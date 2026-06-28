@@ -2,7 +2,7 @@
 
 AI-powered interview preparation backend built with NestJS and Fastify. It integrates Mastra LLM agents with NVIDIA NIM to generate adaptive questions and evaluate user responses.
 
-![Swagger API Documentation](c:/antigravity-test/PrepAI/server/public/swagger.png)
+![Swagger API Documentation](./public/swagger.png)
 
 ---
 
