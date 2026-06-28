@@ -20,6 +20,7 @@ The platform covers behavioral, system design, coding, and domain-specific topic
 - [Features In Detail](#features-in-detail)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
+- [Backend API](#backend-api)
 - [Getting Started](#getting-started)
 - [Testing](#testing)
 - [UI Prototype](#ui-prototype)
@@ -286,7 +287,8 @@ PrepAI/
 │   │   └── smoke.spec.ts          # Frontend E2E tests
 │   └── backend/
 │       └── smoke.spec.ts          # Backend E2E tests
-├── server/                         # Backend (NestJS — separate setup)
+├── server/                         # Backend (NestJS + Fastify)
+│   └── README.md                   # Backend documentation and API Spec
 ├── ui/                             # Frontend (React + Vite)
 │   ├── public/                     # Static assets (favicon, icons)
 │   ├── src/
@@ -318,6 +320,14 @@ PrepAI/
 ├── GEMINI.md
 └── README.md
 ```
+
+---
+
+## Backend API
+
+The backend is built with NestJS and Fastify, integrating Mastra LLM agents for technical interview feedback. 
+
+For the complete list of endpoints, payloads, and mock requests/responses, see the [README.md](file:///c:/antigravity-test/PrepAI/server/README.md) specification in the `server` directory.
 
 ---
 

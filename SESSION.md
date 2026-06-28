@@ -1,4 +1,4 @@
-# Session Log — PrepAI Frontend Setup
+# Session Log — PrepAI Full Stack Setup
 
 Date: 2026-06-28
 
@@ -6,7 +6,7 @@ Date: 2026-06-28
 
 ## What We Built
 
-Scaffolded the entire frontend base project for PrepAI, configured tooling, set up E2E testing, documented the project, and prepared the monorepo structure.
+Scaffolded the entire frontend (`ui/`) and backend (`server/`) for PrepAI, configured tooling, set up E2E testing, documented the project, and prepared the monorepo structure.
 
 ---
 
@@ -159,7 +159,6 @@ PrepAI/
 │       └── smoke.spec.ts            # Backend E2E tests
 │
 ├── ui/                               # Frontend (React + Vite)
-│   ├── .env                          # (referenced from root)
 │   ├── .gitignore
 │   ├── components.json               # Shadcn UI config
 │   ├── eslint.config.js
@@ -193,7 +192,69 @@ PrepAI/
 │       └── test/
 │           └── setup.ts              # Vitest setup
 │
-└── server/                           # Backend (empty, to be set up)
+└── server/                           # Backend (NestJS + Fastify)
+    ├── .gitignore
+    ├── nest-cli.json
+    ├── package.json
+    ├── pnpm-lock.yaml
+    ├── pnpm-workspace.yaml
+    ├── tsconfig.json
+    ├── tsconfig.build.json
+    ├── vitest.config.ts
+    ├── vitest.config.e2e.ts
+    ├── prisma/
+    │   ├── schema.prisma             # MongoDB (User, Topic, Question, ChatMessage)
+    │   └── schema.postgresql.prisma  # PostgreSQL (PracticeSession, Answer)
+    └── src/
+        ├── main.ts                   # Bootstrap (NestFactory + configureApp + listen)
+        ├── app.module.ts             # Root module (Config, Logger, Cache, Prisma, Health)
+        ├── config/
+        │   ├── index.ts              # Barrel exports
+        │   ├── app.config.ts         # registerAs('app') with validation
+        │   ├── configure-app.ts      # Centralized app setup (Logger, plugins, Swagger)
+        │   ├── env.validation.ts     # Zod schema for env vars
+        │   ├── fastify.config.ts     # registerFastifyPlugins (helmet, cors, rate-limit, multipart)
+        │   ├── logger-config.ts      # Pino HTTP config
+        │   ├── middleware.config.ts   # MiddlewareConfig type
+        │   └── swagger.config.ts     # setupSwagger (DocumentBuilder + SwaggerUI)
+        ├── common/
+        │   ├── index.ts              # Barrel exports
+        │   ├── constants/
+        │   │   ├── index.ts
+        │   │   └── api.constants.ts  # ApiTags, ApiRoutes, messages
+        │   ├── decorators/
+        │   │   ├── index.ts
+        │   │   ├── current-user.decorator.ts
+        │   │   ├── public.decorator.ts
+        │   │   └── roles.decorator.ts
+        │   ├── filters/
+        │   │   ├── index.ts
+        │   │   └── http-exception.filter.ts
+        │   ├── guards/
+        │   │   ├── index.ts
+        │   │   ├── clerk-auth.guard.ts
+        │   │   └── roles.guard.ts
+        │   ├── interceptors/
+        │   │   ├── index.ts
+        │   │   └── transform.interceptor.ts
+        │   ├── middleware/
+        │   │   ├── index.ts
+        │   │   ├── logger.middleware.ts    # Pino request/response logging
+        │   │   └── sanitize.middleware.ts  # Trims string inputs
+        │   └── types/
+        │       └── index.ts
+        ├── modules/
+        │   └── health/
+        │       ├── health.module.ts
+        │       ├── health.controller.ts
+        │       └── health.controller.spec.ts
+        ├── prisma/
+        │   ├── prisma.module.ts
+        │   └── prisma.service.ts     # PrismaService (MongoDB) + PrismaPostgresqlService
+        └── types/
+            ├── index.ts
+            ├── user.types.ts         # IUserPayload, UserRole
+            └── response.types.ts     # IResponse<T>
 ```
 
 ---
@@ -252,6 +313,139 @@ PrepAI/
 
 ---
 
+## Backend Setup (`server/`)
+
+### 20. NestJS Backend Scaffolding
+
+Scaffolded a production-ready NestJS backend in `server/` with:
+
+**Packages installed** (exact pinned versions):
+- NestJS 11.1.26 (common, core, config, platform-fastify, swagger, event-emitter, schedule, cache-manager)
+- Fastify 5.8.5 with plugins (cors, helmet, rate-limit, multipart, static)
+- Prisma 6.19.0 (client + CLI)
+- Clerk SDK 5.1.6
+- Mastra Core 1.41.0
+- Google AI SDK 1.2.12
+- Redis (ioredis 5.11.1, cache-manager 7.2.8)
+- Pino logging (nestjs-pino 4.6.1, pino 10.3.1)
+- Zod 4.4.3, class-validator, class-transformer
+- Vitest 4.1.8 with SWC, coverage-v8
+- TypeScript 6.0.3
+
+**Config files created:**
+- `package.json` — `"type": "module"`, all exact versions, no `^`/`~`
+- `tsconfig.json` — `strict: true`, `module: NodeNext`, `emitDecoratorMetadata`, `@/*` alias
+- `tsconfig.build.json` — extends tsconfig.json
+- `nest-cli.json`
+- `pnpm-workspace.yaml` — allowBuilds for prisma, swc, clerk
+- `vitest.config.ts` — SWC plugin, jsdom, coverage thresholds
+- `vitest.config.e2e.ts` — e2e test config
+- `.env.example`
+- `.gitignore`
+
+**Prisma schemas:**
+- `prisma/schema.prisma` — MongoDB (User, Topic, Question, ChatMessage)
+- `prisma/schema.postgresql.prisma` — PostgreSQL (PracticeSession, Answer)
+
+**Source structure (current state after user refactoring):**
+- `src/main.ts` — Minimal bootstrap: NestFactory.create + configureApp + listen. No inline plugin/middleware setup
+- `src/app.module.ts` — ConfigModule (Zod validate + `envFilePath` to root `.env`), LoggerModule, CacheModule (Redis via `redisStore`), PrismaModule, HealthModule. SanitizeMiddleware applied via `forRoutes('{*path}')`
+- `src/config/configure-app.ts` — **Centralized app setup**: `app.useLogger(app.get(Logger))` (Pino), `registerGlobalMiddleware(app)`, `registerFastifyPlugins(app)`, `setGlobalPrefix('api/v1')`, `setupSwagger(app)`, `enableShutdownHooks()`
+- `src/config/app.config.ts` — `registerAs('app')` with DATABASE_URL validation (required in non-test), PORT, NODE_ENV, databaseUrl, postgresqlUrl
+- `src/config/fastify.config.ts` — `registerFastifyPlugins(app)` — registers Helmet (CSP directives), CORS (`*` in dev, CSV in prod), rate-limit (10/min on `/api/v1/auth/`, 100/min elsewhere), multipart (10MB limit)
+- `src/config/swagger.config.ts` — `setupSwagger(app)` — DocumentBuilder with BearerAuth, SwaggerUI with persistAuthorization, tryItOut, displayRequestDuration
+- `src/config/logger-config.ts` — Pino HTTP config: pino-pretty in dev (translateTime, colorize), custom success message, debug level in dev / info in prod
+- `src/config/middleware.config.ts` — MiddlewareConfig type definition
+- `src/config/index.ts` — Barrel exports for all config files
+- `src/common/constants/` — ApiTags (Health, Auth, Users, Topics, Questions, Sessions, Answers, Analytics, Chatbot), ApiRoutes, success/error message constants
+- `src/common/decorators/` — @CurrentUser (param decorator), @Public (SetMetadata), @Roles (SetMetadata)
+- `src/common/guards/` — ClerkAuthGuard (verifies Bearer token via `@clerk/clerk-sdk-node`, attaches user payload), RolesGuard (checks required roles)
+- `src/common/filters/` — HttpExceptionFilter (wraps errors in IResponse format)
+- `src/common/interceptors/` — TransformInterceptor (wraps responses in `{ success, message, data, path, timestamp }`)
+- `src/common/middleware/sanitize.middleware.ts` — Trims string inputs in request body
+- `src/common/middleware/logger.middleware.ts` — **New**: Pino-based request/response logging via `@InjectPinoLogger`, logs incoming requests and response status on finish
+- `src/common/middleware/index.ts` — Exports SanitizeMiddleware + LoggerMiddleware
+- `src/common/types/` — MiddlewareConfig interface
+- `src/prisma/prisma.service.ts` — PrismaService (MongoDB, extends PrismaClient), PrismaPostgresqlService (PostgreSQL, graceful skip if `POSTGRESQL_URL` not set)
+- `src/modules/health/` — HealthController (`@Public()` GET `/health` → `{ status: 'ok' }`), HealthModule
+- `src/types/` — IUserPayload, UserRole enum, IResponse<T> interface
+
+### 21. Delete Server-Level Env Files
+
+- Deleted `server/.env.example` (`server/.env` didn't exist)
+- Root-level `.env` and `.env.example` are the single source of truth for both `ui/` and `server/`
+
+### 22. Fix ConfigModule to Read from Root `.env`
+
+- Added `envFilePath: join(__dirname, '..', '..', '.env')` to ConfigModule in `app.module.ts`
+- Uses `import.meta.url` → `fileURLToPath` → `dirname` to resolve at runtime
+- Path resolves: `src/` → `server/` → project root
+
+### 23. Root .env.example Verification
+
+- Root `.env.example` already contained all frontend (`VITE_*`) and backend variables
+- No changes needed
+
+### 24. User Refactoring — Centralized App Setup
+
+The user restructured the backend to centralize all app configuration:
+
+- **main.ts simplified**: Removed inline helmet/cors/rate-limit/multipart registrations, ValidationPipe, ExceptionFilter, TransformInterceptor — all moved to `configure-app.ts`
+- **configure-app.ts** became the single entry point for app setup: Logger (Pino), global middleware, Fastify plugins, route prefix, Swagger, shutdown hooks
+- **fastify.config.ts** changed from returning options object to `registerFastifyPlugins(app)` — registers plugins directly on the app instance
+- **swagger.config.ts** changed from returning config object to `setupSwagger(app)` — creates document and mounts SwaggerUI with custom options
+- **app.config.ts** added manual DATABASE_URL validation (required in non-test) inside `registerAs`
+- **logger-config.ts** enhanced with custom formatting (translateTime, ignore pid/hostname, colorize) and `customSuccessMessage`
+- **LoggerMiddleware added**: New Pino-based middleware using `@InjectPinoLogger` for request/response logging
+- **app.module.ts** updated: Removed EventEmitterModule, ScheduleModule; added `envFilePath`, `forRoutes('{*path}')`, `appConfig`/`loggerConfig` imports
+- **Rate limiting**: Stricter controls — 10/min on `/api/v1/auth/`, 100/min elsewhere
+
+### 25. Prisma Generate
+
+- Ran `pnpm prisma:generate` to generate both MongoDB and PostgreSQL Prisma clients
+- MongoDB client generated to `node_modules/.prisma/client`
+- PostgreSQL client generated to `src/generated/postgresql-client/`
+
+### 26. Logger Error Fix
+
+- `app.get(Logger)` fails because `nestjs-pino` overrides the Logger token differently
+- Fixed by using static `Logger.log(...)` in `main.ts` instead of resolving from container
+- `configure-app.ts` uses `app.useLogger(app.get(Logger))` which works because it's called after the container is fully initialized
+
+### 27. Route Wildcard Fix
+
+- `forRoutes('*')` causes path-to-regexp warnings in newer Fastify/NestJS
+- Fixed to `forRoutes('{*path}')` — named parameter syntax
+
+### 28. Weather Module — Mastra + NVIDIA NIM Integration
+
+Created a sample weather agent module to verify Mastra + NVIDIA NIM integration:
+
+**Package installed:**
+- `@ai-sdk/openai@3.0.77` (v3, compatible with Mastra 1.41.0 — v4 causes LanguageModelV4/v3 mismatch)
+
+**Files created:**
+- `src/mastra/index.ts` — Mastra singleton with weatherAgent registered
+- `src/modules/weather/weather.agent.ts` — Agent definition with `createOpenAI` (NVIDIA NIM provider), `createTool` for `getWeather` (Open-Meteo geocoding + weather API), native `fetch` only
+- `src/modules/weather/weather.service.ts` — NestJS service using `mastra.getAgent('weatherAgent')` + `agent.generate()`
+- `src/modules/weather/weather.controller.ts` — `@Public()` POST `/weather/ask` endpoint with Swagger decorators
+- `src/modules/weather/weather.module.ts` — Module wiring controller + service
+- `src/modules/weather/dto/ask-weather.dto.ts` — class-validator DTO with `@ApiProperty`
+- `src/modules/weather/dto/index.ts` — Barrel export
+
+**Config changes:**
+- Root `.env.example` — added `NVIDIA_API_KEY`, `NVIDIA_BASE_URL`, `NVIDIA_MODEL`
+- `env.validation.ts` — added 3 Zod fields with defaults
+- `app.module.ts` — imported and registered `WeatherModule`
+
+**TypeScript fixes:**
+- `Agent` and `createTool` import from subpaths (`@mastra/core/agent`, `@mastra/core/tools`)
+- Agent requires `id` field in v1.41.0
+- DTO property needs `!` assertion for strict mode
+- Execute function parameter needs explicit type annotation
+
+---
+
 ## Verification Checklist
 
 - [x] No `^` or `~` in any `package.json` dependency
@@ -274,3 +468,73 @@ PrepAI/
 - [x] No `baseUrl` deprecation warnings in any tsconfig
 - [x] `vitest.config.ts` exists with test config separated from vite.config.ts
 - [x] Clerk key validated with regex — placeholder values don't crash the app
+
+### Backend
+
+- [x] No `^` or `~` in server `package.json`
+- [x] `"type": "module"` in server `package.json`
+- [x] `pnpm-lock.yaml` exists in `server/`
+- [x] `pnpm-workspace.yaml` exists in `server/`
+- [x] `tsconfig.json` has `strict: true`, `module: NodeNext`, `emitDecoratorMetadata: true`
+- [x] `tsconfig.build.json` extends `tsconfig.json`
+- [x] `nest-cli.json` exists
+- [x] `vitest.config.ts` and `vitest.config.e2e.ts` both exist
+- [x] Both Prisma schemas exist (`schema.prisma` MongoDB, `schema.postgresql.prisma`)
+- [x] All `.js` extensions used in TypeScript imports
+- [x] `pnpm exec tsc --noEmit` exits with zero errors
+- [x] `pnpm test` — health controller spec passes
+- [x] ClerkAuthGuard verifies Bearer tokens via `@clerk/clerk-sdk-node`
+- [x] Health endpoint at `/health` returns `{ status: 'ok' }`
+- [x] Swagger configured at `/docs` (non-production only) with BearerAuth + custom UI options
+- [x] `server/.env` and `server/.env.example` do not exist
+- [x] ConfigModule `envFilePath` points to root `.env`
+- [x] Root `.env.example` has all frontend + backend variables
+- [x] `configure-app.ts` centralizes all app setup (Logger, middleware, plugins, prefix, Swagger, shutdown)
+- [x] `fastify.config.ts` registers plugins directly on app instance
+- [x] LoggerMiddleware added for request/response logging via Pino
+- [x] `forRoutes('{*path}')` — no path-to-regexp warnings
+- [x] Rate limiting: 10/min on auth, 100/min elsewhere
+- [x] `main.ts` uses static `Logger.log()` — no `app.get(Logger)` container resolution
+- [x] Prisma clients generated (MongoDB + PostgreSQL)
+- [x] `pnpm start:dev` starts without errors
+- [x] `@ai-sdk/openai@3.0.77` installed (v3, compatible with Mastra 1.41.0)
+- [x] Root `.env.example` has NVIDIA vars (API_KEY, BASE_URL, MODEL)
+- [x] `env.validation.ts` has NVIDIA Zod fields with defaults
+- [x] `src/mastra/index.ts` exists with Mastra singleton
+- [x] `weather.agent.ts` uses `createOpenAI` with NVIDIA NIM baseURL
+- [x] `getWeather` tool calls Open-Meteo geocoding then weather API
+- [x] `weather.service.ts` uses `mastra.getAgent('weatherAgent')`
+- [x] `weather.controller.ts` is `@Public()` — no auth required
+- [x] `WeatherModule` registered in `app.module.ts`
+
+### 29. Mastra Integration, Bug Fixes & Tech Expert Agent Setup
+
+We integrated the new `techExpertAgent` module and resolved various compiler, dependency injection, and runtime issues in the ESM NestJS server:
+
+1. **Resolved Watch Mode Deletion Conflict**:
+   - Disabled `"incremental"` compilation in `tsconfig.json` to prevent Nest CLI's `"deleteOutDir": true` watch behavior from deleting necessary compiled files while TypeScript skips re-emitting them.
+
+2. **Fixed Weather Service Spec Tests**:
+   - Corrected the mock path in [weather.service.spec.ts](file:///c:/antigravity-test/PrepAI/server/src/modules/weather/weather.service.spec.ts) from `../mastra/mastra.config.js` to `../../mastra/mastra.config.js` so Vitest targets the mock correctly.
+   - Fixed `mockGetAgent` to be synchronous (returning the mocked agent directly instead of wrapping it in `Promise.resolve`) to match the real Mastra API.
+
+3. **Removed and Restored Mastra Integration**:
+   - Safely deleted the weather module and weather agent as requested, removing `@mastra/*` dependencies.
+   - Restored Mastra by adding `@mastra/core` (using version `1.47.0` to resolve a database harness session export mismatch in `@mastra/libsql@1.14.2`) and `@ai-sdk/openai`.
+   - Wired the new [tech-expert-agent.ts](file:///c:/antigravity-test/PrepAI/server/src/mastra/agents/tech-expert-agent.ts) to use `process.env` directly for API keys and base URLs.
+   - Created and registered `TechExpertModule` in [app.module.ts](file:///c:/antigravity-test/PrepAI/server/src/app.module.ts).
+
+4. **Fixed ESM Watch Mode Path Alias Resolution**:
+   - Discovered that Nest's default watch compiler (`nest start --watch`) fails to resolve `@/` path aliases in ESM mode.
+   - Updated `start:dev` script to use `@swc-node/register` (`node --import @swc-node/register/esm-register --watch src/main.ts`) which supports both native Node ESM watch mode and TS decorator metadata emission.
+
+5. **Implemented ZodValidationPipe**:
+   - Created [zod-validation.pipe.ts](file:///c:/antigravity-test/PrepAI/server/src/common/pipes/zod-validation.pipe.ts) to handle runtime request body validations.
+   - Fixed compiler error TS1272 by using `import type { ZodSchema }` instead of class imports to satisfy `isolatedModules`.
+   - Registered and exported it globally in the common barrel file.
+
+6. **Fixed DTO Whitelisting**:
+   - Added class-validator decorators (`@IsString()`, `@IsNotEmpty()`) to `TechExpertRequestDto` inside [tech-expert.types.ts](file:///c:/antigravity-test/PrepAI/server/src/modules/tech-expert/tech-expert.types.ts) to prevent Nest's whitelisting ValidationPipe from discarding incoming request properties.
+
+7. **Resolved Upstream LLM Race Condition**:
+   - Added the `--env-file=../.env` flag to Node startup to load the API keys *before* module evaluation. This ensures `process.env.NVIDIA_API_KEY` is already populated when `tech-expert-agent.ts` evaluates statically at module import time.

@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/postgresql-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRESQL_URL")
+}
+
+model PracticeSession {
+  id          String   @id @default(uuid())
+  userId      String
+  topicId     String
+  status      String   @default("IN_PROGRESS")
+  score       Float?
+  totalQ      Int      @default(0)
+  answeredQ   Int      @default(0)
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  answers Answer[]
+}
+
+model Answer {
+  id         String          @id @default(uuid())
+  sessionId  String
+  session    PracticeSession @relation(fields: [sessionId], references: [id])
+  questionId String
+  content    String
+  score      Float?
+  feedback   String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
