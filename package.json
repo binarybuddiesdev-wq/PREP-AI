@@ -1,0 +1,19 @@
+{
+  "name": "prepai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:ui": "playwright test --project=ui",
+    "test:server": "playwright test --project=server",
+    "test:chromium": "playwright test --project=ui-chromium --project=server-chromium",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.52.0",
+    "@types/node": "22.15.3",
+    "typescript": "5.8.3"
+  }
+}
