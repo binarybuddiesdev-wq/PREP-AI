@@ -18,7 +18,7 @@
     "prisma:migrate:postgresql": "prisma migrate dev --schema=prisma/schema.postgresql.prisma"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.2",
+    "@ai-sdk/openai": "4.0.2",
     "@clerk/clerk-sdk-node": "5.1.6",
     "@fastify/cors": "11.2.0",
     "@fastify/helmet": "13.0.2",
@@ -39,11 +39,13 @@
     "cache-manager-ioredis-yet": "2.1.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
+    "cloudinary": "2.10.0",
     "fastify": "5.8.5",
     "ioredis": "5.11.1",
     "nestjs-pino": "4.6.1",
     "pino": "10.3.1",
     "reflect-metadata": "0.2.2",
+    "resend": "6.16.0",
     "rxjs": "7.8.2",
     "zod": "4.4.3"
   },

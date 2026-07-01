@@ -274,6 +274,16 @@ Cross-cutting functionality available on all screens.
 | Fonts | DM Sans + JetBrains Mono (Fontsource) | 5.2.8 |
 | Package Manager | pnpm | 11.5.0 |
 
+### Infrastructure
+
+| Service | Technology | Purpose |
+|---------|-----------|---------|
+| Code Execution | Piston (self-hosted) | Sandboxed code runner for JS/TS/Python |
+| Container Runtime | Podman Desktop | Runs Piston container locally |
+| Email | Resend | Transactional emails (reminders, reports) |
+| File Storage | Cloudinary | PDF upload and storage |
+| AI/LLM | NVIDIA NIM | Question generation, answer evaluation, chatbot |
+
 ---
 
 ## Project Structure
@@ -282,11 +292,22 @@ Cross-cutting functionality available on all screens.
 PrepAI/
 ├── public/
 │   └── dashboard.png              # Dashboard screenshot for README
+├── docs/
+│   ├── PISTON_SETUP.md            # Original Piston setup guide
+│   └── PISTON_WSL_SETUP_GUIDE.md  # Detailed WSL/Podman troubleshooting
 ├── e2e/
 │   ├── frontend/
 │   │   └── smoke.spec.ts          # Frontend E2E tests
 │   └── backend/
 │       └── smoke.spec.ts          # Backend E2E tests
+├── piston-cli/                    # Piston CLI for runtime installation
+│   ├── commands/
+│   ├── index.js
+│   └── package.json
+├── types/
+│   ├── piston.ts                  # Piston manager script (start/stop/setup/status)
+│   └── piston.types.ts            # TypeScript types for piston script
+├── piston-entrypoint.sh           # Custom entrypoint for Windows/Podman cgroup fix
 ├── server/                         # Backend (NestJS + Fastify)
 │   └── README.md                   # Backend documentation and API Spec
 ├── ui/                             # Frontend (React + Vite)
@@ -314,10 +335,11 @@ PrepAI/
 │   ├── tsconfig.app.json           # App TypeScript config (strict mode)
 │   ├── tsconfig.node.json          # Node TypeScript config
 │   └── vite.config.ts              # Vite config (aliases, Tailwind, Vitest)
-├── package.json                    # Root package (Playwright E2E tests)
+├── package.json                    # Root package (Playwright E2E tests + Piston scripts)
 ├── playwright.config.ts            # Playwright config (frontend + backend)
 ├── prepai-ui.html                  # Full standalone UI prototype
-├── GEMINI.md
+├── .env.example                    # Environment variables template
+├── GEMINI.md                       # Project guidelines (Gemini)
 └── README.md
 ```
 
@@ -337,6 +359,52 @@ For the complete list of endpoints, payloads, and mock requests/responses, see t
 
 - Node.js 18+
 - pnpm 9+
+- **Podman Desktop** — Download from https://podman-desktop.io (required for Piston)
+- **Podman CLI** — Installed automatically with Podman Desktop
+- **podman-compose** — Install via: `pip install podman-compose` (optional, for docker-compose files)
+
+### Piston Code Execution Engine
+
+Piston is self-hosted for secure code execution. Before running, ensure:
+
+1. **Podman Desktop is running** — Open the app, verify the machine is started (green indicator)
+2. **Podman CLI is available** — Test with: `podman --version`
+3. **Container is running** — Test with: `podman ps`
+
+#### Quick Piston Commands
+
+```bash
+pnpm piston:start     # Start Piston container (first time may take a minute)
+pnpm piston:setup     # Install JS/TS/Python runtimes (run once)
+pnpm piston:status    # Check if container is running
+pnpm piston:stop      # Stop and remove container
+```
+
+#### Verify Piston is Working
+
+```bash
+# Check container status
+podman ps
+
+# Test API endpoint
+curl http://127.0.0.1:2000/api/v2/runtimes
+
+# Test code execution
+curl -X POST http://127.0.0.1:2000/api/v2/execute \
+  -H "Content-Type: application/json" \
+  -d '{"language":"js","version":"*","files":[{"content":"console.log(1+1)"}]}'
+```
+
+Expected output: `"stdout":"2\n"` with `"code":0`
+
+#### Troubleshooting Piston
+
+| Issue | Solution |
+|-------|----------|
+| Container exits immediately | Run `podman rm -f piston_api` then `pnpm piston:start` |
+| Port 2000 in use | Change port in `types/piston.ts` (line 39) |
+| Podman not found | Ensure Podman Desktop is running and in PATH |
+| Runtimes not installed | Run `pnpm piston:setup` |
 
 ### 1. Clone the repository
 
@@ -345,29 +413,50 @@ git clone <repo-url>
 cd PrepAI
 ```
 
-### 2. Install frontend dependencies
+### 2. Install all dependencies
 
 ```bash
-cd ui
 pnpm install
+cd ui && pnpm install && cd ..
+cd server && pnpm install && cd ..
 ```
 
 ### 3. Set up environment variables
 
-Create `ui/.env` from the template:
-
 ```bash
-cp ui/.env.example ui/.env
+cp .env.example .env
 ```
 
-Edit `ui/.env` and add your Clerk publishable key:
+Edit `.env` and add your API keys (see [Resources](#resources--api-keys) below):
 
 ```
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_key_here
-VITE_API_BASE_URL=http://localhost:3000
+CLERK_SECRET_KEY=sk_test_your_key_here
+NVIDIA_API_KEY=nvapi-your_key_here
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+RESEND_API_KEY=re_your_key_here
 ```
 
-### 4. Start the frontend dev server
+### 4. Start Piston (Code Execution Engine)
+
+```bash
+pnpm piston:start     # Boot Piston container
+pnpm piston:setup     # Install JS/TS/Python runtimes
+pnpm piston:status    # Verify it's running
+```
+
+### 5. Start the backend server
+
+```bash
+cd server
+pnpm run start:dev
+```
+
+The API will be available at `http://localhost:3000`.
+
+### 6. Start the frontend dev server
 
 ```bash
 cd ui
@@ -376,12 +465,57 @@ pnpm dev
 
 The app will be available at `http://localhost:5173`.
 
-### 5. Install E2E test dependencies (optional)
+### 7. Install E2E test dependencies (optional)
 
 ```bash
 pnpm install          # at root level
 npx playwright install chromium
 ```
+
+---
+
+## Resources & API Keys
+
+| Service | Purpose | Get Key At |
+|---------|---------|-----------|
+| **Clerk** | Authentication (Email, Google, GitHub, LinkedIn) | https://dashboard.clerk.com |
+| **NVIDIA NIM** | AI/LLM for question generation and feedback | https://build.nvidia.com |
+| **Cloudinary** | PDF file storage (25 GB free) | https://cloudinary.com |
+| **Resend** | Transactional emails (100/day free) | https://resend.com |
+| **Podman Desktop** | Container runtime for Piston | https://podman-desktop.io |
+
+### Clerk
+1. Sign up at https://dashboard.clerk.com
+2. Create a new application
+3. Enable providers: Email, Google, GitHub, LinkedIn
+4. Copy **Publishable Key** → `VITE_CLERK_PUBLISHABLE_KEY`
+5. Copy **Secret Key** → `CLERK_SECRET_KEY`
+
+### NVIDIA NIM
+1. Sign up at https://build.nvidia.com
+2. Go to API Explorer
+3. Generate an API key
+4. Copy key → `NVIDIA_API_KEY`
+5. Model used: `meta/llama-3.1-8b-instruct`
+
+### Cloudinary
+1. Sign up at https://cloudinary.com
+2. Go to Dashboard → Account Details
+3. Copy **Cloud Name** → `CLOUDINARY_CLOUD_NAME`
+4. Copy **API Key** → `CLOUDINARY_API_KEY`
+5. Copy **API Secret** → `CLOUDINARY_API_SECRET`
+
+### Resend
+1. Sign up at https://resend.com
+2. Go to API Keys → Create API Key
+3. Copy key → `RESEND_API_KEY`
+4. Free tier: 100 emails/day
+
+### Piston (Code Execution)
+- Self-hosted, no API key needed
+- Runs locally via Podman container
+- Commands: `pnpm piston:start/stop/setup/status`
+- Details: See `docs/PISTON_WSL_SETUP_GUIDE.md`
 
 ---
 
