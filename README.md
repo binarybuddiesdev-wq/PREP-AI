@@ -10,7 +10,7 @@
 
 PrepAI is a full-stack web application designed to help software engineers prepare for technical interviews. Unlike generic question banks, PrepAI uses AI to generate questions tailored to your specific role, tech stack, and experience level — then scores your answers and maps your weaknesses over time.
 
-The platform covers behavioral, system design, coding, and domain-specific topics (React, Node.js, TypeScript, NestJS, DSA, and more). It includes a built-in code editor, PDF document viewer, performance analytics dashboard, and an AI chat assistant.
+The platform covers system design, coding, and domain-specific topics (React, TypeScript, HTML, CSS, Node.js, ExpressJS, NestJS, MongoDB, and more). It includes a built-in code editor, PDF document viewer, performance analytics dashboard, and an AI chat assistant.
 
 ---
 
@@ -36,9 +36,8 @@ The application has the following screens, each accessible via the sidebar navig
 | Landing | Public marketing page with hero, features, testimonials, CTA |
 | Auth | Login/signup with email and social providers |
 | Dashboard | KPIs, recent sessions, streak, score chart, weak areas |
-| Practice | Topic + difficulty selection, timed questions, AI feedback |
-| Question Bank | Browsable/filterable/searchable grid of all questions |
-| Coding | DSA problems with Monaco editor, test cases, AI verdict |
+| Practice | 3 modes: Topic Practice, Weak Areas, PDF Study with AI feedback |
+| Coding | Algorithm problems with Monaco editor, test cases, AI verdict |
 | History | Past sessions with expandable Q&A and feedback |
 | Settings | Profile, notifications, preferences, AI config, documents |
 | Library | PDF viewer with zoom, navigation, fullscreen, bulk delete |
@@ -87,20 +86,23 @@ The main hub after login showing progress overview and quick actions.
   - Average Score (7.4, +5% trend)
   - Topics Covered (8, -2% trend)
 - **Recent sessions table**: Topic, Date, Score (color-coded pill), Status — with "View All" link to History
-- **Suggested practice**: Clickable tag chips for weak areas (DSA — Graphs, System Design, React Performance, Node.js Streams, Coding — Two Sum)
+- **Suggested practice**: Clickable tag chips for weak areas (MongoDB, System Design, ExpressJS)
 - **Streak tracker**: 7-day streak with day indicators (M T W T F S S), completed days highlighted in amber, current day solid amber
 - **Score trend chart**: SVG line chart showing last 7 session scores with gradient fill, grid lines, date labels, and dot markers
-- **Weak areas**: Progress bars for DSA (45%), System Design (62%), Node.js (71%), NestJS (78%) — each with color-coded gradient fills
+- **Weak areas**: Progress bars for MongoDB (45%), System Design (62%), ExpressJS (68%) — each with color-coded gradient fills
 
 ### 4. Practice Sessions
 
-The core interview practice flow with timed questions and AI scoring.
+The core interview practice flow with timed questions and AI scoring. 3 practice modes:
 
-- **Topic selector**: Pill buttons for React, NestJS, TypeScript, System Design, DSA, Node.js — single select
-- **Difficulty selector**: Junior, Mid, Senior — single select
-- **Start card**: Shows selected topic, difficulty, and question count with "Start Session" button
+- **Mode selector**: 3 cards — Topic Practice, Weak Areas, PDF Study
+- **Topic Practice**: Topic pills (multi-select) + difficulty selector. Questions from pre-seeded bank.
+- **Weak Areas**: AI picks topics where user scores lowest. Shows current weak area percentages.
+- **PDF Study**: Select uploaded PDFs, AI generates questions via RAG.
+- **Session config**: Timer per question, hints on skip. Question count is role-based (10 free, 30 premium).
+- **Remaining sessions bar**: Shows how many sessions left today (3/day for free, unlimited for premium).
 - **Question card** (active session):
-  - Question counter ("Q1 of 8")
+  - Question counter ("Q1 of 10" — role-based limit)
   - Timer (MM:SS format, counts up from 00:00)
   - Progress bar showing completion percentage
   - Question text
@@ -112,42 +114,32 @@ The core interview practice flow with timed questions and AI scoring.
   - Verdict text ("Excellent Answer!", "Good Answer!", "Decent Answer!")
   - Detailed feedback paragraph
   - Action buttons: Next Question, Practice Same Topic Again, End Session
+- **Session complete card**: Shows questions answered, average score, time taken
 - **Loading overlay**: Animated spinner with "AI is analyzing your answer..." text during scoring
 
-### 5. Question Bank
+### 5. Coding Challenges
 
-Browse and search the full question library.
+Algorithm and data structure problems with a built-in code editor. 50 problems across 11 topics.
 
-- **Search box**: Real-time search filtering across all questions
-- **Topic filter**: All, React, NestJS, TypeScript, System Design, DSA, Node.js
-- **Difficulty filter**: All, Junior, Mid, Senior
-- **Question grid**: Card layout showing:
-  - Topic tag (color-coded pill)
-  - Difficulty pill
-  - Question text (3-line clamp)
-  - Estimated time (~5 min)
-  - "Practice →" button linking to Practice screen with that topic pre-selected
-- **Pagination**: Page buttons with prev/next arrows, current page highlighted
-- **Empty state**: "No questions found" with clear filters button
-
-### 6. Coding Challenges
-
-DSA and algorithm problems with a built-in code editor.
-
+- **Coding stats bar**: Solved count, daily progress (x/5), AI Reviews left (x/3), day streak
+- **Daily limits**: Free users — 5 problems solved/day, 3 AI Reviews/day. Premium/Admin — unlimited.
 - **Problem list view**:
-  - Topic filter pills: All, Arrays, Strings, Trees, Graphs, DP, Two Pointers
-  - Card grid with difficulty indicator (left border color: green=Easy, amber=Medium, red=Hard)
+  - Topic filter pills: All, Arrays, Stacks, Hash Maps, Binary Search, Linked Lists, Trees, Graphs, DP, Two Pointers, Backtracking, Sliding Window
+  - Difficulty filter pills: All, Easy, Medium, Hard
+  - Card grid with difficulty indicator (green=Easy, amber=Medium, red=Hard)
+  - Solved problems show green left border + checkmark badge
   - Each card shows: problem number, difficulty pill, title, description preview, topic tag, estimated time
   - Click to open problem detail
 - **Problem detail + editor view** (split panel):
   - **Left panel** (collapsible): Problem title, difficulty + topic pills, full description, example inputs/outputs/explanations, constraints list
   - **Right panel**:
-    - Editor header: Filename tab (auto-generated from problem title + language extension), Run button, Submit button, language dropdown (JavaScript, TypeScript, Python), reset button, fullscreen button
+    - Editor header: Filename tab, Run button, Submit button, AI Review button, language dropdown (JavaScript, TypeScript, Python), reset button, fullscreen button
     - Monaco editor: Syntax highlighting, line numbers, JetBrains Mono font, dark theme, 480px height
     - Output panel: Tab bar (Output, Test Cases), clear button
-      - Output tab: Shows "Click Run Code to see output" placeholder
-      - Test Cases tab: Input/Expected pairs for each example
-- **Run code results**: Accepted/rejected verdict, per-test-case pass/fail with input/expected/got, runtime, memory, pass count
+- **Run code**: Executes code against test cases via Piston API
+- **Submit**: Marks problem as solved, records coding streak
+- **AI Review**: Shows time/space complexity analysis, code quality feedback, improvement suggestions (mock UI for prototype)
+- **Submit results**: Accepted/Wrong Answer verdict with per-test-case pass/fail
 - **Submit results** (modal overlay): Verdict pill (Accepted/Wrong Answer), time complexity analysis, space complexity analysis, AI suggestion paragraph, "Next Problem" and "Close" buttons
 - **Fullscreen editor**: Overlay with header (filename, language, reset, minimize), full-viewport Monaco editor
 - **Language switching**: Updates editor content, filename extension, and Monaco language mode
@@ -168,7 +160,7 @@ Review all past practice sessions with detailed Q&A breakdown.
 
 Comprehensive user preferences organized into tabs.
 
-- **Tab navigation**: Profile, Notifications, Practice Preferences, AI & Sources, Documents, Danger Zone
+- **Tab navigation**: Profile, Notifications, Practice Preferences, AI & Sources, Documents, Plan, Danger Zone
 
 #### Profile
 - First Name, Last Name (side by side)
@@ -191,7 +183,7 @@ Comprehensive user preferences organized into tabs.
 - Default Difficulty dropdown: Junior, Mid, Senior, Mixed (random)
 - Session Length dropdown: 5, 10, 15, 20 questions
 - Timer per Question dropdown: No timer, 2 min, 5 min, 10 min
-- Preferred Topics: Clickable tag chips (React, TypeScript, System Design, DSA, NestJS, Node.js)
+- Preferred Topics: Clickable tag chips (React, TypeScript, HTML, CSS, Node.js, ExpressJS, NestJS, MongoDB, System Design)
 - Toggle: Show hints after skip
 - Toggle: Auto-advance to next question (3-second delay)
 - Save Preferences button
@@ -205,6 +197,26 @@ Comprehensive user preferences organized into tabs.
 - PDF upload area with drag-and-drop support
 - File list with toggle and delete for each uploaded PDF
 - Drag-over visual feedback (border color change, background highlight)
+
+#### Plan
+- **Current plan card**: Shows plan badge (FREE/Premium), plan name, description
+- **Limits grid**: Practice sessions, questions per session, coding problems, AI reviews — with current limits
+- **Upgrade section** (free users only): Monthly (₹299) and Yearly (₹1,999) plan cards with features
+- **Premium users**: Shows "Unlimited" for all limits, no upgrade section
+
+### Sidebar Upgrade
+- "Upgrade to Premium" button in sidebar (visible for free users only)
+- Amber gradient background with sparkle icon
+- Click opens upgrade modal with plan selection
+- Hidden when user is Premium or Admin
+
+### Payment (Razorpay)
+- **UPI**: Select app (GPay/PhonePe/Paytm/BHIM) → QR code + UPI ID input → Pay
+- **Card**: Enter card number, expiry, CVV, name → 6-digit OTP → Verify → Success
+- **Netbanking**: Select bank (SBI, HDFC, ICICI, etc.) → Redirect to bank page → Approve → Success
+- **Wallet**: Select wallet (Paytm, Mobikwik, FreeCharge, JioMoney) → Redirect to wallet → Approve → Success
+- **Pricing**: ₹299/month or ₹1,999/year (44% savings)
+- **Flow**: Upgrade Now → Razorpay checkout → Payment → Role updated to PREMIUM
 
 #### Danger Zone
 - **Reset All Progress**: Red-bordered card with description and "Reset Progress" button
@@ -236,7 +248,7 @@ AI assistant accessible from any screen via floating bubble.
   - Header: Green pulsing dot, "PrepAI Assistant" title, fullscreen button, close button
   - Messages area: Scrollable, user messages (amber, right-aligned), bot messages (surface background, left-aligned)
   - Input area: Text input with placeholder, send button (amber)
-- **Topic-aware responses**: Detects keywords (React, JavaScript, DSA, System Design, TypeScript, help, thank) and returns relevant advice
+- **Topic-aware responses**: Detects keywords (React, JavaScript, System Design, TypeScript, Node.js, help, thank) and returns relevant advice
 - **Fullscreen mode**: Expands to fill most of the viewport (900px max-width)
 
 ### 11. Global Features
@@ -244,12 +256,13 @@ AI assistant accessible from any screen via floating bubble.
 Cross-cutting functionality available on all screens.
 
 - **Dark/Light theme**: Toggle via navbar or toolbar icon, persisted to localStorage, full CSS variable system for both modes
-- **Global search**: Inline search in toolbar, real-time filtering across pages (Practice, Coding, History, Settings, Question Bank), keyboard navigation (arrow keys, Enter, Escape)
+- **Global search**: Inline search in toolbar, real-time filtering across pages (Practice, Coding, History, Settings), keyboard navigation (arrow keys, Enter, Escape)
 - **Notifications dropdown**: Bell icon with unread count badge, notification items with colored icons (green/amber/red/blue), "Mark all read" action, items show session completions, new topics, streak milestones, weekly reports
 - **Toast notifications**: Bottom-right stack, success (green checkmark), error (red X), info (blue ℹ), auto-dismiss after 3.5 seconds, manual close, slide-in animation
 - **Responsive design**: Mobile sidebar as overlay with hamburger menu, stacked grid layouts, adjusted padding/typography
 - **Collapsible sidebar**: Toggle between expanded (240px) and collapsed (60px) modes, icons-only when collapsed, tooltip on hover
 - **User menu**: Avatar with dropdown (Settings, Log out) in both sidebar footer and toolbar
+- **Upgrade button**: "Upgrade to Premium" in sidebar (free users only), hidden for Premium/Admin
 
 ---
 
@@ -482,6 +495,7 @@ npx playwright install chromium
 | **NVIDIA NIM** | AI/LLM for question generation and feedback | https://build.nvidia.com |
 | **Cloudinary** | PDF file storage (25 GB free) | https://cloudinary.com |
 | **Resend** | Transactional emails (100/day free) | https://resend.com |
+| **Razorpay** | Payment gateway for premium upgrades | https://dashboard.razorpay.com |
 | **Podman Desktop** | Container runtime for Piston | https://podman-desktop.io |
 
 ### Clerk
@@ -510,6 +524,15 @@ npx playwright install chromium
 2. Go to API Keys → Create API Key
 3. Copy key → `RESEND_API_KEY`
 4. Free tier: 100 emails/day
+
+### Razorpay
+1. Sign up at https://dashboard.razorpay.com
+2. Go to Settings → API Keys
+3. Generate Test Mode keys
+4. Copy **Key ID** → `RAZORPAY_KEY_ID`
+5. Copy **Key Secret** → `RAZORPAY_KEY_SECRET`
+6. Test mode: No real money charged
+7. Docs: https://razorpay.com/docs
 
 ### Piston (Code Execution)
 - Self-hosted, no API key needed
@@ -545,11 +568,11 @@ pnpm report                        # open HTML report
 
 The file `prepai-ui.html` at the project root is a **fully self-contained HTML prototype** of the entire application. It includes:
 
-- All screens (Landing, Auth, Dashboard, Practice, Question Bank, Coding, History, Settings, Library)
+- All screens (Landing, Auth, Dashboard, Practice, Coding, History, Settings, Library)
 - Working navigation between screens
 - Dark/light theme toggle
 - Interactive elements (filters, search, chatbot, toasts)
-- 10 coding problems with Monaco editor integration
+- 50 coding problems with Monaco editor integration across 11 topics
 - 30+ practice questions across 6 topics
 - Session history with expandable Q&A
 - PDF viewer with zoom and navigation

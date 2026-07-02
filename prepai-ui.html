@@ -57,8 +57,7 @@ html[data-theme="light"] .tag{background:rgba(0,0,0,.04);border-color:rgba(0,0,0
 html[data-theme="light"] .tag:hover{border-color:var(--accent);color:var(--accent);background:rgba(245,158,11,.06)}
 html[data-theme="light"] .q-card,html[data-theme="light"] .fb-card{background:#ffffff;border-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .q-textarea{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.08);color:#111827}
-html[data-theme="light"] .bank-card{background:#ffffff;border-color:rgba(0,0,0,.06)}
-html[data-theme="light"] .bank-card:hover{border-color:rgba(0,0,0,.12)}
+
 html[data-theme="light"] .hist-card{background:#ffffff;border-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .hist-tbl th{background:#f1f1f3;border-bottom-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .hist-tbl td{border-bottom-color:rgba(0,0,0,.06)}
@@ -138,7 +137,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .pill{display:inline-flex;padding:.2rem .6rem;border-radius:100px;font-size:.72rem;font-weight:600}
 .pill-amber{background:var(--accentBg);color:var(--accent)}.pill-green{background:var(--greenBg);color:var(--green)}.pill-red{background:var(--redBg);color:var(--red)}.pill-blue{background:var(--blueBg);color:var(--blue)}.pill-purple{background:var(--purpleBg);color:var(--purple)}.pill-muted{background:var(--surface2);color:var(--dim)}
 
-.fpill{padding:.4rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:100px;font-size:.78rem;font-weight:500;color:var(--dim);cursor:pointer;transition:all .2s}
+.fpill{padding:.4rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:100px;font-size:.78rem;font-weight:500;color:var(--dim);cursor:pointer;transition:all .2s;margin-right:.35rem;margin-bottom:.35rem}
 .fpill:hover{border-color:var(--border2);color:var(--text)}.fpill.on{background:var(--accent);border-color:var(--accent);color:#000}
 
 /* ========== SCREENS ========== */
@@ -405,6 +404,9 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .au-field input{width:100%;padding:.75rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.875rem;transition:all .2s}.au-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,158,11,.12)}.au-field input::placeholder{color:var(--faint)}
 .au-submit{width:100%;padding:.8rem;background:var(--accent);color:#000;border-radius:8px;font-weight:600;font-size:.925rem;margin-top:.5rem;transition:all .2s}.au-submit:hover{box-shadow:0 6px 24px rgba(245,158,11,.3);transform:translateY(-1px)}
 .au-switch{text-align:center;margin-top:1.25rem;color:var(--dim);font-size:.85rem}.au-switch a{color:var(--accent);font-weight:500;cursor:pointer}
+.au-dev-role{margin-bottom:1.25rem;padding:.75rem 1rem;background:rgba(139,92,246,.06);border:1px dashed rgba(139,92,246,.25);border-radius:8px}
+.au-dev-label{display:block;font-size:.7rem;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+.au-dev-select{width:100%;padding:.6rem .9rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.85rem;color:var(--text);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2372727b' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;padding-right:2rem}
 
 /* ========== APP ========== */
 #scr-app{z-index:300;background:var(--bg)}
@@ -424,6 +426,8 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .sb.collapsed .sb-item svg{margin:0;width:20px;height:20px}
 .sb.collapsed .sb-foot{justify-content:center;padding:.85rem .5rem;flex-direction:column;gap:.5rem}
 .sb.collapsed .sb-foot .sb-user-info{display:none}
+.sb.collapsed .sb-upgrade{padding:.5rem;justify-content:center}
+.sb.collapsed .sb-upgrade-text{display:none}
 .sb.collapsed .sb-menu{left:0;right:0}
 .sb.collapsed .sb-menu-item{justify-content:center;padding:.55rem}
 .sb.collapsed .sb-menu-item svg{margin:0}
@@ -554,18 +558,297 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .fb-ring-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}.fb-ring-num{font-size:1.8rem;font-weight:700;line-height:1}.fb-ring-of{font-size:.65rem;color:var(--dim)}
 .fb-verdict{font-size:1rem;font-weight:600;text-align:center;margin-bottom:.4rem}.fb-detail{color:var(--dim);font-size:.85rem;line-height:1.7;margin-bottom:1.5rem}.fb-actions{display:flex;flex-direction:column;gap:.6rem}
 
+/* Practice Modes */
+.practice-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.practice-mode-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;cursor:pointer;transition:all .25s;text-align:center}
+.practice-mode-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.practice-mode-card.active{border-color:var(--accent);background:rgba(245,158,11,.04);box-shadow:0 0 0 1px var(--accent)}
+.practice-mode-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto .75rem}
+.practice-mode-card h3{font-size:.95rem;font-weight:600;margin-bottom:.35rem}
+.practice-mode-card p{font-size:.8rem;color:var(--dim);line-height:1.5}
+
+/* Practice Config */
+.practice-config{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.25rem}
+.practice-config .filter-row{margin-bottom:.75rem}.practice-config .filter-row:last-child{margin-bottom:0}
+
+/* PDF Source Toggles (Topic Practice) */
+#pdf-source-pills{display:flex;flex-wrap:wrap;gap:.5rem}
+.pdf-source-toggle{display:flex;align-items:center;gap:.5rem;padding:.4rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;font-size:.8rem}
+.pdf-source-toggle:hover{border-color:var(--border2)}
+.pdf-source-toggle:has(input:checked){background:var(--accentBg);border-color:rgba(245,158,11,.25)}
+.pdf-source-toggle input[type="checkbox"]{accent-color:var(--accent);width:14px;height:14px}
+.pdf-source-name{color:var(--dim);font-weight:500}
+
+/* Weak Areas */
+.weak-areas-info{margin-bottom:1.25rem}
+.weak-areas-header{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.25rem}
+.weak-areas-header .weak-areas-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.weak-areas-header h3{font-size:.95rem;font-weight:600;margin-bottom:.2rem}
+.weak-areas-list{display:flex;flex-direction:column;gap:.65rem}
+.weak-area-item{display:flex;align-items:center;gap:.75rem}
+.weak-area-name{font-size:.825rem;font-weight:500;min-width:110px}
+.weak-area-bar{flex:1;height:6px;background:var(--surface);border-radius:100px;overflow:hidden}
+.weak-area-fill{height:100%;border-radius:100px;transition:width .8s ease}
+.weak-area-pct{font-size:.78rem;font-weight:600;min-width:35px;text-align:right}
+
+/* PDF Study Items */
+#pdf-study-list{display:flex;flex-direction:column;gap:.5rem}
+.pdf-study-item{display:flex;align-items:center;gap:.75rem;padding:.65rem .85rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s}
+.pdf-study-item:hover{border-color:var(--border2)}
+.pdf-study-item:has(input:checked){background:var(--accentBg);border-color:rgba(245,158,11,.25)}
+.pdf-study-item input[type="checkbox"]{accent-color:var(--accent);width:14px;height:14px;flex-shrink:0}
+.pdf-study-icon{width:32px;height:32px;border-radius:8px;background:var(--redBg);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--red);flex-shrink:0}
+.pdf-study-info{display:flex;flex-direction:column}
+.pdf-study-name{font-size:.825rem;font-weight:500}
+.pdf-study-meta{font-size:.7rem;color:var(--faint)}
+
+/* Session Config */
+.session-config{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+.session-config-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.session-config-field label{display:block;font-size:.78rem;font-weight:500;color:var(--dim);margin-bottom:.35rem}
+.session-config-field select{width:100%;padding:.6rem .9rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.85rem;color:var(--text);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2372727b' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;padding-right:2rem;transition:all .2s}
+.session-config-field select:focus{border-color:var(--accent);outline:none}
+.session-q-display{display:flex;align-items:baseline;gap:.5rem;padding:.6rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.session-q-count{font-size:1.3rem;font-weight:700;color:var(--accent)}
+.session-q-label{font-size:.78rem;color:var(--dim)}
+
+/* Start Card Override */
+.start-card{margin-top:0}
+
+/* Sidebar Upgrade */
+.sb-upgrade{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;margin:0 .75rem .5rem;background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(245,158,11,.04));border:1px solid rgba(245,158,11,.2);border-radius:10px;cursor:pointer;transition:all .2s}
+.sb-upgrade:hover{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.08));border-color:rgba(245,158,11,.35);transform:translateY(-1px)}
+.sb-upgrade-icon{font-size:1.1rem}
+.sb-upgrade-text{display:flex;flex-direction:column}
+.sb-upgrade-text strong{font-size:.8rem;font-weight:600;color:var(--accent)}
+.sb-upgrade-text span{font-size:.65rem;color:var(--dim)}
+
+/* Upgrade Modal */
+.upgrade-overlay{display:none;position:fixed;inset:0;background:rgba(9,9,11,.85);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center}
+.upgrade-overlay.show{display:flex}
+.upgrade-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;max-width:520px;width:90%}
+.upgrade-card h2{font-size:1.4rem;font-weight:700;text-align:center;margin-bottom:.3rem}
+.upgrade-card .sub{text-align:center;color:var(--dim);font-size:.9rem;margin-bottom:2rem}
+.upgrade-plans{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.upgrade-plan{border:1px solid var(--border);border-radius:14px;padding:1.25rem 1rem;text-align:center;cursor:pointer;transition:all .25s;position:relative;display:flex;flex-direction:column}
+.upgrade-plan:hover{border-color:var(--border2);transform:translateY(-2px)}
+.upgrade-plan.selected{border-color:var(--accent);background:rgba(245,158,11,.04)}
+.upgrade-plan.popular::after{content:'Best Value';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;font-size:.6rem;font-weight:700;padding:.15rem .6rem;border-radius:100px;letter-spacing:.03em}
+.upgrade-plan-name{font-size:.85rem;font-weight:600;margin-bottom:.25rem}
+.upgrade-plan-price{font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1.1;margin-bottom:.1rem}
+.upgrade-plan-period{font-size:.7rem;color:var(--dim);margin-bottom:.75rem}
+.upgrade-plan-features{text-align:left;font-size:.75rem;color:var(--dim);line-height:1.7;list-style:none;padding:0;margin:0}
+.upgrade-plan-features li{padding-left:1.1rem;position:relative}
+.upgrade-plan-features li::before{content:'\2713';position:absolute;left:0;color:var(--accent);font-weight:700}
+.upgrade-current{padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:1.5rem;text-align:center}
+.upgrade-current span{font-size:.85rem;color:var(--dim)}
+.upgrade-current strong{color:var(--text)}
+.upgrade-pay-btn{width:100%;padding:.85rem;background:var(--accent);color:#000;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s}
+.upgrade-pay-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(245,158,11,.25)}
+.upgrade-close{width:100%;padding:.7rem;background:none;border:1px solid var(--border);border-radius:10px;font-size:.85rem;color:var(--dim);cursor:pointer;margin-top:.75rem;transition:all .2s}
+.upgrade-close:hover{border-color:var(--border2);color:var(--text)}
+
+/* Settings Plan Section */
+.plan-current-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem}
+.plan-current-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem}
+.plan-current-badge{padding:.3rem .8rem;border-radius:8px;font-size:.75rem;font-weight:700;letter-spacing:.05em}
+.plan-current-badge.free{background:var(--surface2);color:var(--dim)}
+.plan-current-badge.premium{background:var(--accentBg);color:var(--accent)}
+.plan-current-info h3{font-size:1.1rem;font-weight:600;margin-bottom:.15rem}
+.plan-current-info p{font-size:.825rem;color:var(--dim)}
+.plan-current-limits{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.plan-limit-item{display:flex;justify-content:space-between;padding:.5rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.825rem}
+.plan-limit-label{color:var(--dim)}
+.plan-limit-val{font-weight:600;color:var(--text)}
+.plan-upgrade-section h3{font-size:1.1rem;font-weight:600;margin-bottom:.25rem}
+
+/* Razorpay Checkout */
+.rzrpay-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+.rzrpay-overlay.show{opacity:1}
+.rzrpay-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.rzrpay-modal{position:relative;width:740px;max-width:95vw;background:var(--card);border:1px solid var(--border);border-radius:12px;display:flex;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.35);transform:scale(.95);transition:transform .3s ease}
+.rzrpay-overlay.show .rzrpay-modal{transform:scale(1)}
+.rzrpay-left{flex:1;display:flex;flex-direction:column;min-width:0}
+.rzrpay-methods-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-size:.9rem;font-weight:600;color:var(--text)}
+.rzrpay-close-btn{background:none;border:none;font-size:1.4rem;color:var(--dim);cursor:pointer;line-height:1;padding:0}
+.rzrpay-close-btn:hover{color:var(--text)}
+.rzrpay-methods-list{display:flex;flex-direction:column}
+.rzrpay-methods-list.collapsed .rzrpay-method{padding:.6rem 1.25rem}
+.rzrpay-methods-list.collapsed .rzrpay-method:not(.selected){display:none}
+.rzrpay-methods-list.collapsed .rzrpay-method.selected{border-bottom:none}
+.rzrpay-method{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.25rem;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--border)}
+.rzrpay-method:hover{background:var(--surface)}
+.rzrpay-method.selected{background:rgba(51,115,229,.08)}
+.rzrpay-method-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--faint);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.rzrpay-method.selected .rzrpay-method-dot{border-color:#3373e5}
+.rzrpay-method.selected .rzrpay-method-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:#3373e5}
+.rzrpay-method-name{font-size:.875rem;font-weight:600;color:var(--text)}
+.rzrpay-method-desc{font-size:.72rem;color:var(--dim)}
+.rzrpay-method-body{flex:1;overflow-y:auto;padding:1.25rem}
+.rzrpay-upi-apps{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem}
+.rzrpay-upi-app{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.75rem .5rem;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s}
+.rzrpay-upi-app:hover{border-color:var(--border2)}
+.rzrpay-upi-app.selected{border-color:#3373e5;background:rgba(51,115,229,.08)}
+.rzrpay-app-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.rzrpay-upi-app span{font-size:.68rem;color:var(--dim);text-align:center}
+.rzrpay-upi-or{text-align:center;font-size:.72rem;color:var(--faint);margin-bottom:1rem;position:relative}
+.rzrpay-upi-or::before,.rzrpay-upi-or::after{content:'';position:absolute;top:50%;width:calc(50% - 20px);height:1px;background:var(--border)}
+.rzrpay-upi-or::before{left:0}
+.rzrpay-upi-or::after{right:0}
+.rzrpay-input-label{font-size:.75rem;font-weight:600;color:var(--dim);margin-bottom:.4rem}
+.rzrpay-input-row{display:flex;gap:.5rem}
+.rzrpay-input{flex:1;padding:.65rem .85rem;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text)}
+.rzrpay-input:focus{border-color:#3373e5;outline:none}
+.rzrpay-verify-btn{padding:.65rem 1.1rem;background:#3373e5;color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.rzrpay-verify-btn:hover{background:#2860c0}
+.rzrpay-footer{padding:.85rem 1.25rem;border-top:1px solid var(--border);background:var(--surface)}
+.rzrpay-secure{display:flex;align-items:center;justify-content:center;gap:.35rem;font-size:.7rem;color:var(--faint);margin-bottom:.6rem}
+.rzrpay-pay-btn{width:100%;padding:.8rem;background:#3373e5;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s}
+.rzrpay-pay-btn:hover{background:#2860c0}
+.rzrpay-powered{text-align:center;font-size:.62rem;color:var(--faint);margin-top:.5rem}
+
+/* QR Code Section */
+.rzrpay-qr-section{display:flex;flex-direction:column;align-items:center;padding:1rem 0}
+.rzrpay-qr-title{font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:1rem}
+.rzrpay-qr-box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:.75rem;max-width:200px}
+.rzrpay-qr-placeholder{display:flex;align-items:center;justify-content:center}
+.rzrpay-qr-timer{font-size:.75rem;color:var(--dim);text-align:center;margin-bottom:1rem}
+.rzrpay-qr-or{text-align:center;font-size:.72rem;color:var(--faint);margin-bottom:1rem;position:relative;width:100%}
+.rzrpay-qr-or::before,.rzrpay-qr-or::after{content:'';position:absolute;top:50%;width:calc(50% - 20px);height:1px;background:var(--border)}
+.rzrpay-qr-or::before{left:0}
+.rzrpay-qr-or::after{right:0}
+.rzrpay-qr-upi{width:100%}
+.rzrpay-qr-simulate{display:flex;flex-direction:column;align-items:center;gap:.4rem;margin-top:.5rem}
+.rzrpay-simulate-btn{padding:.5rem 1.2rem;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.rzrpay-simulate-btn:hover{background:#0ea472}
+.rzrpay-simulate-hint{font-size:.65rem;color:var(--faint)}
+
+/* Bank Grid */
+.rzrpay-bank-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.rzrpay-bank{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.65rem .5rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;text-align:center}
+.rzrpay-bank:hover{border-color:var(--border2);background:var(--surface)}
+.rzrpay-bank.selected{border-color:#3373e5;background:rgba(51,115,229,.08)}
+.rzrpay-bank-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.55rem;font-weight:700}
+.rzrpay-bank span{font-size:.65rem;color:var(--dim)}
+
+/* Wallet List */
+.rzrpay-wallet-list{display:flex;flex-direction:column;gap:.5rem}
+.rzrpay-wallet{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s}
+.rzrpay-wallet:hover{border-color:var(--border2);background:var(--surface)}
+.rzrpay-wallet.selected{border-color:#3373e5;background:rgba(51,115,229,.08)}
+.rzrpay-wallet-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rzrpay-wallet-name{font-size:.85rem;font-weight:600;color:var(--text)}
+.rzrpay-wallet-desc{font-size:.7rem;color:var(--dim)}
+
+/* Error Message */
+.rzrpay-error{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:.6rem .85rem;border-radius:8px;font-size:.8rem;margin-bottom:.75rem;text-align:center}
+
+/* OTP Screen */
+.rzrpay-otp-section{display:flex;flex-direction:column;align-items:center;padding:1rem 0}
+.rzrpay-otp-icon{font-size:2rem;margin-bottom:.75rem}
+.rzrpay-otp-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.3rem}
+.rzrpay-otp-desc{font-size:.75rem;color:var(--dim);text-align:center;margin-bottom:1.25rem}
+.rzrpay-otp-inputs{display:flex;gap:.5rem;margin-bottom:1.25rem}
+.rzrpay-otp-box{width:44px;height:50px;text-align:center;border:1px solid var(--border);border-radius:10px;font-size:1.2rem;font-weight:600;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
+.rzrpay-otp-box:focus{border-color:#3373e5}
+.rzrpay-otp-resend{font-size:.75rem;color:var(--dim);margin-top:.75rem}
+
+/* Redirect Screen */
+.rzrpay-redirect-section{display:flex;flex-direction:column;align-items:center;padding:2rem 0}
+.rzrpay-redirect-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:#3373e5;border-radius:50%;animation:rzrpaySpin .8s linear infinite;margin-bottom:1rem}
+@keyframes rzrpaySpin{to{transform:rotate(360deg)}}
+.rzrpay-redirect-icon{font-size:2rem;margin-bottom:.5rem}
+.rzrpay-redirect-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.25rem}
+.rzrpay-redirect-desc{font-size:.8rem;color:var(--dim);margin-bottom:1.25rem}
+.rzrpay-redirect-simulate{padding:.5rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--dim);cursor:pointer;transition:all .15s}
+.rzrpay-redirect-simulate:hover{border-color:var(--border2);color:var(--text)}
+
+/* Bank/Wallet Approval */
+.rzrpay-approval-section{padding:1rem 0}
+.rzrpay-approval-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.rzrpay-approval-bank{font-size:.9rem;font-weight:600;color:var(--text)}
+.rzrpay-approval-secure{font-size:.7rem;color:var(--faint);display:flex;align-items:center;gap:.3rem}
+.rzrpay-approval-body{text-align:center}
+.rzrpay-approval-amount{font-size:2rem;font-weight:700;color:var(--text);margin-bottom:.25rem}
+.rzrpay-approval-merchant{font-size:.85rem;color:var(--dim);margin-bottom:.25rem}
+.rzrpay-approval-desc{font-size:.8rem;color:var(--faint);margin-bottom:1.5rem}
+.rzrpay-approval-actions{display:flex;gap:.75rem;justify-content:center}
+.rzrpay-approval-btn{padding:.7rem 2rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;border:none}
+.rzrpay-approval-btn.approve{background:#3373e5;color:#fff}
+.rzrpay-approval-btn.approve:hover{background:#2860c0}
+.rzrpay-approval-btn.reject{background:var(--surface);border:1px solid var(--border);color:var(--dim)}
+.rzrpay-approval-btn.reject:hover{border-color:var(--border2);color:var(--text)}
+
+/* Processing Overlay */
+.rzrpay-processing-overlay{position:absolute;inset:0;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:12px}
+.rzrpay-processing-content{display:flex;flex-direction:column;align-items:center;gap:.75rem}
+.rzrpay-processing-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:#3373e5;border-radius:50%;animation:rzrpaySpin .8s linear infinite}
+.rzrpay-processing-check{width:48px;height:48px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;font-weight:700}
+.rzrpay-processing-text{font-size:.9rem;font-weight:500;color:var(--text)}
+.rzrpay-right{width:260px;background:var(--surface);border-left:1px solid var(--border);padding:1.5rem;display:flex;flex-direction:column}
+.rzrpay-order-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.rzrpay-order-icon{width:36px;height:36px;background:var(--accent);color:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem}
+.rzrpay-order-name{font-size:.95rem;font-weight:600;color:var(--text)}
+.rzrpay-order-details{flex:1}
+.rzrpay-order-row{display:flex;justify-content:space-between;padding:.5rem 0;font-size:.825rem;color:var(--dim)}
+.rzrpay-order-row span:last-child{font-weight:500;color:var(--text)}
+.rzrpay-order-total{border-top:1px solid var(--border);margin-top:.5rem;padding-top:.75rem;font-weight:600}
+.rzrpay-order-total span{font-size:1rem;color:var(--text)}
+.rzrpay-order-note{font-size:.65rem;color:var(--faint);line-height:1.5;margin-top:1rem}
+
+/* Remaining Sessions Bar */
+.sessions-bar{display:flex;align-items:center;gap:.5rem;padding:.65rem 1rem;background:var(--accentBg);border:1px solid rgba(245,158,11,.15);border-radius:10px;margin-bottom:1.25rem;font-size:.85rem}
+.sessions-bar-icon{font-size:1rem}
+.sessions-bar-text{color:var(--dim);font-weight:500}
+.sessions-bar-text strong{color:var(--accent);font-weight:700}
+
+/* Session Active — hide config */
+.pg-practice-active .practice-modes,
+.pg-practice-active .practice-config,
+.pg-practice-active .session-config,
+.pg-practice-active .start-card,
+.pg-practice-active .sessions-bar,
+.pg-practice-active .pg-sub{display:none!important}
+.pg-practice-active .pg-title{margin-bottom:1rem}
+
+/* Session Complete Card */
+.session-complete-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem;text-align:center;max-width:480px;margin:2rem auto}
+.session-complete-icon{font-size:3rem;margin-bottom:1rem}
+.session-complete-card h3{font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+.session-complete-sub{color:var(--dim);font-size:.9rem;margin-bottom:1.5rem}
+.session-complete-stats{display:flex;justify-content:center;gap:2rem;margin-bottom:2rem}
+.session-complete-stat{text-align:center}
+.session-complete-val{display:block;font-size:1.8rem;font-weight:700;color:var(--accent);line-height:1;margin-bottom:.2rem}
+.session-complete-lbl{font-size:.78rem;color:var(--dim)}
+.session-complete-actions{display:flex;flex-direction:column;gap:.6rem}
+
+/* Coding Stats Bar */
+.coding-stats-bar{display:flex;gap:1.5rem;padding:.85rem 1.25rem;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:1.25rem}
+.coding-stat{text-align:center}
+.coding-stat-val{display:block;font-size:1.3rem;font-weight:700;color:var(--accent);line-height:1;margin-bottom:.15rem}
+.coding-stat-lbl{font-size:.72rem;color:var(--dim)}
+
+/* Solved Indicator */
+.code-full-card.solved{border-left:3px solid var(--green)}
+.code-full-card.solved h3{color:var(--green)}
+.solved-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:600;color:var(--green);padding:.15rem .5rem;background:var(--greenBg);border-radius:100px}
+.solved-badge svg{width:12px;height:12px}
+
+/* AI Review Modal */
+.ai-review-overlay{display:none;position:fixed;inset:0;background:rgba(9,9,11,.85);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center}
+.ai-review-overlay.show{display:flex}
+.ai-review-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:520px;width:90%;max-height:80vh;overflow-y:auto}
+.ai-review-card h3{font-size:1.2rem;font-weight:700;margin-bottom:.25rem}
+.ai-review-verdict{display:inline-flex;padding:.3rem .9rem;border-radius:100px;font-size:.8rem;font-weight:600;margin-bottom:1.25rem}
+.ai-review-section{margin-bottom:1rem}
+.ai-review-section h4{font-size:.85rem;font-weight:600;margin-bottom:.4rem;color:var(--dim)}
+.ai-review-section p{font-size:.875rem;line-height:1.6}
+.ai-review-actions{display:flex;gap:.75rem;margin-top:1.5rem}
+
 /* Loading */
 .ld-overlay{display:none;position:fixed;inset:0;background:rgba(9,9,11,.85);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center}.ld-overlay.show{display:flex}
 .ld-spinner{display:flex;gap:6px;justify-content:center;margin-bottom:1rem}.ld-spinner span{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:bounce .6s ease-in-out infinite alternate}.ld-spinner span:nth-child(2){animation-delay:.15s}.ld-spinner span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{from{transform:translateY(0);opacity:.4}to{transform:translateY(-8px);opacity:1}}
-
-/* Bank */
-.bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1rem;margin-bottom:1.75rem}
-.bank-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem;transition:all .25s}.bank-card:hover{border-color:var(--border2);transform:translateY(-2px)}
-.bank-tags{display:flex;gap:.35rem;margin-bottom:.7rem}.bank-q{font-size:.875rem;line-height:1.6;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.bank-foot{display:flex;align-items:center;justify-content:space-between}.bank-meta{font-size:.72rem;color:var(--faint)}
-.pg-row{display:flex;justify-content:center;gap:.35rem}.pg-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.78rem;color:var(--dim);font-weight:500;transition:all .2s}.pg-btn:hover{border-color:var(--border2);color:var(--text)}.pg-btn.on{background:var(--accent);border-color:var(--accent);color:#000}.pg-btn:disabled{opacity:.3;cursor:not-allowed}
-.search-box{display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;background:var(--card);border:1px solid var(--border);border-radius:8px;width:260px;transition:all .2s}.search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,158,11,.08)}.search-box svg{width:16px;height:16px;color:var(--faint);flex-shrink:0}.search-box input{flex:1;background:none;border:none;color:var(--text);font-size:.85rem}.search-box input::placeholder{color:var(--faint)}
 
 /* History */
 .hist-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -631,6 +914,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 /* Toast */
 .toast-container{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
 
+.bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1rem;margin-bottom:1.75rem}
 .lib-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
 .lib-toolbar-left{display:flex;align-items:center;gap:.75rem}
 .lib-select-badge{background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:100px;display:none}
@@ -722,8 +1006,8 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9}.sb-overlay.show{display:block}
 
-@media(max-width:1024px){.dash-grid,.practice-grid{grid-template-columns:1fr}}
-@media(max-width:768px){.sb{transform:translateX(-100%);z-index:20;width:240px!important}.sb.open{transform:translateX(0)}.sb.collapsed{width:240px!important}.sb.collapsed .sb-head>div>span,.sb.collapsed .sb-label,.sb.collapsed .sb-item span:not(.sb-badge),.sb.collapsed .sb-foot>div:last-child{display:block!important}.sb.collapsed .sb-head{justify-content:flex-start;padding:1.25rem}.sb.collapsed .sb-item{justify-content:flex-start;padding:.6rem .85rem;gap:.65rem}.sb.collapsed .sb-foot{justify-content:flex-start;padding:.85rem 1.1rem;flex-direction:row;gap:.6rem}.sb.collapsed .sb-foot .sb-user-info{display:block}.sb-collapse-toggle{display:none}.mn{margin-left:0!important}.hamburger{display:flex}.ld-nav-links,.ld-nav-cta{display:none}.ld-hero{flex-direction:column;padding:6rem 5vw 3rem;gap:2.5rem}.ld-hero-right{flex:none;width:100%;max-width:400px}.ld-terminal{transform:none}.ld-feat-row,.ld-testi-inner,.ld-how-grid,.ld-bignums-inner{grid-template-columns:1fr}.ld-how-grid::before{display:none}.ld-hero-metrics{gap:1.5rem}.ld-footer{flex-direction:column;gap:1rem;text-align:center}.bank-grid{grid-template-columns:1fr}.search-box{width:100%}.set-row{grid-template-columns:1fr}.set-nav{flex-wrap:wrap}}
+@media(max-width:1024px){.dash-grid,.practice-grid{grid-template-columns:1fr}.practice-modes{grid-template-columns:1fr}.session-config-row{grid-template-columns:1fr}}
+@media(max-width:768px){.sb{transform:translateX(-100%);z-index:20;width:240px!important}.sb.open{transform:translateX(0)}.sb.collapsed{width:240px!important}.sb.collapsed .sb-head>div>span,.sb.collapsed .sb-label,.sb.collapsed .sb-item span:not(.sb-badge),.sb.collapsed .sb-foot>div:last-child{display:block!important}.sb.collapsed .sb-head{justify-content:flex-start;padding:1.25rem}.sb.collapsed .sb-item{justify-content:flex-start;padding:.6rem .85rem;gap:.65rem}.sb.collapsed .sb-foot{justify-content:flex-start;padding:.85rem 1.1rem;flex-direction:row;gap:.6rem}.sb.collapsed .sb-foot .sb-user-info{display:block}.sb-collapse-toggle{display:none}.mn{margin-left:0!important}.hamburger{display:flex}.ld-nav-links,.ld-nav-cta{display:none}.ld-hero{flex-direction:column;padding:6rem 5vw 3rem;gap:2.5rem}.ld-hero-right{flex:none;width:100%;max-width:400px}.ld-terminal{transform:none}.ld-feat-row,.ld-testi-inner,.ld-how-grid,.ld-bignums-inner{grid-template-columns:1fr}.ld-how-grid::before{display:none}.ld-hero-metrics{gap:1.5rem}.ld-footer{flex-direction:column;gap:1rem;text-align:center}.set-row{grid-template-columns:1fr}.set-nav{flex-wrap:wrap}}
 @media(max-width:480px){.kpi-row{grid-template-columns:1fr}.pg{padding:1rem}}
 </style>
 </head>
@@ -850,6 +1134,14 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <button class="au-social-btn"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>GitHub</button>
 </div>
 <div class="au-or">OR</div>
+<div class="au-dev-role">
+<label class="au-dev-label">Dev Only — Select Role</label>
+<select id="dev-role-select" class="au-dev-select">
+<option value="USER">Normal User (Free)</option>
+<option value="PREMIUM">Premium User</option>
+<option value="ADMIN">Admin</option>
+</select>
+</div>
 <form onsubmit="doAuth(event)">
 <div class="au-field" id="name-f" style="display:none"><label>Full Name</label><input type="text" placeholder="Jane Doe"></div>
 <div class="au-field"><label>Email</label><input type="email" placeholder="you@company.com"></div>
@@ -870,14 +1162,18 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <div class="sb-label">Main</div>
 <div class="sb-item on" data-pg="dashboard" title="Dashboard" onclick="showPg('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></div>
 <div class="sb-item" data-pg="practice" title="Practice" onclick="showPg('practice')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg><span>Practice</span><span class="sb-badge">New</span></div>
-<div class="sb-item" data-pg="bank" title="Question Bank" onclick="showPg('bank')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Question Bank</span></div>
+
 <div class="sb-item" data-pg="coding" title="Coding" onclick="showPg('coding')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg><span>Coding</span></div>
 <div class="sb-label">Track</div>
 <div class="sb-item" data-pg="history" title="History" onclick="showPg('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg><span>History</span></div>
 <div class="sb-item" data-pg="settings" title="Settings" onclick="showPg('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></div>
 <div class="sb-item" data-pg="library" title="Library" onclick="showPg('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg><span>Library</span></div>
 </nav>
-<div class="sb-foot" onclick="toggleSbMenu()"><div class="sb-avatar">A</div><div class="sb-user-info"><div class="sb-uname">Abhi</div><div class="sb-urole">Senior Plan</div></div>
+<div class="sb-upgrade" id="sb-upgrade" onclick="showUpgradeModal()">
+<div class="sb-upgrade-icon">&#10024;</div>
+<div class="sb-upgrade-text"><strong>Upgrade to Premium</strong><span>Unlimited sessions & AI reviews</span></div>
+</div>
+<div class="sb-foot" onclick="toggleSbMenu()"><div class="sb-avatar">A</div><div class="sb-user-info"><div class="sb-uname">Abhi</div><div class="sb-urole"><span id="role-badge" class="pill pill-muted">USER</span></div></div>
 <div class="sb-menu" id="sb-menu">
 <div class="sb-menu-item danger" onclick="event.stopPropagation();doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="sb-menu-text">Log out</span></div>
 </div>
@@ -911,12 +1207,12 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 </div>
 </div>
 <div class="pg-title">Good evening, Abhi &#128075;</div>
-<div class="pg-sub">You've completed 3 sessions this week. Keep the streak going!</div>
+<div class="pg-sub" id="dashboard-sub">You've completed 3 sessions this week. Keep the streak going!</div>
 <div class="kpi-row">
 <div class="kpi"><div class="kpi-top"><div class="kpi-ico amber">&#128221;</div><div class="kpi-trend up">&#8593; 12%</div></div><div class="kpi-val">24</div><div class="kpi-lbl">Sessions Completed</div></div>
 <div class="kpi"><div class="kpi-top"><div class="kpi-ico blue">&#10067;</div><div class="kpi-trend up">&#8593; 8%</div></div><div class="kpi-val">186</div><div class="kpi-lbl">Questions Answered</div></div>
 <div class="kpi"><div class="kpi-top"><div class="kpi-ico green">&#11088;</div><div class="kpi-trend up">&#8593; 5%</div></div><div class="kpi-val">7.4</div><div class="kpi-lbl">Average Score</div></div>
-<div class="kpi"><div class="kpi-top"><div class="kpi-ico purple">&#128218;</div><div class="kpi-trend down">&#8595; 2%</div></div><div class="kpi-val">8</div><div class="kpi-lbl">Topics Covered</div></div>
+<div class="kpi"><div class="kpi-top"><div class="kpi-ico purple">&#128187;</div><div class="kpi-trend up">&#10003;</div></div><div class="kpi-val" id="kpi-solved">0</div><div class="kpi-lbl">Problems Solved</div></div>
 </div>
 <div class="dash-grid"><div>
 <div class="cd" style="margin-bottom:1.25rem"><div class="cd-h"><h3>Recent Sessions</h3><button class="btn btn-ghost btn-sm" onclick="showPg('history')">View All</button></div>
@@ -944,24 +1240,116 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <!-- PRACTICE -->
 <div class="pg" id="pg-practice" hidden>
 <div class="pg-title">Practice Session</div>
-<div class="pg-sub">Select a topic and difficulty, then answer the question below.</div>
-<div class="filter-row"><span class="filter-lbl">Topic</span><div id="topic-pills">
-<button class="fpill on" data-t="React" onclick="pickT(this)">React</button><button class="fpill" data-t="NestJS" onclick="pickT(this)">NestJS</button><button class="fpill" data-t="TypeScript" onclick="pickT(this)">TypeScript</button><button class="fpill" data-t="System Design" onclick="pickT(this)">System Design</button><button class="fpill" data-t="DSA" onclick="pickT(this)">DSA</button><button class="fpill" data-t="Node.js" onclick="pickT(this)">Node.js</button>
+<div class="pg-sub">Choose how you want to practice, then configure your session.</div>
+
+<!-- REMAINING SESSIONS BAR -->
+<div class="sessions-bar" id="sessions-bar">
+<span class="sessions-bar-icon">&#9889;</span>
+<span class="sessions-bar-text" id="sessions-bar-text">3 of 3 sessions left today</span>
+</div>
+
+<!-- MODE SELECTOR -->
+<div class="practice-modes" id="practice-modes">
+<div class="practice-mode-card active" data-mode="topic" onclick="selectMode('topic')">
+<div class="practice-mode-icon" style="background:var(--accentBg);color:var(--accent)">&#9889;</div>
+<h3>Topic Practice</h3>
+<p>Pick topics you want to focus on and start practicing.</p>
+</div>
+<div class="practice-mode-card" data-mode="weak" onclick="selectMode('weak')">
+<div class="practice-mode-icon" style="background:var(--blueBg);color:var(--blue)">&#128200;</div>
+<h3>Weak Areas</h3>
+<p>AI picks topics where you scored lowest and helps you improve.</p>
+</div>
+<div class="practice-mode-card" data-mode="pdf" onclick="selectMode('pdf')">
+<div class="practice-mode-icon" style="background:var(--redBg);color:var(--red)">&#128196;</div>
+<h3>PDF Study</h3>
+<p>Get quizzed on content from your uploaded PDF documents.</p>
+</div>
+</div>
+
+<!-- TOPIC PRACTICE CONFIG -->
+<div class="practice-config" id="config-topic">
+<div class="filter-row"><span class="filter-lbl">Topics</span><div id="topic-pills">
+<button class="fpill on" data-t="React" onclick="pickT(this)">React</button><button class="fpill" data-t="TypeScript" onclick="pickT(this)">TypeScript</button><button class="fpill" data-t="HTML" onclick="pickT(this)">HTML</button><button class="fpill" data-t="CSS" onclick="pickT(this)">CSS</button><button class="fpill" data-t="Node.js" onclick="pickT(this)">Node.js</button><button class="fpill" data-t="ExpressJS" onclick="pickT(this)">ExpressJS</button><button class="fpill" data-t="NestJS" onclick="pickT(this)">NestJS</button><button class="fpill" data-t="MongoDB" onclick="pickT(this)">MongoDB</button><button class="fpill" data-t="System Design" onclick="pickT(this)">System Design</button>
 </div></div>
-<div class="filter-row"><span class="filter-lbl">Level</span><div id="diff-pills">
+<div class="filter-row"><span class="filter-lbl">Difficulty</span><div id="diff-pills">
 <button class="fpill on" data-d="Junior" onclick="pickD(this)">Junior</button><button class="fpill" data-d="Mid" onclick="pickD(this)">Mid</button><button class="fpill" data-d="Senior" onclick="pickD(this)">Senior</button>
 </div></div>
+</div>
+
+<!-- WEAK AREAS CONFIG -->
+<div class="practice-config" id="config-weak" hidden>
+<div class="weak-areas-info">
+<div class="weak-areas-header">
+<div class="weak-areas-icon" style="background:var(--blueBg);color:var(--blue)">&#128200;</div>
+<div><h3>AI will pick your weak topics</h3><p style="color:var(--dim);font-size:.85rem">Based on your session history, we'll focus on areas where you need the most improvement.</p></div>
+</div>
+<div class="weak-areas-list" id="weak-areas-list">
+<div class="weak-area-item"><span class="weak-area-name">MongoDB</span><div class="weak-area-bar"><div class="weak-area-fill" style="width:45%;background:var(--red)"></div></div><span class="weak-area-pct" style="color:var(--red)">45%</span></div>
+<div class="weak-area-item"><span class="weak-area-name">System Design</span><div class="weak-area-bar"><div class="weak-area-fill" style="width:62%;background:var(--accent)"></div></div><span class="weak-area-pct" style="color:var(--accent)">62%</span></div>
+<div class="weak-area-item"><span class="weak-area-name">ExpressJS</span><div class="weak-area-bar"><div class="weak-area-fill" style="width:68%;background:var(--blue)"></div></div><span class="weak-area-pct" style="color:var(--blue)">68%</span></div>
+</div>
+<p style="font-size:.8rem;color:var(--faint);margin-top:1rem">Topics below 70% score will be included in this session.</p>
+</div>
+<div class="filter-row"><span class="filter-lbl">Difficulty</span><div id="diff-pills-weak">
+<button class="fpill" data-d="Junior" onclick="pickDWeak(this)">Junior</button><button class="fpill on" data-d="Mid" onclick="pickDWeak(this)">Mid</button><button class="fpill" data-d="Senior" onclick="pickDWeak(this)">Senior</button>
+</div></div>
+</div>
+
+<!-- PDF STUDY CONFIG -->
+<div class="practice-config" id="config-pdf" hidden>
+<div class="filter-row"><span class="filter-lbl">Select PDFs</span><div id="pdf-study-list">
+<label class="pdf-study-item checked"><input type="checkbox" checked onchange="togglePdfStudy(this)"><div class="pdf-study-icon">PDF</div><div class="pdf-study-info"><span class="pdf-study-name">React Fundamentals.pdf</span><span class="pdf-study-meta">142 pages</span></div></label>
+<label class="pdf-study-item checked"><input type="checkbox" checked onchange="togglePdfStudy(this)"><div class="pdf-study-icon">PDF</div><div class="pdf-study-info"><span class="pdf-study-name">NestJS Guide.pdf</span><span class="pdf-study-meta">98 pages</span></div></label>
+<label class="pdf-study-item"><input type="checkbox" onchange="togglePdfStudy(this)"><div class="pdf-study-icon">PDF</div><div class="pdf-study-info"><span class="pdf-study-name">TypeScript Handbook.pdf</span><span class="pdf-study-meta">210 pages</span></div></label>
+<label class="pdf-study-item"><input type="checkbox" onchange="togglePdfStudy(this)"><div class="pdf-study-icon">PDF</div><div class="pdf-study-info"><span class="pdf-study-name">System Design Patterns.pdf</span><span class="pdf-study-meta">176 pages</span></div></label>
+<label class="pdf-study-item"><input type="checkbox" onchange="togglePdfStudy(this)"><div class="pdf-study-icon">PDF</div><div class="pdf-study-info"><span class="pdf-study-name">DSA Concepts.pdf</span><span class="pdf-study-meta">88 pages</span></div></label>
+</div></div>
+<div class="filter-row"><span class="filter-lbl">Difficulty</span><div id="diff-pills-pdf">
+<button class="fpill on" data-d="Junior" onclick="pickDPdf(this)">Junior</button><button class="fpill" data-d="Mid" onclick="pickDPdf(this)">Mid</button><button class="fpill" data-d="Senior" onclick="pickDPdf(this)">Senior</button>
+</div></div>
+</div>
+
+<!-- SESSION CONFIG (common to all modes) -->
+<div class="session-config" id="session-config">
+<div class="session-config-row">
+<div class="session-config-field">
+<label>Questions per session</label>
+<div class="session-q-display"><span class="session-q-count" id="session-q-count">10</span><span class="session-q-label" id="session-q-label">Free plan</span></div>
+</div>
+<div class="session-config-field">
+<label>Timer per question</label>
+<select id="session-timer">
+<option value="0">No timer</option>
+<option value="120">2 minutes</option>
+<option value="300" selected>5 minutes</option>
+<option value="600">10 minutes</option>
+</select>
+</div>
+<div class="session-config-field">
+<label>Hints on skip</label>
+<select id="session-hints">
+<option value="on">Show hints</option>
+<option value="off">No hints</option>
+</select>
+</div>
+</div>
+</div>
+
+<!-- START CARD -->
 <div class="start-card" id="start-card">
 <div class="start-card-icon">&#9889;</div>
 <h3>Ready to Practice?</h3>
-<p>You've selected <strong id="start-topic">React</strong> at <strong id="start-diff">Junior</strong> level. This session will include <strong id="start-count">8 questions</strong>.</p>
+<p id="start-desc">You've selected <strong id="start-topic">React</strong> at <strong id="start-diff">Junior</strong> level. This session will include <strong id="start-count">10 questions</strong>.</p>
 <div class="start-card-details">
-<div class="start-card-detail"><strong id="start-topic2">React</strong><span>Topic</span></div>
-<div class="start-card-detail"><strong id="start-diff2">Junior</strong><span>Level</span></div>
-<div class="start-card-detail"><strong id="start-count2">8</strong><span>Questions</span></div>
+<div class="start-card-detail"><strong id="start-mode">Topic Practice</strong><span>Mode</span></div>
+<div class="start-card-detail"><strong id="start-diff2">Junior</strong><span>Difficulty</span></div>
+<div class="start-card-detail"><strong id="start-count2">10</strong><span>Questions</span></div>
 </div>
 <button class="btn btn-primary btn-lg" onclick="startSession()" style="min-width:200px">Start Session &rarr;</button>
 </div>
+
+<!-- QUESTION & FEEDBACK CARDS -->
 <div class="practice-grid">
 <div class="q-card" id="q-card" hidden>
 <div class="q-meta"><span class="q-counter mono" id="q-counter">Q1 of 8</span><div class="q-timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg><span id="timer">00:00</span></div></div>
@@ -977,16 +1365,23 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <div class="fb-actions"><button class="btn btn-primary btn-full" onclick="nextQ()">Next Question</button><button class="btn btn-outline btn-full" onclick="practiceSameTopic()">Practice Same Topic Again</button><button class="btn btn-ghost btn-full" onclick="endSess()">End Session</button></div>
 </div>
 </div>
+
+<!-- SESSION COMPLETE CARD -->
+<div class="session-complete-card" id="session-complete" hidden>
+<div class="session-complete-icon">&#127881;</div>
+<h3>Session Complete!</h3>
+<p class="session-complete-sub">Great work! Here's how you did.</p>
+<div class="session-complete-stats">
+<div class="session-complete-stat"><span class="session-complete-val" id="sc-questions">0</span><span class="session-complete-lbl">Questions</span></div>
+<div class="session-complete-stat"><span class="session-complete-val" id="sc-score">0.0</span><span class="session-complete-lbl">Avg Score</span></div>
+<div class="session-complete-stat"><span class="session-complete-val" id="sc-time">0m</span><span class="session-complete-lbl">Time</span></div>
+</div>
+<div class="session-complete-actions">
+<button class="btn btn-primary btn-full" onclick="backToPractice()">Back to Practice</button>
+<button class="btn btn-outline btn-full" onclick="endSess()">Go to Dashboard</button>
+</div>
 </div>
 
-<!-- QUESTION BANK -->
-<div class="pg" id="pg-bank" hidden>
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem"><div class="pg-title" style="margin:0">Question Bank</div>
-<div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search questions..." id="bank-search" oninput="renderBank()"></div></div>
-<div class="filter-row"><span class="filter-lbl">Topic</span><button class="fpill on" onclick="bankFT(this,'All')">All</button><button class="fpill" onclick="bankFT(this,'React')">React</button><button class="fpill" onclick="bankFT(this,'NestJS')">NestJS</button><button class="fpill" onclick="bankFT(this,'TypeScript')">TypeScript</button><button class="fpill" onclick="bankFT(this,'System Design')">System Design</button><button class="fpill" onclick="bankFT(this,'DSA')">DSA</button><button class="fpill" onclick="bankFT(this,'Node.js')">Node.js</button></div>
-<div class="filter-row"><span class="filter-lbl">Level</span><button class="fpill on" onclick="bankFD(this,'All')">All</button><button class="fpill" onclick="bankFD(this,'Junior')">Junior</button><button class="fpill" onclick="bankFD(this,'Mid')">Mid</button><button class="fpill" onclick="bankFD(this,'Senior')">Senior</button></div>
-<div class="bank-grid" id="bank-grid"></div>
-<div class="pg-row" id="pagination"></div>
 </div>
 
 <!-- HISTORY -->
@@ -1006,6 +1401,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <div class="set-nav-item" onclick="showSetTab('prefs',this)">Practice Preferences</div>
 <div class="set-nav-item" onclick="showSetTab('ai',this)">AI & Sources</div>
 <div class="set-nav-item" onclick="showSetTab('docs',this)">Documents</div>
+<div class="set-nav-item" onclick="showSetTab('plan',this)">Plan</div>
 <div class="set-nav-item" onclick="showSetTab('danger',this)">Danger Zone</div>
 </div>
 <!-- Profile -->
@@ -1084,6 +1480,55 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <input type="file" id="pdf-file-input" accept=".pdf" multiple onchange="handlePdfUpload(this.files)">
 </div>
 </div>
+<!-- Plan -->
+<div class="set-panel" id="set-plan" hidden>
+<h2>Your Plan</h2>
+<div class="plan-current-card" id="plan-current-card">
+<div class="plan-current-header">
+<div class="plan-current-badge" id="plan-current-badge">FREE</div>
+<div class="plan-current-info">
+<h3 id="plan-current-name">Free Plan</h3>
+<p id="plan-current-desc">Basic access with daily limits</p>
+</div>
+</div>
+<div class="plan-current-limits">
+<div class="plan-limit-item"><span class="plan-limit-label">Practice Sessions</span><span class="plan-limit-val" id="pl-practice">3 / day</span></div>
+<div class="plan-limit-item"><span class="plan-limit-label">Questions per Session</span><span class="plan-limit-val" id="pl-questions">10</span></div>
+<div class="plan-limit-item"><span class="plan-limit-label">Coding Problems</span><span class="plan-limit-val" id="pl-coding">5 / day</span></div>
+<div class="plan-limit-item"><span class="plan-limit-label">AI Reviews</span><span class="plan-limit-val" id="pl-reviews">3 / day</span></div>
+</div>
+</div>
+<div class="plan-upgrade-section" id="plan-upgrade-section">
+<h3>Upgrade to Premium</h3>
+<p style="color:var(--dim);font-size:.875rem;margin-bottom:1.25rem">Unlock unlimited access to all features</p>
+<div class="upgrade-plans">
+<div class="upgrade-plan" onclick="selectPlan('monthly')" id="plan-modal-monthly">
+<div class="upgrade-plan-name">Monthly</div>
+<div class="upgrade-plan-price">&#8377;299</div>
+<div class="upgrade-plan-period">per month</div>
+<ul class="upgrade-plan-features">
+<li>Unlimited practice sessions</li>
+<li>Unlimited coding problems</li>
+<li>Unlimited AI Reviews</li>
+<li>Priority support</li>
+</ul>
+</div>
+<div class="upgrade-plan popular selected" onclick="selectPlan('yearly')" id="plan-modal-yearly">
+<div class="upgrade-plan-name">Yearly</div>
+<div class="upgrade-plan-price">&#8377;1,999</div>
+<div class="upgrade-plan-period">per year (save 44%)</div>
+<ul class="upgrade-plan-features">
+<li>Everything in Monthly</li>
+<li>4 months free</li>
+<li>Early access to new features</li>
+<li>Priority support</li>
+</ul>
+</div>
+</div>
+<button class="upgrade-pay-btn" onclick="processPayment()" style="margin-top:1rem">Upgrade Now</button>
+</div>
+</div>
+
 <!-- Danger Zone -->
 <div class="set-panel" id="set-danger" hidden><h2>Danger Zone</h2>
 <p style="color:var(--dim);font-size:.875rem;margin-bottom:1.5rem">These actions are irreversible. Please be certain.</p>
@@ -1152,7 +1597,15 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <!-- CODING -->
 <div class="pg" id="pg-coding" hidden>
 <div class="pg-title">Coding Questions</div>
-<div class="pg-sub">Practice DSA and real-world coding problems with AI feedback</div>
+<div class="pg-sub">Practice algorithm and data structure problems with AI feedback</div>
+
+<!-- CODING STATS BAR -->
+<div class="coding-stats-bar" id="coding-stats-bar">
+<div class="coding-stat"><span class="coding-stat-val" id="cs-solved">0</span><span class="coding-stat-lbl">Solved</span></div>
+<div class="coding-stat"><span class="coding-stat-val" id="cs-daily">0/5</span><span class="coding-stat-lbl">Today</span></div>
+<div class="coding-stat"><span class="coding-stat-val" id="cs-reviews">0/3</span><span class="coding-stat-lbl">AI Reviews</span></div>
+<div class="coding-stat"><span class="coding-stat-val" id="cs-streak">0</span><span class="coding-stat-lbl">Day Streak</span></div>
+</div>
 
 <!-- VIEW 1: Problem List (full page) -->
 <div id="code-list-view">
@@ -1162,15 +1615,27 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <span class="filter-lbl">Topic</span>
 <button class="fpill on" onclick="codeFilterTopic(this,'All')">All</button>
 <button class="fpill" onclick="codeFilterTopic(this,'Arrays')">Arrays</button>
-<button class="fpill" onclick="codeFilterTopic(this,'Strings')">Strings</button>
+<button class="fpill" onclick="codeFilterTopic(this,'Stacks')">Stacks</button>
+<button class="fpill" onclick="codeFilterTopic(this,'Hash Maps')">Hash Maps</button>
+<button class="fpill" onclick="codeFilterTopic(this,'Binary Search')">Binary Search</button>
+<button class="fpill" onclick="codeFilterTopic(this,'Linked Lists')">Linked Lists</button>
 <button class="fpill" onclick="codeFilterTopic(this,'Trees')">Trees</button>
 <button class="fpill" onclick="codeFilterTopic(this,'Graphs')">Graphs</button>
 <button class="fpill" onclick="codeFilterTopic(this,'Dynamic Programming')">DP</button>
 <button class="fpill" onclick="codeFilterTopic(this,'Two Pointers')">Two Pointers</button>
+<button class="fpill" onclick="codeFilterTopic(this,'Backtracking')">Backtracking</button>
+<button class="fpill" onclick="codeFilterTopic(this,'Sliding Window')">Sliding Window</button>
+</div>
+<div class="filter-row" style="margin:0">
+<span class="filter-lbl">Difficulty</span>
+<button class="fpill on" onclick="codeFilterDiff(this,'All')">All</button>
+<button class="fpill" onclick="codeFilterDiff(this,'Easy')">Easy</button>
+<button class="fpill" onclick="codeFilterDiff(this,'Medium')">Medium</button>
+<button class="fpill" onclick="codeFilterDiff(this,'Hard')">Hard</button>
 </div>
 </div>
 </div>
-<div id="code-full-list" style="max-height:calc(100vh - 260px);overflow-y:auto;padding-right:.5rem"></div>
+<div id="code-full-list" style="max-height:calc(100vh - 300px);overflow-y:auto;padding-right:.5rem"></div>
 </div>
 
 <!-- VIEW 2: Problem Detail + Editor -->
@@ -1200,6 +1665,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <div style="display:flex;align-items:center;gap:.5rem;margin-left:auto">
 <button class="btn btn-primary btn-sm" onclick="runCode()" style="padding:.4rem .9rem;font-size:.75rem">Run</button>
 <button class="btn btn-outline btn-sm" onclick="submitCode()" style="padding:.4rem .9rem;font-size:.75rem">Submit</button>
+<button class="btn btn-ghost btn-sm" onclick="aiReview()" style="padding:.4rem .9rem;font-size:.75rem;color:var(--purple)">&#9733; AI Review</button>
 <select class="code-lang-select" id="code-lang-select" onchange="switchLang(this.value)">
 <option value="javascript" selected>JavaScript</option>
 <option value="typescript">TypeScript</option>
@@ -1224,6 +1690,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 </div>
 </div>
 </div>
+</div>
 
 <!-- Fullscreen Editor -->
 <div class="code-fs-overlay" id="code-fs-overlay">
@@ -1240,6 +1707,68 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 </div>
 </div>
 <div class="code-fs-editor"><div id="monaco-container-fs"></div></div>
+</div>
+</div>
+
+<!-- AI Review Modal -->
+<div class="ai-review-overlay" id="ai-review-overlay">
+<div class="ai-review-card">
+<h3 id="ai-review-title">AI Code Review</h3>
+<div class="ai-review-verdict pill pill-green" id="ai-review-verdict">Optimal Solution</div>
+<div class="ai-review-section">
+<h4>Time Complexity</h4>
+<p id="ai-review-time">O(n) — Single pass through the array.</p>
+</div>
+<div class="ai-review-section">
+<h4>Space Complexity</h4>
+<p id="ai-review-space">O(n) — Hash map stores up to n elements.</p>
+</div>
+<div class="ai-review-section">
+<h4>Code Quality</h4>
+<p id="ai-review-quality">Clean implementation with clear variable naming. Consider adding edge case handling for empty input.</p>
+</div>
+<div class="ai-review-section">
+<h4>Suggestions</h4>
+<p id="ai-review-suggestions">Your solution is optimal. No further improvements needed.</p>
+</div>
+<div class="ai-review-actions">
+<button class="btn btn-primary btn-full" onclick="closeAiReview()">Got it</button>
+</div>
+</div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="upgrade-overlay" id="upgrade-overlay">
+<div class="upgrade-card">
+<h2>Upgrade to Premium</h2>
+<p class="sub">Unlock unlimited practice and AI-powered features</p>
+<div class="upgrade-current">Current plan: <strong id="upgrade-current-plan">Free</strong></div>
+<div class="upgrade-plans">
+<div class="upgrade-plan" onclick="selectPlan('monthly')" id="plan-monthly">
+<div class="upgrade-plan-name">Monthly</div>
+<div class="upgrade-plan-price">&#8377;299</div>
+<div class="upgrade-plan-period">per month</div>
+<ul class="upgrade-plan-features">
+<li>Unlimited practice sessions</li>
+<li>Unlimited coding problems</li>
+<li>Unlimited AI Reviews</li>
+<li>Priority support</li>
+</ul>
+</div>
+<div class="upgrade-plan popular selected" onclick="selectPlan('yearly')" id="plan-yearly">
+<div class="upgrade-plan-name">Yearly</div>
+<div class="upgrade-plan-price">&#8377;1,999</div>
+<div class="upgrade-plan-period">per year (save 44%)</div>
+<ul class="upgrade-plan-features">
+<li>Everything in Monthly</li>
+<li>4 months free</li>
+<li>Early access to new features</li>
+<li>Priority support</li>
+</ul>
+</div>
+</div>
+<button class="upgrade-pay-btn" onclick="processPayment()">Upgrade Now</button>
+<button class="upgrade-close" onclick="closeUpgradeModal()">Maybe later</button>
 </div>
 </div>
 
@@ -1282,8 +1811,13 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 
 <script>
 let authMode='login',curTopic='React',curDiff='Junior',qIdx=0,timer=null,secs=0;
-let bankPg=1,bankTF='All',bankDF='All',expHist=null;
+let expHist=null;
 let isNewUser=true,sessionStarted=false;
+let curMode='topic';
+let curRole=localStorage.getItem('prepai_role')||'USER';
+const ROLE_LIMITS={USER:{daily:3,questions:10},PREMIUM:{daily:Infinity,questions:30},ADMIN:{daily:Infinity,questions:30}};
+let sessionScores=[];
+let sessionStartTime=0;
 
 const Q={
 React:[
@@ -1295,49 +1829,63 @@ React:[
 {q:"What are custom hooks? How do they differ from regular helper functions?",d:"Junior"},
 {q:"How would you optimize a React app with a list of 10,000 items?",d:"Senior"},
 {q:"Explain React Context API limitations. When would you reach for Zustand or Redux?",d:"Mid"}
-],NestJS:[
-{q:"Explain middleware vs interceptors in NestJS. When do you use each?",d:"Mid"},
-{q:"How would you implement JWT authentication in a NestJS app?",d:"Mid"},
-{q:"What are Guards in NestJS and how do they differ from middleware?",d:"Mid"},
-{q:"Explain the dependency injection pattern in NestJS with a real example.",d:"Junior"},
-{q:"How do you implement real-time features using WebSockets in NestJS?",d:"Senior"}
 ],TypeScript:[
 {q:"Explain the difference between interface and type in TypeScript. When do you prefer one?",d:"Junior"},
 {q:"What are discriminated unions? Give a practical example.",d:"Mid"},
 {q:"How do generic types work? Create a generic API response type.",d:"Mid"},
 {q:"Explain TypeScript's structural typing. How does it differ from nominal typing?",d:"Senior"},
 {q:"What are template literal types? Show a real use case.",d:"Senior"}
+],HTML:[
+{q:"What is the DOM and how does it differ from the virtual DOM?",d:"Junior"},
+{q:"Explain semantic HTML. Why should you use semantic tags over divs?",d:"Junior"},
+{q:"What are Web Workers and when would you use them?",d:"Senior"},
+{q:"Explain the difference between localStorage, sessionStorage, and cookies.",d:"Mid"},
+{q:"What is the accessibility tree and how do ARIA roles interact with it?",d:"Senior"}
+],CSS:[
+{q:"Explain the CSS box model. What is the difference between box-sizing: content-box and border-box?",d:"Junior"},
+{q:"What is the difference between Flexbox and CSS Grid? When do you use each?",d:"Mid"},
+{q:"How does CSS specificity work? What order do selectors follow?",d:"Junior"},
+{q:"Explain CSS containment and how it improves performance.",d:"Senior"},
+{q:"What are CSS custom properties and how do they differ from preprocessor variables?",d:"Mid"}
+],"Node.js":[
+{q:"Explain the event loop phases in Node.js. What happens in each phase?",d:"Mid"},
+{q:"How does Node.js handle concurrency with a single thread?",d:"Mid"},
+{q:"What's the difference between process.nextTick() and setImmediate()?",d:"Senior"},
+{q:"Explain streams in Node.js. What are the four types and when do you use each?",d:"Senior"},
+{q:"How do you handle backpressure in Node.js streams?",d:"Senior"}
+],ExpressJS:[
+{q:"What is middleware in Express? How does the request-response cycle work?",d:"Junior"},
+{q:"Explain the difference between app.use() and app.get() in Express.",d:"Junior"},
+{q:"How would you structure a large Express application?",d:"Mid"},
+{q:"What is the purpose of Express Router? How do you organize routes?",d:"Mid"},
+{q:"How do you handle errors in Express? What is the error-handling middleware pattern?",d:"Mid"}
+],NestJS:[
+{q:"Explain middleware vs interceptors in NestJS. When do you use each?",d:"Mid"},
+{q:"How would you implement JWT authentication in a NestJS app?",d:"Mid"},
+{q:"What are Guards in NestJS and how do they differ from middleware?",d:"Mid"},
+{q:"Explain the dependency injection pattern in NestJS with a real example.",d:"Junior"},
+{q:"How do you implement real-time features using WebSockets in NestJS?",d:"Senior"}
+],MongoDB:[
+{q:"What is the difference between MongoDB and a relational database?",d:"Junior"},
+{q:"Explain MongoDB indexing. When would you create a compound index?",d:"Mid"},
+{q:"What are aggregation pipelines? Give a real-world use case.",d:"Mid"},
+{q:"Explain read and write concerns in MongoDB. How do they affect consistency?",d:"Senior"},
+{q:"When would you use embedded documents vs references in MongoDB?",d:"Mid"}
 ],"System Design":[
 {q:"Design a URL shortener like bit.ly. Cover architecture, database, and scaling.",d:"Senior"},
 {q:"How would you design a real-time chat app like WhatsApp?",d:"Senior"},
 {q:"Explain the CAP theorem. Give examples of systems that choose each tradeoff.",d:"Mid"},
 {q:"Design a news feed system like Twitter's timeline.",d:"Senior"}
-],DSA:[
-{q:"Explain BFS vs DFS. When would you use each in practice?",d:"Junior"},
-{q:"How do you detect a cycle in a linked list? What's the time complexity?",d:"Mid"},
-{q:"Explain dynamic programming using the coin change problem.",d:"Mid"},
-{q:"Implement an LRU cache. What data structures do you need?",d:"Senior"},
-{q:"What are the time and space complexities of quicksort? When does it degrade?",d:"Mid"}
-],"Node.js":[
-{q:"Explain the event loop phases in Node.js. What happens in each phase?",d:"Mid"},
-{q:"How does Node.js handle concurrency with a single thread?",d:"Mid"},
-{q:"What's the difference between process.nextTick() and setImmediate()?",d:"Senior"},
-{q:"How would you handle errors in an Express.js application?",d:"Junior"},
-{q:"Explain streams in Node.js. What are the four types and when do you use each?",d:"Senior"}
 ]};
 
-const allQ=[];
-Object.entries(Q).forEach(([t,qs])=>qs.forEach(q=>allQ.push({...q,topic:t})));
-
 const hist=[
-{date:"Jun 24, 2026",topic:"React Hooks",qs:8,score:8.5,dur:"18 min",status:"completed",qa:[{q:"What is the virtual DOM?",a:"The virtual DOM is a lightweight JS representation of the actual DOM. React uses it to batch updates and minimize expensive DOM operations by diffing the virtual tree before committing changes.",fb:"Clear and accurate. Could mention the diffing algorithm for extra depth."},{q:"Explain useEffect cleanup",a:"The cleanup function returned from useEffect runs before the component unmounts and before the effect re-runs. It's used to cancel subscriptions, clear timers, or abort fetches.",fb:"Solid answer with practical examples. Well structured."}]},
-{date:"Jun 23, 2026",topic:"System Design",qs:5,score:6.2,dur:"32 min",status:"completed",qa:[{q:"Design a URL shortener",a:"I'd use a base62 encoding of an auto-increment ID stored in DynamoDB. For lookup, a Redis cache in front of the database. Analytics can use Kafka to stream click events.",fb:"Good foundation. Discuss database sharding and read replicas for scale."}]},
-{date:"Jun 22, 2026",topic:"DSA",qs:6,score:4.8,dur:"38 min",status:"completed",qa:[{q:"Reverse a linked list iteratively",a:"Use three pointers: prev, current, next. At each step, point current.next to prev, then advance all three pointers.",fb:"Correct approach. Try to also discuss the recursive solution for completeness."}]},
-{date:"Jun 21, 2026",topic:"TypeScript",qs:10,score:9.1,dur:"22 min",status:"completed",qa:[{q:"Interface vs Type",a:"Interfaces support declaration merging and are ideal for object shapes. Types are more flexible: they support unions, intersections, mapped types, and conditional types.",fb:"Excellent comparison with clear examples. Top answer."}]},
-{date:"Jun 20, 2026",topic:"NestJS",qs:7,score:7.3,dur:"25 min",status:"completed",qa:[{q:"Explain NestJS decorators",a:"Decorators in NestJS are used for metadata reflection. @Injectable marks a class as a provider. @Controller defines route handlers. Custom decorators can extract request data.",fb:"Good understanding. Elaborate on custom parameter decorators for advanced usage."}]},
-{date:"Jun 19, 2026",topic:"Node.js",qs:6,score:6.9,dur:"20 min",status:"completed",qa:[{q:"Explain the event loop",a:"The event loop processes callbacks in phases: timers, pending, poll, check, and close. libuv handles the implementation. The thread pool handles file I/O and DNS lookups.",fb:"Mention the thread pool size (default 4) and how to configure it with UV_THREADPOOL_SIZE."}]},
-{date:"Jun 18, 2026",topic:"React Performance",qs:8,score:8.8,dur:"24 min",status:"completed",qa:[{q:"Prevent unnecessary re-renders?",a:"Use React.memo for components, useMemo for expensive calculations, useCallback for stable function references. Also consider splitting context and using state colocation.",fb:"Comprehensive answer covering multiple strategies. Excellent."}]},
-{date:"Jun 17, 2026",topic:"System Design",qs:4,score:5.5,dur:"40 min",status:"completed",qa:[{q:"Design a rate limiter",a:"I'd use a sliding window algorithm with Redis. Each request increments a counter with a TTL. If the counter exceeds the limit, return 429.",fb:"Good start. Discuss token bucket and leaky bucket algorithms as alternatives."}]},
+{type:"practice",date:"Jun 24, 2026",topic:"React Hooks",qs:8,score:8.5,dur:"18 min",status:"completed",qa:[{q:"What is the virtual DOM?",a:"The virtual DOM is a lightweight JS representation of the actual DOM. React uses it to batch updates and minimize expensive DOM operations by diffing the virtual tree before committing changes.",fb:"Clear and accurate. Could mention the diffing algorithm for extra depth."},{q:"Explain useEffect cleanup",a:"The cleanup function returned from useEffect runs before the component unmounts and before the effect re-runs. It's used to cancel subscriptions, clear timers, or abort fetches.",fb:"Solid answer with practical examples. Well structured."}]},
+{type:"practice",date:"Jun 23, 2026",topic:"System Design",qs:5,score:6.2,dur:"32 min",status:"completed",qa:[{q:"Design a URL shortener",a:"I'd use a base62 encoding of an auto-increment ID stored in DynamoDB. For lookup, a Redis cache in front of the database. Analytics can use Kafka to stream click events.",fb:"Good foundation. Discuss database sharding and read replicas for scale."}]},
+{type:"coding",date:"Jun 22, 2026",topic:"Arrays",qs:3,score:9.0,dur:"25 min",status:"completed",qa:[{q:"Two Sum",a:"Used hash map to store complement. O(n) time.",fb:"Optimal solution. Good choice of data structure."},{q:"Best Time to Buy and Sell Stock",a:"Single pass tracking min price.",fb:"Clean and efficient. Well done."}]},
+{type:"practice",date:"Jun 21, 2026",topic:"TypeScript",qs:10,score:9.1,dur:"22 min",status:"completed",qa:[{q:"Interface vs Type",a:"Interfaces support declaration merging and are ideal for object shapes. Types are more flexible: they support unions, intersections, mapped types, and conditional types.",fb:"Excellent comparison with clear examples. Top answer."}]},
+{type:"practice",date:"Jun 20, 2026",topic:"NestJS",qs:7,score:7.3,dur:"25 min",status:"completed",qa:[{q:"Explain NestJS decorators",a:"Decorators in NestJS are used for metadata reflection. @Injectable marks a class as a provider. @Controller defines route handlers. Custom decorators can extract request data.",fb:"Good understanding. Elaborate on custom parameter decorators for advanced usage."}]},
+{type:"coding",date:"Jun 19, 2026",topic:"Trees",qs:2,score:8.5,dur:"15 min",status:"completed",qa:[{q:"Invert Binary Tree",a:"Recursive approach swapping left and right children.",fb:"Classic solution. Clean implementation."}]},
+{type:"practice",date:"Jun 18, 2026",topic:"React Performance",qs:8,score:8.8,dur:"24 min",status:"completed",qa:[{q:"Prevent unnecessary re-renders?",a:"Use React.memo for components, useMemo for expensive calculations, useCallback for stable function references. Also consider splitting context and using state colocation.",fb:"Comprehensive answer covering multiple strategies. Excellent."}]},
 ];
 
 function go(view){
@@ -1349,20 +1897,20 @@ if(view==='app')showPg('dashboard');
 }
 
 function showPg(name){
-var pages=['dashboard','practice','bank','coding','history','settings','library'];
+var pages=['dashboard','practice','coding','history','settings','library'];
 for(var i=0;i<pages.length;i++){
 document.getElementById('pg-'+pages[i]).hidden=(pages[i]!==name);
 }
 var items=document.querySelectorAll('.sb-item');
 for(var i=0;i<items.length;i++){items[i].classList.toggle('on',items[i].getAttribute('data-pg')===name)}
-var titles={dashboard:'Dashboard',practice:'Practice',bank:'Question Bank',coding:'Coding',history:'History',settings:'Settings',library:'Library'};
+var titles={dashboard:'Dashboard',practice:'Practice',coding:'Coding',history:'History',settings:'Settings',library:'Library'};
 document.getElementById('tb-title').textContent=titles[name]||'Dashboard';
-if(name==='bank')renderBank();
 if(name==='history')renderHist();
 if(name==='practice')showStartCard();
 if(name==='coding')initCodingPage();
 if(name==='library')initLibrary();
 if(name==='dashboard'&&isNewUser)document.getElementById('welcome-banner').style.display='block';
+if(name==='dashboard')updateRoleDisplay();
 closeSb();
 }
 
@@ -1391,38 +1939,143 @@ document.getElementById('au-btn').textContent=authMode==='login'?'Sign In':'Crea
 document.getElementById('au-sw').innerHTML=authMode==='login'?'No account? <a onclick="flipAuth()">Create one</a>':'Already have an account? <a onclick="flipAuth()">Sign in</a>';
 document.getElementById('name-f').style.display=authMode==='signup'?'block':'none';
 }
-function doAuth(e){e.preventDefault();go('app')}
+function doAuth(e){
+e.preventDefault();
+var sel=document.getElementById('dev-role-select');
+curRole=sel?sel.value:'USER';
+localStorage.setItem('prepai_role',curRole);
+var today=new Date().toDateString();
+var sessionData=JSON.parse(localStorage.getItem('prepai_sessions')||'{}');
+if(sessionData.date!==today){sessionData={date:today,count:0};}
+sessionData.count=Math.min(sessionData.count,0);
+localStorage.setItem('prepai_sessions',JSON.stringify(sessionData));
+updateRoleDisplay();
+go('app');
+}
+
+function selectMode(mode){
+curMode=mode;
+var cards=document.querySelectorAll('.practice-mode-card');
+for(var i=0;i<cards.length;i++)cards[i].classList.toggle('active',cards[i].getAttribute('data-mode')===mode);
+document.getElementById('config-topic').hidden=mode!=='topic';
+document.getElementById('config-weak').hidden=mode!=='weak';
+document.getElementById('config-pdf').hidden=mode!=='pdf';
+showStartCard();
+}
 
 function pickT(el){var pills=el.parentElement.querySelectorAll('.fpill');for(var i=0;i<pills.length;i++)pills[i].classList.remove('on');el.classList.add('on');curTopic=el.dataset.t;qIdx=0;if(sessionStarted)loadQ();else showStartCard()}
 function pickD(el){var pills=el.parentElement.querySelectorAll('.fpill');for(var i=0;i<pills.length;i++)pills[i].classList.remove('on');el.classList.add('on');curDiff=el.dataset.d;qIdx=0;if(sessionStarted)loadQ();else showStartCard()}
-function goPractice(t){curTopic=t;qIdx=0;sessionStarted=false;showPg('practice');var pills=document.querySelectorAll('#topic-pills .fpill');for(var i=0;i<pills.length;i++)pills[i].classList.toggle('on',pills[i].getAttribute('data-t')===t)}
+function pickDWeak(el){var pills=el.parentElement.querySelectorAll('.fpill');for(var i=0;i<pills.length;i++)pills[i].classList.remove('on');el.classList.add('on');curDiff=el.dataset.d;showStartCard()}
+function pickDPdf(el){var pills=el.parentElement.querySelectorAll('.fpill');for(var i=0;i<pills.length;i++)pills[i].classList.remove('on');el.classList.add('on');curDiff=el.dataset.d;showStartCard()}
+function togglePdfSource(cb){var item=cb.closest('.pdf-source-toggle');if(cb.checked)item.style.background='var(--accentBg)';else item.style.background='';showStartCard()}
+function togglePdfStudy(cb){var item=cb.closest('.pdf-study-item');if(cb.checked)item.classList.add('checked');else item.classList.remove('checked');showStartCard()}
+function goPractice(t){curTopic=t;qIdx=0;sessionStarted=false;curMode='topic';showPg('practice');selectMode('topic');var pills=document.querySelectorAll('#topic-pills .fpill');for(var i=0;i<pills.length;i++)pills[i].classList.toggle('on',pills[i].getAttribute('data-t')===t)}
 
 function showStartCard(){
 sessionStarted=false;
 document.getElementById('q-card').hidden=true;
 document.getElementById('fb-card').hidden=true;
 document.getElementById('start-card').hidden=false;
-var qs=Q[curTopic]||[];
+var qCount=parseInt(document.getElementById('session-q-count').textContent)||10;
+var modeLabel={topic:'Topic Practice',weak:'Weak Areas',pdf:'PDF Study'}[curMode]||'Topic Practice';
+document.getElementById('start-mode').textContent=modeLabel;
+document.getElementById('start-diff2').textContent=curDiff;
+document.getElementById('start-count2').textContent=qCount;
+document.getElementById('start-count').textContent=qCount+' questions';
+if(curMode==='topic'){
 document.getElementById('start-topic').textContent=curTopic;
 document.getElementById('start-diff').textContent=curDiff;
-document.getElementById('start-count').textContent=qs.length+' questions';
-document.getElementById('start-topic2').textContent=curTopic;
-document.getElementById('start-diff2').textContent=curDiff;
-document.getElementById('start-count2').textContent=qs.length;
+document.getElementById('start-desc').innerHTML='You\'ve selected <strong>'+curTopic+'</strong> at <strong>'+curDiff+'</strong> level. This session will include <strong>'+qCount+' questions</strong>.';
+}else if(curMode==='weak'){
+document.getElementById('start-topic').textContent='Weak Areas';
+document.getElementById('start-diff').textContent=curDiff;
+document.getElementById('start-desc').innerHTML='AI will focus on your weak areas at <strong>'+curDiff+'</strong> difficulty. This session will include <strong>'+qCount+' questions</strong>.';
+}else{
+document.getElementById('start-topic').textContent='PDF Study';
+document.getElementById('start-diff').textContent=curDiff;
+document.getElementById('start-desc').innerHTML='Questions generated from your uploaded PDFs at <strong>'+curDiff+'</strong> difficulty. This session will include <strong>'+qCount+' questions</strong>.';
+}
 clearInterval(timer);secs=0;updateT();
 }
 
 function startSession(){
+var limits=ROLE_LIMITS[curRole]||ROLE_LIMITS.USER;
+var today=new Date().toDateString();
+var sessionData=JSON.parse(localStorage.getItem('prepai_sessions')||'{}');
+if(sessionData.date!==today){sessionData={date:today,count:0};}
+if(sessionData.count>=limits.daily){
+showSessionLimit();
+return;
+}
+sessionData.count++;
+localStorage.setItem('prepai_sessions',JSON.stringify(sessionData));
 sessionStarted=true;
-document.getElementById('start-card').hidden=true;
+sessionScores=[];
+sessionStartTime=Date.now();
+document.getElementById('pg-practice').classList.add('pg-practice-active');
+document.getElementById('session-complete').hidden=true;
 loadQ();
+updateSessionsBar();
+}
+
+function showSessionLimit(){
+var overlay=document.getElementById('overlay');
+overlay.innerHTML='<div style="text-align:center;max-width:380px"><div style="font-size:3rem;margin-bottom:1rem">&#128683;</div><h3 style="font-size:1.2rem;font-weight:700;margin-bottom:.5rem">Daily Session Limit Reached</h3><p style="color:var(--dim);font-size:.9rem;line-height:1.6;margin-bottom:1.5rem">You\'ve used all 3 free sessions today. Come back tomorrow for more practice, or upgrade to Premium for unlimited sessions.</p><button class="btn btn-primary" onclick="document.getElementById(\'overlay\').classList.remove(\'show\')">Got it</button></div>';
+overlay.classList.add('show');
+}
+
+function updateRoleDisplay(){
+var limits=ROLE_LIMITS[curRole]||ROLE_LIMITS.USER;
+var today=new Date().toDateString();
+var sessionData=JSON.parse(localStorage.getItem('prepai_sessions')||'{}');
+if(sessionData.date!==today){sessionData={date:today,count:0};}
+var remaining=limits.daily===Infinity?'\u221E':Math.max(0,limits.daily-sessionData.count);
+var qLabel=curRole==='USER'?'Free plan':curRole==='PREMIUM'?'Premium plan':'Admin plan';
+var qCount=limits.questions;
+document.getElementById('session-q-count').textContent=qCount;
+document.getElementById('session-q-label').textContent=qLabel;
+var roleBadge=document.getElementById('role-badge');
+if(roleBadge){roleBadge.textContent=curRole;roleBadge.className='pill '+(curRole==='ADMIN'?'pill-purple':curRole==='PREMIUM'?'pill-amber':'pill-muted');}
+var upgradeEl=document.getElementById('sb-upgrade');
+if(upgradeEl)upgradeEl.style.display=curRole==='USER'?'flex':'none';
+var dashSub=document.getElementById('dashboard-sub');
+if(dashSub){
+if(limits.daily===Infinity){
+dashSub.textContent='Unlimited sessions available. Keep the streak going!';
+}else{
+dashSub.textContent=remaining+' of '+limits.daily+' sessions left today. Keep the streak going!';
+}
+}
+var solvedEl=document.getElementById('kpi-solved');
+if(solvedEl)solvedEl.textContent=solvedProblems.length;
+updateSessionsBar();
+}
+
+function updateSessionsBar(){
+var limits=ROLE_LIMITS[curRole]||ROLE_LIMITS.USER;
+var today=new Date().toDateString();
+var sessionData=JSON.parse(localStorage.getItem('prepai_sessions')||'{}');
+if(sessionData.date!==today){sessionData={date:today,count:0};}
+var bar=document.getElementById('sessions-bar');
+var text=document.getElementById('sessions-bar-text');
+if(!bar||!text)return;
+if(limits.daily===Infinity){
+text.innerHTML='Unlimited sessions available';
+bar.style.background='var(--greenBg)';bar.style.borderColor='rgba(16,185,129,.15)';
+}else{
+var remaining=Math.max(0,limits.daily-sessionData.count);
+text.innerHTML='<strong>'+remaining+'</strong> of <strong>'+limits.daily+'</strong> sessions left today';
+if(remaining===0){bar.style.background='var(--redBg)';bar.style.borderColor='rgba(244,63,94,.15)';}
+else if(remaining===1){bar.style.background='rgba(245,158,11,.08)';bar.style.borderColor='rgba(245,158,11,.15)';}
+else{bar.style.background='var(--accentBg)';bar.style.borderColor='rgba(245,158,11,.15)';}
+}
 }
 
 function practiceSameTopic(){
-qIdx=0;
+qIdx=0;sessionScores=[];sessionStartTime=Date.now();
 clearInterval(timer);secs=0;updateT();
 sessionStarted=true;
-document.getElementById('start-card').hidden=true;
+document.getElementById('session-complete').hidden=true;
 loadQ();
 }
 
@@ -1432,11 +2085,16 @@ isNewUser=false;
 }
 
 function loadQ(){
+var limits=ROLE_LIMITS[curRole]||ROLE_LIMITS.USER;
+if(qIdx>=limits.questions){
+showSessionComplete();
+return;
+}
 var qs=Q[curTopic]||[];if(!qs.length)return;
 var q=qs[qIdx%qs.length];
 document.getElementById('q-text').textContent=q.q;
-document.getElementById('q-counter').textContent='Q'+(qIdx+1)+' of '+qs.length;
-document.getElementById('q-prog-fill').style.width=((qIdx+1)/qs.length*100)+'%';
+document.getElementById('q-counter').textContent='Q'+(qIdx+1)+' of '+limits.questions;
+document.getElementById('q-prog-fill').style.width=((qIdx+1)/limits.questions*100)+'%';
 document.getElementById('answer').value='';
 clearInterval(timer);secs=0;updateT();
 timer=setInterval(function(){secs++;updateT()},1000);
@@ -1454,6 +2112,7 @@ document.getElementById('overlay').classList.add('show');
 setTimeout(function(){
 document.getElementById('overlay').classList.remove('show');
 var sc=parseFloat((Math.random()*4+6).toFixed(1));
+sessionScores.push(sc);
 document.getElementById('fb-num').textContent=sc.toFixed(1);
 document.getElementById('fb-verdict').textContent=sc>=8?'Excellent Answer!':sc>=7?'Good Answer!':'Decent Answer!';
 document.getElementById('fb-detail').textContent='Your answer shows solid understanding. Consider adding more specific edge cases and real-world examples to strengthen your response further.';
@@ -1467,42 +2126,30 @@ document.getElementById('fb-card').hidden=false;
 }
 function skipQ(){qIdx++;loadQ()}
 function nextQ(){qIdx++;loadQ()}
-function endSess(){qIdx=0;showPg('dashboard')}
-
-function renderBank(){
-var f=allQ;
-if(bankTF!=='All')f=f.filter(function(q){return q.topic===bankTF});
-if(bankDF!=='All')f=f.filter(function(q){return q.d===bankDF});
-var sv=(document.getElementById('bank-search')?document.getElementById('bank-search').value:'').toLowerCase();
-if(sv)f=f.filter(function(q){return q.q.toLowerCase().indexOf(sv)!==-1});
-var pp=6,tot=Math.ceil(f.length/pp),s=(bankPg-1)*pp,items=f.slice(s,s+pp);
-var tc={React:'blue',NestJS:'red',TypeScript:'purple','System Design':'amber',DSA:'green','Node.js':'green'};
-if(f.length===0){
-document.getElementById('bank-grid').innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">&#128269;</div><h3>No questions found</h3><p>Try adjusting your filters or search query to find what you\'re looking for.</p><button class="btn btn-outline btn-sm" onclick="clearBankFilters()">Clear All Filters</button></div>';
-document.getElementById('pagination').innerHTML='';
-return;
+function endSess(){
+qIdx=0;sessionStarted=false;sessionScores=[];
+document.getElementById('pg-practice').classList.remove('pg-practice-active');
+document.getElementById('q-card').hidden=true;
+document.getElementById('fb-card').hidden=true;
+document.getElementById('session-complete').hidden=true;
+clearInterval(timer);secs=0;updateT();
+updateSessionsBar();
+showStartCard();
 }
-var html='';
-for(var i=0;i<items.length;i++){
-var q=items[i];
-html+='<div class="bank-card"><div class="bank-tags"><span class="pill pill-'+(tc[q.topic]||'amber')+'">'+q.topic+'</span><span class="pill pill-muted">'+q.d+'</span></div><div class="bank-q">'+q.q+'</div><div class="bank-foot"><span class="bank-meta">~5 min</span><button class="btn btn-ghost btn-sm" onclick="goPractice(\''+q.topic+'\')">Practice &rarr;</button></div></div>';
+function backToPractice(){
+endSess();
 }
-document.getElementById('bank-grid').innerHTML=html;
-var pg='<button class="pg-btn" onclick="bankGo('+(bankPg-1)+')" '+(bankPg===1?'disabled':'')+'>&lsaquo;</button>';
-for(var i=1;i<=tot;i++)pg+='<button class="pg-btn '+(i===bankPg?'on':'')+'" onclick="bankGo('+i+')">'+i+'</button>';
-pg+='<button class="pg-btn" onclick="bankGo('+(bankPg+1)+')" '+(bankPg===tot?'disabled':'')+'>&rsaquo;</button>';
-document.getElementById('pagination').innerHTML=pg;
+function showSessionComplete(){
+clearInterval(timer);
+document.getElementById('q-card').hidden=true;
+document.getElementById('fb-card').hidden=true;
+var avg=sessionScores.length?sessionScores.reduce(function(a,b){return a+b},0)/sessionScores.length:0;
+var elapsed=Math.round((Date.now()-sessionStartTime)/60000);
+document.getElementById('sc-questions').textContent=sessionScores.length;
+document.getElementById('sc-score').textContent=avg.toFixed(1);
+document.getElementById('sc-time').textContent=elapsed+'m';
+document.getElementById('session-complete').hidden=false;
 }
-function clearBankFilters(){
-bankTF='All';bankDF='All';bankPg=1;
-if(document.getElementById('bank-search'))document.getElementById('bank-search').value='';
-var rows=document.querySelectorAll('#pg-bank .filter-row');
-rows.forEach(function(row){var pills=row.querySelectorAll('.fpill');pills.forEach(function(p,i){p.classList.toggle('on',i===0)})});
-renderBank();
-}
-function bankFT(el,t){var pills=el.parentElement.querySelectorAll('.fpill');for(var i=0;i<pills.length;i++)pills[i].classList.remove('on');el.classList.add('on');bankTF=t;bankPg=1;renderBank()}
-function bankFD(el,d){var pills=el.parentElement.querySelectorAll('.fpill');for(var i=0;i<pills.length;i++)pills[i].classList.remove('on');el.classList.add('on');bankDF=d;bankPg=1;renderBank()}
-function bankGo(p){var t=Math.ceil((bankTF==='All'?allQ.length:allQ.filter(function(q){return q.topic===bankTF}).length)/6);if(p<1||p>t)return;bankPg=p;renderBank()}
 
 function renderHist(){
 if(hist.length===0){
@@ -1513,7 +2160,8 @@ var html='';
 for(var i=0;i<hist.length;i++){
 var r=hist[i];
 var sc=r.score>=7?'pill-green':r.score>=5?'pill-amber':'pill-red';
-html+='<tr onclick="toggleH('+i+')"><td>'+r.date+'</td><td><span class="pill pill-blue">Practice</span></td><td>'+r.topic+'</td><td>'+r.qs+'</td><td><span class="pill '+sc+'">'+r.score+'</span></td><td>'+r.dur+'</td><td><span class="pill pill-green">'+(r.status==='completed'?'Completed':'In Progress')+'</span></td></tr>';
+var typePill=r.type==='coding'?'<span class="pill pill-purple">Coding</span>':'<span class="pill pill-blue">Practice</span>';
+html+='<tr onclick="toggleH('+i+')"><td>'+r.date+'</td><td>'+typePill+'</td><td>'+r.topic+'</td><td>'+r.qs+'</td><td><span class="pill '+sc+'">'+r.score+'</span></td><td>'+r.dur+'</td><td><span class="pill pill-green">'+(r.status==='completed'?'Completed':'In Progress')+'</span></td></tr>';
 html+='<tr class="exp-row" id="exp-'+i+'"><td colspan="7"><div class="exp-inner">';
 for(var j=0;j<r.qa.length;j++){
 var a=r.qa[j];
@@ -1530,13 +2178,14 @@ else{if(expHist!==null){var prev=document.getElementById('exp-'+expHist);if(prev
 }
 
 function showSetTab(tab,el){
-var tabs=['profile','notifications','prefs','ai','docs','danger'];
+var tabs=['profile','notifications','prefs','ai','docs','plan','danger'];
 for(var i=0;i<tabs.length;i++){
 document.getElementById('set-'+tabs[i]).hidden=(tabs[i]!==tab);
 }
 var items=el.parentElement.querySelectorAll('.set-nav-item');
 for(var i=0;i<items.length;i++)items[i].classList.remove('on');
 el.classList.add('on');
+if(tab==='plan')updatePlanSection();
 }
 
 var libPdfs=[
@@ -1752,8 +2401,7 @@ var items=[
 {icon:'&#128200;',text:'DSA Questions',hint:'Coding',action:"showPg('coding')"},
 {icon:'&#128218;',text:'TypeScript',hint:'Practice',action:"showPg('practice')"},
 {icon:'&#9881;',text:'Settings',hint:'Account',action:"showPg('settings')"},
-{icon:'&#128197;',text:'Session History',hint:'Track',action:"showPg('history')"},
-{icon:'&#128214;',text:'Question Bank',hint:'Browse',action:"showPg('bank')"}
+{icon:'&#128197;',text:'Session History',hint:'Track',action:"showPg('history')"}
 ];
 searchMatched=items.filter(function(i){return i.text.toLowerCase().indexOf(val.toLowerCase())!==-1;});
 searchActiveIdx=-1;
@@ -1958,131 +2606,63 @@ requestAnimationFrame(step);
 /* ========== CODING PAGE ========== */
 var isMonacoLoaded=false,monacoEditor=null,fsMonacoEditor=null,curCodeIdx=0,curLang='javascript';
 var codeTopicF='All',codeDiffF='All',codeCollapsed=false,isFullscreen=false;
+var solvedProblems=JSON.parse(localStorage.getItem('prepai_solved')||'[]');
+var codingStreakData=JSON.parse(localStorage.getItem('prepai_coding_streak')||'{"date":"","count":0}');
+var codingDaily=JSON.parse(localStorage.getItem('prepai_coding_daily')||'{"date":"","solved":0,"reviews":0}');
+const CODING_LIMITS={USER:{dailySolved:5,dailyReviews:3},PREMIUM:{dailySolved:Infinity,dailyReviews:Infinity},ADMIN:{dailySolved:Infinity,dailyReviews:Infinity}};
 
 var codeProblems=[
-{
-title:'Two Sum',difficulty:'Easy',topic:'Arrays',
-desc:'Given an array of integers <strong>nums</strong> and an integer <strong>target</strong>, return indices of the two numbers such that they add up to target.<br><br>You may assume that each input would have exactly one solution, and you may not use the same element twice.<br><br>You can return the answer in any order.',
-examples:[
-{input:'nums = [2,7,11,15], target = 9',output:'[0,1]',explanation:'Because nums[0] + nums[1] == 9, we return [0, 1].'},
-{input:'nums = [3,2,4], target = 6',output:'[1,2]',explanation:''}
-],
-constraints:['2 &le; nums.length &le; 10<sup>4</sup>','-10<sup>9</sup> &le; nums[i] &le; 10<sup>9</sup>','-10<sup>9</sup> &le; target &le; 10<sup>9</sup>','Only one valid answer exists.'],
-js:'function twoSum(nums, target) {\n  // Write your solution here\n  \n}',
-ts:'function twoSum(nums: number[], target: number): number[] {\n  // Write your solution here\n  \n}',
-py:'def two_sum(nums, target):\n    # Write your solution here\n    pass'
-},
-{
-title:'Longest Substring Without Repeating Characters',difficulty:'Medium',topic:'Strings',
-desc:'Given a string <strong>s</strong>, find the length of the longest substring without repeating characters.',
-examples:[
-{input:'s = "abcabcbb"',output:'3',explanation:'The answer is "abc", with the length of 3.'},
-{input:'s = "bbbbb"',output:'1',explanation:'The answer is "b", with the length of 1.'},
-{input:'s = "pwwkew"',output:'3',explanation:'The answer is "wke", with the length of 3. Note that the answer must be a substring.'}
-],
-constraints:['0 &le; s.length &le; 5 &times; 10<sup>4</sup>','s consists of English letters, digits, symbols and spaces.'],
-js:'function lengthOfLongestSubstring(s) {\n  // Write your solution here\n  \n}',
-ts:'function lengthOfLongestSubstring(s: string): number {\n  // Write your solution here\n  \n}',
-py:'def length_of_longest_substring(s):\n    # Write your solution here\n    pass'
-},
-{
-title:'Binary Tree Level Order Traversal',difficulty:'Medium',topic:'Trees',
-desc:'Given the <strong>root</strong> of a binary tree, return the level order traversal of its nodes\' values (i.e., from left to right, level by level).',
-examples:[
-{input:'root = [3,9,20,null,null,15,7]',output:'[[3],[9,20],[15,7]]',explanation:'Level 1 has node 3, level 2 has nodes 9 and 20, level 3 has nodes 15 and 7.'},
-{input:'root = [1]',output:'[[1]]',explanation:''},
-{input:'root = []',output:'[]',explanation:''}
-],
-constraints:['The number of nodes is in range [0, 2000]','-1000 &le; Node.val &le; 1000'],
-js:'function levelOrder(root) {\n  // Write your solution here\n  \n}',
-ts:'function levelOrder(root: TreeNode | null): number[][] {\n  // Write your solution here\n  \n}',
-py:'def level_order(root):\n    # Write your solution here\n    pass'
-},
-{
-title:'Maximum Subarray',difficulty:'Medium',topic:'Dynamic Programming',
-desc:'Given an integer array <strong>nums</strong>, find the subarray with the largest sum, and return its sum.',
-examples:[
-{input:'nums = [-2,1,-3,4,-1,2,1,-5,4]',output:'6',explanation:'The subarray [4,-1,2,1] has the largest sum 6.'},
-{input:'nums = [1]',output:'1',explanation:'The subarray [1] has the largest sum 1.'}
-],
-constraints:['1 &le; nums.length &le; 10<sup>5</sup>','-10<sup>4</sup> &le; nums[i] &le; 10<sup>4</sup>'],
-js:'function maxSubArray(nums) {\n  // Write your solution here\n  \n}',
-ts:'function maxSubArray(nums: number[]): number {\n  // Write your solution here\n  \n}',
-py:'def max_sub_array(nums):\n    # Write your solution here\n    pass'
-},
-{
-title:'Valid Parentheses',difficulty:'Easy',topic:'Strings',
-desc:'Given a string <strong>s</strong> containing just the characters <strong>(</strong>, <strong>)</strong>, <strong>{</strong>, <strong>}</strong>, <strong>[</strong> and <strong>]</strong>, determine if the input string is valid.',
-examples:[
-{input:'s = "()"',output:'true',explanation:'Open bracket closed by the same type of brackets.'},
-{input:'s = "()[]{}"',output:'true',explanation:'All brackets closed in the correct order.'},
-{input:'s = "(]"',output:'false',explanation:'Parentheses closed by a square bracket.'}
-],
-constraints:['1 &le; s.length &le; 10<sup>4</sup>','s consists of parentheses only \'()[]{}\''],
-js:'function isValid(s) {\n  // Write your solution here\n  \n}',
-ts:'function isValid(s: string): boolean {\n  // Write your solution here\n  \n}',
-py:'def is_valid(s):\n    # Write your solution here\n    pass'
-},
-{
-title:'Merge Two Sorted Lists',difficulty:'Easy',topic:'Two Pointers',
-desc:'You are given the heads of two sorted linked lists <strong>list1</strong> and <strong>list2</strong>. Merge the two lists into one sorted list.',
-examples:[
-{input:'list1 = [1,2,4], list2 = [1,3,4]',output:'[1,1,2,3,4]',explanation:'Merging the two sorted lists.'},
-{input:'list1 = [], list2 = []',output:'[]',explanation:'Both lists are empty.'}
-],
-constraints:['The number of nodes in both lists is in the range [0, 50]','-50 &le; Node.val &le; 50'],
-js:'function mergeTwoLists(list1, list2) {\n  // Write your solution here\n  \n}',
-ts:'function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): ListNode | null {\n  // Write your solution here\n  \n}',
-py:'def merge_two_lists(list1, list2):\n    # Write your solution here\n    pass'
-},
-{
-title:'Best Time to Buy and Sell Stock',difficulty:'Easy',topic:'Arrays',
-desc:'You are given an array <strong>prices</strong> where <strong>prices[i]</strong> is the price of a given stock on the ith day. Find the maximum profit you can achieve.',
-examples:[
-{input:'prices = [7,1,5,3,6,4]',output:'5',explanation:'Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5.'},
-{input:'prices = [7,6,4,3,1]',output:'0',explanation:'No profit can be achieved, return 0.'}
-],
-constraints:['1 &le; prices.length &le; 10<sup>5</sup>','0 &le; prices[i] &le; 10<sup>4</sup>'],
-js:'function maxProfit(prices) {\n  // Write your solution here\n  \n}',
-ts:'function maxProfit(prices: number[]): number {\n  // Write your solution here\n  \n}',
-py:'def max_profit(prices):\n    # Write your solution here\n    pass'
-},
-{
-title:'Number of Islands',difficulty:'Medium',topic:'Graphs',
-desc:'Given an <strong>m x n</strong> 2D binary grid <strong>grid</strong> which represents a map of <strong>1\'s</strong> (land) and <strong>0\'s</strong> (water), return the number of islands.',
-examples:[
-{input:'grid = [["1","1","1","1","0"],["1","1","0","1","0"],["1","1","0","0","0"],["0","0","0","0","0"]]',output:'1',explanation:'One island consisting of all the 1s connected horizontally or vertically.'},
-{input:'grid = [["1","1","0","0","0"],["1","1","0","0","0"],["0","0","1","0","0"],["0","0","0","1","1"]]',output:'3',explanation:'Three separate islands.'}
-],
-constraints:['m == grid.length','n == grid[i].length','1 &le; m, n &le; 300','grid[i][j] is \'0\' or \'1\'.'],
-js:'function numIslands(grid) {\n  // Write your solution here\n  \n}',
-ts:'function numIslands(grid: string[][]): number {\n  // Write your solution here\n  \n}',
-py:'def num_islands(grid):\n    # Write your solution here\n    pass'
-},
-{
-title:'Coin Change',difficulty:'Medium',topic:'Dynamic Programming',
-desc:'You are given an integer array <strong>coins</strong> representing coins of different denominations and an integer <strong>amount</strong> representing a total amount of money. Return the fewest number of coins that you need to make up that amount.',
-examples:[
-{input:'coins = [1,5,11], amount = 15',output:'3',explanation:'15 = 5 + 5 + 5 (3 coins).'},
-{input:'coins = [2], amount = 3',output:'-1',explanation:'3 cannot be made up of just 2s.'}
-],
-constraints:['1 &le; coins.length &le; 12','1 &le; coins[i] &le; 2<sup>31</sup> - 1','0 &le; amount &le; 10<sup>4</sup>'],
-js:'function coinChange(coins, amount) {\n  // Write your solution here\n  \n}',
-ts:'function coinChange(coins: number[], amount: number): number {\n  // Write your solution here\n  \n}',
-py:'def coin_change(coins, amount):\n    # Write your solution here\n    pass'
-},
-{
-title:'Container With Most Water',difficulty:'Medium',topic:'Two Pointers',
-desc:'You are given an integer array <strong>height</strong> of length n. Find two lines that together with the x-axis form a container that holds the most water.',
-examples:[
-{input:'height = [1,8,6,2,5,4,8,3,7]',output:'49',explanation:'The max area is formed between index 1 and 8: min(8,7) * 7 = 49.'},
-{input:'height = [1,1]',output:'1',explanation:'Only one container possible.'}
-],
-constraints:['n == height.length','2 &le; n &le; 10<sup>5</sup>','0 &le; height[i] &le; 10<sup>4</sup>'],
-js:'function maxArea(height) {\n  // Write your solution here\n  \n}',
-ts:'function maxArea(height: number[]): number {\n  // Write your solution here\n  \n}',
-py:'def max_area(height):\n    # Write your solution here\n    pass'
-}
+{title:'Two Sum',difficulty:'Easy',topic:'Arrays',desc:'Given an array of integers <strong>nums</strong> and an integer <strong>target</strong>, return indices of the two numbers such that they add up to target.',examples:[{input:'nums = [2,7,11,15], target = 9',output:'[0,1]',explanation:'nums[0] + nums[1] == 9'},{input:'nums = [3,2,4], target = 6',output:'[1,2]',explanation:''}],constraints:['2 <= nums.length <= 10^4','-10^9 <= nums[i] <= 10^9','Only one valid answer exists.'],js:'function twoSum(nums, target) {\n  \n}',ts:'function twoSum(nums: number[], target: number): number[] {\n  \n}',py:'def two_sum(nums, target):\n    pass'},
+{title:'Contains Duplicate',difficulty:'Easy',topic:'Arrays',desc:'Given an integer array <strong>nums</strong>, return true if any value appears at least twice.',examples:[{input:'nums = [1,2,3,1]',output:'true',explanation:'1 appears twice.'},{input:'nums = [1,2,3,4]',output:'false',explanation:'All elements are distinct.'}],constraints:['1 <= nums.length <= 10^5','-10^9 <= nums[i] <= 10^9'],js:'function containsDuplicate(nums) {\n  \n}',ts:'function containsDuplicate(nums: number[]): boolean {\n  \n}',py:'def contains_duplicate(nums):\n    pass'},
+{title:'Maximum Subarray',difficulty:'Medium',topic:'Arrays',desc:'Find the contiguous subarray with the largest sum and return its sum.',examples:[{input:'nums = [-2,1,-3,4,-1,2,1,-5,4]',output:'6',explanation:'[4,-1,2,1] has largest sum.'},{input:'nums = [1]',output:'1',explanation:''}],constraints:['1 <= nums.length <= 10^5','-10^4 <= nums[i] <= 10^4'],js:'function maxSubArray(nums) {\n  \n}',ts:'function maxSubArray(nums: number[]): number {\n  \n}',py:'def max_sub_array(nums):\n    pass'},
+{title:'Best Time to Buy and Sell Stock',difficulty:'Easy',topic:'Arrays',desc:'Find the maximum profit from buying and selling a stock once.',examples:[{input:'prices = [7,1,5,3,6,4]',output:'5',explanation:'Buy at 1, sell at 6.'},{input:'prices = [7,6,4,3,1]',output:'0',explanation:'No profit possible.'}],constraints:['1 <= prices.length <= 10^5'],js:'function maxProfit(prices) {\n  \n}',ts:'function maxProfit(prices: number[]): number {\n  \n}',py:'def max_profit(prices):\n    pass'},
+{title:'Product of Array Except Self',difficulty:'Medium',topic:'Arrays',desc:'Return an array where each element is the product of all other elements without using division.',examples:[{input:'nums = [1,2,3,4]',output:'[24,12,8,6]',explanation:''},{input:'nums = [-1,1,0,-3,3]',output:'[0,0,9,0,0]',explanation:''}],constraints:['2 <= nums.length <= 10^5'],js:'function productExceptSelf(nums) {\n  \n}',ts:'function productExceptSelf(nums: number[]): number[] {\n  \n}',py:'def product_except_self(nums):\n    pass'},
+{title:'Trapping Rain Water',difficulty:'Hard',topic:'Arrays',desc:'Compute how much water it can trap after raining.',examples:[{input:'height = [0,1,0,2,1,0,1,3,2,1,2,1]',output:'6',explanation:''},{input:'height = [4,2,0,3,2,5]',output:'9',explanation:''}],constraints:['1 <= height.length <= 2*10^4'],js:'function trap(height) {\n  \n}',ts:'function trap(height: number[]): number {\n  \n}',py:'def trap(height):\n    pass'},
+{title:'Valid Parentheses',difficulty:'Easy',topic:'Stacks',desc:'Determine if a string of brackets is valid.',examples:[{input:'s = "()"',output:'true',explanation:''},{input:'s = "(]"',output:'false',explanation:''}],constraints:['1 <= s.length <= 10^4'],js:'function isValid(s) {\n  \n}',ts:'function isValid(s: string): boolean {\n  \n}',py:'def is_valid(s):\n    pass'},
+{title:'Min Stack',difficulty:'Medium',topic:'Stacks',desc:'Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.',examples:[{input:'push(-2),push(0),push(-3),getMin(),pop(),top(),getMin()',output:'-3,0,-2',explanation:''}],constraints:['Methods will be called with valid indices.'],js:'var MinStack = function() {};\nMinStack.prototype.push = function(val) {};\nMinStack.prototype.pop = function() {};\nMinStack.prototype.top = function() {};\nMinStack.prototype.getMin = function() {};',ts:'class MinStack {\n  push(val: number): void {}\n  pop(): void {}\n  top(): number { return 0 }\n  getMin(): number { return 0 }\n}',py:'class MinStack:\n    def push(self, val): pass\n    def pop(self): pass\n    def top(self): pass\n    def getMin(self): pass'},
+{title:'Daily Temperatures',difficulty:'Medium',topic:'Stacks',desc:'For each day, find how many days you have to wait until a warmer temperature.',examples:[{input:'temps = [73,74,75,71,69,72,76,73]',output:'[1,1,4,2,1,1,0,0]',explanation:''}],constraints:['1 <= temps.length <= 10^5'],js:'function dailyTemperatures(temps) {\n  \n}',ts:'function dailyTemperatures(temps: number[]): number[] {\n  \n}',py:'def daily_temperatures(temps):\n    pass'},
+{title:'Evaluate Reverse Polish Notation',difficulty:'Medium',topic:'Stacks',desc:'Evaluate the value of an arithmetic expression in Reverse Polish Notation.',examples:[{input:'["2","1","+","3","*"]',output:'9',explanation:'((2+1)*3)=9'},{input:'["4","13","5","/","+"]',output:'6',explanation:'(4+(13/5))=6'}],constraints:['1 <= tokens.length <= 10^4'],js:'function evalRPN(tokens) {\n  \n}',ts:'function evalRPN(tokens: string[]): number {\n  \n}',py:'def eval_rpn(tokens):\n    pass'},
+{title:'Valid Anagram',difficulty:'Easy',topic:'Hash Maps',desc:'Determine if two strings are anagrams of each other.',examples:[{input:'s = "anagram", t = "nagaram"',output:'true',explanation:''},{input:'s = "rat", t = "car"',output:'false',explanation:''}],constraints:['1 <= s.length, t.length <= 5*10^4'],js:'function isAnagram(s, t) {\n  \n}',ts:'function isAnagram(s: string, t: string): boolean {\n  \n}',py:'def is_anagram(s, t):\n    pass'},
+{title:'Two Sum (Hash Map)',difficulty:'Easy',topic:'Hash Maps',desc:'Solve Two Sum using a hash map for O(n) time.',examples:[{input:'nums = [2,7,11,15], target = 9',output:'[0,1]',explanation:''}],constraints:['2 <= nums.length <= 10^4'],js:'function twoSum(nums, target) {\n  \n}',ts:'function twoSum(nums: number[], target: number): number[] {\n  \n}',py:'def two_sum(nums, target):\n    pass'},
+{title:'Group Anagrams',difficulty:'Medium',topic:'Hash Maps',desc:'Group strings that are anagrams of each other.',examples:[{input:'strs = ["eat","tea","tan","ate","nat","bat"]',output:'[["eat","tea","ate"],["tan","nat"],["bat"]]',explanation:''}],constraints:['1 <= strs.length <= 10^4'],js:'function groupAnagrams(strs) {\n  \n}',ts:'function groupAnagrams(strs: string[]): string[][] {\n  \n}',py:'def group_anagrams(strs):\n    pass'},
+{title:'Longest Consecutive Sequence',difficulty:'Medium',topic:'Hash Maps',desc:'Find the length of the longest consecutive elements sequence in O(n).',examples:[{input:'nums = [100,4,200,1,3,2]',output:'4',explanation:'[1,2,3,4]'},{input:'nums = [0,3,7,2,5,8,4,6,0,1]',output:'9',explanation:''}],constraints:['0 <= nums.length <= 10^5'],js:'function longestConsecutive(nums) {\n  \n}',ts:'function longestConsecutive(nums: number[]): number {\n  \n}',py:'def longest_consecutive(nums):\n    pass'},
+{title:'First Bad Version',difficulty:'Easy',topic:'Binary Search',desc:'Find the first bad version using binary search.',examples:[{input:'n = 5, bad = 4',output:'4',explanation:'Versions 1-3 good, 4-5 bad.'}],constraints:['1 <= bad <= n <= 2^31 - 1'],js:'var solution = function(isBadVersion) {\n  return function(n) {\n    \n  };\n};',ts:'var solution = function(isBadVersion: (v: number) => boolean) {\n  return function(n: number): number {\n    \n  };\n};',py:'def solution(is_bad_version):\n    def first_bad(n):\n        pass\n    return first_bad'},
+{title:'Search in Rotated Sorted Array',difficulty:'Medium',topic:'Binary Search',desc:'Search for a target in a rotated sorted array in O(log n).',examples:[{input:'nums = [4,5,6,7,0,1,2], target = 0',output:'4',explanation:''},{input:'nums = [4,5,6,7,0,1,2], target = 3',output:'-1',explanation:''}],constraints:['1 <= nums.length <= 5000'],js:'function search(nums, target) {\n  \n}',ts:'function search(nums: number[], target: number): number {\n  \n}',py:'def search(nums, target):\n    pass'},
+{title:'Find Minimum in Rotated Sorted Array',difficulty:'Medium',topic:'Binary Search',desc:'Find the minimum element in a rotated sorted array.',examples:[{input:'nums = [3,4,5,1,2]',output:'1',explanation:''},{input:'nums = [4,5,6,7,0,1,2]',output:'0',explanation:''}],constraints:['1 <= nums.length <= 5000'],js:'function findMin(nums) {\n  \n}',ts:'function findMin(nums: number[]): number {\n  \n}',py:'def find_min(nums):\n    pass'},
+{title:'Reverse Linked List',difficulty:'Easy',topic:'Linked Lists',desc:'Reverse a singly linked list.',examples:[{input:'head = [1,2,3,4,5]',output:'[5,4,3,2,1]',explanation:''},{input:'head = [1,2]',output:'[2,1]',explanation:''}],constraints:['1 <= nums.length <= 5000'],js:'function reverseList(head) {\n  \n}',ts:'function reverseList(head: ListNode | null): ListNode | null {\n  \n}',py:'def reverse_list(head):\n    pass'},
+{title:'Merge Two Sorted Lists',difficulty:'Easy',topic:'Linked Lists',desc:'Merge two sorted linked lists into one sorted list.',examples:[{input:'list1 = [1,2,4], list2 = [1,3,4]',output:'[1,1,2,3,4]',explanation:''}],constraints:['0 <= list1.length, list2.length <= 50'],js:'function mergeTwoLists(list1, list2) {\n  \n}',ts:'function mergeTwoLists(l1: ListNode | null, l2: ListNode | null): ListNode | null {\n  \n}',py:'def merge_two_lists(l1, l2):\n    pass'},
+{title:'Linked List Cycle',difficulty:'Easy',topic:'Linked Lists',desc:'Detect if a linked list has a cycle.',examples:[{input:'head = [3,2,0,-4], pos = 1',output:'true',explanation:'Tail connects to node at index 1.'},{input:'head = [1], pos = -1',output:'false',explanation:''}],constraints:['0 <= pos <= 10^4'],js:'function hasCycle(head) {\n  \n}',ts:'function hasCycle(head: ListNode | null): boolean {\n  \n}',py:'def has_cycle(head):\n    pass'},
+{title:'Remove Nth Node From End',difficulty:'Medium',topic:'Linked Lists',desc:'Remove the nth node from the end of a linked list in one pass.',examples:[{input:'head = [1,2,3,4,5], n = 2',output:'[1,2,3,5]',explanation:''},{input:'head = [1], n = 1',output:'[]',explanation:''}],constraints:['1 <= list.size <= 30'],js:'function removeNthFromEnd(head, n) {\n  \n}',ts:'function removeNthFromEnd(head: ListNode | null, n: number): ListNode | null {\n  \n}',py:'def remove_nth_from_end(head, n):\n    pass'},
+{title:'Invert Binary Tree',difficulty:'Easy',topic:'Trees',desc:'Invert a binary tree (mirror it).',examples:[{input:'root = [4,2,7,1,3,6,9]',output:'[4,7,2,9,6,3,1]',explanation:''}],constraints:['0 <= num of nodes <= 100'],js:'function invertTree(root) {\n  \n}',ts:'function invertTree(root: TreeNode | null): TreeNode | null {\n  \n}',py:'def invert_tree(root):\n    pass'},
+{title:'Maximum Depth of Binary Tree',difficulty:'Easy',topic:'Trees',desc:'Find the maximum depth of a binary tree.',examples:[{input:'root = [3,9,20,null,null,15,7]',output:'3',explanation:''}],constraints:['0 <= num of nodes <= 10^4'],js:'function maxDepth(root) {\n  \n}',ts:'function maxDepth(root: TreeNode | null): number {\n  \n}',py:'def max_depth(root):\n    pass'},
+{title:'Binary Tree Level Order Traversal',difficulty:'Medium',topic:'Trees',desc:'Return level order traversal of a binary tree.',examples:[{input:'root = [3,9,20,null,null,15,7]',output:'[[3],[9,20],[15,7]]',explanation:''}],constraints:['0 <= num of nodes <= 2000'],js:'function levelOrder(root) {\n  \n}',ts:'function levelOrder(root: TreeNode | null): number[][] {\n  \n}',py:'def level_order(root):\n    pass'},
+{title:'Validate BST',difficulty:'Medium',topic:'Trees',desc:'Determine if a binary tree is a valid binary search tree.',examples:[{input:'root = [2,1,3]',output:'true',explanation:''},{input:'root = [5,1,4,null,null,3,6]',output:'false',explanation:'Node 4 is in the right subtree of 2.'}],constraints:['1 <= num of nodes <= 10^4'],js:'function isValidBST(root) {\n  \n}',ts:'function isValidBST(root: TreeNode | null): boolean {\n  \n}',py:'def is_valid_bst(root):\n    pass'},
+{title:'Lowest Common Ancestor',difficulty:'Medium',topic:'Trees',desc:'Find the lowest common ancestor of two nodes in a binary tree.',examples:[{input:'root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 1',output:'3',explanation:''}],constraints:['2 <= num of nodes <= 10^5'],js:'function lowestCommonAncestor(root, p, q) {\n  \n}',ts:'function lowestCommonAncestor(root: TreeNode | null, p: TreeNode | null, q: TreeNode | null): TreeNode | null {\n  \n}',py:'def lowest_common_ancestor(root, p, q):\n    pass'},
+{title:'Number of Islands',difficulty:'Medium',topic:'Graphs',desc:'Count the number of islands in a 2D grid.',examples:[{input:'grid = [["1","1","1","1","0"],["1","1","0","1","0"],["1","1","0","0","0"],["0","0","0","0","0"]]',output:'1',explanation:''}],constraints:['1 <= m, n <= 300'],js:'function numIslands(grid) {\n  \n}',ts:'function numIslands(grid: string[][]): number {\n  \n}',py:'def num_islands(grid):\n    pass'},
+{title:'Clone Graph',difficulty:'Medium',topic:'Graphs',desc:'Clone an undirected graph.',examples:[{input:'adjList = [[2,4],[1,3],[2,4],[1,3]]',output:'[[2,4],[1,3],[2,4],[1,3]]',explanation:''}],constraints:['0 <= num of nodes <= 100'],js:'function cloneGraph(node) {\n  \n}',ts:'function cloneGraph(node: Node | null): Node | null {\n  \n}',py:'def clone_graph(node):\n    pass'},
+{title:'Course Schedule',difficulty:'Medium',topic:'Graphs',desc:'Determine if you can finish all courses given prerequisites.',examples:[{input:'numCourses = 2, prerequisites = [[1,0]]',output:'true',explanation:'Take course 0 first.'},{input:'numCourses = 2, prerequisites = [[1,0],[0,1]]',output:'false',explanation:'Circular dependency.'}],constraints:['1 <= numCourses <= 2000'],js:'function canFinish(numCourses, prerequisites) {\n  \n}',ts:'function canFinish(numCourses: number, prerequisites: number[][]): boolean {\n  \n}',py:'def can_finish(num_courses, prerequisites):\n    pass'},
+{title:'Pacific Atlantic Water Flow',difficulty:'Hard',topic:'Graphs',desc:'Find cells where water can flow to both Pacific and Atlantic oceans.',examples:[{input:'heights = [[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]]',output:'[[0,4],[1,3],[1,4],[2,2],[3,0],[3,1],[4,0]]',explanation:''}],constraints:['1 <= heights.length, heights[0].length <= 200'],js:'function pacificAtlantic(heights) {\n  \n}',ts:'function pacificAtlantic(heights: number[][]): number[][] {\n  \n}',py:'def pacific_atlantic(heights):\n    pass'},
+{title:'Climbing Stairs',difficulty:'Easy',topic:'Dynamic Programming',desc:'Count distinct ways to climb n stairs (1 or 2 steps at a time).',examples:[{input:'n = 2',output:'2',explanation:'1+1 or 2'},{input:'n = 3',output:'3',explanation:'1+1+1, 1+2, 2+1'}],constraints:['1 <= n <= 45'],js:'function climbStairs(n) {\n  \n}',ts:'function climbStairs(n: number): number {\n  \n}',py:'def climb_stairs(n):\n    pass'},
+{title:'Coin Change',difficulty:'Medium',topic:'Dynamic Programming',desc:'Find fewest coins needed to make up an amount.',examples:[{input:'coins = [1,5,11], amount = 15',output:'3',explanation:'5+5+5'},{input:'coins = [2], amount = 3',output:'-1',explanation:''}],constraints:['1 <= coins.length <= 12','0 <= amount <= 10^4'],js:'function coinChange(coins, amount) {\n  \n}',ts:'function coinChange(coins: number[], amount: number): number {\n  \n}',py:'def coin_change(coins, amount):\n    pass'},
+{title:'Longest Increasing Subsequence',difficulty:'Medium',topic:'Dynamic Programming',desc:'Find the length of the longest strictly increasing subsequence.',examples:[{input:'nums = [10,9,2,5,3,7,101,18]',output:'4',explanation:'[2,3,7,101]'},{input:'nums = [0,1,0,3,2,3]',output:'4',explanation:''}],constraints:['1 <= nums.length <= 2500'],js:'function lengthOfLIS(nums) {\n  \n}',ts:'function lengthOfLIS(nums: number[]): number {\n  \n}',py:'def length_of_lis(nums):\n    pass'},
+{title:'House Robber',difficulty:'Medium',topic:'Dynamic Programming',desc:'Maximize stolen money without robbing adjacent houses.',examples:[{input:'nums = [1,2,3,1]',output:'4',explanation:'Rob house 1 and 3.'},{input:'nums = [2,7,9,3,1]',output:'12',explanation:'Rob house 1, 3, 5.'}],constraints:['1 <= nums.length <= 100'],js:'function rob(nums) {\n  \n}',ts:'function rob(nums: number[]): number {\n  \n}',py:'def rob(nums):\n    pass'},
+{title:'Word Break',difficulty:'Medium',topic:'Dynamic Programming',desc:'Determine if a string can be segmented into dictionary words.',examples:[{input:'s = "leetcode", wordDict = ["leet","code"]',output:'true',explanation:''},{input:'s = "catsandog", wordDict = ["cats","dog","sand","and","cat"]',output:'false',explanation:''}],constraints:['1 <= s.length <= 300'],js:'function wordBreak(s, wordDict) {\n  \n}',ts:'function wordBreak(s: string, wordDict: string[]): boolean {\n  \n}',py:'def word_break(s, word_dict):\n    pass'},
+{title:'Longest Common Subsequence',difficulty:'Medium',topic:'Dynamic Programming',desc:'Find the length of the longest common subsequence of two strings.',examples:[{input:'text1 = "abcde", text2 = "ace"',output:'3',explanation:'"ace"'},{input:'text1 = "abc", text2 = "def"',output:'0',explanation:''}],constraints:['1 <= text1.length, text2.length <= 1000'],js:'function longestCommonSubsequence(text1, text2) {\n  \n}',ts:'function longestCommonSubsequence(text1: string, text2: string): number {\n  \n}',py:'def longest_common_subsequence(text1, text2):\n    pass'},
+{title:'Best Time to Buy and Sell Stock with Cooldown',difficulty:'Hard',topic:'Dynamic Programming',desc:'Maximize profit with a cooldown period after selling.',examples:[{input:'prices = [1,2,3,0,2]',output:'3',explanation:'Buy at 1, sell at 3, cooldown, buy at 0, sell at 2.'}],constraints:['1 <= prices.length <= 5000'],js:'function maxProfit(prices) {\n  \n}',ts:'function maxProfit(prices: number[]): number {\n  \n}',py:'def max_profit(prices):\n    pass'},
+{title:'Two Sum II',difficulty:'Medium',topic:'Two Pointers',desc:'Find two numbers in a sorted array that add up to a target.',examples:[{input:'numbers = [2,7,11,15], target = 9',output:'[1,2]',explanation:''}],constraints:['2 <= numbers.length <= 3*10^4'],js:'function twoSum(numbers, target) {\n  \n}',ts:'function twoSum(numbers: number[], target: number): number[] {\n  \n}',py:'def two_sum(numbers, target):\n    pass'},
+{title:'Container With Most Water',difficulty:'Medium',topic:'Two Pointers',desc:'Find two lines that form a container holding the most water.',examples:[{input:'height = [1,8,6,2,5,4,8,3,7]',output:'49',explanation:''}],constraints:['2 <= height.length <= 10^5'],js:'function maxArea(height) {\n  \n}',ts:'function maxArea(height: number[]): number {\n  \n}',py:'def max_area(height):\n    pass'},
+{title:'3Sum',difficulty:'Medium',topic:'Two Pointers',desc:'Find all unique triplets that sum to zero.',examples:[{input:'nums = [-1,0,1,2,-1,-4]',output:'[[-1,-1,2],[-1,0,1]]',explanation:''}],constraints:['3 <= nums.length <= 3000'],js:'function threeSum(nums) {\n  \n}',ts:'function threeSum(nums: number[]): number[][] {\n  \n}',py:'def three_sum(nums):\n    pass'},
+{title:'Move Zeroes',difficulty:'Easy',topic:'Two Pointers',desc:'Move all zeros to the end while maintaining relative order.',examples:[{input:'nums = [0,1,0,3,12]',output:'[1,3,12,0,0]',explanation:''}],constraints:['1 <= nums.length <= 10^4'],js:'function moveZeroes(nums) {\n  \n}',ts:'function moveZeroes(nums: number[]): void {\n  \n}',py:'def move_zeroes(nums):\n    pass'},
+{title:'Backtracking — Subsets',difficulty:'Medium',topic:'Backtracking',desc:'Generate all possible subsets of a set of distinct integers.',examples:[{input:'nums = [1,2,3]',output:'[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]',explanation:''}],constraints:['1 <= nums.length <= 10'],js:'function subsets(nums) {\n  \n}',ts:'function subsets(nums: number[]): number[][] {\n  \n}',py:'def subsets(nums):\n    pass'},
+{title:'Backtracking — Permutations',difficulty:'Medium',topic:'Backtracking',desc:'Return all possible permutations of a list of distinct integers.',examples:[{input:'nums = [1,2,3]',output:'[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]',explanation:''}],constraints:['1 <= nums.length <= 6'],js:'function permute(nums) {\n  \n}',ts:'function permute(nums: number[]): number[][] {\n  \n}',py:'def permute(nums):\n    pass'},
+{title:'Backtracking — Combination Sum',difficulty:'Medium',topic:'Backtracking',desc:'Find all unique combinations that sum to a target (elements reusable).',examples:[{input:'candidates = [2,3,6,7], target = 7',output:'[[2,2,3],[7]]',explanation:''}],constraints:['1 <= candidates.length <= 30'],js:'function combinationSum(candidates, target) {\n  \n}',ts:'function combinationSum(candidates: number[], target: number): number[][] {\n  \n}',py:'def combination_sum(candidates, target):\n    pass'},
+{title:'N-Queens',difficulty:'Hard',topic:'Backtracking',desc:'Place n queens on an nxn chessboard so no two queens attack each other.',examples:[{input:'n = 4',output:'[[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]',explanation:'Two solutions exist.'}],constraints:['1 <= n <= 9'],js:'function solveNQueens(n) {\n  \n}',ts:'function solveNQueens(n: number): string[][] {\n  \n}',py:'def solve_n_queens(n):\n    pass'},
+{title:'Spiral Matrix',difficulty:'Medium',topic:'Arrays',desc:'Return all elements of a matrix in spiral order.',examples:[{input:'matrix = [[1,2,3],[4,5,6],[7,8,9]]',output:'[1,2,3,6,9,8,7,4,5]',explanation:''}],constraints:['1 <= m, n <= 10'],js:'function spiralOrder(matrix) {\n  \n}',ts:'function spiralOrder(matrix: number[][]): number[] {\n  \n}',py:'def spiral_order(matrix):\n    pass'},
+{title:'Rotate Image',difficulty:'Medium',topic:'Arrays',desc:'Rotate an n x n matrix 90 degrees clockwise in place.',examples:[{input:'matrix = [[1,2,3],[4,5,6],[7,8,9]]',output:'[[7,4,1],[8,5,2],[9,6,3]]',explanation:''}],constraints:['1 <= n <= 20'],js:'function rotate(matrix) {\n  \n}',ts:'function rotate(matrix: number[][]): void {\n  \n}',py:'def rotate(matrix):\n    pass'},
+{title:'Find All Anagrams in a String',difficulty:'Medium',topic:'Sliding Window',desc:'Find all start indices of anagrams of p in s.',examples:[{input:'s = "cbaebabacd", p = "abc"',output:'[0,6]',explanation:'"cba" and "bac" are anagrams.'}],constraints:['1 <= s.length, p.length <= 3*10^4'],js:'function findAnagrams(s, p) {\n  \n}',ts:'function findAnagrams(s: string, p: string): number[] {\n  \n}',py:'def find_anagrams(s, p):\n    pass'},
+{title:'Minimum Window Substring',difficulty:'Hard',topic:'Sliding Window',desc:'Find the minimum window in s that contains all characters of t.',examples:[{input:'s = "ADOBECODEBANC", t = "ABC"',output:'"BANC"',explanation:''}],constraints:['1 <= s.length, t.length <= 10^5'],js:'function minWindow(s, t) {\n  \n}',ts:'function minWindow(s: string, t: string): string {\n  \n}',py:'def min_window(s, t):\n    pass'},
+{title:'Sliding Window Maximum',difficulty:'Hard',topic:'Sliding Window',desc:'Return the max value in each sliding window of size k.',examples:[{input:'nums = [1,3,-1,-3,5,3,6,7], k = 3',output:'[3,3,5,5,6,7]',explanation:''}],constraints:['1 <= nums.length <= 10^5'],js:'function maxSlidingWindow(nums, k) {\n  \n}',ts:'function maxSlidingWindow(nums: number[], k: number): number[] {\n  \n}',py:'def max_sliding_window(nums, k):\n    pass'},
+{title:'Implement Queue using Stacks',difficulty:'Easy',topic:'Stacks',desc:'Implement a FIFO queue using only two stacks.',examples:[{input:'push(1),push(2),peek(),pop(),empty()',output:'1,1,false',explanation:''}],constraints:['1 <= call <= 100'],js:'var MyQueue = function() {};\nMyQueue.prototype.push = function(x) {};\nMyQueue.prototype.pop = function() {};\nMyQueue.prototype.peek = function() {};\nMyQueue.prototype.empty = function() {};',ts:'class MyQueue {\n  push(x: number): void {}\n  pop(): number { return 0 }\n  peek(): number { return 0 }\n  empty(): boolean { return true }\n}',py:'class MyQueue:\n    def push(self, x): pass\n    def pop(self): pass\n    def peek(self): pass\n    def empty(self): pass'}
 ];
 
 function initCodingPage(){
@@ -2096,12 +2676,15 @@ var count=0;
 for(var i=0;i<codeProblems.length;i++){
 var p=codeProblems[i];
 if(codeTopicF!=='All'&&p.topic!==codeTopicF)continue;
+if(codeDiffF!=='All'&&p.difficulty!==codeDiffF)continue;
+var isSolved=solvedProblems.indexOf(i)>-1;
 count++;
 var diffClass=p.difficulty==='Easy'?'pill-green':p.difficulty==='Medium'?'pill-amber':'pill-red';
 var cardClass=p.difficulty==='Easy'?'easy':p.difficulty==='Medium'?'medium':'hard';
+if(isSolved)cardClass+=' solved';
 html+='<div class="code-full-card '+cardClass+'" onclick="selectProblem('+i+')">';
 html+='<div class="code-full-card-inner">';
-html+='<div class="code-full-card-head"><span class="code-full-card-num">#'+count+'</span><span class="pill '+diffClass+'">'+p.difficulty+'</span></div>';
+html+='<div class="code-full-card-head"><div style="display:flex;align-items:center;gap:.5rem"><span class="code-full-card-num">#'+count+'</span><span class="pill '+diffClass+'">'+p.difficulty+'</span></div>'+(isSolved?'<span class="solved-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Solved</span>':'')+'</div>';
 html+='<h3>'+p.title+'</h3>';
 html+='<p>'+p.desc.replace(/<[^>]+>/g,'')+'</p>';
 html+='<div class="code-full-card-foot">';
@@ -2114,14 +2697,16 @@ if(count===0){
 html='<div style="text-align:center;padding:4rem 2rem;color:var(--faint)"><p style="font-size:1.1rem;margin-bottom:.5rem">No problems found</p><p style="font-size:.875rem">Try adjusting your filters</p></div>';
 }
 container.innerHTML=html;
+updateCodingStats();
 }
 
 function showCodeList(){
 document.getElementById('code-list-view').style.display='block';
 document.getElementById('code-detail-view').style.display='none';
 document.querySelector('.pg-title').textContent='Coding Questions';
-document.querySelector('.pg-sub').textContent='Practice DSA and real-world coding problems with AI feedback';
+document.querySelector('.pg-sub').textContent='Practice algorithm and data structure problems with AI feedback';
 renderFullList();
+updateCodingStats();
 }
 
 function selectProblem(idx){
@@ -2206,6 +2791,12 @@ document.getElementById('code-fs-filename').textContent=fname;
 function codeFilterTopic(el,t){
 el.parentElement.querySelectorAll('.fpill').forEach(function(p){p.classList.remove('on')});
 el.classList.add('on');codeTopicF=t;
+renderFullList();
+}
+
+function codeFilterDiff(el,d){
+el.parentElement.querySelectorAll('.fpill').forEach(function(p){p.classList.remove('on')});
+el.classList.add('on');codeDiffF=d;
 renderFullList();
 }
 
@@ -2344,11 +2935,27 @@ out.innerHTML=html;
 }
 
 function submitCode(){
-document.getElementById('overlay').classList.add('show');
-setTimeout(function(){
-document.getElementById('overlay').classList.remove('show');
+var limits=CODING_LIMITS[curRole]||CODING_LIMITS.USER;
+var today=new Date().toDateString();
+if(codingDaily.date!==today)codingDaily={date:today,solved:0,reviews:0};
+if(limits.dailySolved!==Infinity&&codingDaily.solved>=limits.dailySolved){
+showCodingLimit('You\'ve solved '+limits.dailySolved+' problems today. Come back tomorrow or upgrade to Premium for unlimited.');
+return;
+}
+if(solvedProblems.indexOf(curCodeIdx)===-1){
+solvedProblems.push(curCodeIdx);
+localStorage.setItem('prepai_solved',JSON.stringify(solvedProblems));
+codingDaily.solved++;
+localStorage.setItem('prepai_coding_daily',JSON.stringify(codingDaily));
+}
+if(codingStreakData.date!==today){
+var yesterday=new Date(Date.now()-86400000).toDateString();
+codingStreakData.count=codingStreakData.date===yesterday?codingStreakData.count+1:1;
+codingStreakData.date=today;
+localStorage.setItem('prepai_coding_streak',JSON.stringify(codingStreakData));
+}
 showSubmitResult();
-},2500);
+updateCodingStats();
 }
 
 function showSubmitResult(){
@@ -2367,6 +2974,339 @@ curCodeIdx=(curCodeIdx+1)%codeProblems.length;
 renderFullList();
 renderCodingProblem();
 clearOutput();
+}
+
+function aiReview(){
+var limits=CODING_LIMITS[curRole]||CODING_LIMITS.USER;
+var today=new Date().toDateString();
+if(codingDaily.date!==today)codingDaily={date:today,solved:0,reviews:0};
+if(limits.dailyReviews!==Infinity&&codingDaily.reviews>=limits.dailyReviews){
+showCodingLimit('You\'ve used all '+limits.dailyReviews+' AI Reviews today. Come back tomorrow or upgrade to Premium for unlimited.');
+return;
+}
+codingDaily.reviews++;
+localStorage.setItem('prepai_coding_daily',JSON.stringify(codingDaily));
+document.getElementById('overlay').classList.add('show');
+setTimeout(function(){
+document.getElementById('overlay').classList.remove('show');
+var p=codeProblems[curCodeIdx];
+var reviews={
+Easy:{time:'O(n)',timeDesc:'Linear time. Single pass through the data.',space:'O(1)',spaceDesc:'Constant extra space used.',quality:'Clean and efficient solution. Good use of basic data structures.',suggestions:'Consider adding input validation for edge cases.'},
+Medium:{time:'O(n log n)',timeDesc:'Linearithmic time. Sorting or divide-and-conquer involved.',space:'O(n)',spaceDesc:'Linear extra space for auxiliary data structures.',quality:'Solid approach with good algorithmic thinking. Solution handles most cases well.',suggestions:'Think about optimizing space usage. Could you reduce auxiliary memory?'},
+Hard:{time:'O(n^2)',timeDesc:'Quadratic time. Nested iterations over the data.',space:'O(n)',spaceDesc:'Linear extra space for tracking state.',quality:'Correct solution but there may be more optimal approaches.',suggestions:'Research advanced techniques like dynamic programming or two-pointer patterns for optimization.'}
+};
+var r=reviews[p.difficulty]||reviews.Medium;
+document.getElementById('ai-review-title').textContent='AI Review: '+p.title;
+document.getElementById('ai-review-time').textContent=r.time+' \u2014 '+r.timeDesc;
+document.getElementById('ai-review-space').textContent=r.space+' \u2014 '+r.spaceDesc;
+document.getElementById('ai-review-quality').textContent=r.quality;
+document.getElementById('ai-review-suggestions').textContent=r.suggestions;
+var verdictEl=document.getElementById('ai-review-verdict');
+if(solvedProblems.indexOf(curCodeIdx)>-1){
+verdictEl.textContent='Already Solved';verdictEl.className='ai-review-verdict pill pill-green';
+}else{
+verdictEl.textContent='Needs Work';verdictEl.className='ai-review-verdict pill pill-amber';
+}
+document.getElementById('ai-review-overlay').classList.add('show');
+updateCodingStats();
+},2000);
+}
+
+function closeAiReview(){
+document.getElementById('ai-review-overlay').classList.remove('show');
+}
+
+var selectedPlan='yearly';
+function selectPlan(plan){
+selectedPlan=plan;
+document.getElementById('plan-monthly').classList.toggle('selected',plan==='monthly');
+document.getElementById('plan-yearly').classList.toggle('selected',plan==='yearly');
+}
+function showUpgradeModal(){
+document.getElementById('upgrade-current-plan').textContent=curRole==='USER'?'Free':curRole;
+document.getElementById('upgrade-overlay').classList.add('show');
+}
+function closeUpgradeModal(){
+document.getElementById('upgrade-overlay').classList.remove('show');
+}
+function processPayment(){
+closeUpgradeModal();
+var amount=selectedPlan==='monthly'?'299':'1,999';
+var planLabel=selectedPlan==='monthly'?'Monthly':'Yearly';
+var rzrpay=document.createElement('div');
+rzrpay.className='rzrpay-overlay';
+rzrpay.id='rzrpay-overlay';
+rzrpay.innerHTML='<div class="rzrpay-backdrop" onclick="closeRzrpay()"></div><div class="rzrpay-modal"><div class="rzrpay-left"><div class="rzrpay-methods-header"><span>Payment Method</span><button class="rzrpay-close-btn" onclick="closeRzrpay()">&times;</button></div><div class="rzrpay-methods-list"><div class="rzrpay-method" onclick="selectPayMethod(this,\'upi\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">UPI</div><div class="rzrpay-method-desc">Google Pay, PhonePe, Paytm & more</div></div></div><div class="rzrpay-method" onclick="selectPayMethod(this,\'card\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">Card</div><div class="rzrpay-method-desc">Credit or Debit Card</div></div></div><div class="rzrpay-method" onclick="selectPayMethod(this,\'netbanking\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">Netbanking</div><div class="rzrpay-method-desc">All major banks</div></div></div><div class="rzrpay-method" onclick="selectPayMethod(this,\'wallet\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">Wallet</div><div class="rzrpay-method-desc">Paytm, Mobikwik & more</div></div></div></div><div class="rzrpay-method-body" id="rzrpay-method-body"></div></div><div class="rzrpay-right"><div class="rzrpay-order-header"><div class="rzrpay-order-icon">P</div><div class="rzrpay-order-name">PrepAI</div></div><div class="rzrpay-order-details"><div class="rzrpay-order-row"><span>Plan</span><span>'+planLabel+' Premium</span></div><div class="rzrpay-order-row"><span>Duration</span><span>'+(selectedPlan==='monthly'?'1 month':'12 months')+'</span></div><div class="rzrpay-order-row rzrpay-order-total"><span>Total</span><span>&#8377;'+amount+'</span></div></div><div class="rzrpay-order-note">By proceeding, you agree to PrepAI\'s Terms of Service and Privacy Policy.</div></div></div>';
+document.body.appendChild(rzrpay);
+setTimeout(function(){rzrpay.classList.add('show');},10);
+}
+
+function closeRzrpay(){
+var el=document.getElementById('rzrpay-overlay');
+if(el){el.classList.remove('show');setTimeout(function(){el.remove();},300);}
+}
+
+function completePayment(){
+var btn=document.querySelector('.rzrpay-pay-btn');
+btn.textContent='Processing...';
+btn.disabled=true;
+setTimeout(function(){
+closeRzrpay();
+curRole='PREMIUM';
+localStorage.setItem('prepai_role',curRole);
+var roleBadge=document.getElementById('role-badge');
+if(roleBadge){roleBadge.textContent='PREMIUM';roleBadge.className='pill pill-amber';}
+var upgradeEl=document.getElementById('sb-upgrade');
+if(upgradeEl)upgradeEl.style.display='none';
+updateRoleDisplay();
+updateCodingStats();
+updatePlanSection();
+showToast('Payment successful! You\'re now Premium.','success');
+},2500);
+}
+
+function selectPayMethod(el,type){
+el.parentElement.querySelectorAll('.rzrpay-method').forEach(function(m){m.classList.remove('selected')});
+el.classList.add('selected');
+el.parentElement.classList.add('collapsed');
+var header=document.querySelector('.rzrpay-methods-header');
+var methodName=el.querySelector('.rzrpay-method-name').textContent;
+header.innerHTML='<span onclick="expandMethods()" style="cursor:pointer;display:flex;align-items:center;gap:.4rem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Change</span><span>'+methodName+'</span>';
+var body=document.getElementById('rzrpay-method-body');
+var amount=selectedPlan==='monthly'?'299':'1,999';
+if(type==='upi'){
+body.innerHTML='<div class="rzrpay-upi-apps"><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#4285f4;color:#fff;font-size:.65rem;font-weight:700">GPay</div><span>Google Pay</span></div><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#5f259f;color:#fff;font-size:.65rem;font-weight:700">PhPe</div><span>PhonePe</span></div><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#00b9f5;color:#fff;font-size:.65rem;font-weight:700">Paytm</div><span>Paytm</span></div><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#950013;color:#fff;font-size:.6rem;font-weight:700">BHIM</div><span>BHIM</span></div></div><div class="rzrpay-upi-or">OR</div><div class="rzrpay-upi-id-section"><label class="rzrpay-input-label">Enter UPI ID</label><div class="rzrpay-input-row"><input type="text" placeholder="name@upi" class="rzrpay-input"><button class="rzrpay-verify-btn">Verify</button></div></div>';
+}else if(type==='card'){
+body.innerHTML='<div style="display:flex;flex-direction:column;gap:.75rem"><div><label class="rzrpay-input-label">Card Number</label><input type="text" placeholder="1234 5678 9012 3456" class="rzrpay-input" style="width:100%" maxlength="19" oninput="formatCardNumber(this)" id="rzrpay-card-num"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem"><div><label class="rzrpay-input-label">Expiry</label><input type="text" placeholder="MM/YY" class="rzrpay-input" style="width:100%" maxlength="5" oninput="formatExpiry(this)" id="rzrpay-card-exp"></div><div><label class="rzrpay-input-label">CVV</label><input type="password" placeholder="***" class="rzrpay-input" style="width:100%" maxlength="4" id="rzrpay-card-cvv"></div></div><div><label class="rzrpay-input-label">Name on Card</label><input type="text" placeholder="John Doe" class="rzrpay-input" style="width:100%" id="rzrpay-card-name"></div><button class="rzrpay-pay-btn" onclick="processCardPayment()" style="margin-top:.5rem">Pay &#8377;'+amount+'</button></div>';
+}else if(type==='netbanking'){
+body.innerHTML='<div class="rzrpay-bank-grid"><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#1a4b8e">SBI</div><span>State Bank of India</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#004b8d">HDFC</div><span>HDFC Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#b31217">ICICI</div><span>ICICI Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#8c1515">Axis</div><span>Axis Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#003da5">Kotak</div><span>Kotak Mahindra</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#a4002b">Yes</div><span>Yes Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#005ba1">PNB</div><span>Punjab National Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#ed1c24">IDBI</div><span>IDBI Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#004c8f">BOB</div><span>Bank of Baroda</span></div></div><div class="rzrpay-bank-pay" id="rzrpay-bank-pay" style="display:none;margin-top:1rem"><button class="rzrpay-pay-btn" onclick="processBankPayment()">Pay &#8377;'+amount+'</button></div>';
+}else if(type==='wallet'){
+body.innerHTML='<div class="rzrpay-wallet-list"><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#00b9f5;color:#fff;font-size:.7rem;font-weight:700">Paytm</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">Paytm</div><div class="rzrpay-wallet-desc">Pay using Paytm wallet</div></div></div><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#8c3e9f;color:#fff;font-size:.6rem;font-weight:700">MobiKwik</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">Mobikwik</div><div class="rzrpay-wallet-desc">Pay using Mobikwik wallet</div></div></div><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#e42527;color:#fff;font-size:.55rem;font-weight:700">FreeCharge</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">FreeCharge</div><div class="rzrpay-wallet-desc">Pay using FreeCharge wallet</div></div></div><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#333;color:#fff;font-size:.55rem;font-weight:700">JioMoney</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">JioMoney</div><div class="rzrpay-wallet-desc">Pay using JioMoney wallet</div></div></div></div><div class="rzrpay-wallet-pay" id="rzrpay-wallet-pay" style="display:none;margin-top:1rem"><button class="rzrpay-pay-btn" onclick="processWalletPayment()">Pay &#8377;'+amount+'</button></div>';
+}
+}
+
+function expandMethods(){
+var list=document.querySelector('.rzrpay-methods-list');
+list.classList.remove('collapsed');
+list.querySelectorAll('.rzrpay-method').forEach(function(m){m.classList.remove('selected')});
+var header=document.querySelector('.rzrpay-methods-header');
+header.innerHTML='<span>Payment Method</span><button class="rzrpay-close-btn" onclick="closeRzrpay()">&times;</button>';
+document.getElementById('rzrpay-method-body').innerHTML='';
+}
+
+function formatCardNumber(input){
+var v=input.value.replace(/\D/g,'').substring(0,16);
+var formatted=v.replace(/(.{4})/g,'$1 ').trim();
+input.value=formatted;
+}
+
+function formatExpiry(input){
+var v=input.value.replace(/\D/g,'').substring(0,4);
+if(v.length>=2)v=v.substring(0,2)+'/'+v.substring(2);
+input.value=v;
+}
+
+function processCardPayment(){
+var num=document.getElementById('rzrpay-card-num').value.replace(/\s/g,'');
+var exp=document.getElementById('rzrpay-card-exp').value;
+var cvv=document.getElementById('rzrpay-card-cvv').value;
+var name=document.getElementById('rzrpay-card-name').value;
+if(num.length<16){showRzrpayError('Please enter a valid 16-digit card number');return;}
+if(!exp.match(/^\d{2}\/\d{2}$/)){showRzrpayError('Please enter a valid expiry date (MM/YY)');return;}
+if(cvv.length<3){showRzrpayError('Please enter a valid CVV');return;}
+if(!name.trim()){showRzrpayError('Please enter the name on card');return;}
+showRzrpayOTP('card');
+}
+
+function selectBank(el){
+var parent=el.parentElement;
+parent.querySelectorAll('.rzrpay-bank').forEach(function(b){b.classList.remove('selected')});
+el.classList.add('selected');
+var payDiv=document.getElementById('rzrpay-bank-pay');
+if(payDiv)payDiv.style.display='block';
+}
+
+function processBankPayment(){
+var selected=document.querySelector('.rzrpay-bank.selected');
+if(!selected){showRzrpayError('Please select a bank');return;}
+var bankName=selected.querySelector('span').textContent;
+showRzrpayRedirect(bankName,'bank');
+}
+
+function selectWallet(el){
+var parent=el.parentElement;
+parent.querySelectorAll('.rzrpay-wallet').forEach(function(w){w.classList.remove('selected')});
+el.classList.add('selected');
+var payDiv=document.getElementById('rzrpay-wallet-pay');
+if(payDiv)payDiv.style.display='block';
+}
+
+function processWalletPayment(){
+var selected=document.querySelector('.rzrpay-wallet.selected');
+if(!selected){showRzrpayError('Please select a wallet');return;}
+var walletName=selected.querySelector('.rzrpay-wallet-name').textContent;
+showRzrpayRedirect(walletName,'wallet');
+}
+
+function showRzrpayError(msg){
+var body=document.getElementById('rzrpay-method-body');
+var existing=body.querySelector('.rzrpay-error');
+if(existing)existing.remove();
+var err=document.createElement('div');
+err.className='rzrpay-error';
+err.textContent=msg;
+body.insertBefore(err,body.firstChild);
+setTimeout(function(){if(err.parentNode)err.remove();},3000);
+}
+
+function showRzrpayOTP(method){
+var body=document.getElementById('rzrpay-method-body');
+body.innerHTML='<div class="rzrpay-otp-section"><div class="rzrpay-otp-icon">&#128274;</div><div class="rzrpay-otp-title">Enter OTP</div><div class="rzrpay-otp-desc">A 6-digit code has been sent to your registered mobile number ending in ****</div><div class="rzrpay-otp-inputs"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,1)" onkeydown="otpKeyDown(event,this,1)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,2)" onkeydown="otpKeyDown(event,this,2)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,3)" onkeydown="otpKeyDown(event,this,3)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,4)" onkeydown="otpKeyDown(event,this,4)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,5)" onkeydown="otpKeyDown(event,this,5)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,6)" onkeydown="otpKeyDown(event,this,6)"></div><button class="rzrpay-pay-btn" onclick="verifyOTP()">Verify & Pay</button><div class="rzrpay-otp-resend">Resend OTP in <strong>0:30</strong></div></div>';
+setTimeout(function(){body.querySelector('.rzrpay-otp-box').focus();},100);
+}
+
+function otpMove(el,next){
+if(el.value.length===1){var boxes=document.querySelectorAll('.rzrpay-otp-box');if(next<boxes.length)boxes[next].focus();}
+}
+
+function otpKeyDown(e,el,idx){
+if(e.key==='Backspace'&&!el.value&&idx>0){var boxes=document.querySelectorAll('.rzrpay-otp-box');boxes[idx-1].focus();}
+}
+
+function verifyOTP(){
+var boxes=document.querySelectorAll('.rzrpay-otp-box');
+var otp='';
+boxes.forEach(function(b){otp+=b.value;});
+if(otp.length<6){showRzrpayError('Please enter the complete 6-digit OTP');return;}
+showRzrpayProcessing();
+}
+
+function showRzrpayRedirect(name,type){
+var body=document.getElementById('rzrpay-method-body');
+var icon=type==='bank'?'&#127974;':'&#128091;';
+body.innerHTML='<div class="rzrpay-redirect-section"><div class="rzrpay-redirect-spinner"></div><div class="rzrpay-redirect-icon">'+icon+'</div><div class="rzrpay-redirect-title">Redirecting to '+name+'</div><div class="rzrpay-redirect-desc">Please complete the payment on the '+name+' page</div><button class="rzrpay-redirect-simulate" onclick="showBankApproval(\''+name+'\')">Simulate Approval</button></div>';
+}
+
+function showBankApproval(name){
+var body=document.getElementById('rzrpay-method-body');
+body.innerHTML='<div class="rzrpay-approval-section"><div class="rzrpay-approval-header"><div class="rzrpay-approval-bank">'+name+'</div><div class="rzrpay-approval-secure">&#128274; Secure</div></div><div class="rzrpay-approval-body"><div class="rzrpay-approval-amount">&#8377;'+(selectedPlan==='monthly'?'299':'1,999')+'</div><div class="rzrpay-approval-merchant">Pay to PrepAI</div><div class="rzrpay-approval-desc">Confirm payment from your '+name+' account</div><div class="rzrpay-approval-actions"><button class="rzrpay-approval-btn approve" onclick="approvePayment()">Approve</button><button class="rzrpay-approval-btn reject" onclick="rejectPayment()">Reject</button></div></div></div>';
+}
+
+function approvePayment(){
+showRzrpayProcessing();
+}
+
+function rejectPayment(){
+showRzrpayError('Payment was rejected. Please try again.');
+var body=document.getElementById('rzrpay-method-body');
+setTimeout(function(){
+expandMethods();
+},1500);
+}
+
+function showRzrpayProcessing(){
+var overlay=document.querySelector('.rzrpay-modal');
+var spinner=document.createElement('div');
+spinner.className='rzrpay-processing-overlay';
+spinner.innerHTML='<div class="rzrpay-processing-content"><div class="rzrpay-processing-spinner"></div><div class="rzrpay-processing-text">Verifying payment...</div></div>';
+overlay.appendChild(spinner);
+setTimeout(function(){
+spinner.innerHTML='<div class="rzrpay-processing-content"><div class="rzrpay-processing-check">&#10003;</div><div class="rzrpay-processing-text" style="color:#10b981">Payment Successful!</div></div>';
+},1500);
+setTimeout(function(){
+closeRzrpay();
+curRole='PREMIUM';
+localStorage.setItem('prepai_role',curRole);
+var roleBadge=document.getElementById('role-badge');
+if(roleBadge){roleBadge.textContent='PREMIUM';roleBadge.className='pill pill-amber';}
+var upgradeEl=document.getElementById('sb-upgrade');
+if(upgradeEl)upgradeEl.style.display='none';
+updateRoleDisplay();
+updateCodingStats();
+updatePlanSection();
+showToast('Payment successful! You\'re now Premium.','success');
+},3000);
+}
+
+function selectInnerItem(el){
+var parent=el.parentElement;
+parent.querySelectorAll('.rzrpay-upi-app, .rzrpay-method, .rzrpay-bank, .rzrpay-wallet').forEach(function(item){item.classList.remove('selected')});
+el.classList.add('selected');
+if(el.classList.contains('rzrpay-upi-app')&&!el.querySelector('.rzrpay-input')){
+var appName=el.querySelector('span').textContent;
+var body=document.getElementById('rzrpay-method-body');
+var qrHtml='<div class="rzrpay-qr-section"><div class="rzrpay-qr-title">Scan QR code with '+appName+'</div><div class="rzrpay-qr-box"><div class="rzrpay-qr-placeholder" id="rzrpay-qr-placeholder"><svg viewBox="0 0 100 100" width="140" height="140"><rect x="5" y="5" width="25" height="25" rx="3" fill="#333"/><rect x="70" y="5" width="25" height="25" rx="3" fill="#333"/><rect x="5" y="70" width="25" height="25" rx="3" fill="#333"/><rect x="35" y="5" width="8" height="8" fill="#333"/><rect x="35" y="18" width="8" height="8" fill="#333"/><rect x="47" y="5" width="8" height="8" fill="#333"/><rect x="47" y="18" width="8" height="8" fill="#333"/><rect x="35" y="40" width="8" height="8" fill="#333"/><rect x="47" y="40" width="8" height="8" fill="#333"/><rect x="5" y="35" width="8" height="8" fill="#333"/><rect x="18" y="35" width="8" height="8" fill="#333"/><rect x="5" y="47" width="8" height="8" fill="#333"/><rect x="18" y="47" width="8" height="8" fill="#333"/><rect x="70" y="35" width="8" height="8" fill="#333"/><rect x="83" y="35" width="8" height="8" fill="#333"/><rect x="70" y="47" width="8" height="8" fill="#333"/><rect x="83" y="47" width="8" height="8" fill="#333"/><rect x="35" y="70" width="8" height="8" fill="#333"/><rect x="47" y="70" width="8" height="8" fill="#333"/><rect x="35" y="83" width="8" height="8" fill="#333"/><rect x="59" y="70" width="8" height="8" fill="#333"/><rect x="70" y="83" width="8" height="8" fill="#333"/><rect x="83" y="70" width="8" height="8" fill="#333"/><rect x="59" y="83" width="12" height="12" rx="6" fill="#333"/></svg></div></div><div class="rzrpay-qr-timer" id="rzrpay-qr-timer">Open '+appName+' and scan. Timeout in <strong>4:58</strong></div><div class="rzrpay-qr-simulate"><button class="rzrpay-simulate-btn" onclick="simulatePayment()">Simulate Payment</button><span class="rzrpay-simulate-hint">Or scan QR from your phone</span></div></div>';
+body.innerHTML=qrHtml;
+}
+}
+
+function simulatePayment(){
+var qr=document.getElementById('rzrpay-qr-placeholder');
+var timer=document.getElementById('rzrpay-qr-timer');
+if(qr)qr.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:.5rem"><div style="width:48px;height:48px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div style="font-size:.9rem;font-weight:600;color:#10b981">Payment Successful!</div><div style="font-size:.75rem;color:var(--dim)">₹'+(selectedPlan==='monthly'?'299':'1,999')+' received by PrepAI</div></div>';
+if(timer)timer.innerHTML='<span style="color:#10b981;font-weight:600">Payment confirmed</span>';
+var btn=document.querySelector('.rzrpay-simulate-btn');
+if(btn)btn.style.display='none';
+var hint=document.querySelector('.rzrpay-simulate-hint');
+if(hint)hint.style.display='none';
+setTimeout(function(){
+closeRzrpay();
+curRole='PREMIUM';
+localStorage.setItem('prepai_role',curRole);
+var roleBadge=document.getElementById('role-badge');
+if(roleBadge){roleBadge.textContent='PREMIUM';roleBadge.className='pill pill-amber';}
+var upgradeEl=document.getElementById('sb-upgrade');
+if(upgradeEl)upgradeEl.style.display='none';
+updateRoleDisplay();
+updateCodingStats();
+updatePlanSection();
+showToast('Payment successful! You\'re now Premium.','success');
+},2000);
+}
+
+function updatePlanSection(){
+var isPremium=curRole==='PREMIUM'||curRole==='ADMIN';
+var badge=document.getElementById('plan-current-badge');
+var name=document.getElementById('plan-current-name');
+var desc=document.getElementById('plan-current-desc');
+var upgradeSection=document.getElementById('plan-upgrade-section');
+if(isPremium){
+badge.textContent='PREMIUM';badge.className='plan-current-badge premium';
+name.textContent='Premium Plan';
+desc.textContent='Unlimited access to all features';
+upgradeSection.style.display='none';
+}else{
+badge.textContent='FREE';badge.className='plan-current-badge free';
+name.textContent='Free Plan';
+desc.textContent='Basic access with daily limits';
+upgradeSection.style.display='block';
+}
+var limits=ROLE_LIMITS[curRole]||ROLE_LIMITS.USER;
+var codingLimits=CODING_LIMITS[curRole]||CODING_LIMITS.USER;
+document.getElementById('pl-practice').textContent=limits.daily===Infinity?'Unlimited':limits.daily+' / day';
+document.getElementById('pl-questions').textContent=limits.questions;
+document.getElementById('pl-coding').textContent=codingLimits.dailySolved===Infinity?'Unlimited':codingLimits.dailySolved+' / day';
+document.getElementById('pl-reviews').textContent=codingLimits.dailyReviews===Infinity?'Unlimited':codingLimits.dailyReviews+' / day';
+}
+
+function updateCodingStats(){
+var limits=CODING_LIMITS[curRole]||CODING_LIMITS.USER;
+var today=new Date().toDateString();
+if(codingDaily.date!==today)codingDaily={date:today,solved:0,reviews:0};
+var solved=solvedProblems.length;
+var dailySolved=codingDaily.solved;
+var dailyReviews=codingDaily.reviews;
+var streak=codingStreakData.count||0;
+document.getElementById('cs-solved').textContent=solved;
+document.getElementById('cs-daily').textContent=limits.dailySolved===Infinity?dailySolved:dailySolved+'/'+limits.dailySolved;
+document.getElementById('cs-reviews').textContent=limits.dailyReviews===Infinity?dailyReviews:dailyReviews+'/'+limits.dailyReviews;
+document.getElementById('cs-streak').textContent=streak;
+}
+
+function showCodingLimit(msg){
+var overlay=document.getElementById('overlay');
+overlay.innerHTML='<div style="text-align:center;max-width:380px"><div style="font-size:3rem;margin-bottom:1rem">&#128683;</div><h3 style="font-size:1.2rem;font-weight:700;margin-bottom:.5rem">Daily Limit Reached</h3><p style="color:var(--dim);font-size:.9rem;line-height:1.6;margin-bottom:1.5rem">'+msg+'</p><button class="btn btn-primary" onclick="document.getElementById(\'overlay\').classList.remove(\'show\')">Got it</button></div>';
+overlay.classList.add('show');
 }
 
 /* ========== CHATBOT ========== */

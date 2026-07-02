@@ -125,3 +125,7 @@ Submits a technology query to the AI Tech Expert agent.
 - **`POST /api/v1/answers/submit`**: Submit user answer for evaluation and grading.
 - **`GET /api/v1/analytics`**: Retrieve performance metrics, history trends, and strength charts.
 - **`POST /api/v1/chatbot`**: Talk to the general AI study chatbot.
+- **`POST /api/v1/payments/create-order`**: Create a Razorpay order for premium upgrade.
+- **`POST /api/v1/payments/verify`**: Verify Razorpay payment and update user role.
+- **`GET /api/v1/payments/history`**: Get user's payment history.
+- **`POST /api/v1/payments/webhook`**: Handle Razorpay webhook events (refund, subscription).

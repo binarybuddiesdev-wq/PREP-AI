@@ -45,6 +45,7 @@
     "nestjs-pino": "4.6.1",
     "pino": "10.3.1",
     "reflect-metadata": "0.2.2",
+    "razorpay": "2.9.5",
     "resend": "6.16.0",
     "rxjs": "7.8.2",
     "zod": "4.4.3"
