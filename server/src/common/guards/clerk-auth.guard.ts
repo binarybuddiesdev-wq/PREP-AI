@@ -1,10 +1,12 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator.js';
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
+  private readonly logger = new Logger(ClerkAuthGuard.name);
+
   constructor(private readonly reflector: Reflector) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -40,6 +42,7 @@ export class ClerkAuthGuard implements CanActivate {
       };
       return true;
     } catch (error) {
+      this.logger.error('Clerk token verification failed', error);
       throw new UnauthorizedException('Invalid session token');
     }
   }

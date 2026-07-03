@@ -408,6 +408,36 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .au-dev-label{display:block;font-size:.7rem;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
 .au-dev-select{width:100%;padding:.6rem .9rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.85rem;color:var(--text);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2372727b' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;padding-right:2rem}
 
+/* ========== SETUP ========== */
+#scr-setup{z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center}
+#scr-setup::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.06),transparent 70%);pointer-events:none}
+.setup-card{width:100%;max-width:520px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem;position:relative;z-index:1}
+.setup-brand{display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.5rem;font-weight:700;font-size:1.15rem}
+.setup-title{text-align:center;font-size:1.3rem;font-weight:600;margin-bottom:.25rem}
+.setup-sub{text-align:center;color:var(--dim);font-size:.875rem;margin-bottom:1.75rem}
+.setup-progress{display:flex;align-items:center;gap:0;margin-bottom:2rem;padding:0 .5rem}
+.setup-step-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;border:2px solid var(--border);color:var(--faint);background:var(--bg);transition:all .3s;flex-shrink:0;position:relative;z-index:1}
+.setup-step-dot.active{border-color:var(--accent);color:var(--accent);background:var(--accentBg)}
+.setup-step-dot.done{border-color:var(--green);color:#fff;background:var(--green)}
+.setup-step-line{flex:1;height:2px;background:var(--border);transition:background .3s}
+.setup-step-line.done{background:var(--green)}
+.setup-step{display:none}.setup-step.active{display:block}
+.setup-step h3{font-size:1.05rem;font-weight:600;margin-bottom:.3rem}
+.setup-step>p{color:var(--dim);font-size:.85rem;margin-bottom:1.25rem}
+.setup-field{margin-bottom:1rem}
+.setup-field label{display:block;font-size:.78rem;font-weight:500;color:var(--dim);margin-bottom:.35rem}
+.setup-field select,.setup-field input{width:100%;padding:.7rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.875rem;transition:all .2s;color:var(--text)}
+.setup-field select:focus,.setup-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,158,11,.12)}
+.setup-field select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2372727b' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;padding-right:2rem}
+.setup-topics{display:flex;flex-wrap:wrap;gap:.5rem}
+.setup-topic{padding:.5rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:100px;font-size:.825rem;color:var(--dim);cursor:pointer;transition:all .2s;user-select:none}
+.setup-topic:hover{border-color:var(--border2);color:var(--text)}
+.setup-topic.on{background:var(--accentBg);border-color:rgba(245,158,11,.25);color:var(--accent);font-weight:500}
+.setup-actions{display:flex;gap:.75rem;margin-top:1.75rem}
+.setup-actions .btn{flex:1}
+.setup-skip{display:block;text-align:center;margin-top:1rem;color:var(--faint);font-size:.8rem;cursor:pointer;transition:color .2s;background:none;border:none;width:100%}
+.setup-skip:hover{color:var(--dim)}
+
 /* ========== APP ========== */
 #scr-app{z-index:300;background:var(--bg)}
 .app-shell{display:flex;min-height:100vh}
@@ -1153,6 +1183,103 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 </div>
 </div>
 
+<!-- ======== SETUP ======== -->
+<div id="scr-setup" class="screen" hidden>
+<div class="setup-card">
+<div class="setup-brand"><div class="ld-mark">P</div>PrepAI</div>
+<div class="setup-title">Let's set up your profile</div>
+<div class="setup-sub">This helps us personalize your interview prep experience.</div>
+
+<div class="setup-progress">
+<div class="setup-step-dot active" id="stp-dot-1">1</div>
+<div class="setup-step-line" id="stp-line-1"></div>
+<div class="setup-step-dot" id="stp-dot-2">2</div>
+<div class="setup-step-line" id="stp-line-2"></div>
+<div class="setup-step-dot" id="stp-dot-3">3</div>
+</div>
+
+<!-- Step 1: Role & Experience -->
+<div class="setup-step active" id="stp-1">
+<h3>Tell us about your target role</h3>
+<p>We'll tailor questions to match your interview goals.</p>
+<div class="setup-field">
+<label>Target Role</label>
+<select id="setup-role">
+<option value="">Select your target role</option>
+<option value="Frontend Engineer">Frontend Engineer</option>
+<option value="Full-Stack Engineer">Full-Stack Engineer</option>
+<option value="Backend Engineer">Backend Engineer</option>
+<option value="DevOps Engineer">DevOps Engineer</option>
+<option value="Engineering Manager">Engineering Manager</option>
+</select>
+</div>
+<div class="setup-field">
+<label>Experience Level</label>
+<select id="setup-exp">
+<option value="">Select your experience level</option>
+<option value="Junior">Junior (0-2 yrs)</option>
+<option value="Mid">Mid (2-5 yrs)</option>
+<option value="Senior">Senior (5+ yrs)</option>
+</select>
+</div>
+<div class="setup-actions">
+<button class="btn btn-primary" onclick="setupNext(1)">Continue</button>
+</div>
+<button class="setup-skip" onclick="setupSkip()">Skip for now</button>
+</div>
+
+<!-- Step 2: Target Companies -->
+<div class="setup-step" id="stp-2">
+<h3>Where are you applying?</h3>
+<p>Optional — we'll bias questions toward what those companies ask.</p>
+<div class="setup-field">
+<label>Target Companies</label>
+<input type="text" id="setup-companies" placeholder="e.g. Google, Meta, Amazon, Stripe">
+</div>
+<div class="setup-actions">
+<button class="btn btn-ghost" onclick="setupBack(2)">Back</button>
+<button class="btn btn-primary" onclick="setupNext(2)">Continue</button>
+</div>
+<button class="setup-skip" onclick="setupSkip()">Skip for now</button>
+</div>
+
+<!-- Step 3: Topics & Difficulty -->
+<div class="setup-step" id="stp-3">
+<h3>Pick your focus areas</h3>
+<p>Select topics you want to practice most. You can change these later.</p>
+<div class="setup-field">
+<label>Preferred Topics</label>
+<div class="setup-topics" id="setup-topics">
+<span class="setup-topic on" onclick="this.classList.toggle('on')">React</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">TypeScript</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">HTML</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">CSS</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">Node.js</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">ExpressJS</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">NestJS</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">MongoDB</span>
+<span class="setup-topic" onclick="this.classList.toggle('on')">System Design</span>
+</div>
+</div>
+<div class="setup-field">
+<label>Default Difficulty</label>
+<select id="setup-diff">
+<option value="Junior">Junior</option>
+<option value="Mid" selected>Mid</option>
+<option value="Senior">Senior</option>
+<option value="Mixed">Mixed (random)</option>
+</select>
+</div>
+<div class="setup-actions">
+<button class="btn btn-ghost" onclick="setupBack(3)">Back</button>
+<button class="btn btn-primary" onclick="setupFinish()">Start Practicing</button>
+</div>
+<button class="setup-skip" onclick="setupSkip()">Skip for now</button>
+</div>
+
+</div>
+</div>
+
 <!-- ======== APP ======== -->
 <div id="scr-app" class="screen" hidden>
 <div class="app-shell">
@@ -1813,7 +1940,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <script>
 let authMode='login',curTopic='React',curDiff='Junior',qIdx=0,timer=null,secs=0;
 let expHist=null;
-let isNewUser=true,sessionStarted=false;
+let isNewUser=localStorage.getItem('prepai_new_user')!=='false',sessionStarted=false;
 let curMode='topic';
 let curRole=localStorage.getItem('prepai_role')||'USER';
 const ROLE_LIMITS={USER:{daily:3,questions:10},PREMIUM:{daily:Infinity,questions:30},ADMIN:{daily:Infinity,questions:30}};
@@ -1892,6 +2019,7 @@ const hist=[
 function go(view){
 document.getElementById('scr-landing').hidden=(view!=='landing');
 document.getElementById('scr-auth').hidden=(view!=='auth');
+document.getElementById('scr-setup').hidden=(view!=='setup');
 document.getElementById('scr-app').hidden=(view!=='app');
 window.scrollTo(0,0);
 if(view==='app')showPg('dashboard');
@@ -1951,6 +2079,70 @@ if(sessionData.date!==today){sessionData={date:today,count:0};}
 sessionData.count=Math.min(sessionData.count,0);
 localStorage.setItem('prepai_sessions',JSON.stringify(sessionData));
 updateRoleDisplay();
+if(isNewUser){
+resetSetup();
+go('setup');
+}else{
+go('app');
+}
+}
+
+var setupStep=1;
+function resetSetup(){
+setupStep=1;
+document.querySelectorAll('.setup-step').forEach(function(s){s.classList.remove('active')});
+document.getElementById('stp-1').classList.add('active');
+document.querySelectorAll('.setup-step-dot').forEach(function(d){d.classList.remove('active','done')});
+document.querySelectorAll('.setup-step-line').forEach(function(l){l.classList.remove('done')});
+document.getElementById('stp-dot-1').classList.add('active');
+document.getElementById('setup-role').value='';
+document.getElementById('setup-exp').value='';
+document.getElementById('setup-companies').value='';
+document.querySelectorAll('.setup-topic').forEach(function(t){t.classList.remove('on')});
+document.getElementById('setup-diff').value='Mid';
+}
+function setupNext(from){
+if(from===1){
+var role=document.getElementById('setup-role').value;
+var exp=document.getElementById('setup-exp').value;
+if(!role||!exp){showToast('Please select both fields','error');return;}
+}
+showSetupStep(from+1);
+}
+function setupBack(from){showSetupStep(from-1)}
+function showSetupStep(n){
+setupStep=n;
+document.querySelectorAll('.setup-step').forEach(function(s){s.classList.remove('active')});
+document.getElementById('stp-'+n).classList.add('active');
+for(var i=1;i<=3;i++){
+var dot=document.getElementById('stp-dot-'+i);
+dot.classList.remove('active','done');
+if(i<n)dot.classList.add('done');
+else if(i===n)dot.classList.add('active');
+}
+for(var i=1;i<=2;i++){
+var line=document.getElementById('stp-line-'+i);
+if(i<n)line.classList.add('done');
+else line.classList.remove('done');
+}
+}
+function setupFinish(){
+var topics=[];
+document.querySelectorAll('.setup-topic.on').forEach(function(t){topics.push(t.textContent)});
+var data={
+role:document.getElementById('setup-role').value,
+experience:document.getElementById('setup-exp').value,
+companies:document.getElementById('setup-companies').value,
+topics:topics,
+difficulty:document.getElementById('setup-diff').value
+};
+localStorage.setItem('prepai_setup',JSON.stringify(data));
+isNewUser=false;localStorage.setItem('prepai_new_user','false');
+showToast('Profile setup complete!');
+go('app');
+}
+function setupSkip(){
+isNewUser=false;localStorage.setItem('prepai_new_user','false');
 go('app');
 }
 
@@ -2082,7 +2274,7 @@ loadQ();
 
 function dismissBanner(){
 document.getElementById('welcome-banner').style.display='none';
-isNewUser=false;
+isNewUser=false;localStorage.setItem('prepai_new_user','false');
 }
 
 function loadQ(){

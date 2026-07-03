@@ -11,28 +11,20 @@ import App from './App.tsx'
 const queryClient = new QueryClient()
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-const isClerkValid = clerkPubKey && /^pk_(test|live)_/.test(clerkPubKey)
-
-function InnerProviders() {
-  return (
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </Provider>
-  )
-}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {isClerkValid ? (
-      <ClerkProvider publishableKey={clerkPubKey}>
-        <InnerProviders />
-      </ClerkProvider>
-    ) : (
-      <InnerProviders />
-    )}
+    <ClerkProvider
+      publishableKey={clerkPubKey!}
+      afterSignOutUrl="/sign-in"
+    >
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </Provider>
+    </ClerkProvider>
   </StrictMode>,
 )

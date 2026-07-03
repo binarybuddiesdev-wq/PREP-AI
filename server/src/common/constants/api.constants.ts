@@ -22,6 +22,20 @@ export enum ApiRoutes {
   CHATBOT = 'chatbot',
 }
 
+export enum ApiOperation {
+  HEALTH_CHECK = 'Health check',
+  AUTH_REGISTER = 'Register a new user',
+  AUTH_LOGIN = 'Login with credentials',
+  AUTH_REFRESH = 'Refresh access token',
+  AUTH_LOGOUT = 'Logout current session',
+  AUTH_ME = 'Get current authenticated user',
+  USER_GET_ME = 'Get current user profile',
+  USER_GET_SETTINGS = 'Get current user settings',
+  USER_UPDATE_SETTINGS = 'Update current user settings',
+  USER_SETUP_COMPLETE = 'Mark setup as complete',
+  USER_GET_BY_ID = 'Get user by Clerk ID (admin only)',
+}
+
 export const SUCCESS_MESSAGES = {
   GENERAL: 'Success',
   CREATED: 'Created successfully',
@@ -52,3 +66,23 @@ export const ERROR_MESSAGES = {
   DATABASE_ERROR: 'Database operation failed',
   AI_SERVICE_ERROR: 'AI service unavailable',
 } as const;
+
+export const EMAIL_IN_USE = 'Email already in use';
+
+// User success messages
+export const GET_ME_SUCCESS = 'User profile fetched successfully';
+export const UPDATE_SETTINGS_SUCCESS = 'Settings updated successfully';
+export const GET_SETTINGS_SUCCESS = 'Settings fetched successfully';
+export const SETUP_COMPLETE_SUCCESS = 'Setup marked as complete';
+export const GET_USER_SUCCESS = 'User fetched successfully';
+
+export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({
+  schema: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      message: { type: 'string', example: message },
+      data: dataSchema,
+    },
+  },
+});
