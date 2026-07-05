@@ -14,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { TechExpertModule } from './modules/tech-expert/tech-expert.module.js';
 import { UserModule } from './modules/user/user.module.js';
+import { TopicModule } from './modules/topic/topic.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,7 +40,7 @@ const __dirname = dirname(__filename);
       }),
     }),
     PrismaModule,
-    HealthModule, TechExpertModule, UserModule
+    HealthModule, TechExpertModule, UserModule, TopicModule
   ],
   controllers: [],
   providers: [],

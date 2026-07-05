@@ -46,6 +46,18 @@ Base URL: `http://localhost:3000/api/v1`
 
 ---
 
+## Topics
+
+| Method | Endpoint | Description | Auth | Role | Request Body | Response |
+|--------|----------|-------------|------|------|--------------|----------|
+| `POST` | `/topics` | Create a new topic | Bearer Token | ADMIN | `{ name, slug, category, icon? }` | `{ message, data: Topic }` |
+| `GET` | `/topics` | Get all topics (optional `?category=` filter) | Bearer Token | Any | — | `{ message, data: Topic[] }` |
+| `GET` | `/topics/:slug` | Get topic by slug | Bearer Token | Any | — | `{ message, data: Topic }` |
+| `PATCH` | `/topics/:id` | Update a topic | Bearer Token | ADMIN | `{ name?, slug?, category?, icon? }` | `{ message, data: Topic }` |
+| `DELETE` | `/topics/:id` | Delete a topic | Bearer Token | ADMIN | — | `{ message }` |
+
+---
+
 ## User Model
 
 ```
@@ -75,3 +87,47 @@ UserSettings {
   updatedAt     DateTime  @updatedAt
 }
 ```
+
+## Topic Model
+
+```
+Topic {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String    @unique
+  category    String
+  icon        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+```
+
+---
+
+## Testing in Swagger
+
+### Authentication
+
+1. Open Swagger at `http://localhost:3000/docs`
+2. Click **Authorize** at the top right
+3. Paste your Bearer token and click **Authorize**
+
+### Getting the Bearer Token
+
+1. Open the frontend at `http://localhost:5173`
+2. Log in normally
+3. Open browser **DevTools** (F12) → **Application** tab → **Cookies**
+4. Copy the value of `__session` cookie (starts with `eyJ...`)
+5. Paste it into Swagger's Authorize field
+
+### Important: Clerk Token Expiry
+
+Clerk access tokens expire in **~60 seconds**. If you get a `401 Invalid session token` error:
+
+1. Go back to the frontend
+2. Refresh the page (F5)
+3. Copy the new `__session` cookie value
+4. Paste it into Swagger's Authorize again
+5. Test the endpoint
+
+This is normal Clerk behavior — short-lived tokens for security. For testing, you'll need to refresh the token frequently.

@@ -34,6 +34,11 @@ export enum ApiOperation {
   USER_UPDATE_SETTINGS = 'Update current user settings',
   USER_SETUP_COMPLETE = 'Mark setup as complete',
   USER_GET_BY_ID = 'Get user by Clerk ID (admin only)',
+  TOPIC_GET_ALL = 'Get all topics',
+  TOPIC_GET_BY_SLUG = 'Get topic by slug',
+  TOPIC_CREATE = 'Create a new topic',
+  TOPIC_UPDATE = 'Update a topic',
+  TOPIC_DELETE = 'Delete a topic',
 }
 
 export const SUCCESS_MESSAGES = {
@@ -75,6 +80,13 @@ export const UPDATE_SETTINGS_SUCCESS = 'Settings updated successfully';
 export const GET_SETTINGS_SUCCESS = 'Settings fetched successfully';
 export const SETUP_COMPLETE_SUCCESS = 'Setup marked as complete';
 export const GET_USER_SUCCESS = 'User fetched successfully';
+
+// Topic success messages
+export const GET_TOPICS_SUCCESS = 'Topics fetched successfully';
+export const GET_TOPIC_SUCCESS = 'Topic fetched successfully';
+export const CREATE_TOPIC_SUCCESS = 'Topic created successfully';
+export const UPDATE_TOPIC_SUCCESS = 'Topic updated successfully';
+export const DELETE_TOPIC_SUCCESS = 'Topic deleted successfully';
 
 export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({
   schema: {
