@@ -104,6 +104,34 @@ Topic {
 
 ---
 
+## Questions
+
+| Method | Endpoint | Description | Auth | Role | Request Body | Response |
+|--------|----------|-------------|------|------|--------------|----------|
+| `POST` | `/questions` | Create a new question | Bearer Token | ADMIN | `{ question, topicId, difficulty, referenceAnswer? }` | `{ message, data: Question }` |
+| `GET` | `/questions` | Get questions by topic and difficulty | Bearer Token | Any | — | `{ message, data: Question[] }` |
+| `GET` | `/questions/:id` | Get question by ID | Bearer Token | Any | — | `{ message, data: Question }` |
+| `PATCH` | `/questions/:id` | Update a question | Bearer Token | ADMIN | `{ question?, topicId?, difficulty?, referenceAnswer? }` | `{ message, data: Question }` |
+| `DELETE` | `/questions/:id` | Delete a question | Bearer Token | ADMIN | — | `{ message }` |
+
+---
+
+## Question Model
+
+```
+Question {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  question        String
+  topicId         String    @db.ObjectId
+  difficulty      String
+  referenceAnswer String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+```
+
+---
+
 ## Testing in Swagger
 
 ### Authentication

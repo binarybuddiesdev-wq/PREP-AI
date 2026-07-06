@@ -1,8 +1,8 @@
 import { PrismaService } from '@/prisma/prisma.service.js';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CreateTopicDto, GetTopicsDto, UpdateTopicDto } from './dto/index.js';
-import { TOPIC_ALREADY_EXISTS, TOPIC_NOT_FOUND } from '@/common/index.js';
+import { TOPIC_ALREADY_EXISTS, TOPIC_NOT_FOUND, CANNOT_DELETE_TOPIC_WITH_QUESTIONS, TOPIC_DELETED_LOG } from '@/common/index.js';
 
 @Injectable()
 export class TopicService {
@@ -106,9 +106,15 @@ export class TopicService {
             throw new NotFoundException(TOPIC_NOT_FOUND);
         }
 
+        const questionCount = await this.prisma.question.count({ where: { topicId: id } });
+
+        if (questionCount > 0) {
+            throw new BadRequestException(CANNOT_DELETE_TOPIC_WITH_QUESTIONS);
+        }
+
         await this.prisma.topic.delete({ where: { id } });
 
-        this.logger.info({ id }, 'Topic deleted successfully');
+        this.logger.info({ id }, TOPIC_DELETED_LOG);
 
     }
 

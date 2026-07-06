@@ -15,6 +15,8 @@ export const DELETE_TOPIC_SUCCESS = CONST_DELETE_TOPIC_SUCCESS;
 
 export const TOPIC_ALREADY_EXISTS = 'Topic with this name or slug already exists';
 export const TOPIC_NOT_FOUND = 'Topic not found';
+export const CANNOT_DELETE_TOPIC_WITH_QUESTIONS = 'Cannot delete topic — questions still reference it. Delete or reassign questions first';
+export const TOPIC_DELETED_LOG = 'Topic deleted successfully';
 
 export const topicDataSchema = {
     type: 'object',

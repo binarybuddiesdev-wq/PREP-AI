@@ -39,6 +39,11 @@ export enum ApiOperation {
   TOPIC_CREATE = 'Create a new topic',
   TOPIC_UPDATE = 'Update a topic',
   TOPIC_DELETE = 'Delete a topic',
+  QUESTION_GET_ALL = 'Get all questions',
+  QUESTION_GET_BY_ID = 'Get question by ID',
+  QUESTION_CREATE = 'Create a new question',
+  QUESTION_UPDATE = 'Update a question',
+  QUESTION_DELETE = 'Delete a question',
 }
 
 export const SUCCESS_MESSAGES = {
@@ -87,6 +92,13 @@ export const GET_TOPIC_SUCCESS = 'Topic fetched successfully';
 export const CREATE_TOPIC_SUCCESS = 'Topic created successfully';
 export const UPDATE_TOPIC_SUCCESS = 'Topic updated successfully';
 export const DELETE_TOPIC_SUCCESS = 'Topic deleted successfully';
+
+// Question success messages
+export const GET_QUESTIONS_SUCCESS = 'Questions fetched successfully';
+export const GET_QUESTION_SUCCESS = 'Question fetched successfully';
+export const CREATE_QUESTION_SUCCESS = 'Question created successfully';
+export const UPDATE_QUESTION_SUCCESS = 'Question updated successfully';
+export const DELETE_QUESTION_SUCCESS = 'Question deleted successfully';
 
 export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({
   schema: {
