@@ -1,9 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller.js';
 import { UserService } from './user.service.js';
-import { NotFoundException } from '@nestjs/common';
-import { PinoLogger } from 'nestjs-pino';
+import { CanActivate, ExecutionContext, NotFoundException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+
+class MockAuthGuard implements CanActivate {
+    canActivate(context: ExecutionContext): boolean {
+        return true;
+    }
+}
 
 describe('UserController', () => {
     let controller: UserController;
@@ -51,7 +57,12 @@ describe('UserController', () => {
                 { provide: UserService, useValue: userService },
                 { provide: 'PinoLogger:UserController', useValue: mockPinoLogger },
             ],
-        }).compile();
+        })
+        .overrideGuard(ClerkAuthGuard)
+        .useClass(MockAuthGuard)
+        .overrideGuard(RolesGuard)
+        .useClass(MockAuthGuard)
+        .compile();
 
         controller = module.get<UserController>(UserController);
     });
