@@ -22,19 +22,12 @@ html[data-theme="light"] .ld-hero-desc{color:#6b7280}
 html[data-theme="light"] .ld-chip{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.15)}
 html[data-theme="light"] .ld-term-glow{display:none}
 html[data-theme="light"] .ld-terminal{background:#1e1e2e;border-color:rgba(255,255,255,.1);box-shadow:0 20px 60px rgba(0,0,0,.15)}
-html[data-theme="light"] .ld-feat{background:rgba(255,255,255,.8)}
-html[data-theme="light"] .ld-testi-card{background:rgba(255,255,255,.8)}
-html[data-theme="light"] .ld-testi-text{color:#6b7280}
-html[data-theme="light"] .ld-how-dot{background:#f8f9fa;border-color:rgba(245,158,11,.3)}
-html[data-theme="light"] .ld-bign{background:rgba(255,255,255,.8)}
-html[data-theme="light"] .ld-cta-inner{background:linear-gradient(180deg,rgba(245,158,11,.04) 0%,transparent 100%);border-color:rgba(0,0,0,.06)}
-html[data-theme="light"] .ld-cta-inner::before{background:linear-gradient(135deg,rgba(245,158,11,.2),transparent 40%,transparent 60%,rgba(14,165,233,.15))}
 html[data-theme="light"] .ld-footer{border-top-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .ld-footer a{color:#6b7280}
 html[data-theme="light"] .ld-footer a:hover{color:#111827}
-html[data-theme="light"] .ld-features-label,html[data-theme="light"] .ld-section-label{color:#d97706}
+html[data-theme="light"] .ld-section-label{color:#d97706}
 html[data-theme="light"] .ld-section-title{color:#111827}
-html[data-theme="light"] .ld-features-sub{color:#6b7280}
+html[data-theme="light"] .ld-section-sub{color:#6b7280}
 html[data-theme="light"] .sb{background:#f1f1f3;border-right-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .sb-head{border-bottom-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .sb-item:hover{background:rgba(0,0,0,.04)}
@@ -111,9 +104,6 @@ html[data-theme="light"] .code-fs-header{background:#f1f1f3;border-bottom-color:
 html[data-theme="light"] .lib-fs-overlay{background:#f8f9fa}
 html[data-theme="light"] .lib-fs-header{background:#f1f1f3;border-bottom-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .code-modal{background:#ffffff;border-color:rgba(0,0,0,.08)}
-html[data-theme="light"] .ld-bignum{background:rgba(255,255,255,.8)}
-html[data-theme="light"] .ld-testi-card{background:rgba(255,255,255,.8)}
-html[data-theme="light"] .ld-feat{background:rgba(255,255,255,.8)}
 html[data-theme="light"] .pdf-card{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}
 html[data-theme="light"] .pdf-card:hover{border-color:rgba(0,0,0,.12)}
 html[data-theme="light"] .code-confirm{background:#ffffff;border-color:rgba(0,0,0,.08)}
@@ -126,6 +116,13 @@ html{scroll-behavior:smooth}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--faint);border-radius:3px}
 a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}input,textarea,select{font-family:inherit;outline:none;color:var(--text)}
+
+/* Data reads in mono site-wide — scores, counters, metrics, timers */
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:-.02em}
+
+/* Accessibility floor: visible keyboard focus everywhere, and respect reduced-motion */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 
 .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.3rem;border-radius:8px;font-weight:500;font-size:.875rem;transition:all .2s}
 .btn-primary{background:var(--accent);color:#000;font-weight:600}.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(245,158,11,.25)}
@@ -195,52 +192,70 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .ld-orb-purple{width:600px;height:600px;background:rgba(139,92,246,.04);top:-15%;left:-10%;filter:blur(120px)}
 .ld-orb-amber{width:500px;height:500px;background:rgba(245,158,11,.05);bottom:-20%;right:-8%;filter:blur(120px)}
 
-/* Features reimagined */
-.ld-features{padding:7rem 5vw;max-width:1300px;margin:0 auto;position:relative;z-index:1}
-.ld-features-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.25em;color:var(--accent);font-weight:600;margin-bottom:.5rem}
-.ld-features-title{font-size:2.2rem;font-weight:700;margin-bottom:1rem;letter-spacing:-.03em}
-.ld-features-sub{color:var(--dim);font-size:1rem;margin-bottom:3.5rem;max-width:500px}
-.ld-feat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.03);border-radius:20px;overflow:hidden}
-.ld-feat{background:rgba(9,9,8,.8);padding:2.5rem 2rem}
-.ld-feat:hover{background:rgba(24,24,27,.8)}
-.ld-feat-num{font-size:.65rem;font-weight:600;color:var(--faint);letter-spacing:.1em;margin-bottom:1.5rem;font-family:'JetBrains Mono',monospace}
-.ld-feat-icon2{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:1.25rem;border:1px solid rgba(255,255,255,.06)}
-.ld-feat h3{font-size:1.05rem;font-weight:600;margin-bottom:.5rem;letter-spacing:-.01em}.ld-feat p{color:var(--dim);font-size:.85rem;line-height:1.7}
+/* ========== Landing page below the hero — redesigned ========== */
+.ld-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.ld-section{padding:7rem 5vw;max-width:1300px;margin:0 auto;position:relative;z-index:1}
+.ld-section-head{text-align:center;max-width:640px;margin:0 auto 3rem}
+.ld-section-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.22em;color:var(--accent);font-weight:700;margin-bottom:1rem}
+.ld-section-title{font-size:clamp(2rem,3.8vw,3rem);font-weight:800;letter-spacing:-.035em;margin:0 0 .75rem;line-height:1.1}
+.ld-section-sub{color:var(--dim);font-size:1.05rem;margin:0}
 
-/* Testimonials */
-.ld-testi{padding:6rem 5vw;position:relative;z-index:1}
-.ld-testi-inner{max-width:1300px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,.03);border-radius:20px;overflow:hidden}
-.ld-testi-card{background:rgba(9,9,8,.8);padding:2rem;display:flex;flex-direction:column}
-.ld-testi-stars{color:var(--accent);font-size:.8rem;margin-bottom:1rem;letter-spacing:2px}
-.ld-testi-text{font-size:.9rem;color:var(--dim);line-height:1.7;flex:1;margin-bottom:1.25rem;font-style:italic}
-.ld-testi-author{display:flex;align-items:center;gap:.6rem}
-.ld-testi-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#000}
-.ld-testi-name{font-size:.8rem;font-weight:600}.ld-testi-role{font-size:.7rem;color:var(--faint)}
+/* Showcase — 3D floating product panel, single light source */
+.ld-stage{perspective:1800px;max-width:760px;margin:3.5rem auto 0;height:440px;position:relative}
+.ld-stage::before{content:'';position:absolute;left:50%;top:6%;width:420px;height:420px;background:radial-gradient(circle,rgba(245,158,11,.22),transparent 70%);filter:blur(60px);transform:translateX(-50%);pointer-events:none}
+.ld-panel{position:absolute;inset:0;margin:auto;width:640px;max-width:92vw;height:380px;transform-style:preserve-3d;transform:rotateX(6deg) rotateY(-8deg);animation:ldFloat 7s ease-in-out infinite;transition:transform .2s ease-out}
+/* This showcase is a deliberate decorative flourish, not essential motion — it stays animated
+   even under prefers-reduced-motion, overriding the site-wide reduced-motion rule for just this element. */
+@media (prefers-reduced-motion:reduce){.ld-panel{animation-duration:7s!important;animation-iteration-count:infinite!important;transition-duration:.2s!important}}
+@keyframes ldFloat{0%,100%{transform:translateY(0) rotateX(6deg) rotateY(-8deg)}50%{transform:translateY(-14px) rotateX(4deg) rotateY(-8deg)}}
+.ld-panel-face{position:absolute;inset:0;background:var(--card);border:1px solid var(--border2);border-radius:16px;overflow:hidden;box-shadow:0 50px 100px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.05)}
+.ld-panel-face::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,158,11,.6),transparent)}
+.ld-panel-bar{display:flex;align-items:center;gap:6px;padding:.7rem 1rem;border-bottom:1px solid var(--border);background:var(--surface)}
+.ld-panel-dot{width:9px;height:9px;border-radius:50%}
+.ld-panel-title{font-size:.65rem;color:var(--faint);margin-left:.4rem}
+.ld-panel-body{padding:1.5rem 1.75rem;display:grid;grid-template-columns:1.4fr 1fr;gap:1.5rem}
+.ld-panel-q{font-size:.8rem;color:var(--dim);line-height:1.6}
+.ld-panel-q .lbl{font-size:.62rem;color:var(--accent);display:block;margin-bottom:.5rem;letter-spacing:.04em}
+.ld-panel-ta{margin-top:1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem;font-size:.72rem;color:var(--faint);height:56px}
+.ld-panel-fb{display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid var(--border);padding-left:1.5rem}
+.ld-ring{width:96px;height:96px;border-radius:50%;background:conic-gradient(var(--accent) 0deg 306deg,var(--surface2) 306deg 360deg);display:flex;align-items:center;justify-content:center;margin-bottom:.6rem}
+.ld-ring-inner{width:76px;height:76px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ld-ring-inner b{font-size:1.15rem}
+.ld-ring-inner span{font-size:.55rem;color:var(--faint)}
+.ld-panel-fb .verdict{font-size:.72rem;color:var(--dim);text-align:center}
 
-/* How it works horizontal */
-.ld-how{padding:7rem 5vw;max-width:1300px;margin:0 auto;position:relative;z-index:1}
-.ld-how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:3rem;position:relative}
-.ld-how-grid::before{content:'';position:absolute;top:28px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,158,11,.15),rgba(245,158,11,.15),transparent)}
-.ld-how-step{text-align:center;padding:0 1.5rem;position:relative}
-.ld-how-dot{width:56px;height:56px;border-radius:50%;background:#050508;border:2px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--accent);margin:0 auto 1.5rem;position:relative;z-index:1;font-family:'JetBrains Mono',monospace}
-.ld-how-step h3{font-size:.95rem;font-weight:600;margin-bottom:.4rem}.ld-how-step p{color:var(--dim);font-size:.8rem;line-height:1.6}
+/* Three statement cards */
+.ld-stmts{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+.ld-stmt-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;box-shadow:0 20px 50px rgba(0,0,0,.2);transition:transform .3s,border-color .3s}
+.ld-stmt-card:hover{transform:translateY(-3px);border-color:rgba(245,158,11,.35);box-shadow:0 20px 50px rgba(0,0,0,.25),0 0 0 1px rgba(245,158,11,.08),0 0 40px rgba(245,158,11,.08)}
+.ld-stmt-card .idx{font-size:.7rem;color:var(--accent);margin-bottom:1rem;display:block;font-weight:700}
+.ld-stmt-card h3{font-size:1.1rem;font-weight:700;margin:0 0 .6rem;letter-spacing:-.01em}
+.ld-stmt-card p{color:var(--dim);font-size:.87rem;line-height:1.65;margin:0}
 
-/* Big number stats */
-.ld-bignumbers{padding:7rem 5vw;position:relative;z-index:1}
-.ld-bignums-inner{max-width:1300px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.03);border-radius:20px;overflow:hidden}
-.ld-bign{background:rgba(9,9,8,.8);padding:2.5rem 2rem;text-align:center}
-.ld-bign:hover{background:rgba(17,17,19,.8)}
-.ld-bign-val{font-size:3rem;font-weight:700;letter-spacing:-.04em;line-height:1;margin-bottom:.3rem}
-.ld-bign-val.grad{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.ld-bign-lbl{font-size:.8rem;color:var(--dim)}
+/* Four-step loop — cards, no number badges, position implies order */
+.ld-loop{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem}
+.ld-loop-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem 1.5rem;position:relative;overflow:hidden;transition:transform .3s,border-color .3s,box-shadow .3s}
+.ld-loop-item::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:.5;transition:opacity .3s}
+.ld-loop-item:hover{transform:translateY(-3px);border-color:rgba(245,158,11,.3);box-shadow:0 16px 40px rgba(0,0,0,.25),0 0 30px rgba(245,158,11,.07)}
+.ld-loop-item:hover::before{opacity:1}
+.ld-loop-item h4{font-size:1rem;font-weight:700;margin:0 0 .5rem}
+.ld-loop-item p{font-size:.85rem;color:var(--dim);margin:0;line-height:1.6}
 
-/* CTA */
-.ld-cta{padding:7rem 5vw;position:relative;z-index:1}
-.ld-cta-inner{max-width:700px;margin:0 auto;text-align:center;position:relative;padding:4rem 3rem;border:1px solid rgba(255,255,255,.04);border-radius:24px;background:linear-gradient(180deg,rgba(245,158,11,.03) 0%,transparent 100%)}
-.ld-cta-inner::before{content:'';position:absolute;inset:-1px;border-radius:24px;padding:1px;background:linear-gradient(135deg,rgba(245,158,11,.15),transparent 40%,transparent 60%,rgba(14,165,233,.1));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-.ld-cta-inner h2{font-size:2rem;font-weight:700;margin-bottom:.75rem;letter-spacing:-.03em}
-.ld-cta-inner p{color:var(--dim);margin-bottom:2rem;font-size:1rem}
-.ld-cta-inner .btn{position:relative}
+/* Outcomes — glowing gradient numbers on quiet cards */
+.ld-stats2{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center}
+.ld-stat2{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem 2.5rem;text-align:center;flex:1;min-width:220px;transition:transform .3s,border-color .3s,box-shadow .3s}
+.ld-stat2:hover{transform:translateY(-3px);border-color:rgba(245,158,11,.3);box-shadow:0 20px 50px rgba(0,0,0,.25),0 0 40px rgba(245,158,11,.08)}
+.ld-stat2 b{display:block;font-size:clamp(2.2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:.6rem;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ld-stat2 span{font-size:.85rem;color:var(--dim)}
+
+/* Closing CTA — single dramatic glow, no border box */
+.ld-cta2{text-align:center;padding:7rem 5vw;position:relative;overflow:hidden;z-index:1}
+.ld-cta2::before{content:'';position:absolute;left:50%;top:0;width:900px;height:500px;background:radial-gradient(ellipse,rgba(245,158,11,.2),transparent 65%);transform:translateX(-50%);pointer-events:none}
+.ld-cta2-inner{position:relative;max-width:700px;margin:0 auto}
+.ld-cta2 h2{font-size:clamp(2rem,4vw,2.8rem);font-weight:700;letter-spacing:-.035em;margin:0 0 .75rem;line-height:1.1}
+.ld-cta2 p{color:var(--dim);margin-bottom:2rem;font-size:1rem}
+.btn-cta{display:inline-flex;align-items:center;gap:.6rem;padding:.9rem 2.1rem;border-radius:10px;font-weight:700;font-size:.92rem;cursor:pointer;border:none;font-family:inherit;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#000;box-shadow:0 10px 40px rgba(245,158,11,.28);transition:transform .3s,box-shadow .3s}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 16px 50px rgba(245,158,11,.4)}
 
 /* Footer */
 .ld-footer{padding:2.5rem 5vw;border-top:1px solid rgba(255,255,255,.03);display:flex;align-items:center;justify-content:space-between;color:var(--faint);font-size:.78rem;position:relative;z-index:1;max-width:1300px;margin:0 auto}
@@ -249,13 +264,11 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 /* Scroll animations */
 .ld-reveal{opacity:1;transform:translateY(0)}
 
-/* Feature card hover glow */
-.ld-feat{border-top:1px solid transparent;transition:background .3s,border-color .3s}
-.ld-feat:hover{background:rgba(24,24,27,.8);border-top-color:rgba(245,158,11,.2)}
+#ld-how,#ld-stats{overflow:hidden}
+#ld-how::before,#ld-stats::before{content:'';position:absolute;left:50%;top:20%;width:700px;height:400px;background:radial-gradient(ellipse,rgba(245,158,11,.09),transparent 70%);filter:blur(50px);transform:translateX(-50%);pointer-events:none;z-index:-1}
 
-/* Testimonial hover glow */
-.ld-testi-card{transition:all .3s ease;border:1px solid transparent}
-.ld-testi-card:hover{background:rgba(17,17,19,.8);border-color:rgba(245,158,11,.2);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+@media(max-width:900px){.ld-panel-body{grid-template-columns:1fr}.ld-panel-fb{border-left:none;border-top:1px solid var(--border);padding-left:0;padding-top:1rem;flex-direction:row;gap:1rem}}
+@media(max-width:760px){.ld-stmts{grid-template-columns:1fr}.ld-loop{grid-template-columns:1fr 1fr;row-gap:1.5rem}.ld-loop-item{border-left:none;padding-left:0}.ld-stats2{gap:2.5rem}}
 
 /* ========== CODING PAGE ========== */
 .code-full-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem 2rem}
@@ -285,7 +298,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .code-problem-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0}
 .code-problem-head h3{font-size:.85rem;font-weight:600}
 .code-collapse-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--dim);cursor:pointer;font-size:.75rem;transition:all .2s;position:relative}
-.code-collapse-btn:hover{background:var(--surface-hover);color:var(--text)}
+.code-collapse-btn:hover{background:var(--surface2);color:var(--text)}
 .code-collapse-btn .tooltip{position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border);border-radius:6px;padding:.3rem .6rem;font-size:.7rem;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
 .code-collapse-btn:hover .tooltip{opacity:1}
 .code-problem-body{flex:1;overflow-y:auto;padding:1.25rem}
@@ -312,7 +325,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .code-lang-select:focus{border-color:var(--accent);outline:none}
 .code-lang-select option{background:var(--card);color:var(--text)}
 .code-reset-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .2s}
-.code-reset-btn:hover{background:var(--surface-hover);color:var(--text);border-color:var(--accent)}
+.code-reset-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--accent)}
 .code-reset-btn svg{width:14px;height:14px}
 .code-fs-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--dim);cursor:pointer;transition:all .2s;margin:0 .5rem;border-radius:6px}
 .code-fs-btn:hover{background:var(--surface);color:var(--text)}
@@ -692,142 +705,124 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .plan-limit-val{font-weight:600;color:var(--text)}
 .plan-upgrade-section h3{font-size:1.1rem;font-weight:600;margin-bottom:.25rem}
 
-/* Razorpay Checkout */
-.rzrpay-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
-.rzrpay-overlay.show{opacity:1}
-.rzrpay-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
-.rzrpay-modal{position:relative;width:740px;max-width:95vw;background:var(--card);border:1px solid var(--border);border-radius:12px;display:flex;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.35);transform:scale(.95);transition:transform .3s ease}
-.rzrpay-overlay.show .rzrpay-modal{transform:scale(1)}
-.rzrpay-left{flex:1;display:flex;flex-direction:column;min-width:0}
-.rzrpay-methods-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-size:.9rem;font-weight:600;color:var(--text)}
-.rzrpay-close-btn{background:none;border:none;font-size:1.4rem;color:var(--dim);cursor:pointer;line-height:1;padding:0}
-.rzrpay-close-btn:hover{color:var(--text)}
-.rzrpay-methods-list{display:flex;flex-direction:column}
-.rzrpay-methods-list.collapsed .rzrpay-method{padding:.6rem 1.25rem}
-.rzrpay-methods-list.collapsed .rzrpay-method:not(.selected){display:none}
-.rzrpay-methods-list.collapsed .rzrpay-method.selected{border-bottom:none}
-.rzrpay-method{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.25rem;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--border)}
-.rzrpay-method:hover{background:var(--surface)}
-.rzrpay-method.selected{background:rgba(51,115,229,.08)}
-.rzrpay-method-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--faint);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.rzrpay-method.selected .rzrpay-method-dot{border-color:#3373e5}
-.rzrpay-method.selected .rzrpay-method-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:#3373e5}
-.rzrpay-method-name{font-size:.875rem;font-weight:600;color:var(--text)}
-.rzrpay-method-desc{font-size:.72rem;color:var(--dim)}
-.rzrpay-method-body{flex:1;overflow-y:auto;padding:1.25rem}
-.rzrpay-upi-apps{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem}
-.rzrpay-upi-app{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.75rem .5rem;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s}
-.rzrpay-upi-app:hover{border-color:var(--border2)}
-.rzrpay-upi-app.selected{border-color:#3373e5;background:rgba(51,115,229,.08)}
-.rzrpay-app-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
-.rzrpay-upi-app span{font-size:.68rem;color:var(--dim);text-align:center}
-.rzrpay-upi-or{text-align:center;font-size:.72rem;color:var(--faint);margin-bottom:1rem;position:relative}
-.rzrpay-upi-or::before,.rzrpay-upi-or::after{content:'';position:absolute;top:50%;width:calc(50% - 20px);height:1px;background:var(--border)}
-.rzrpay-upi-or::before{left:0}
-.rzrpay-upi-or::after{right:0}
-.rzrpay-input-label{font-size:.75rem;font-weight:600;color:var(--dim);margin-bottom:.4rem}
-.rzrpay-input-row{display:flex;gap:.5rem}
-.rzrpay-input{flex:1;padding:.65rem .85rem;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--bg);color:var(--text)}
-.rzrpay-input:focus{border-color:#3373e5;outline:none}
-.rzrpay-verify-btn{padding:.65rem 1.1rem;background:#3373e5;color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap}
-.rzrpay-verify-btn:hover{background:#2860c0}
-.rzrpay-footer{padding:.85rem 1.25rem;border-top:1px solid var(--border);background:var(--surface)}
-.rzrpay-secure{display:flex;align-items:center;justify-content:center;gap:.35rem;font-size:.7rem;color:var(--faint);margin-bottom:.6rem}
-.rzrpay-pay-btn{width:100%;padding:.8rem;background:#3373e5;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s}
-.rzrpay-pay-btn:hover{background:#2860c0}
-.rzrpay-powered{text-align:center;font-size:.62rem;color:var(--faint);margin-top:.5rem}
+/* Payment Checkout */
+.pm-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+.pm-overlay.show{opacity:1}
+.pm-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.pm-modal{position:relative;width:440px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.4);transform:scale(.96);transition:transform .3s ease}
+.pm-overlay.show .pm-modal{transform:scale(1)}
+.pm-head{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.pm-head h3{font-size:1rem;font-weight:700;margin:0}
+.pm-close-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--dim);cursor:pointer;font-size:1rem;line-height:1;transition:all .15s}
+.pm-close-btn:hover{color:var(--text);border-color:var(--border2)}
+.pm-receipt{display:flex;justify-content:space-between;align-items:baseline;padding:.75rem 1.25rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:.78rem;color:var(--dim);flex-shrink:0}
+.pm-receipt strong{color:var(--text);font-size:.95rem}
+.pm-tabs{display:flex;gap:.4rem;padding:.9rem 1.25rem 0;flex-shrink:0}
+.pm-tabs.locked .pm-tab{pointer-events:none;opacity:.4;cursor:not-allowed}
+.pm-tabs.locked .pm-tab.on{opacity:1}
+.pm-tab{flex:1;padding:.5rem .3rem;text-align:center;font-size:.72rem;font-weight:600;border:1px solid var(--border);border-radius:8px;color:var(--dim);cursor:pointer;background:none;font-family:inherit;transition:all .15s}
+.pm-tab:hover{border-color:var(--border2)}
+.pm-tab.on{border-color:var(--accent);background:var(--accentBg);color:var(--accent)}
+.pm-body{flex:1;overflow-y:auto;padding:1.1rem 1.25rem 1.25rem}
+.pm-label{display:block;font-size:.72rem;font-weight:600;color:var(--dim);margin-bottom:.35rem}
+.pm-input{width:100%;padding:.65rem .8rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.83rem;color:var(--text);margin-bottom:.85rem;font-family:inherit}
+.pm-input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accentBg)}
+.pm-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.pm-row{display:flex;gap:.5rem}
+.pm-row .pm-input{margin-bottom:0}
+.pm-field-wrap{position:relative}
+.pm-card-brand{position:absolute;right:.6rem;top:2.15rem;height:18px;display:flex;align-items:center;pointer-events:none}
+.pm-badge{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 2px 6px rgba(0,0,0,.25);flex-shrink:0;position:relative;overflow:hidden}
+.pm-badge.sm{width:30px;height:30px;font-size:.5rem}
+.gpay-ring{width:22px;height:22px;border-radius:50%;background:conic-gradient(#4285F4 0deg 90deg,#34A853 90deg 180deg,#FBBC05 180deg 270deg,#EA4335 270deg 360deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px))}
+.pm-badge-bhim{background:linear-gradient(180deg,#ff9933 0 34%,#f4f4f4 34% 66%,#138808 66% 100%)}
+.pm-badge-bhim .pm-chakra{width:11px;height:11px;border-radius:50%;border:1.5px solid #0b3d91}
+.pm-tile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.75rem}
+.pm-tile{display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.7rem .3rem;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:.63rem;color:var(--dim);text-align:center;transition:all .15s}
+.pm-tile:hover{border-color:var(--border2)}
+.pm-tile.selected{border-color:var(--accent);background:var(--accentBg);color:var(--accent)}
+.pm-divider{text-align:center;font-size:.7rem;color:var(--faint);margin:.9rem 0;position:relative}
+.pm-divider::before,.pm-divider::after{content:'';position:absolute;top:50%;width:calc(50% - 24px);height:1px;background:var(--border)}
+.pm-divider::before{left:0}
+.pm-divider::after{right:0}
+.pm-verify-btn{padding:.65rem 1rem;border:1px solid var(--border2);border-radius:8px;background:none;color:var(--text);font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}
+.pm-verify-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-/* QR Code Section */
-.rzrpay-qr-section{display:flex;flex-direction:column;align-items:center;padding:1rem 0}
-.rzrpay-qr-title{font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:1rem}
-.rzrpay-qr-box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:.75rem;max-width:200px}
-.rzrpay-qr-placeholder{display:flex;align-items:center;justify-content:center}
-.rzrpay-qr-timer{font-size:.75rem;color:var(--dim);text-align:center;margin-bottom:1rem}
-.rzrpay-qr-or{text-align:center;font-size:.72rem;color:var(--faint);margin-bottom:1rem;position:relative;width:100%}
-.rzrpay-qr-or::before,.rzrpay-qr-or::after{content:'';position:absolute;top:50%;width:calc(50% - 20px);height:1px;background:var(--border)}
-.rzrpay-qr-or::before{left:0}
-.rzrpay-qr-or::after{right:0}
-.rzrpay-qr-upi{width:100%}
-.rzrpay-qr-simulate{display:flex;flex-direction:column;align-items:center;gap:.4rem;margin-top:.5rem}
-.rzrpay-simulate-btn{padding:.5rem 1.2rem;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
-.rzrpay-simulate-btn:hover{background:#0ea472}
-.rzrpay-simulate-hint{font-size:.65rem;color:var(--faint)}
+/* QR — the code itself stays black-on-white regardless of theme, same as a real payment app; only the surrounding chrome adapts */
+.pm-qr-section{display:flex;flex-direction:column;align-items:center;padding:1.1rem 1rem;border:1px solid rgba(245,158,11,.22);border-radius:12px;margin-bottom:.85rem;background:var(--surface)}
+.pm-qr-title{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.85rem;text-align:center;display:flex;align-items:center;gap:.4rem}
+.pm-qr-box{background:#fff;border-radius:10px;padding:10px;margin-bottom:.75rem;line-height:0}
+.pm-qr-timer{font-size:.72rem;color:var(--dim);text-align:center;margin-bottom:.9rem}
+.pm-qr-simulate{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+.pm-simulate-btn{padding:.5rem 1.2rem;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.pm-simulate-btn:hover{filter:brightness(1.08)}
+.pm-simulate-hint{font-size:.65rem;color:var(--faint)}
 
 /* Bank Grid */
-.rzrpay-bank-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
-.rzrpay-bank{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.65rem .5rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;text-align:center}
-.rzrpay-bank:hover{border-color:var(--border2);background:var(--surface)}
-.rzrpay-bank.selected{border-color:#3373e5;background:rgba(51,115,229,.08)}
-.rzrpay-bank-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.55rem;font-weight:700}
-.rzrpay-bank span{font-size:.65rem;color:var(--dim)}
+.pm-bank-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.9rem}
+.pm-bank{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.6rem .3rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;font-size:.6rem;color:var(--dim)}
+.pm-bank:hover{border-color:var(--border2)}
+.pm-bank.selected{border-color:var(--accent);background:var(--accentBg);color:var(--accent)}
 
 /* Wallet List */
-.rzrpay-wallet-list{display:flex;flex-direction:column;gap:.5rem}
-.rzrpay-wallet{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s}
-.rzrpay-wallet:hover{border-color:var(--border2);background:var(--surface)}
-.rzrpay-wallet.selected{border-color:#3373e5;background:rgba(51,115,229,.08)}
-.rzrpay-wallet-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.rzrpay-wallet-name{font-size:.85rem;font-weight:600;color:var(--text)}
-.rzrpay-wallet-desc{font-size:.7rem;color:var(--dim)}
+.pm-wallet-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.9rem}
+.pm-wallet{display:flex;align-items:center;gap:.75rem;padding:.75rem .9rem;border:1px solid var(--border);border-radius:9px;cursor:pointer;transition:all .15s}
+.pm-wallet:hover{border-color:var(--border2)}
+.pm-wallet.selected{border-color:var(--accent);background:var(--accentBg)}
+.pm-wallet-name{font-size:.85rem;font-weight:600;color:var(--text)}
+.pm-wallet-desc{font-size:.7rem;color:var(--dim)}
 
 /* Error Message */
-.rzrpay-error{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:.6rem .85rem;border-radius:8px;font-size:.8rem;margin-bottom:.75rem;text-align:center}
+.pm-error{background:var(--redBg);border:1px solid rgba(244,63,94,.25);color:var(--red);padding:.6rem .85rem;border-radius:8px;font-size:.8rem;margin-bottom:.75rem;text-align:center}
 
 /* OTP Screen */
-.rzrpay-otp-section{display:flex;flex-direction:column;align-items:center;padding:1rem 0}
-.rzrpay-otp-icon{font-size:2rem;margin-bottom:.75rem}
-.rzrpay-otp-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.3rem}
-.rzrpay-otp-desc{font-size:.75rem;color:var(--dim);text-align:center;margin-bottom:1.25rem}
-.rzrpay-otp-inputs{display:flex;gap:.5rem;margin-bottom:1.25rem}
-.rzrpay-otp-box{width:44px;height:50px;text-align:center;border:1px solid var(--border);border-radius:10px;font-size:1.2rem;font-weight:600;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
-.rzrpay-otp-box:focus{border-color:#3373e5}
-.rzrpay-otp-resend{font-size:.75rem;color:var(--dim);margin-top:.75rem}
+.pm-otp-section{display:flex;flex-direction:column;align-items:center;padding:.5rem 0 0}
+.pm-otp-icon{font-size:2rem;margin-bottom:.6rem}
+.pm-otp-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.3rem}
+.pm-otp-desc{font-size:.75rem;color:var(--dim);text-align:center;margin-bottom:1.1rem}
+.pm-otp-inputs{display:flex;gap:.5rem;margin-bottom:1.1rem;width:100%}
+.pm-otp-box{flex:1;min-width:0;aspect-ratio:1;text-align:center;border:1px solid var(--border);border-radius:10px;font-size:1.1rem;font-weight:700;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
+.pm-otp-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentBg)}
+.pm-otp-resend{font-size:.75rem;color:var(--dim);margin-top:.5rem}
 
 /* Redirect Screen */
-.rzrpay-redirect-section{display:flex;flex-direction:column;align-items:center;padding:2rem 0}
-.rzrpay-redirect-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:#3373e5;border-radius:50%;animation:rzrpaySpin .8s linear infinite;margin-bottom:1rem}
-@keyframes rzrpaySpin{to{transform:rotate(360deg)}}
-.rzrpay-redirect-icon{font-size:2rem;margin-bottom:.5rem}
-.rzrpay-redirect-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.25rem}
-.rzrpay-redirect-desc{font-size:.8rem;color:var(--dim);margin-bottom:1.25rem}
-.rzrpay-redirect-simulate{padding:.5rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--dim);cursor:pointer;transition:all .15s}
-.rzrpay-redirect-simulate:hover{border-color:var(--border2);color:var(--text)}
+.pm-redirect-section{display:flex;flex-direction:column;align-items:center;padding:2rem 0}
+.pm-redirect-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:pmSpin .8s linear infinite;margin-bottom:1rem}
+@keyframes pmSpin{to{transform:rotate(360deg)}}
+.pm-redirect-icon{font-size:2rem;margin-bottom:.5rem}
+.pm-redirect-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.25rem;text-align:center}
+.pm-redirect-desc{font-size:.8rem;color:var(--dim);margin-bottom:1.25rem;text-align:center}
+.pm-redirect-simulate{padding:.5rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.8rem;color:var(--dim);cursor:pointer;transition:all .15s}
+.pm-redirect-simulate:hover{border-color:var(--border2);color:var(--text)}
 
 /* Bank/Wallet Approval */
-.rzrpay-approval-section{padding:1rem 0}
-.rzrpay-approval-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-.rzrpay-approval-bank{font-size:.9rem;font-weight:600;color:var(--text)}
-.rzrpay-approval-secure{font-size:.7rem;color:var(--faint);display:flex;align-items:center;gap:.3rem}
-.rzrpay-approval-body{text-align:center}
-.rzrpay-approval-amount{font-size:2rem;font-weight:700;color:var(--text);margin-bottom:.25rem}
-.rzrpay-approval-merchant{font-size:.85rem;color:var(--dim);margin-bottom:.25rem}
-.rzrpay-approval-desc{font-size:.8rem;color:var(--faint);margin-bottom:1.5rem}
-.rzrpay-approval-actions{display:flex;gap:.75rem;justify-content:center}
-.rzrpay-approval-btn{padding:.7rem 2rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;border:none}
-.rzrpay-approval-btn.approve{background:#3373e5;color:#fff}
-.rzrpay-approval-btn.approve:hover{background:#2860c0}
-.rzrpay-approval-btn.reject{background:var(--surface);border:1px solid var(--border);color:var(--dim)}
-.rzrpay-approval-btn.reject:hover{border-color:var(--border2);color:var(--text)}
+.pm-approval-section{padding:.5rem 0 0}
+.pm-approval-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.pm-approval-bank{font-size:.9rem;font-weight:600;color:var(--text)}
+.pm-approval-secure{font-size:.7rem;color:var(--faint);display:flex;align-items:center;gap:.3rem}
+.pm-approval-body{text-align:center}
+.pm-approval-amount{font-size:2rem;font-weight:700;color:var(--text);margin-bottom:.25rem}
+.pm-approval-merchant{font-size:.85rem;color:var(--dim);margin-bottom:.25rem}
+.pm-approval-desc{font-size:.8rem;color:var(--faint);margin-bottom:1.5rem}
+.pm-approval-actions{display:flex;gap:.75rem;justify-content:center}
+.pm-approval-btn{padding:.7rem 1.75rem;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-family:inherit}
+.pm-approval-btn.approve{background:var(--accent);color:#000}
+.pm-approval-btn.approve:hover{background:var(--accent2)}
+.pm-approval-btn.reject{background:var(--surface);border:1px solid var(--border);color:var(--dim)}
+.pm-approval-btn.reject:hover{border-color:var(--border2);color:var(--text)}
 
 /* Processing Overlay */
-.rzrpay-processing-overlay{position:absolute;inset:0;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:12px}
-.rzrpay-processing-content{display:flex;flex-direction:column;align-items:center;gap:.75rem}
-.rzrpay-processing-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:#3373e5;border-radius:50%;animation:rzrpaySpin .8s linear infinite}
-.rzrpay-processing-check{width:48px;height:48px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;font-weight:700}
-.rzrpay-processing-text{font-size:.9rem;font-weight:500;color:var(--text)}
-.rzrpay-right{width:260px;background:var(--surface);border-left:1px solid var(--border);padding:1.5rem;display:flex;flex-direction:column}
-.rzrpay-order-header{display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-.rzrpay-order-icon{width:36px;height:36px;background:var(--accent);color:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem}
-.rzrpay-order-name{font-size:.95rem;font-weight:600;color:var(--text)}
-.rzrpay-order-details{flex:1}
-.rzrpay-order-row{display:flex;justify-content:space-between;padding:.5rem 0;font-size:.825rem;color:var(--dim)}
-.rzrpay-order-row span:last-child{font-weight:500;color:var(--text)}
-.rzrpay-order-total{border-top:1px solid var(--border);margin-top:.5rem;padding-top:.75rem;font-weight:600}
-.rzrpay-order-total span{font-size:1rem;color:var(--text)}
-.rzrpay-order-note{font-size:.65rem;color:var(--faint);line-height:1.5;margin-top:1rem}
+.pm-processing-overlay{position:absolute;inset:0;background:var(--card);display:flex;align-items:center;justify-content:center;z-index:10}
+.pm-processing-content{display:flex;flex-direction:column;align-items:center;gap:.75rem}
+.pm-processing-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:pmSpin .8s linear infinite}
+.pm-processing-check{width:48px;height:48px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;font-weight:700}
+.pm-processing-text{font-size:.9rem;font-weight:500;color:var(--text)}
+.pm-pay-btn{width:100%;padding:.8rem;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:700;font-size:.92rem;cursor:pointer;transition:all .2s}
+.pm-pay-btn:hover{background:var(--accent2)}
+.pm-secure{display:flex;align-items:center;justify-content:center;gap:.35rem;font-size:.68rem;color:var(--faint);margin-top:1rem}
 
 /* Remaining Sessions Bar */
-.sessions-bar{display:flex;align-items:center;gap:.5rem;padding:.65rem 1rem;background:var(--accentBg);border:1px solid rgba(245,158,11,.15);border-radius:10px;margin-bottom:1.25rem;font-size:.85rem}
+.sessions-bar{display:flex;align-items:center;gap:.5rem;padding:.65rem 1rem;background:var(--accentBg);border:1px solid rgba(245,158,11,.15);border-radius:12px;margin-bottom:1.25rem;font-size:.85rem}
 .sessions-bar-icon{font-size:1rem}
 .sessions-bar-text{color:var(--dim);font-weight:500}
 .sessions-bar-text strong{color:var(--accent);font-weight:700}
@@ -855,7 +850,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 /* Coding Stats Bar */
 .coding-stats-bar{display:flex;gap:1.5rem;padding:.85rem 1.25rem;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:1.25rem}
 .coding-stat{text-align:center}
-.coding-stat-val{display:block;font-size:1.3rem;font-weight:700;color:var(--accent);line-height:1;margin-bottom:.15rem}
+.coding-stat-val{display:block;font-size:1.3rem;font-weight:700;color:var(--text);line-height:1;margin-bottom:.15rem}
 .coding-stat-lbl{font-size:.72rem;color:var(--dim)}
 
 /* Solved Indicator */
@@ -987,7 +982,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .lib-viewer-pdf{position:absolute;inset:0;width:100%;height:100%;border:none}
 .lib-viewer-toolbar{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:.6rem 1rem;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
 .lib-viewer-toolbar button{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .2s}
-.lib-viewer-toolbar button:hover{background:var(--surface-hover);color:var(--text)}
+.lib-viewer-toolbar button:hover{background:var(--surface2);color:var(--text)}
 .lib-viewer-toolbar button svg{width:16px;height:16px}
 .lib-viewer-toolbar span{font-size:.8rem;color:var(--dim);min-width:60px;text-align:center}
 .lib-fs-overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column}
@@ -1000,7 +995,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .lib-fs-body{flex:1;position:relative;overflow:hidden}
 .lib-fs-toolbar{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:.6rem 1rem;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
 .lib-fs-toolbar button{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .2s}
-.lib-fs-toolbar button:hover{background:var(--surface-hover);color:var(--text)}
+.lib-fs-toolbar button:hover{background:var(--surface2);color:var(--text)}
 .lib-fs-toolbar button svg{width:16px;height:16px}
 .lib-fs-toolbar span{font-size:.8rem;color:var(--dim);min-width:60px;text-align:center}
 .toast-container{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
@@ -1037,7 +1032,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9}.sb-overlay.show{display:block}
 
 @media(max-width:1024px){.dash-grid,.practice-grid{grid-template-columns:1fr}.practice-modes{grid-template-columns:1fr}.session-config-row{grid-template-columns:1fr}}
-@media(max-width:768px){.sb{transform:translateX(-100%);z-index:20;width:240px!important}.sb.open{transform:translateX(0)}.sb.collapsed{width:240px!important}.sb.collapsed .sb-head>div>span,.sb.collapsed .sb-label,.sb.collapsed .sb-item span:not(.sb-badge),.sb.collapsed .sb-foot>div:last-child{display:block!important}.sb.collapsed .sb-head{justify-content:flex-start;padding:1.25rem}.sb.collapsed .sb-item{justify-content:flex-start;padding:.6rem .85rem;gap:.65rem}.sb.collapsed .sb-foot{justify-content:flex-start;padding:.85rem 1.1rem;flex-direction:row;gap:.6rem}.sb.collapsed .sb-foot .sb-user-info{display:block}.sb-collapse-toggle{display:none}.mn{margin-left:0!important}.hamburger{display:flex}.ld-nav-links,.ld-nav-cta{display:none}.ld-hero{flex-direction:column;padding:6rem 5vw 3rem;gap:2.5rem}.ld-hero-right{flex:none;width:100%;max-width:400px}.ld-terminal{transform:none}.ld-feat-row,.ld-testi-inner,.ld-how-grid,.ld-bignums-inner{grid-template-columns:1fr}.ld-how-grid::before{display:none}.ld-hero-metrics{gap:1.5rem}.ld-footer{flex-direction:column;gap:1rem;text-align:center}.set-row{grid-template-columns:1fr}.set-nav{flex-wrap:wrap}}
+@media(max-width:768px){.sb{transform:translateX(-100%);z-index:20;width:240px!important}.sb.open{transform:translateX(0)}.sb.collapsed{width:240px!important}.sb.collapsed .sb-head>div>span,.sb.collapsed .sb-label,.sb.collapsed .sb-item span:not(.sb-badge),.sb.collapsed .sb-foot>div:last-child{display:block!important}.sb.collapsed .sb-head{justify-content:flex-start;padding:1.25rem}.sb.collapsed .sb-item{justify-content:flex-start;padding:.6rem .85rem;gap:.65rem}.sb.collapsed .sb-foot{justify-content:flex-start;padding:.85rem 1.1rem;flex-direction:row;gap:.6rem}.sb.collapsed .sb-foot .sb-user-info{display:block}.sb-collapse-toggle{display:none}.mn{margin-left:0!important}.hamburger{display:flex}.ld-nav-links,.ld-nav-cta{display:none}.ld-hero{flex-direction:column;padding:6rem 5vw 3rem;gap:2.5rem}.ld-hero-right{flex:none;width:100%;max-width:400px}.ld-terminal{transform:none}.ld-stmts,.ld-loop{grid-template-columns:1fr}.ld-loop-item{border-left:none!important;padding-left:0!important;margin-bottom:1.25rem}.ld-stats2{gap:2rem}.ld-panel-body{grid-template-columns:1fr}.ld-hero-metrics{gap:1.5rem}.ld-footer{flex-direction:column;gap:1rem;text-align:center}.set-row{grid-template-columns:1fr}.set-nav{flex-wrap:wrap}}
 @media(max-width:480px){.kpi-row{grid-template-columns:1fr}.pg{padding:1rem}}
 </style>
 </head>
@@ -1065,9 +1060,9 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <button class="btn btn-outline btn-lg" onclick="document.getElementById('ld-feats').scrollIntoView({behavior:'smooth'})">See how it works</button>
 </div>
 <div class="ld-hero-metrics">
-<div class="ld-hero-metric"><strong class="ld-counter" data-target="500" data-suffix="+">0</strong><span>Questions</span></div>
-<div class="ld-hero-metric"><strong class="ld-counter" data-target="12" data-suffix="k+">0</strong><span>Sessions</span></div>
-<div class="ld-hero-metric"><strong class="ld-counter" data-target="4.9" data-suffix="" data-decimal="true">0</strong><span>User Rating</span></div>
+<div class="ld-hero-metric"><strong class="ld-counter mono" data-target="500" data-suffix="+">0</strong><span>Questions</span></div>
+<div class="ld-hero-metric"><strong class="ld-counter mono" data-target="12" data-suffix="k+">0</strong><span>Sessions</span></div>
+<div class="ld-hero-metric"><strong class="ld-counter mono" data-target="4.9" data-suffix="" data-decimal="true">0</strong><span>User Rating</span></div>
 </div>
 </div>
 <div class="ld-hero-right">
@@ -1088,62 +1083,76 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 </div>
 </section>
 
-<section class="ld-features ld-reveal" id="ld-feats">
-<div class="ld-features-label">Built Different</div>
-<h2 class="ld-features-title">Not just another prep tool</h2>
-<p class="ld-features-sub">Every feature designed around how engineers actually learn and improve.</p>
-<div class="ld-feat-row">
-<div class="ld-feat ld-reveal"><div class="ld-feat-num">01</div><div class="ld-feat-icon2" style="background:var(--accentBg);color:var(--accent)">&#9889;</div><h3>Adaptive AI Engine</h3><p>Questions evolve based on your answers. Miss a topic? The next session doubles down on it. Get it right? Difficulty increases.</p></div>
-<div class="ld-feat ld-reveal"><div class="ld-feat-num">02</div><div class="ld-feat-icon2" style="background:var(--blueBg);color:var(--blue)">&#9998;</div><h3>Line-by-Line Feedback</h3><p>Not just "good job." We analyze clarity, technical depth, real-world applicability, and suggest exactly what to add.</p></div>
-<div class="ld-feat ld-reveal"><div class="ld-feat-num">03</div><div class="ld-feat-icon2" style="background:var(--greenBg);color:var(--green)">&#128200;</div><h3>Weakness Mapping</h3><p>Automatically identifies patterns in your weak areas across sessions and builds a personalized study path.</p></div>
-</div>
-</section>
+<canvas class="ld-canvas" id="ldCanvas"></canvas>
 
-<section class="ld-testi ld-reveal">
-<div class="ld-testi-inner">
-<div class="ld-testi-card ld-reveal">
-<div class="ld-testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-<div class="ld-testi-text">"I practiced for 2 weeks and landed my dream role at Google. The AI feedback on system design questions was better than any mock interview I've done."</div>
-<div class="ld-testi-author"><div class="ld-testi-av" style="background:var(--accent)">S</div><div><div class="ld-testi-name">Sarah Chen</div><div class="ld-testi-role">Senior Engineer, Google</div></div></div>
+<section class="ld-section ld-reveal" id="ld-feats">
+<div class="ld-section-head">
+<div class="ld-section-label">See it work</div>
+<h2 class="ld-section-title">Feedback that reads like a senior engineer wrote it</h2>
+<p class="ld-section-sub">Not a bare score. A real answer, graded, with the reasoning shown &mdash; this is an actual practice session.</p>
 </div>
-<div class="ld-testi-card ld-reveal">
-<div class="ld-testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-<div class="ld-testi-text">"The weakness mapping changed everything. I had no idea I was consistently weak on concurrency questions until PrepAI showed me the pattern."</div>
-<div class="ld-testi-author"><div class="ld-testi-av" style="background:var(--blue)">M</div><div><div class="ld-testi-name">Marcus Rivera</div><div class="ld-testi-role">Staff Engineer, Stripe</div></div></div>
+<div class="ld-stage" id="ldStage">
+<div class="ld-panel" id="ldPanel">
+<div class="ld-panel-face">
+<div class="ld-panel-bar"><div class="ld-panel-dot" style="background:#ff5f57"></div><div class="ld-panel-dot" style="background:#febc2e"></div><div class="ld-panel-dot" style="background:#28c840"></div><span class="ld-panel-title mono">prepai &mdash; practice session</span></div>
+<div class="ld-panel-body">
+<div class="ld-panel-q">
+<span class="lbl mono">QUESTION 4 OF 10 &mdash; REACT, SENIOR</span>
+How would you prevent unnecessary re-renders in a list of 10,000 items?
+<div class="ld-panel-ta">I'd wrap the component in React.memo and virtualize the list so we're not mounting every row at once...</div>
 </div>
-<div class="ld-testi-card ld-reveal">
-<div class="ld-testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-<div class="ld-testi-text">"Finally, a prep tool that adapts to me. Junior questions were too easy, senior ones too hard. This finds the exact level where I learn fastest."</div>
-<div class="ld-testi-author"><div class="ld-testi-av" style="background:var(--green)">A</div><div><div class="ld-testi-name">Aisha Patel</div><div class="ld-testi-role">Frontend Lead, Vercel</div></div></div>
+<div class="ld-panel-fb">
+<div class="ld-ring"><div class="ld-ring-inner"><b class="mono">8.5</b><span>/ 10</span></div></div>
+<div class="verdict">Excellent answer</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </section>
 
-<section class="ld-how ld-reveal" id="ld-how">
-<div class="ld-features-label">How It Works</div>
-<h2 class="ld-features-title">From sign-up to offer letter</h2>
-<div class="ld-how-grid">
-<div class="ld-how-step ld-reveal"><div class="ld-how-dot">1</div><h3>Pick Your Stack</h3><p>React, TypeScript, System Design, DSA, Node, NestJS and 14 more.</p></div>
-<div class="ld-how-step ld-reveal"><div class="ld-how-dot">2</div><h3>Answer Live</h3><p>Type answers in a timed, pressure-free environment. No judgment, just practice.</p></div>
-<div class="ld-how-step ld-reveal"><div class="ld-how-dot">3</div><h3>Get AI Feedback</h3><p>Detailed scoring with specific improvement suggestions for every answer.</p></div>
-<div class="ld-how-step ld-reveal"><div class="ld-how-dot">4</div><h3>Track Growth</h3><p>Watch your scores climb. See which topics are strong and which need work.</p></div>
+<section class="ld-section ld-reveal">
+<div class="ld-section-head">
+<div class="ld-section-label">Built differently</div>
+<h2 class="ld-section-title">Three things a static question bank can't do</h2>
+</div>
+<div class="ld-stmts">
+<div class="ld-stmt-card ld-reveal"><span class="idx mono">01</span><h3>Adapts every question</h3><p>Nail three in a row and the next one gets harder. Miss the fundamentals and it backs off automatically &mdash; no settings screen, it just happens.</p></div>
+<div class="ld-stmt-card ld-reveal"><span class="idx mono">02</span><h3>Explains the score</h3><p>What you got right, what's missing, and the exact phrase to add next time &mdash; not just a number.</p></div>
+<div class="ld-stmt-card ld-reveal"><span class="idx mono">03</span><h3>Finds your gaps first</h3><p>No self-assessment quiz. After a few sessions we already know where you're strong and where you're not.</p></div>
 </div>
 </section>
 
-<section class="ld-bignumbers ld-reveal" id="ld-stats">
-<div class="ld-bignums-inner">
-<div class="ld-bign ld-reveal"><div class="ld-bign-val grad">500+</div><div class="ld-bign-lbl">Practice Questions</div></div>
-<div class="ld-bign ld-reveal"><div class="ld-bign-val grad">20+</div><div class="ld-bign-lbl">Topic Categories</div></div>
-<div class="ld-bign ld-reveal"><div class="ld-bign-val grad">12k+</div><div class="ld-bign-lbl">Sessions Completed</div></div>
-<div class="ld-bign ld-reveal"><div class="ld-bign-val grad">Free</div><div class="ld-bign-lbl">No Credit Card</div></div>
+<section class="ld-section ld-reveal" id="ld-how">
+<div class="ld-section-head">
+<div class="ld-section-label">The loop</div>
+<h2 class="ld-section-title">Four steps, every session</h2>
+</div>
+<div class="ld-loop">
+<div class="ld-loop-item"><h4>Pick your stack</h4><p>React, TypeScript, System Design, DSA, Node, NestJS and 14 more.</p></div>
+<div class="ld-loop-item"><h4>Answer for real</h4><p>Timed, typed, no multiple choice &mdash; no judgment, just practice.</p></div>
+<div class="ld-loop-item"><h4>Get graded</h4><p>Score plus the reasoning behind it, in seconds.</p></div>
+<div class="ld-loop-item"><h4>Watch gaps close</h4><p>Each session targets what your last one exposed.</p></div>
 </div>
 </section>
 
-<section class="ld-cta ld-reveal">
-<div class="ld-cta-inner">
-<h2>Stop preparing the hard way</h2>
-<p>Join 12,000+ developers who practice smarter, not harder.</p>
-<button class="btn btn-primary btn-lg" onclick="go('auth')">Get Started Free &rarr;</button>
+<section class="ld-section ld-reveal" id="ld-stats">
+<div class="ld-section-head">
+<div class="ld-section-label">In practice</div>
+<h2 class="ld-section-title">Scores that actually move</h2>
+</div>
+<div class="ld-stats2">
+<div class="ld-stat2"><b class="mono">4.2&rarr;8.3</b><span>Avg. system design score, first 10 sessions</span></div>
+<div class="ld-stat2"><b class="mono">31&rarr;84%</b><span>MongoDB score after two focused weeks</span></div>
+<div class="ld-stat2"><b class="mono">12</b><span>Sessions to a first "you're ready" verdict</span></div>
+</div>
+</section>
+
+<section class="ld-cta2 ld-reveal">
+<div class="ld-cta2-inner">
+<h2>Stop guessing. Start practicing.</h2>
+<p>Free to start. No credit card. Cancel anytime.</p>
+<button class="btn-cta" onclick="go('auth')">Get Started Free &rarr;</button>
 </div>
 </section>
 
@@ -1337,30 +1346,29 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <div class="pg-title">Good evening, Abhi &#128075;</div>
 <div class="pg-sub" id="dashboard-sub">You've completed 3 sessions this week. Keep the streak going!</div>
 <div class="kpi-row">
-<div class="kpi"><div class="kpi-top"><div class="kpi-ico amber">&#128221;</div><div class="kpi-trend up">&#8593; 12%</div></div><div class="kpi-val">24</div><div class="kpi-lbl">Sessions Completed</div></div>
-<div class="kpi"><div class="kpi-top"><div class="kpi-ico blue">&#10067;</div><div class="kpi-trend up">&#8593; 8%</div></div><div class="kpi-val">186</div><div class="kpi-lbl">Questions Answered</div></div>
-<div class="kpi"><div class="kpi-top"><div class="kpi-ico green">&#11088;</div><div class="kpi-trend up">&#8593; 5%</div></div><div class="kpi-val">7.4</div><div class="kpi-lbl">Average Score</div></div>
-<div class="kpi"><div class="kpi-top"><div class="kpi-ico purple">&#128187;</div><div class="kpi-trend up">&#10003;</div></div><div class="kpi-val" id="kpi-solved">0</div><div class="kpi-lbl">Problems Solved</div></div>
+<div class="kpi"><div class="kpi-top"><div class="kpi-ico amber">&#128221;</div><div class="kpi-trend up mono">&#8593; 12%</div></div><div class="kpi-val mono">24</div><div class="kpi-lbl">Sessions Completed</div></div>
+<div class="kpi"><div class="kpi-top"><div class="kpi-ico blue">&#10067;</div><div class="kpi-trend up mono">&#8593; 8%</div></div><div class="kpi-val mono">186</div><div class="kpi-lbl">Questions Answered</div></div>
+<div class="kpi"><div class="kpi-top"><div class="kpi-ico green">&#11088;</div><div class="kpi-trend up mono">&#8593; 5%</div></div><div class="kpi-val mono">7.4</div><div class="kpi-lbl">Average Score</div></div>
+<div class="kpi"><div class="kpi-top"><div class="kpi-ico purple">&#128187;</div><div class="kpi-trend up mono">&#10003;</div></div><div class="kpi-val mono" id="kpi-solved">0</div><div class="kpi-lbl">Problems Solved</div></div>
 </div>
 <div class="dash-grid"><div>
 <div class="cd" style="margin-bottom:1.25rem"><div class="cd-h"><h3>Recent Sessions</h3><button class="btn btn-ghost btn-sm" onclick="showPg('history')">View All</button></div>
 <div class="cd-b tb-wrap" style="padding:0"><table class="tbl"><thead><tr><th>Topic</th><th>Date</th><th>Score</th><th>Status</th></tr></thead><tbody>
-<tr><td>React Hooks</td><td>Today, 2:30 PM</td><td><span class="pill pill-green">8.5</span></td><td><span class="pill pill-green">Done</span></td></tr>
-<tr><td>System Design</td><td>Yesterday</td><td><span class="pill pill-amber">6.2</span></td><td><span class="pill pill-green">Done</span></td></tr>
-<tr><td>DSA &mdash; Trees</td><td>Jun 22</td><td><span class="pill pill-red">4.8</span></td><td><span class="pill pill-blue">In Progress</span></td></tr>
-<tr><td>TypeScript Generics</td><td>Jun 21</td><td><span class="pill pill-green">9.1</span></td><td><span class="pill pill-green">Done</span></td></tr>
-<tr><td>NestJS Guards</td><td>Jun 20</td><td><span class="pill pill-amber">7.3</span></td><td><span class="pill pill-green">Done</span></td></tr>
+<tr><td>React Hooks</td><td>Today, 2:30 PM</td><td><span class="pill pill-green">&#10003; 8.5</span></td><td><span class="pill pill-green">Done</span></td></tr>
+<tr><td>System Design</td><td>Yesterday</td><td><span class="pill pill-amber">~ 6.2</span></td><td><span class="pill pill-green">Done</span></td></tr>
+<tr><td>DSA &mdash; Trees</td><td>Jun 22</td><td><span class="pill pill-red">! 4.8</span></td><td><span class="pill pill-blue">In Progress</span></td></tr>
+<tr><td>TypeScript Generics</td><td>Jun 21</td><td><span class="pill pill-green">&#10003; 9.1</span></td><td><span class="pill pill-green">Done</span></td></tr>
+<tr><td>NestJS Guards</td><td>Jun 20</td><td><span class="pill pill-green">&#10003; 7.3</span></td><td><span class="pill pill-green">Done</span></td></tr>
 </tbody></table></div></div>
 <div class="cd"><div class="cd-h"><h3>Suggested Practice</h3></div><div class="cd-b"><p style="font-size:.825rem;color:var(--dim);margin-bottom:.85rem">Based on your weak areas, we recommend:</p>
 <div class="tags"><span class="tag" onclick="goPractice('DSA')">DSA &mdash; Graphs</span><span class="tag" onclick="goPractice('System Design')">System Design</span><span class="tag" onclick="goPractice('React')">React Performance</span><span class="tag" onclick="goPractice('Node.js')">Node.js Streams</span><span class="tag" onclick="showPg('coding')">Coding &mdash; Two Sum</span></div></div></div>
 </div><div>
-<div class="cd" style="margin-bottom:1.25rem"><div class="streak"><div class="streak-num">7</div><div class="streak-lbl">Day Streak</div><div class="streak-days"><div class="streak-day done">M</div><div class="streak-day done">T</div><div class="streak-day done">W</div><div class="streak-day done">T</div><div class="streak-day done">F</div><div class="streak-day now">S</div><div class="streak-day">S</div></div></div></div>
+<div class="cd" style="margin-bottom:1.25rem"><div class="streak"><div class="streak-num mono">7</div><div class="streak-lbl">Day Streak</div><div class="streak-days"><div class="streak-day done">M</div><div class="streak-day done">T</div><div class="streak-day done">W</div><div class="streak-day done">T</div><div class="streak-day done">F</div><div class="streak-day now">S</div><div class="streak-day">S</div></div></div></div>
 <div class="cd" style="margin-bottom:1.25rem"><div class="cd-h"><h3>Score Trend</h3><span style="font-size:.75rem;color:var(--faint)">Last 7 sessions</span></div><div class="cd-b"><div class="score-chart" id="score-chart"></div></div></div>
 <div class="cd"><div class="cd-h"><h3>Weak Areas</h3></div><div class="cd-b">
-<div class="prog"><div class="prog-top"><span class="prog-lbl">DSA</span><span class="prog-pct">45%</span></div><div class="prog-track"><div class="prog-fill amber" style="width:45%"></div></div></div>
+<div class="prog"><div class="prog-top"><span class="prog-lbl">MongoDB</span><span class="prog-pct">45%</span></div><div class="prog-track"><div class="prog-fill amber" style="width:45%"></div></div></div>
 <div class="prog"><div class="prog-top"><span class="prog-lbl">System Design</span><span class="prog-pct">62%</span></div><div class="prog-track"><div class="prog-fill blue" style="width:62%"></div></div></div>
-<div class="prog"><div class="prog-top"><span class="prog-lbl">Node.js</span><span class="prog-pct">71%</span></div><div class="prog-track"><div class="prog-fill green" style="width:71%"></div></div></div>
-<div class="prog"><div class="prog-top"><span class="prog-lbl">NestJS</span><span class="prog-pct">78%</span></div><div class="prog-track"><div class="prog-fill purple" style="width:78%"></div></div></div>
+<div class="prog"><div class="prog-top"><span class="prog-lbl">ExpressJS</span><span class="prog-pct">68%</span></div><div class="prog-track"><div class="prog-fill purple" style="width:68%"></div></div></div>
 </div></div>
 </div></div>
 </div>
@@ -1487,7 +1495,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <div class="q-actions"><button class="btn btn-outline" onclick="skipQ()">Skip</button><button class="btn btn-primary" style="flex:1" onclick="submitQ()">Submit Answer</button></div>
 </div>
 <div class="fb-card" id="fb-card" hidden>
-<div class="fb-score"><div class="fb-ring"><svg viewBox="0 0 110 110"><defs><linearGradient id="gAmber" x1="0%" y1="0%" x2="100%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#fbbf24"/></linearGradient></defs><circle class="fb-ring-bg" cx="55" cy="55" r="45"/><circle class="fb-ring-fill" id="fb-ring" cx="55" cy="55" r="45"/></svg><div class="fb-ring-val"><div class="fb-ring-num" id="fb-num">0</div><div class="fb-ring-of">/ 10</div></div></div>
+<div class="fb-score"><div class="fb-ring"><svg viewBox="0 0 110 110"><defs><linearGradient id="gAmber" x1="0%" y1="0%" x2="100%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#fbbf24"/></linearGradient></defs><circle class="fb-ring-bg" cx="55" cy="55" r="45"/><circle class="fb-ring-fill" id="fb-ring" cx="55" cy="55" r="45"/></svg><div class="fb-ring-val"><div class="fb-ring-num mono" id="fb-num">0</div><div class="fb-ring-of">/ 10</div></div></div>
 <div class="fb-verdict" id="fb-verdict">Good Answer!</div></div>
 <div class="fb-detail" id="fb-detail">Your answer shows solid understanding. Consider adding more edge cases and real-world examples.</div>
 <div class="fb-actions"><button class="btn btn-primary btn-full" onclick="nextQ()">Next Question</button><button class="btn btn-outline btn-full" onclick="practiceSameTopic()">Practice Same Topic Again</button><button class="btn btn-ghost btn-full" onclick="endSess()">End Session</button></div>
@@ -1500,9 +1508,9 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 <h3>Session Complete!</h3>
 <p class="session-complete-sub">Great work! Here's how you did.</p>
 <div class="session-complete-stats">
-<div class="session-complete-stat"><span class="session-complete-val" id="sc-questions">0</span><span class="session-complete-lbl">Questions</span></div>
-<div class="session-complete-stat"><span class="session-complete-val" id="sc-score">0.0</span><span class="session-complete-lbl">Avg Score</span></div>
-<div class="session-complete-stat"><span class="session-complete-val" id="sc-time">0m</span><span class="session-complete-lbl">Time</span></div>
+<div class="session-complete-stat"><span class="session-complete-val mono" id="sc-questions">0</span><span class="session-complete-lbl">Questions</span></div>
+<div class="session-complete-stat"><span class="session-complete-val mono" id="sc-score">0.0</span><span class="session-complete-lbl">Avg Score</span></div>
+<div class="session-complete-stat"><span class="session-complete-val mono" id="sc-time">0m</span><span class="session-complete-lbl">Time</span></div>
 </div>
 <div class="session-complete-actions">
 <button class="btn btn-primary btn-full" onclick="backToPractice()">Back to Practice</button>
@@ -1559,7 +1567,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 </div>
 <div class="toggle-row"><div class="toggle-info"><h4>Show hints after skip</h4><p>Display a hint when you skip a question</p></div><div class="toggle-sw on" onclick="this.classList.toggle('on')"></div></div>
 <div class="toggle-row"><div class="toggle-info"><h4>Auto-advance to next question</h4><p>Move to next question 3 seconds after submitting</p></div><div class="toggle-sw" onclick="this.classList.toggle('on')"></div></div>
-<div style="margin-top:1.25rem"><button class="btn btn-primary" onclick="showToast('Practice preferences saved')">Save Preferences</button></div>
+<div style="margin-top:1.25rem"><button class="btn btn-primary" onclick="localStorage.setItem('prepai_prefs_saved','true');showToast('Practice preferences saved')">Save Preferences</button></div>
 </div>
 <!-- AI & Sources -->
 <div class="set-panel" id="set-ai" hidden><h2>AI & Sources</h2>
@@ -1729,10 +1737,10 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 
 <!-- CODING STATS BAR -->
 <div class="coding-stats-bar" id="coding-stats-bar">
-<div class="coding-stat"><span class="coding-stat-val" id="cs-solved">0</span><span class="coding-stat-lbl">Solved</span></div>
-<div class="coding-stat"><span class="coding-stat-val" id="cs-daily">0/5</span><span class="coding-stat-lbl">Today</span></div>
-<div class="coding-stat"><span class="coding-stat-val" id="cs-reviews">0/3</span><span class="coding-stat-lbl">AI Reviews</span></div>
-<div class="coding-stat"><span class="coding-stat-val" id="cs-streak">0</span><span class="coding-stat-lbl">Day Streak</span></div>
+<div class="coding-stat"><span class="coding-stat-val mono" id="cs-solved">0</span><span class="coding-stat-lbl">Solved</span></div>
+<div class="coding-stat"><span class="coding-stat-val mono" id="cs-daily">0/5</span><span class="coding-stat-lbl">Today</span></div>
+<div class="coding-stat"><span class="coding-stat-val mono" id="cs-reviews">0/3</span><span class="coding-stat-lbl">AI Reviews</span></div>
+<div class="coding-stat"><span class="coding-stat-val mono" id="cs-streak">0</span><span class="coding-stat-lbl">Day Streak</span></div>
 </div>
 
 <!-- VIEW 1: Problem List (full page) -->
@@ -2038,7 +2046,7 @@ if(name==='history')renderHist();
 if(name==='practice')showStartCard();
 if(name==='coding')initCodingPage();
 if(name==='library')initLibrary();
-if(name==='dashboard'&&isNewUser)document.getElementById('welcome-banner').style.display='block';
+if(name==='dashboard')renderWelcomeBanner();
 if(name==='dashboard')updateRoleDisplay();
 closeSb();
 }
@@ -2137,11 +2145,13 @@ topics:topics,
 difficulty:document.getElementById('setup-diff').value
 };
 localStorage.setItem('prepai_setup',JSON.stringify(data));
+localStorage.removeItem('prepai_banner_dismissed');
 isNewUser=false;localStorage.setItem('prepai_new_user','false');
 showToast('Profile setup complete!');
 go('app');
 }
 function setupSkip(){
+localStorage.removeItem('prepai_banner_dismissed');
 isNewUser=false;localStorage.setItem('prepai_new_user','false');
 go('app');
 }
@@ -2176,17 +2186,11 @@ document.getElementById('start-diff2').textContent=curDiff;
 document.getElementById('start-count2').textContent=qCount;
 document.getElementById('start-count').textContent=qCount+' questions';
 if(curMode==='topic'){
-document.getElementById('start-topic').textContent=curTopic;
-document.getElementById('start-diff').textContent=curDiff;
-document.getElementById('start-desc').innerHTML='You\'ve selected <strong>'+curTopic+'</strong> at <strong>'+curDiff+'</strong> level. This session will include <strong>'+qCount+' questions</strong>.';
+document.getElementById('start-desc').innerHTML='You\'ve selected <strong id="start-topic">'+curTopic+'</strong> at <strong id="start-diff">'+curDiff+'</strong> level. This session will include <strong id="start-count">'+qCount+' questions</strong>.';
 }else if(curMode==='weak'){
-document.getElementById('start-topic').textContent='Weak Areas';
-document.getElementById('start-diff').textContent=curDiff;
-document.getElementById('start-desc').innerHTML='AI will focus on your weak areas at <strong>'+curDiff+'</strong> difficulty. This session will include <strong>'+qCount+' questions</strong>.';
+document.getElementById('start-desc').innerHTML='AI will focus on your weak areas at <strong id="start-diff">'+curDiff+'</strong> difficulty. This session will include <strong id="start-count">'+qCount+' questions</strong>.';
 }else{
-document.getElementById('start-topic').textContent='PDF Study';
-document.getElementById('start-diff').textContent=curDiff;
-document.getElementById('start-desc').innerHTML='Questions generated from your uploaded PDFs at <strong>'+curDiff+'</strong> difficulty. This session will include <strong>'+qCount+' questions</strong>.';
+document.getElementById('start-desc').innerHTML='Questions generated from your uploaded PDFs at <strong id="start-diff">'+curDiff+'</strong> difficulty. This session will include <strong id="start-count">'+qCount+' questions</strong>.';
 }
 clearInterval(timer);secs=0;updateT();
 }
@@ -2274,7 +2278,28 @@ loadQ();
 
 function dismissBanner(){
 document.getElementById('welcome-banner').style.display='none';
-isNewUser=false;localStorage.setItem('prepai_new_user','false');
+localStorage.setItem('prepai_banner_dismissed','true');
+}
+
+function renderWelcomeBanner(){
+var banner=document.getElementById('welcome-banner');
+if(localStorage.getItem('prepai_banner_dismissed')==='true'){banner.style.display='none';return;}
+var steps=banner.querySelectorAll('.welcome-step');
+var doneFlags=[
+!!localStorage.getItem('prepai_setup'),
+localStorage.getItem('prepai_uploaded_pdf')==='true',
+localStorage.getItem('prepai_prefs_saved')==='true'
+];
+for(var i=0;i<steps.length;i++){
+var done=doneFlags[i];
+steps[i].classList.toggle('done',done);
+steps[i].classList.toggle('pending',!done);
+var dot=steps[i].querySelector('.welcome-step-dot');
+dot.classList.toggle('done',done);
+dot.classList.toggle('pending',!done);
+dot.innerHTML=done?'&#10003;':String(i+1);
+}
+banner.style.display='block';
 }
 
 function loadQ(){
@@ -2353,8 +2378,9 @@ var html='';
 for(var i=0;i<hist.length;i++){
 var r=hist[i];
 var sc=r.score>=7?'pill-green':r.score>=5?'pill-amber':'pill-red';
+var scIcon=r.score>=7?'&#10003; ':r.score>=5?'~ ':'! ';
 var typePill=r.type==='coding'?'<span class="pill pill-purple">Coding</span>':'<span class="pill pill-blue">Practice</span>';
-html+='<tr onclick="toggleH('+i+')"><td>'+r.date+'</td><td>'+typePill+'</td><td>'+r.topic+'</td><td>'+r.qs+'</td><td><span class="pill '+sc+'">'+r.score+'</span></td><td>'+r.dur+'</td><td><span class="pill pill-green">'+(r.status==='completed'?'Completed':'In Progress')+'</span></td></tr>';
+html+='<tr tabindex="0" role="button" onclick="toggleH('+i+')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleH('+i+')}"><td>'+r.date+'</td><td>'+typePill+'</td><td>'+r.topic+'</td><td>'+r.qs+'</td><td><span class="pill '+sc+'">'+scIcon+r.score+'</span></td><td>'+r.dur+'</td><td><span class="pill pill-green">'+(r.status==='completed'?'Completed':'In Progress')+'</span></td></tr>';
 html+='<tr class="exp-row" id="exp-'+i+'"><td colspan="7"><div class="exp-inner">';
 for(var j=0;j<r.qa.length;j++){
 var a=r.qa[j];
@@ -2469,6 +2495,10 @@ renderLibGrid();
 
 function renderLibGrid(){
 var grid=document.getElementById('lib-grid');
+if(libPdfs.length===0){
+grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">&#128196;</div><h3>No PDFs yet</h3><p>Upload study material from Settings &rarr; Documents to read it here and use it as a source for PDF Study sessions.</p><button class="btn btn-primary btn-sm" onclick="showPg(\'settings\');showSetTab(\'docs\',document.querySelector(\'.set-nav-item[onclick*=docs]\'))">Go to Documents</button></div>';
+return;
+}
 var html='';
 for(var i=0;i<libPdfs.length;i++){
 var p=libPdfs[i];
@@ -2735,16 +2765,45 @@ var size=(f.size/(1024*1024)).toFixed(1);
 var pages=Math.floor(Math.random()*200)+50;
 var card=document.createElement('div');
 card.className='pdf-card';
-card.innerHTML='<div class="pdf-card-info"><div class="pdf-card-icon">PDF</div><div><div class="pdf-card-name">'+f.name+'</div><div class="pdf-card-size">'+size+' MB &bull; '+pages+' pages</div></div></div><div style="display:flex;align-items:center"><div class="toggle-sw on" onclick="this.classList.toggle(\'on\')"></div><div class="pdf-delete" onclick="this.closest(\'.pdf-card\').remove()" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>';
+card.innerHTML='<div class="pdf-card-info"><div class="pdf-card-icon">PDF</div><div><div class="pdf-card-name">'+escapeHtml(f.name)+'</div><div class="pdf-card-size">'+size+' MB &bull; '+pages+' pages</div></div></div><div style="display:flex;align-items:center"><div class="toggle-sw on" onclick="this.classList.toggle(\'on\')"></div><div class="pdf-delete" onclick="this.closest(\'.pdf-card\').remove()" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>';
 card.style.animation='fadeIn .3s ease';
 list.appendChild(card);
+localStorage.setItem('prepai_uploaded_pdf','true');
 }
+}
+
+/* Makes any clickable div/span (onclick, no native keyboard support) reachable via Tab and
+   activatable with Enter/Space. Runs once on load, then keeps enhancing content the app injects
+   dynamically later (coding cards, library grid, payment modal, etc.) via MutationObserver. */
+function makeKeyboardOperable(root){
+var candidates=[];
+if(root.nodeType===1&&root.matches&&root.matches('[onclick]:not(a):not(button):not(input):not(select):not(textarea):not([tabindex])')){
+candidates.push(root);
+}
+if(root.querySelectorAll){
+root.querySelectorAll('[onclick]:not(a):not(button):not(input):not(select):not(textarea):not([tabindex])').forEach(function(el){candidates.push(el)});
+}
+candidates.forEach(function(el){
+el.setAttribute('tabindex','0');
+if(!el.hasAttribute('role'))el.setAttribute('role','button');
+el.addEventListener('keydown',function(e){
+if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}
+});
+});
 }
 
 document.addEventListener('DOMContentLoaded',function(){
 loadTheme();
 initPdfDrop();
 renderScoreChart();
+makeKeyboardOperable(document);
+new MutationObserver(function(mutations){
+mutations.forEach(function(m){
+m.addedNodes.forEach(function(n){
+if(n.nodeType===1)makeKeyboardOperable(n);
+});
+});
+}).observe(document.body,{childList:true,subtree:true});
 
 document.getElementById('fs-expand-btn').addEventListener('click',enterFullscreen);
 document.getElementById('fs-close-btn').addEventListener('click',exitFullscreen);
@@ -2774,6 +2833,75 @@ if(window.scrollY>50){nav.classList.add('scrolled')}
 else{nav.classList.remove('scrolled')}
 });
 });
+
+/* Registered as its own listener, independent of the block above, so an
+   unrelated error elsewhere on the page can never silently prevent this
+   from running. */
+document.addEventListener('DOMContentLoaded',function(){
+try{initLdShowcase();}catch(e){console.error('initLdShowcase failed:',e);}
+});
+
+/* Landing page showcase: ambient particle canvas + 3D panel that tilts toward the cursor */
+function initLdShowcase(){
+try{
+var stage=document.getElementById('ldStage'),panel=document.getElementById('ldPanel');
+if(stage&&panel){
+stage.addEventListener('mousemove',function(e){
+var r=stage.getBoundingClientRect();
+var px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;
+panel.style.animationPlayState='paused';
+panel.style.transform='rotateY('+(-8+px*10)+'deg) rotateX('+(6-py*8)+'deg)';
+});
+stage.addEventListener('mouseleave',function(){panel.style.animationPlayState='running';panel.style.transform='';});
+}
+}catch(e){console.error('ld panel parallax failed:',e);}
+try{
+initLdParticles();
+}catch(e){console.error('ld particle canvas failed:',e);}
+}
+
+function initLdParticles(){
+var canvas=document.getElementById('ldCanvas');
+if(!canvas)return;
+var ctx=canvas.getContext('2d'),w,h,pts=[];
+function resize(){
+w=canvas.width=window.innerWidth;
+var landing=document.getElementById('scr-landing');
+h=canvas.height=Math.max(window.innerHeight,landing?landing.scrollHeight:0,document.documentElement.scrollHeight);
+}
+function init(){
+resize();pts=[];
+var count=Math.min(110,Math.floor(w*h/16000));
+for(var i=0;i<count;i++){pts.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:Math.random()*1.6+.5});}
+}
+function tick(){
+ctx.clearRect(0,0,w,h);
+for(var i=0;i<pts.length;i++){
+var p=pts[i];
+p.x+=p.vx;p.y+=p.vy;
+if(p.x<0)p.x=w;if(p.x>w)p.x=0;if(p.y<0)p.y=h;if(p.y>h)p.y=0;
+}
+for(var i=0;i<pts.length;i++){
+for(var j=i+1;j<pts.length;j++){
+var dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+if(dist<110){
+ctx.strokeStyle='rgba(245,158,11,'+(.14*(1-dist/110))+')';
+ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.stroke();
+}
+}
+}
+ctx.fillStyle='rgba(245,158,11,.45)';
+for(var i=0;i<pts.length;i++){
+var p=pts[i];
+ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();
+}
+requestAnimationFrame(tick);
+}
+window.addEventListener('resize',init);
+init();
+tick();
+}
 
 function animateCounters(){
 var counters=document.querySelectorAll('.ld-counter');
@@ -3222,29 +3350,38 @@ document.getElementById('upgrade-overlay').classList.add('show');
 function closeUpgradeModal(){
 document.getElementById('upgrade-overlay').classList.remove('show');
 }
+var pmCurrentType='upi';
+var ICON_GPAY='<div class="pm-badge" style="background:#fff;box-shadow:inset 0 0 0 1px var(--border)"><span class="gpay-ring"></span></div>';
+var ICON_PHONEPE='<div class="pm-badge" style="background:linear-gradient(135deg,#8a2be8,#5f259f)"><span style="font-style:italic;font-size:.85rem">pe</span></div>';
+var ICON_PAYTM='<div class="pm-badge" style="background:linear-gradient(135deg,#2dd4f5,#00b9f5)"><span style="font-size:1rem">P</span></div>';
+var ICON_BHIM='<div class="pm-badge pm-badge-bhim"><span class="pm-chakra"></span></div>';
+var CARD_VISA='<svg viewBox="0 0 32 20" width="30" height="18"><rect width="32" height="20" rx="3" fill="#1434CB"/><text x="16" y="14" font-size="8" font-weight="800" font-style="italic" fill="#fff" text-anchor="middle" font-family="Arial">VISA</text></svg>';
+var CARD_MASTERCARD='<svg viewBox="0 0 32 20" width="30" height="18"><circle cx="13" cy="10" r="6.2" fill="#eb001b"/><circle cx="19" cy="10" r="6.2" fill="#f79e1b" fill-opacity=".9"/></svg>';
+var CARD_RUPAY='<svg viewBox="0 0 32 20" width="30" height="18"><defs><linearGradient id="rgrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f7941d"/><stop offset="1" stop-color="#1a7a3c"/></linearGradient></defs><rect width="32" height="20" rx="3" fill="url(#rgrad)"/><text x="16" y="13" font-size="6" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial">RuPay</text></svg>';
+
 function processPayment(){
 closeUpgradeModal();
 var amount=selectedPlan==='monthly'?'299':'1,999';
 var planLabel=selectedPlan==='monthly'?'Monthly':'Yearly';
-var rzrpay=document.createElement('div');
-rzrpay.className='rzrpay-overlay';
-rzrpay.id='rzrpay-overlay';
-rzrpay.innerHTML='<div class="rzrpay-backdrop" onclick="closeRzrpay()"></div><div class="rzrpay-modal"><div class="rzrpay-left"><div class="rzrpay-methods-header"><span>Payment Method</span><button class="rzrpay-close-btn" onclick="closeRzrpay()">&times;</button></div><div class="rzrpay-methods-list"><div class="rzrpay-method" onclick="selectPayMethod(this,\'upi\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">UPI</div><div class="rzrpay-method-desc">Google Pay, PhonePe, Paytm & more</div></div></div><div class="rzrpay-method" onclick="selectPayMethod(this,\'card\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">Card</div><div class="rzrpay-method-desc">Credit or Debit Card</div></div></div><div class="rzrpay-method" onclick="selectPayMethod(this,\'netbanking\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">Netbanking</div><div class="rzrpay-method-desc">All major banks</div></div></div><div class="rzrpay-method" onclick="selectPayMethod(this,\'wallet\')"><div class="rzrpay-method-dot"></div><div class="rzrpay-method-content"><div class="rzrpay-method-name">Wallet</div><div class="rzrpay-method-desc">Paytm, Mobikwik & more</div></div></div></div><div class="rzrpay-method-body" id="rzrpay-method-body"></div></div><div class="rzrpay-right"><div class="rzrpay-order-header"><div class="rzrpay-order-icon">P</div><div class="rzrpay-order-name">PrepAI</div></div><div class="rzrpay-order-details"><div class="rzrpay-order-row"><span>Plan</span><span>'+planLabel+' Premium</span></div><div class="rzrpay-order-row"><span>Duration</span><span>'+(selectedPlan==='monthly'?'1 month':'12 months')+'</span></div><div class="rzrpay-order-row rzrpay-order-total"><span>Total</span><span>&#8377;'+amount+'</span></div></div><div class="rzrpay-order-note">By proceeding, you agree to PrepAI\'s Terms of Service and Privacy Policy.</div></div></div>';
-document.body.appendChild(rzrpay);
-setTimeout(function(){rzrpay.classList.add('show');},10);
+var pm=document.createElement('div');
+pm.className='pm-overlay';
+pm.id='pm-overlay';
+pm.innerHTML='<div class="pm-backdrop" onclick="closePM()"></div><div class="pm-modal"><div class="pm-head"><h3>Upgrade to Premium</h3><button class="pm-close-btn" onclick="closePM()" aria-label="Close">&times;</button></div><div class="pm-receipt"><span>'+planLabel+' &middot; '+(selectedPlan==='monthly'?'1 month':'12 months')+'</span><strong class="mono">&#8377;'+amount+'</strong></div><div class="pm-tabs"><button class="pm-tab on" onclick="selectPayMethod(this,\'upi\')">UPI</button><button class="pm-tab" onclick="selectPayMethod(this,\'card\')">Card</button><button class="pm-tab" onclick="selectPayMethod(this,\'netbanking\')">Netbanking</button><button class="pm-tab" onclick="selectPayMethod(this,\'wallet\')">Wallet</button></div><div class="pm-body" id="pm-method-body"></div></div>';
+document.body.appendChild(pm);
+setTimeout(function(){pm.classList.add('show');},10);
+selectPayMethod(pm.querySelector('.pm-tab'),'upi');
 }
 
-function closeRzrpay(){
-var el=document.getElementById('rzrpay-overlay');
+function closePM(){
+var el=document.getElementById('pm-overlay');
 if(el){el.classList.remove('show');setTimeout(function(){el.remove();},300);}
 }
 
 function completePayment(){
-var btn=document.querySelector('.rzrpay-pay-btn');
-btn.textContent='Processing...';
-btn.disabled=true;
+var btn=document.querySelector('.pm-pay-btn');
+if(btn){btn.textContent='Processing...';btn.disabled=true;}
 setTimeout(function(){
-closeRzrpay();
+closePM();
 curRole='PREMIUM';
 localStorage.setItem('prepai_role',curRole);
 var roleBadge=document.getElementById('role-badge');
@@ -3258,39 +3395,49 @@ showToast('Payment successful! You\'re now Premium.','success');
 },2500);
 }
 
+function lockTabs(lock){
+var t=document.querySelector('.pm-tabs');
+if(t)t.classList.toggle('locked',lock);
+}
+
 function selectPayMethod(el,type){
-el.parentElement.querySelectorAll('.rzrpay-method').forEach(function(m){m.classList.remove('selected')});
-el.classList.add('selected');
-el.parentElement.classList.add('collapsed');
-var header=document.querySelector('.rzrpay-methods-header');
-var methodName=el.querySelector('.rzrpay-method-name').textContent;
-header.innerHTML='<span onclick="expandMethods()" style="cursor:pointer;display:flex;align-items:center;gap:.4rem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Change</span><span>'+methodName+'</span>';
-var body=document.getElementById('rzrpay-method-body');
+lockTabs(false);
+pmCurrentType=type;
+document.querySelectorAll('.pm-tab').forEach(function(t){t.classList.remove('on')});
+el.classList.add('on');
+var body=document.getElementById('pm-method-body');
 var amount=selectedPlan==='monthly'?'299':'1,999';
 if(type==='upi'){
-body.innerHTML='<div class="rzrpay-upi-apps"><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#4285f4;color:#fff;font-size:.65rem;font-weight:700">GPay</div><span>Google Pay</span></div><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#5f259f;color:#fff;font-size:.65rem;font-weight:700">PhPe</div><span>PhonePe</span></div><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#00b9f5;color:#fff;font-size:.65rem;font-weight:700">Paytm</div><span>Paytm</span></div><div class="rzrpay-upi-app" onclick="selectInnerItem(this)"><div class="rzrpay-app-icon" style="background:#950013;color:#fff;font-size:.6rem;font-weight:700">BHIM</div><span>BHIM</span></div></div><div class="rzrpay-upi-or">OR</div><div class="rzrpay-upi-id-section"><label class="rzrpay-input-label">Enter UPI ID</label><div class="rzrpay-input-row"><input type="text" placeholder="name@upi" class="rzrpay-input"><button class="rzrpay-verify-btn">Verify</button></div></div>';
+body.innerHTML='<div class="pm-tile-grid"><div class="pm-tile selected" onclick="selectUpiApp(this,\'Google Pay\')">'+ICON_GPAY+'Google Pay</div><div class="pm-tile" onclick="selectUpiApp(this,\'PhonePe\')">'+ICON_PHONEPE+'PhonePe</div><div class="pm-tile" onclick="selectUpiApp(this,\'Paytm\')">'+ICON_PAYTM+'Paytm</div><div class="pm-tile" onclick="selectUpiApp(this,\'BHIM\')">'+ICON_BHIM+'BHIM</div></div><div class="pm-qr-section"><div class="pm-qr-title">Scan with <strong id="pm-qr-app">Google Pay</strong><span class="pill pill-amber">Fastest</span></div><div class="pm-qr-box" id="pm-qr-box"></div><div class="pm-qr-timer" id="pm-qr-timer">Open the app and scan. Expires in <strong>4:58</strong></div><div class="pm-qr-simulate"><button class="pm-simulate-btn" onclick="simulatePayment()">Simulate payment</button><span class="pm-simulate-hint">or scan from your phone</span></div></div><div class="pm-divider">or enter UPI ID</div><div class="pm-row"><input type="text" placeholder="name@upi" class="pm-input" style="margin-bottom:0"><button class="pm-verify-btn">Verify</button></div>';
+renderQR(document.getElementById('pm-qr-box'),3);
 }else if(type==='card'){
-body.innerHTML='<div style="display:flex;flex-direction:column;gap:.75rem"><div><label class="rzrpay-input-label">Card Number</label><input type="text" placeholder="1234 5678 9012 3456" class="rzrpay-input" style="width:100%" maxlength="19" oninput="formatCardNumber(this)" id="rzrpay-card-num"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem"><div><label class="rzrpay-input-label">Expiry</label><input type="text" placeholder="MM/YY" class="rzrpay-input" style="width:100%" maxlength="5" oninput="formatExpiry(this)" id="rzrpay-card-exp"></div><div><label class="rzrpay-input-label">CVV</label><input type="password" placeholder="***" class="rzrpay-input" style="width:100%" maxlength="4" id="rzrpay-card-cvv"></div></div><div><label class="rzrpay-input-label">Name on Card</label><input type="text" placeholder="John Doe" class="rzrpay-input" style="width:100%" id="rzrpay-card-name"></div><button class="rzrpay-pay-btn" onclick="processCardPayment()" style="margin-top:.5rem">Pay &#8377;'+amount+'</button></div>';
+body.innerHTML='<div class="pm-field-wrap"><label class="pm-label">Card number</label><input type="text" placeholder="4242 4242 4242 4242" class="pm-input mono" style="padding-right:2.6rem" maxlength="19" oninput="formatCardNumber(this)" id="pm-card-num"><span class="pm-card-brand" id="pm-card-brand"></span></div><div class="pm-grid2"><div><label class="pm-label">Expiry</label><input type="text" placeholder="MM/YY" class="pm-input mono" maxlength="5" oninput="formatExpiry(this)" id="pm-card-exp"></div><div><label class="pm-label">CVV</label><input type="password" placeholder="&bull;&bull;&bull;" class="pm-input mono" maxlength="4" id="pm-card-cvv"></div></div><label class="pm-label">Name on card</label><input type="text" placeholder="Jane Doe" class="pm-input" id="pm-card-name"><button class="pm-pay-btn mono" onclick="processCardPayment()">Continue</button><div class="pm-secure">&#128274; Payments are encrypted and processed securely</div>';
 }else if(type==='netbanking'){
-body.innerHTML='<div class="rzrpay-bank-grid"><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#1a4b8e">SBI</div><span>State Bank of India</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#004b8d">HDFC</div><span>HDFC Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#b31217">ICICI</div><span>ICICI Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#8c1515">Axis</div><span>Axis Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#003da5">Kotak</div><span>Kotak Mahindra</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#a4002b">Yes</div><span>Yes Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#005ba1">PNB</div><span>Punjab National Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#ed1c24">IDBI</div><span>IDBI Bank</span></div><div class="rzrpay-bank" onclick="selectBank(this)"><div class="rzrpay-bank-icon" style="background:#004c8f">BOB</div><span>Bank of Baroda</span></div></div><div class="rzrpay-bank-pay" id="rzrpay-bank-pay" style="display:none;margin-top:1rem"><button class="rzrpay-pay-btn" onclick="processBankPayment()">Pay &#8377;'+amount+'</button></div>';
+body.innerHTML='<div class="pm-bank-grid"><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#1a4b8e">SBI</div><span>State Bank</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#004b8d">HDFC</div><span>HDFC Bank</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#b31217">ICICI</div><span>ICICI Bank</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#8c1515">Axis</div><span>Axis Bank</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#003da5">Kotak</div><span>Kotak Mahindra</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#a4002b">Yes</div><span>Yes Bank</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#005ba1">PNB</div><span>Punjab National</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#ed1c24">IDBI</div><span>IDBI Bank</span></div><div class="pm-bank" onclick="selectBank(this)"><div class="pm-badge sm" style="background:#004c8f">BOB</div><span>Bank of Baroda</span></div></div><button class="pm-pay-btn mono" id="pm-bank-pay" style="display:none" onclick="processBankPayment()">Pay &#8377;'+amount+'</button>';
 }else if(type==='wallet'){
-body.innerHTML='<div class="rzrpay-wallet-list"><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#00b9f5;color:#fff;font-size:.7rem;font-weight:700">Paytm</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">Paytm</div><div class="rzrpay-wallet-desc">Pay using Paytm wallet</div></div></div><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#8c3e9f;color:#fff;font-size:.6rem;font-weight:700">MobiKwik</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">Mobikwik</div><div class="rzrpay-wallet-desc">Pay using Mobikwik wallet</div></div></div><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#e42527;color:#fff;font-size:.55rem;font-weight:700">FreeCharge</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">FreeCharge</div><div class="rzrpay-wallet-desc">Pay using FreeCharge wallet</div></div></div><div class="rzrpay-wallet" onclick="selectWallet(this)"><div class="rzrpay-wallet-icon" style="background:#333;color:#fff;font-size:.55rem;font-weight:700">JioMoney</div><div class="rzrpay-wallet-info"><div class="rzrpay-wallet-name">JioMoney</div><div class="rzrpay-wallet-desc">Pay using JioMoney wallet</div></div></div></div><div class="rzrpay-wallet-pay" id="rzrpay-wallet-pay" style="display:none;margin-top:1rem"><button class="rzrpay-pay-btn" onclick="processWalletPayment()">Pay &#8377;'+amount+'</button></div>';
+body.innerHTML='<div class="pm-wallet-list"><div class="pm-wallet" onclick="selectWallet(this)"><div class="pm-badge" style="background:linear-gradient(135deg,#2dd4f5,#00b9f5)">P</div><div><div class="pm-wallet-name">Paytm</div><div class="pm-wallet-desc">Pay using Paytm wallet</div></div></div><div class="pm-wallet" onclick="selectWallet(this)"><div class="pm-badge" style="background:linear-gradient(135deg,#a855f7,#8c3e9f)">M</div><div><div class="pm-wallet-name">Mobikwik</div><div class="pm-wallet-desc">Pay using Mobikwik wallet</div></div></div><div class="pm-wallet" onclick="selectWallet(this)"><div class="pm-badge" style="background:linear-gradient(135deg,#f97066,#e42527)">FC</div><div><div class="pm-wallet-name">FreeCharge</div><div class="pm-wallet-desc">Pay using FreeCharge wallet</div></div></div><div class="pm-wallet" onclick="selectWallet(this)"><div class="pm-badge" style="background:#333">JM</div><div><div class="pm-wallet-name">JioMoney</div><div class="pm-wallet-desc">Pay using JioMoney wallet</div></div></div></div><button class="pm-pay-btn mono" id="pm-wallet-pay" style="display:none" onclick="processWalletPayment()">Pay &#8377;'+amount+'</button>';
 }
 }
 
-function expandMethods(){
-var list=document.querySelector('.rzrpay-methods-list');
-list.classList.remove('collapsed');
-list.querySelectorAll('.rzrpay-method').forEach(function(m){m.classList.remove('selected')});
-var header=document.querySelector('.rzrpay-methods-header');
-header.innerHTML='<span>Payment Method</span><button class="rzrpay-close-btn" onclick="closeRzrpay()">&times;</button>';
-document.getElementById('rzrpay-method-body').innerHTML='';
+function selectUpiApp(el,name){
+el.parentElement.querySelectorAll('.pm-tile').forEach(function(t){t.classList.remove('selected')});
+el.classList.add('selected');
+document.getElementById('pm-qr-app').textContent=name;
+renderQR(document.getElementById('pm-qr-box'),name.length);
+document.getElementById('pm-qr-timer').innerHTML='Open the app and scan. Expires in <strong>4:58</strong>';
+var btn=document.querySelector('.pm-simulate-btn');if(btn)btn.style.display='inline-flex';
+var hint=document.querySelector('.pm-simulate-hint');if(hint)hint.style.display='inline';
 }
 
 function formatCardNumber(input){
 var v=input.value.replace(/\D/g,'').substring(0,16);
-var formatted=v.replace(/(.{4})/g,'$1 ').trim();
-input.value=formatted;
+input.value=v.replace(/(.{4})/g,'$1 ').trim();
+var badge=document.getElementById('pm-card-brand');
+var first=v.charAt(0);
+if(first==='4')badge.innerHTML=CARD_VISA;
+else if(first==='5')badge.innerHTML=CARD_MASTERCARD;
+else if(first==='6')badge.innerHTML=CARD_RUPAY;
+else badge.innerHTML='';
 }
 
 function formatExpiry(input){
@@ -3300,114 +3447,116 @@ input.value=v;
 }
 
 function processCardPayment(){
-var num=document.getElementById('rzrpay-card-num').value.replace(/\s/g,'');
-var exp=document.getElementById('rzrpay-card-exp').value;
-var cvv=document.getElementById('rzrpay-card-cvv').value;
-var name=document.getElementById('rzrpay-card-name').value;
-if(num.length<16){showRzrpayError('Please enter a valid 16-digit card number');return;}
-if(!exp.match(/^\d{2}\/\d{2}$/)){showRzrpayError('Please enter a valid expiry date (MM/YY)');return;}
-if(cvv.length<3){showRzrpayError('Please enter a valid CVV');return;}
-if(!name.trim()){showRzrpayError('Please enter the name on card');return;}
-showRzrpayOTP('card');
+var num=document.getElementById('pm-card-num').value.replace(/\s/g,'');
+var exp=document.getElementById('pm-card-exp').value;
+var cvv=document.getElementById('pm-card-cvv').value;
+var name=document.getElementById('pm-card-name').value;
+if(num.length<16){showPMError('Please enter a valid 16-digit card number');return;}
+if(!exp.match(/^\d{2}\/\d{2}$/)){showPMError('Please enter a valid expiry date (MM/YY)');return;}
+if(cvv.length<3){showPMError('Please enter a valid CVV');return;}
+if(!name.trim()){showPMError('Please enter the name on card');return;}
+showOtpStep();
 }
 
 function selectBank(el){
 var parent=el.parentElement;
-parent.querySelectorAll('.rzrpay-bank').forEach(function(b){b.classList.remove('selected')});
+parent.querySelectorAll('.pm-bank').forEach(function(b){b.classList.remove('selected')});
 el.classList.add('selected');
-var payDiv=document.getElementById('rzrpay-bank-pay');
+var payDiv=document.getElementById('pm-bank-pay');
 if(payDiv)payDiv.style.display='block';
 }
 
 function processBankPayment(){
-var selected=document.querySelector('.rzrpay-bank.selected');
-if(!selected){showRzrpayError('Please select a bank');return;}
+var selected=document.querySelector('.pm-bank.selected');
+if(!selected){showPMError('Please select a bank');return;}
 var bankName=selected.querySelector('span').textContent;
-showRzrpayRedirect(bankName,'bank');
+showRedirect(bankName,'bank');
 }
 
 function selectWallet(el){
 var parent=el.parentElement;
-parent.querySelectorAll('.rzrpay-wallet').forEach(function(w){w.classList.remove('selected')});
+parent.querySelectorAll('.pm-wallet').forEach(function(w){w.classList.remove('selected')});
 el.classList.add('selected');
-var payDiv=document.getElementById('rzrpay-wallet-pay');
+var payDiv=document.getElementById('pm-wallet-pay');
 if(payDiv)payDiv.style.display='block';
 }
 
 function processWalletPayment(){
-var selected=document.querySelector('.rzrpay-wallet.selected');
-if(!selected){showRzrpayError('Please select a wallet');return;}
-var walletName=selected.querySelector('.rzrpay-wallet-name').textContent;
-showRzrpayRedirect(walletName,'wallet');
+var selected=document.querySelector('.pm-wallet.selected');
+if(!selected){showPMError('Please select a wallet');return;}
+var walletName=selected.querySelector('.pm-wallet-name').textContent;
+showRedirect(walletName,'wallet');
 }
 
-function showRzrpayError(msg){
-var body=document.getElementById('rzrpay-method-body');
-var existing=body.querySelector('.rzrpay-error');
+function showPMError(msg){
+var body=document.getElementById('pm-method-body');
+var existing=body.querySelector('.pm-error');
 if(existing)existing.remove();
 var err=document.createElement('div');
-err.className='rzrpay-error';
+err.className='pm-error';
 err.textContent=msg;
 body.insertBefore(err,body.firstChild);
 setTimeout(function(){if(err.parentNode)err.remove();},3000);
 }
 
-function showRzrpayOTP(method){
-var body=document.getElementById('rzrpay-method-body');
-body.innerHTML='<div class="rzrpay-otp-section"><div class="rzrpay-otp-icon">&#128274;</div><div class="rzrpay-otp-title">Enter OTP</div><div class="rzrpay-otp-desc">A 6-digit code has been sent to your registered mobile number ending in ****</div><div class="rzrpay-otp-inputs"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,1)" onkeydown="otpKeyDown(event,this,1)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,2)" onkeydown="otpKeyDown(event,this,2)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,3)" onkeydown="otpKeyDown(event,this,3)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,4)" onkeydown="otpKeyDown(event,this,4)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,5)" onkeydown="otpKeyDown(event,this,5)"><input type="text" maxlength="1" class="rzrpay-otp-box" oninput="otpMove(this,6)" onkeydown="otpKeyDown(event,this,6)"></div><button class="rzrpay-pay-btn" onclick="verifyOTP()">Verify & Pay</button><div class="rzrpay-otp-resend">Resend OTP in <strong>0:30</strong></div></div>';
-setTimeout(function(){body.querySelector('.rzrpay-otp-box').focus();},100);
+function showOtpStep(){
+lockTabs(true);
+var body=document.getElementById('pm-method-body');
+body.innerHTML='<div class="pm-otp-section"><div class="pm-otp-icon">&#128274;</div><div class="pm-otp-title">Enter OTP</div><div class="pm-otp-desc">A 6-digit code has been sent to your registered mobile number ending in &bull;&bull;&bull;&bull;</div><div class="pm-otp-inputs"><input type="text" maxlength="1" inputmode="numeric" class="pm-otp-box mono" oninput="otpMove(this,1)" onkeydown="otpKeyDown(event,this,1)"><input type="text" maxlength="1" inputmode="numeric" class="pm-otp-box mono" oninput="otpMove(this,2)" onkeydown="otpKeyDown(event,this,2)"><input type="text" maxlength="1" inputmode="numeric" class="pm-otp-box mono" oninput="otpMove(this,3)" onkeydown="otpKeyDown(event,this,3)"><input type="text" maxlength="1" inputmode="numeric" class="pm-otp-box mono" oninput="otpMove(this,4)" onkeydown="otpKeyDown(event,this,4)"><input type="text" maxlength="1" inputmode="numeric" class="pm-otp-box mono" oninput="otpMove(this,5)" onkeydown="otpKeyDown(event,this,5)"><input type="text" maxlength="1" inputmode="numeric" class="pm-otp-box mono" oninput="otpMove(this,6)" onkeydown="otpKeyDown(event,this,6)"></div><button class="pm-pay-btn mono" onclick="verifyOTP()">Verify &amp; Pay</button><div class="pm-otp-resend">Resend OTP in <strong>0:30</strong></div></div>';
+setTimeout(function(){var b=body.querySelector('.pm-otp-box');if(b)b.focus();},100);
 }
 
 function otpMove(el,next){
-if(el.value.length===1){var boxes=document.querySelectorAll('.rzrpay-otp-box');if(next<boxes.length)boxes[next].focus();}
+if(el.value.length===1){var boxes=document.querySelectorAll('.pm-otp-box');if(next<boxes.length)boxes[next].focus();}
 }
 
 function otpKeyDown(e,el,idx){
-if(e.key==='Backspace'&&!el.value&&idx>0){var boxes=document.querySelectorAll('.rzrpay-otp-box');boxes[idx-1].focus();}
+if(e.key==='Backspace'&&!el.value&&idx>0){var boxes=document.querySelectorAll('.pm-otp-box');boxes[idx-1].focus();}
 }
 
 function verifyOTP(){
-var boxes=document.querySelectorAll('.rzrpay-otp-box');
+var boxes=document.querySelectorAll('.pm-otp-box');
 var otp='';
 boxes.forEach(function(b){otp+=b.value;});
-if(otp.length<6){showRzrpayError('Please enter the complete 6-digit OTP');return;}
-showRzrpayProcessing();
+if(otp.length<6){showPMError('Please enter the complete 6-digit OTP');return;}
+showProcessing();
 }
 
-function showRzrpayRedirect(name,type){
-var body=document.getElementById('rzrpay-method-body');
+function showRedirect(name,type){
+lockTabs(true);
+var body=document.getElementById('pm-method-body');
 var icon=type==='bank'?'&#127974;':'&#128091;';
-body.innerHTML='<div class="rzrpay-redirect-section"><div class="rzrpay-redirect-spinner"></div><div class="rzrpay-redirect-icon">'+icon+'</div><div class="rzrpay-redirect-title">Redirecting to '+name+'</div><div class="rzrpay-redirect-desc">Please complete the payment on the '+name+' page</div><button class="rzrpay-redirect-simulate" onclick="showBankApproval(\''+name+'\')">Simulate Approval</button></div>';
+body.innerHTML='<div class="pm-redirect-section"><div class="pm-redirect-spinner"></div><div class="pm-redirect-icon">'+icon+'</div><div class="pm-redirect-title">Redirecting to '+name+'</div><div class="pm-redirect-desc">Complete the payment on the '+name+' page</div><button class="pm-redirect-simulate" onclick="showBankApproval(\''+name+'\')">Simulate approval</button></div>';
 }
 
 function showBankApproval(name){
-var body=document.getElementById('rzrpay-method-body');
-body.innerHTML='<div class="rzrpay-approval-section"><div class="rzrpay-approval-header"><div class="rzrpay-approval-bank">'+name+'</div><div class="rzrpay-approval-secure">&#128274; Secure</div></div><div class="rzrpay-approval-body"><div class="rzrpay-approval-amount">&#8377;'+(selectedPlan==='monthly'?'299':'1,999')+'</div><div class="rzrpay-approval-merchant">Pay to PrepAI</div><div class="rzrpay-approval-desc">Confirm payment from your '+name+' account</div><div class="rzrpay-approval-actions"><button class="rzrpay-approval-btn approve" onclick="approvePayment()">Approve</button><button class="rzrpay-approval-btn reject" onclick="rejectPayment()">Reject</button></div></div></div>';
+var body=document.getElementById('pm-method-body');
+body.innerHTML='<div class="pm-approval-section"><div class="pm-approval-header"><div class="pm-approval-bank">'+name+'</div><div class="pm-approval-secure">&#128274; Secure</div></div><div class="pm-approval-body"><div class="pm-approval-amount mono">&#8377;'+(selectedPlan==='monthly'?'299':'1,999')+'</div><div class="pm-approval-merchant">Pay to PrepAI</div><div class="pm-approval-desc">Confirm the payment from your '+name+' account</div><div class="pm-approval-actions"><button class="pm-approval-btn approve" onclick="approvePayment()">Approve</button><button class="pm-approval-btn reject" onclick="rejectPayment()">Reject</button></div></div></div>';
 }
 
 function approvePayment(){
-showRzrpayProcessing();
+showProcessing();
 }
 
 function rejectPayment(){
-showRzrpayError('Payment was rejected. Please try again.');
-var body=document.getElementById('rzrpay-method-body');
+showPMError('Payment was rejected. Try again.');
 setTimeout(function(){
-expandMethods();
+selectPayMethod(document.querySelector('.pm-tab.on'),pmCurrentType);
 },1500);
 }
 
-function showRzrpayProcessing(){
-var overlay=document.querySelector('.rzrpay-modal');
+function showProcessing(){
+lockTabs(true);
+var modal=document.querySelector('.pm-modal');
 var spinner=document.createElement('div');
-spinner.className='rzrpay-processing-overlay';
-spinner.innerHTML='<div class="rzrpay-processing-content"><div class="rzrpay-processing-spinner"></div><div class="rzrpay-processing-text">Verifying payment...</div></div>';
-overlay.appendChild(spinner);
+spinner.className='pm-processing-overlay';
+spinner.innerHTML='<div class="pm-processing-content"><div class="pm-processing-spinner"></div><div class="pm-processing-text">Verifying payment...</div></div>';
+modal.appendChild(spinner);
 setTimeout(function(){
-spinner.innerHTML='<div class="rzrpay-processing-content"><div class="rzrpay-processing-check">&#10003;</div><div class="rzrpay-processing-text" style="color:#10b981">Payment Successful!</div></div>';
+spinner.innerHTML='<div class="pm-processing-content"><div class="pm-processing-check">&#10003;</div><div class="pm-processing-text" style="color:var(--green)">Payment successful!</div></div>';
 },1500);
 setTimeout(function(){
-closeRzrpay();
+closePM();
 curRole='PREMIUM';
 localStorage.setItem('prepai_role',curRole);
 var roleBadge=document.getElementById('role-badge');
@@ -3421,29 +3570,39 @@ showToast('Payment successful! You\'re now Premium.','success');
 },3000);
 }
 
-function selectInnerItem(el){
-var parent=el.parentElement;
-parent.querySelectorAll('.rzrpay-upi-app, .rzrpay-method, .rzrpay-bank, .rzrpay-wallet').forEach(function(item){item.classList.remove('selected')});
-el.classList.add('selected');
-if(el.classList.contains('rzrpay-upi-app')&&!el.querySelector('.rzrpay-input')){
-var appName=el.querySelector('span').textContent;
-var body=document.getElementById('rzrpay-method-body');
-var qrHtml='<div class="rzrpay-qr-section"><div class="rzrpay-qr-title">Scan QR code with '+appName+'</div><div class="rzrpay-qr-box"><div class="rzrpay-qr-placeholder" id="rzrpay-qr-placeholder"><svg viewBox="0 0 100 100" width="140" height="140"><rect x="5" y="5" width="25" height="25" rx="3" fill="#333"/><rect x="70" y="5" width="25" height="25" rx="3" fill="#333"/><rect x="5" y="70" width="25" height="25" rx="3" fill="#333"/><rect x="35" y="5" width="8" height="8" fill="#333"/><rect x="35" y="18" width="8" height="8" fill="#333"/><rect x="47" y="5" width="8" height="8" fill="#333"/><rect x="47" y="18" width="8" height="8" fill="#333"/><rect x="35" y="40" width="8" height="8" fill="#333"/><rect x="47" y="40" width="8" height="8" fill="#333"/><rect x="5" y="35" width="8" height="8" fill="#333"/><rect x="18" y="35" width="8" height="8" fill="#333"/><rect x="5" y="47" width="8" height="8" fill="#333"/><rect x="18" y="47" width="8" height="8" fill="#333"/><rect x="70" y="35" width="8" height="8" fill="#333"/><rect x="83" y="35" width="8" height="8" fill="#333"/><rect x="70" y="47" width="8" height="8" fill="#333"/><rect x="83" y="47" width="8" height="8" fill="#333"/><rect x="35" y="70" width="8" height="8" fill="#333"/><rect x="47" y="70" width="8" height="8" fill="#333"/><rect x="35" y="83" width="8" height="8" fill="#333"/><rect x="59" y="70" width="8" height="8" fill="#333"/><rect x="70" y="83" width="8" height="8" fill="#333"/><rect x="83" y="70" width="8" height="8" fill="#333"/><rect x="59" y="83" width="12" height="12" rx="6" fill="#333"/></svg></div></div><div class="rzrpay-qr-timer" id="rzrpay-qr-timer">Open '+appName+' and scan. Timeout in <strong>4:58</strong></div><div class="rzrpay-qr-simulate"><button class="rzrpay-simulate-btn" onclick="simulatePayment()">Simulate Payment</button><span class="rzrpay-simulate-hint">Or scan QR from your phone</span></div></div>';
-body.innerHTML=qrHtml;
+/* Generates a believable finder-pattern QR code — three real corner finder squares plus data noise. Not scannable, but structurally an actual QR pattern instead of a placeholder glyph, same as how a real gateway's QR always renders black-on-white regardless of app theme. */
+function renderQR(el,seed){
+if(!el)return;
+var size=21,cell=5.2;
+var corners=[[0,0],[0,size-7],[size-7,0]];
+function inFinder(r,c){for(var k=0;k<corners.length;k++){var fr=corners[k][0],fc=corners[k][1];if(r>=fr&&r<fr+7&&c>=fc&&c<fc+7)return[fr,fc];}return null;}
+function finderVal(r,c,fr,fc){var lr=r-fr,lc=c-fc;if(lr===0||lr===6||lc===0||lc===6)return 1;if(lr>=2&&lr<=4&&lc>=2&&lc<=4)return 1;return 0;}
+var svg='<svg viewBox="0 0 '+(size*cell)+' '+(size*cell)+'" width="120" height="120">';
+svg+='<rect width="100%" height="100%" fill="#fff"/>';
+for(var r=0;r<size;r++){
+for(var c=0;c<size;c++){
+var f=inFinder(r,c),v;
+if(f)v=finderVal(r,c,f[0],f[1]);
+else v=((r*31+c*17+seed+((r*c)%7))%3===0)?1:0;
+if(v)svg+='<rect x="'+(c*cell).toFixed(1)+'" y="'+(r*cell).toFixed(1)+'" width="'+cell+'" height="'+cell+'" fill="#111"/>';
 }
+}
+svg+='</svg>';
+el.innerHTML=svg;
 }
 
 function simulatePayment(){
-var qr=document.getElementById('rzrpay-qr-placeholder');
-var timer=document.getElementById('rzrpay-qr-timer');
-if(qr)qr.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:.5rem"><div style="width:48px;height:48px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div style="font-size:.9rem;font-weight:600;color:#10b981">Payment Successful!</div><div style="font-size:.75rem;color:var(--dim)">₹'+(selectedPlan==='monthly'?'299':'1,999')+' received by PrepAI</div></div>';
-if(timer)timer.innerHTML='<span style="color:#10b981;font-weight:600">Payment confirmed</span>';
-var btn=document.querySelector('.rzrpay-simulate-btn');
+lockTabs(true);
+var qr=document.getElementById('pm-qr-box');
+var timer=document.getElementById('pm-qr-timer');
+if(qr)qr.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.2rem"><div style="width:48px;height:48px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div style="font-size:.85rem;font-weight:600;color:#10b981">Payment successful!</div><div style="font-size:.7rem;color:#666">&#8377;'+(selectedPlan==='monthly'?'299':'1,999')+' received by PrepAI</div></div>';
+if(timer)timer.innerHTML='<span style="color:var(--green);font-weight:600">Payment confirmed</span>';
+var btn=document.querySelector('.pm-simulate-btn');
 if(btn)btn.style.display='none';
-var hint=document.querySelector('.rzrpay-simulate-hint');
+var hint=document.querySelector('.pm-simulate-hint');
 if(hint)hint.style.display='none';
 setTimeout(function(){
-closeRzrpay();
+closePM();
 curRole='PREMIUM';
 localStorage.setItem('prepai_role',curRole);
 var roleBadge=document.getElementById('role-badge');

@@ -53,10 +53,12 @@ The public-facing marketing page shown to unauthenticated visitors.
 
 - **Navigation bar** with brand logo, feature links (Features, How It Works, Results), theme toggle, login, and "Start Free" CTA
 - **Hero section** with animated terminal mockup that simulates a live PrepAI session — shows command input, question display, answer submission, and score output with typing animation
-- **Feature grid** (3 cards): Adaptive AI Engine, Line-by-Line Feedback, Weakness Mapping — each with icon, description, and hover effects
-- **Testimonials section** (3 cards): Quotes from engineers at Google, Stripe, and Vercel with star ratings, avatars, names, and roles
-- **How It Works** (4 steps): Pick Your Stack → Answer Live → Get AI Feedback → Track Growth — connected by a gradient line with numbered dots
-- **Big number stats** (4 cards): 500+ Practice Questions, 20+ Topic Categories, 12k+ Sessions Completed, Free / No Credit Card
+- **Ambient background**: a drifting particle/constellation canvas runs behind the entire page (below the hero), tying every section together
+- **Feedback showcase**: a floating 3D panel (tilts toward the cursor, gently bobs on its own) demonstrating a real graded answer — question, annotated response, and score ring — instead of a generic feature-icon grid
+- **Three statement cards**: "Adapts every question," "Explains the score," "Finds your gaps first" — replacing the old testimonials-with-avatars section
+- **How It Works** (4 steps, "The loop"): Pick Your Stack → Answer for Real → Get Graded → Watch Gaps Close — plain cards with a top accent line, no numbered-circle badges
+- **Outcomes**: gradient-number stat cards showing score deltas (e.g. "4.2 → 8.3"), replacing the old flat "Big Numbers" grid
+- **Closing CTA**: single glowing call-to-action band ("Stop guessing. Start practicing.") instead of a gradient-bordered box
 - **CTA section**: "Stop preparing the hard way" with gradient border and primary button
 - **Footer** with copyright, privacy, terms, Twitter, GitHub links
 - **Scroll reveal animations** on all sections via IntersectionObserver

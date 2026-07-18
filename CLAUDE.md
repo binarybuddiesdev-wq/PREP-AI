@@ -1,6 +1,6 @@
-# GEMINI.md
+# CLAUDE.md
 
-This file provides guidance to Gemini when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -53,19 +53,13 @@ pnpm lint                    # eslint . --ext ts,tsx
 Run a single test file: `pnpm vitest run src/pages/DashboardPage.test.tsx` (from `ui/`)
 
 ### Piston (self-hosted code execution engine, from repo root)
-
-PrepAI uses Piston as its code execution and sandboxing engine. Due to Windows, WSL2, and rootless Podman environment constraints, a custom setup is required:
-
 ```bash
 pnpm piston:start    # boot container (custom entrypoint handles cgroup v2 issues under rootless Podman/WSL2)
 pnpm piston:setup    # install JS/TS/Python runtimes — run once
 pnpm piston:status
 pnpm piston:stop
 ```
-
-- `pnpm piston:start` uses a custom entrypoint ([piston-entrypoint.sh](file:///c:/antigravity-test/PrepAI/piston-entrypoint.sh)) to handle cgroup v2 controller limits in rootless WSL2/Podman (such as the missing `cpuset` controller), maps a named volume `piston_data` at `/piston` to persist installed languages, and binds the container port explicitly to IPv4 loopback `127.0.0.1:2000` to avoid Windows port-forwarding issues (the port is changed in `types/piston.ts`).
-- Requires Podman Desktop running. Verify with `podman ps` and `curl http://127.0.0.1:2000/api/v2/runtimes`.
-- For details, troubleshooting, or manual steps, refer to [PISTON_WSL_SETUP_GUIDE.md](file:///c:/antigravity-test/PrepAI/docs/PISTON_WSL_SETUP_GUIDE.md).
+Requires Podman Desktop running. Verify with `podman ps` and `curl http://127.0.0.1:2000/api/v2/runtimes`. Container binds explicitly to `127.0.0.1:2000` to avoid Windows port-forwarding issues. Troubleshooting details in `docs/PISTON_WSL_SETUP_GUIDE.md`; port is changed in `types/piston.ts`.
 
 ### E2E (Playwright, from repo root)
 ```bash
