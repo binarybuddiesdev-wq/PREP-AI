@@ -132,6 +132,71 @@ Question {
 
 ---
 
+## Theory
+
+| Method | Endpoint | Description | Auth | Role | Request Body / Query | Response |
+|--------|----------|-------------|------|------|----------------------|----------|
+| `POST` | `/theory/session/start` | Start a new theory practice session | Bearer Token | Any | `{ topicId?, mode, difficulty, totalQuestions }` | `{ message, data: TheorySession }` |
+| `GET` | `/theory/session/:sessionId/questions` | Get questions for a session | Bearer Token | Any | `?limit=` (optional) | `{ message, data: Question[] }` |
+| `POST` | `/theory/session/:sessionId/answer` | Submit answer for AI evaluation | Bearer Token | Any | `{ questionId?, questionText, userAnswer, timeTaken? }` | `{ message, data: TheoryAnswer }` |
+| `POST` | `/theory/session/:sessionId/complete` | Complete a session and compute avg score | Bearer Token | Any | — | `{ message, data: TheorySession }` |
+| `GET` | `/theory/session/:sessionId` | Get session detail with all answers | Bearer Token | Any | — | `{ message, data: TheorySessionWithAnswers }` |
+| `GET` | `/theory/sessions` | Get paginated session history | Bearer Token | Any | `?page=&limit=` (optional) | `{ message, data: { sessions, total, page, limit } }` |
+| `GET` | `/theory/weak-areas` | Get topics scoring below 70% | Bearer Token | Any | — | `{ message, data: WeakArea[] }` |
+| `GET` | `/theory/score-trend` | Get score trend for dashboard chart | Bearer Token | Any | `?limit=` (optional, default 7) | `{ message, data: { date, avgScore }[] }` |
+
+### Mode Options
+
+| Mode | Description |
+|------|-------------|
+| `topic` | Questions scoped to a specific topic |
+| `weak` | Questions from topics where user scores below 70% |
+| `pdf` | Questions generated from uploaded PDFs |
+
+### Role Limits
+
+| Limit | Free (USER) | Premium / ADMIN |
+|-------|-------------|-----------------|
+| Daily sessions | 3 | Unlimited (999) |
+| Questions per session | 10 | 30 |
+
+### TheorySession Model (PostgreSQL)
+
+```
+TheorySession {
+  id                String    @id @default(uuid())
+  userId            String
+  topicId           String?   // null for weak/pdf mode
+  mode              String    // "topic" | "weak" | "pdf"
+  difficulty        String    // "Junior" | "Mid" | "Senior"
+  totalQuestions    Int
+  questionsAnswered Int       @default(0)
+  avgScore          Float     @default(0)
+  status            String    @default("in_progress") // "in_progress" | "completed"
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+}
+```
+
+### TheoryAnswer Model (PostgreSQL)
+
+```
+TheoryAnswer {
+  id           String    @id @default(uuid())
+  sessionId    String
+  questionId   String?   // null for AI-generated questions
+  questionText String
+  userAnswer   String
+  aiScore      Float
+  aiFeedback   String
+  timeTaken    Int?      // seconds
+  createdAt    DateTime  @default(now())
+}
+```
+
+---
+
 ## Testing in Swagger
 
 ### Authentication

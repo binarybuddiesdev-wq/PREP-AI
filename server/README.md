@@ -112,6 +112,13 @@ Submits a technology query to the AI Tech Expert agent.
 
 ---
 
+## Implemented Modules
+
+### Theory Practice Sessions (`/api/v1/theory`)
+Full theory practice module with 8 endpoints — session management, AI-evaluated answers, weak area detection, and score trends. See `routes.md` for the complete route table.
+
+---
+
 ## Planned API Specifications (Future Modules)
 
 - **`POST /api/v1/auth/login`**: Authenticate and return credentials.
@@ -120,9 +127,6 @@ Submits a technology query to the AI Tech Expert agent.
 - **`PATCH /api/v1/users/me`**: Update user profile preferences/metadata.
 - **`GET /api/v1/topics`**: Retrieve list of topics.
 - **`POST /api/v1/questions/generate`**: Generate a new question using AI based on a topic.
-- **`POST /api/v1/sessions/start`**: Start a new practice test session.
-- **`POST /api/v1/sessions/:id/complete`**: Finalize and grade a practice test session.
-- **`POST /api/v1/answers/submit`**: Submit user answer for evaluation and grading.
 - **`GET /api/v1/analytics`**: Retrieve performance metrics, history trends, and strength charts.
 - **`POST /api/v1/chatbot`**: Talk to the general AI study chatbot.
 - **`POST /api/v1/payments/create-order`**: Create a Razorpay order for premium upgrade.
