@@ -7,3 +7,96 @@ datasource db {
   provider = "postgresql"
   url      = env("POSTGRESQL_URL")
 }
+
+model TheorySession {
+  id                String    @id @default(uuid())
+  userId            String
+  topicId           String?   // null for Weak Areas mode (AI picks topics)
+  mode              String    // "topic" | "weak" | "pdf"
+  difficulty        String    // "Junior" | "Mid" | "Senior"
+  totalQuestions    Int
+  questionsAnswered Int       @default(0)
+  avgScore          Float     @default(0)
+  status            String    @default("in_progress") // "in_progress" | "completed"
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  answers           TheoryAnswer[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model TheoryAnswer {
+  id           String   @id @default(uuid())
+  sessionId    String
+  questionId   String?  // null for AI-generated questions (Weak Areas / PDF Study)
+  questionText String
+  userAnswer   String
+  aiScore      Float
+  aiFeedback   String
+  timeTaken    Int?     // seconds
+  createdAt    DateTime @default(now())
+
+  session TheorySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model CodingSession {
+  id                String   @id @default(uuid())
+  userId            String
+  problemsAttempted Int      @default(0)
+  problemsSolved    Int      @default(0)
+  status            String   @default("in_progress") // "in_progress" | "completed"
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  answers           CodingAnswer[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model CodingQuestion {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String
+  difficulty  String   // "Easy" | "Medium" | "Hard"
+  topic       String   // "Arrays" | "Stacks" | "Hash Maps" etc.
+  examples    Json     // [{ input, output, explanation }]
+  constraints String[]
+  codeJs      String   // JavaScript boilerplate
+  codeTs      String   // TypeScript boilerplate
+  codePy      String   // Python boilerplate
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([topic])
+  @@index([difficulty])
+  @@index([topic, difficulty])
+}
+
+model CodingAnswer {
+  id               String   @id @default(uuid())
+  sessionId        String?
+  userId           String
+  problemId        String
+  language         String   // "javascript" | "typescript" | "python"
+  code             String
+  status           String   // "accepted" | "wrong_answer" | "error"
+  testCasesPassed  Int
+  testCasesTotal   Int
+  runtime          Int?     // ms
+  memoryUsage      Int?     // MB
+  aiReviewJson     Json?    // { timeComplexity, spaceComplexity, quality, suggestions }
+  createdAt        DateTime @default(now())
+
+  session CodingSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, problemId])
+  @@index([sessionId])
+}

@@ -16,6 +16,7 @@ import { TechExpertModule } from './modules/tech-expert/tech-expert.module.js';
 import { UserModule } from './modules/user/user.module.js';
 import { TopicModule } from './modules/topic/topic.module.js';
 import { QuestionModule } from './modules/question/question.module.js';
+import { TheoryModule } from './modules/theory/theory.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,7 +42,7 @@ const __dirname = dirname(__filename);
       }),
     }),
     PrismaModule,
-    HealthModule, TechExpertModule, UserModule, TopicModule, QuestionModule
+    HealthModule, TechExpertModule, UserModule, TopicModule, QuestionModule, TheoryModule
   ],
   controllers: [],
   providers: [],

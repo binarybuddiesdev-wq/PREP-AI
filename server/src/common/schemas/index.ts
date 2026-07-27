@@ -33,3 +33,14 @@ export {
     QUESTION_UPDATED_LOG,
     QUESTION_DELETED_LOG,
 } from './questions/questions.response.schema.js';
+
+export {
+    StartSessionResponse,
+    GetSessionQuestionsResponse,
+    SubmitAnswerResponse,
+    CompleteSessionResponse,
+    GetSessionDetailResponse,
+    GetSessionHistoryResponse,
+    GetWeakAreasResponse,
+    GetScoreTrendResponse,
+} from './theory/theory.response.schema.js';

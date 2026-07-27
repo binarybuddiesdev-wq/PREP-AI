@@ -1,15 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-
-const postgresqlSchemaPath = '../src/generated/postgresql-client/index.js';
-
-let PrismaPostgresqlClient: typeof PrismaClient | undefined;
-try {
-  const mod = await import(postgresqlSchemaPath);
-  PrismaPostgresqlClient = mod.PrismaClient;
-} catch {
-  // PostgreSQL client not generated yet — skip gracefully
-}
+import { PrismaClient as PostgresPrismaClient } from '../generated/postgresql-client/index.js';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -32,7 +23,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 @Injectable()
 export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaPostgresqlService.name);
-  private client: PrismaClient | undefined;
+  private client: PostgresPrismaClient | undefined;
 
   async onModuleInit(): Promise<void> {
     if (!process.env['POSTGRESQL_URL']) {
@@ -40,13 +31,8 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    if (!PrismaPostgresqlClient) {
-      this.logger.warn('PostgreSQL client not generated — skipping');
-      return;
-    }
-
     try {
-      this.client = new PrismaPostgresqlClient();
+      this.client = new PostgresPrismaClient();
       await this.client.$connect();
       this.logger.log('PostgreSQL connected');
     } catch (error) {
@@ -58,7 +44,7 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     await this.client?.$disconnect();
   }
 
-  get client_(): PrismaClient | undefined {
+  get client_(): PostgresPrismaClient | undefined {
     return this.client;
   }
 }

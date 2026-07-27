@@ -14,6 +14,18 @@ export const envSchema = z.object({
   NVIDIA_API_KEY: z.string().optional(),
   NVIDIA_BASE_URL: z.string().optional().default('https://integrate.api.nvidia.com/v1'),
   NVIDIA_MODEL: z.string().optional().default('meta/llama-3.1-8b-instruct'),
+
+  // Role-Based Limits — Theory
+  THEORY_DAILY_SESSIONS_FREE: z.coerce.number().optional().default(3),
+  THEORY_DAILY_SESSIONS_PREMIUM: z.coerce.number().optional().default(999),
+  THEORY_QUESTIONS_PER_SESSION_FREE: z.coerce.number().optional().default(10),
+  THEORY_QUESTIONS_PER_SESSION_PREMIUM: z.coerce.number().optional().default(30),
+
+  // Role-Based Limits — Coding
+  CODING_DAILY_SOLVED_FREE: z.coerce.number().optional().default(5),
+  CODING_DAILY_SOLVED_PREMIUM: z.coerce.number().optional().default(999),
+  CODING_DAILY_REVIEWS_FREE: z.coerce.number().optional().default(3),
+  CODING_DAILY_REVIEWS_PREMIUM: z.coerce.number().optional().default(999),
 }).passthrough().refine((data) => {
   if (data.NODE_ENV !== 'test') {
     if (!data.DATABASE_URL) return false;

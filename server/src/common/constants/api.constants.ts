@@ -4,6 +4,7 @@ export enum ApiTags {
   USERS = 'Users',
   TOPICS = 'Topics',
   QUESTIONS = 'Questions',
+  THEORY = 'Theory',
   SESSIONS = 'Sessions',
   ANSWERS = 'Answers',
   ANALYTICS = 'Analytics',
@@ -16,6 +17,7 @@ export enum ApiRoutes {
   USERS = 'users',
   TOPICS = 'topics',
   QUESTIONS = 'questions',
+  THEORY = 'theory',
   SESSIONS = 'sessions',
   ANSWERS = 'answers',
   ANALYTICS = 'analytics',
@@ -44,6 +46,16 @@ export enum ApiOperation {
   QUESTION_CREATE = 'Create a new question',
   QUESTION_UPDATE = 'Update a question',
   QUESTION_DELETE = 'Delete a question',
+
+  // Theory
+  THEORY_START_SESSION = 'Start a theory practice session',
+  THEORY_GET_QUESTIONS = 'Get questions for a theory session',
+  THEORY_SUBMIT_ANSWER = 'Submit answer for AI evaluation',
+  THEORY_COMPLETE_SESSION = 'Complete a theory session',
+  THEORY_GET_SESSION = 'Get theory session detail with answers',
+  THEORY_GET_SESSIONS = 'Get theory session history',
+  THEORY_GET_WEAK_AREAS = 'Get topics below 70% score',
+  THEORY_GET_SCORE_TREND = 'Get score trend for dashboard chart',
 }
 
 export const SUCCESS_MESSAGES = {
@@ -99,6 +111,23 @@ export const GET_QUESTION_SUCCESS = 'Question fetched successfully';
 export const CREATE_QUESTION_SUCCESS = 'Question created successfully';
 export const UPDATE_QUESTION_SUCCESS = 'Question updated successfully';
 export const DELETE_QUESTION_SUCCESS = 'Question deleted successfully';
+
+// Theory success messages
+export const THEORY_SESSION_STARTED = 'Session started successfully';
+export const THEORY_QUESTIONS_FETCHED = 'Questions fetched successfully';
+export const THEORY_ANSWER_SUBMITTED = 'Answer submitted successfully';
+export const THEORY_SESSION_COMPLETED = 'Session completed successfully';
+export const THEORY_SESSION_FETCHED = 'Session fetched successfully';
+export const THEORY_SESSIONS_FETCHED = 'Sessions fetched successfully';
+export const THEORY_WEAK_AREAS_FETCHED = 'Weak areas fetched successfully';
+export const THEORY_SCORE_TREND_FETCHED = 'Score trend fetched successfully';
+
+// Theory error messages
+export const THEORY_SESSION_NOT_FOUND = 'Session not found';
+export const THEORY_SESSION_ALREADY_COMPLETED = 'Session already completed';
+export const THEORY_NOT_SESSION_OWNER = 'Not session owner';
+export const THEORY_DAILY_LIMIT_REACHED = 'Daily session limit reached';
+export const THEORY_QUESTIONS_LIMIT_EXCEEDED = 'Questions limit exceeded for your plan';
 
 export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({
   schema: {
