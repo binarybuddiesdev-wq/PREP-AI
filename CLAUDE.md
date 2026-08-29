@@ -54,12 +54,13 @@ Run a single test file: `pnpm vitest run src/pages/DashboardPage.test.tsx` (from
 
 ### Piston (self-hosted code execution engine, from repo root)
 ```bash
-pnpm piston:start    # boot container (custom entrypoint handles cgroup v2 issues under rootless Podman/WSL2)
-pnpm piston:setup    # install JS/TS/Python runtimes — run once
+pnpm piston:start    # create (first run) or `podman start` the piston_api container
+pnpm piston:setup    # install JS/TS/Python runtimes — run once (persist in piston_data volume)
 pnpm piston:status
-pnpm piston:stop
+pnpm piston:stop     # `podman stop` — container is kept (Exited), restart with piston:start
+pnpm piston:remove   # `podman rm -f` — delete the container entirely (e.g. to recreate with new flags)
 ```
-Requires Podman Desktop running. Verify with `podman ps` and `curl http://127.0.0.1:2000/api/v2/runtimes`. Container binds explicitly to `127.0.0.1:2000` to avoid Windows port-forwarding issues. Troubleshooting details in `docs/PISTON_WSL_SETUP_GUIDE.md`; port is changed in `types/piston.ts`.
+Requires Podman Desktop running. Verify with `podman ps` and `curl http://127.0.0.1:2000/api/v2/runtimes`. Container binds explicitly to `127.0.0.1:2000` to avoid Windows port-forwarding issues. Troubleshooting details in `docs/PISTON_WSL_SETUP_GUIDE.md`; port is changed in `types/piston.ts`. On Podman 6.x + WSL 2.7+ a fresh clone also needs: `.sh` files kept LF (`.gitattributes`), WSL2 `networkingMode=mirrored` in `%USERPROFILE%\.wslconfig`, and the `--add-host` GitHub-CDN pins already in `types/piston.ts` — see §2b of the guide. Runtimes persist in the `piston_data` volume, so `pnpm piston:setup` is one-time.
 
 ### E2E (Playwright, from repo root)
 ```bash

@@ -11,6 +11,7 @@
     "report": "playwright show-report",
     "piston:start": "pnpm --filter server exec tsx ../types/piston.ts start",
     "piston:stop": "pnpm --filter server exec tsx ../types/piston.ts stop",
+    "piston:remove": "pnpm --filter server exec tsx ../types/piston.ts remove",
     "piston:setup": "pnpm --filter server exec tsx ../types/piston.ts setup",
     "piston:status": "pnpm --filter server exec tsx ../types/piston.ts status"
   },

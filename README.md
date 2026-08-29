@@ -389,10 +389,11 @@ Piston is self-hosted for secure code execution. Before running, ensure:
 #### Quick Piston Commands
 
 ```bash
-pnpm piston:start     # Start Piston container (first time may take a minute)
-pnpm piston:setup     # Install JS/TS/Python runtimes (run once)
+pnpm piston:start     # Create (first run) or restart the piston_api container
+pnpm piston:setup     # Install JS/TS/Python runtimes (run once — persist in piston_data volume)
 pnpm piston:status    # Check if container is running
-pnpm piston:stop      # Stop and remove container
+pnpm piston:stop      # Stop the container but keep it (restart with piston:start)
+pnpm piston:remove    # Delete the container entirely
 ```
 
 #### Verify Piston is Working

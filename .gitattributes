@@ -1,0 +1,5 @@
+# piston-entrypoint.sh is bind-mounted into the Piston Linux container as its
+# entrypoint. With core.autocrlf=true (Git for Windows default) a fresh clone
+# rewrites it to CRLF, which breaks the shebang -> container exits 127
+# ("exec: /piston_api/src/docker-entrypoint.sh: not found"). Force LF.
+*.sh text eol=lf

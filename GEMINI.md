@@ -57,15 +57,17 @@ Run a single test file: `pnpm vitest run src/pages/DashboardPage.test.tsx` (from
 PrepAI uses Piston as its code execution and sandboxing engine. Due to Windows, WSL2, and rootless Podman environment constraints, a custom setup is required:
 
 ```bash
-pnpm piston:start    # boot container (custom entrypoint handles cgroup v2 issues under rootless Podman/WSL2)
-pnpm piston:setup    # install JS/TS/Python runtimes — run once
+pnpm piston:start    # create (first run) or `podman start` the piston_api container
+pnpm piston:setup    # install JS/TS/Python runtimes — run once (persist in piston_data volume)
 pnpm piston:status
-pnpm piston:stop
+pnpm piston:stop     # `podman stop` — container is kept (Exited), restart with piston:start
+pnpm piston:remove   # `podman rm -f` — delete the container entirely
 ```
 
 - `pnpm piston:start` uses a custom entrypoint ([piston-entrypoint.sh](file:///c:/antigravity-test/PrepAI/piston-entrypoint.sh)) to handle cgroup v2 controller limits in rootless WSL2/Podman (such as the missing `cpuset` controller), maps a named volume `piston_data` at `/piston` to persist installed languages, and binds the container port explicitly to IPv4 loopback `127.0.0.1:2000` to avoid Windows port-forwarding issues (the port is changed in `types/piston.ts`).
 - Requires Podman Desktop running. Verify with `podman ps` and `curl http://127.0.0.1:2000/api/v2/runtimes`.
-- For details, troubleshooting, or manual steps, refer to [PISTON_WSL_SETUP_GUIDE.md](file:///c:/antigravity-test/PrepAI/docs/PISTON_WSL_SETUP_GUIDE.md).
+- On Podman 6.x + WSL 2.7+ a fresh clone also needs: `.sh` files kept LF (`.gitattributes`), WSL2 `networkingMode=mirrored` in `%USERPROFILE%\.wslconfig` (+ `wsl --shutdown`), and the `--add-host` GitHub-CDN pins already in `types/piston.ts`. Runtimes persist in the `piston_data` volume, so `pnpm piston:setup` is one-time.
+- For details, troubleshooting, or manual steps, refer to [PISTON_WSL_SETUP_GUIDE.md](file:///c:/antigravity-test/PrepAI/docs/PISTON_WSL_SETUP_GUIDE.md) (see §2b for the newer-environment fixes).
 
 ### E2E (Playwright, from repo root)
 ```bash

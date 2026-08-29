@@ -12,6 +12,7 @@ When setting up or troubleshooting the Piston code execution engine in this work
 
 Use the following scripts defined in the root `package.json`:
 - `pnpm piston:start` - Runs the container with the required volume and custom entrypoint.
-- `pnpm piston:stop` - Removes the container.
+- `pnpm piston:stop` - Stops the container but keeps it (restart with `piston:start`).
+- `pnpm piston:remove` - Deletes the container entirely.
 - `pnpm piston:setup` - Installs JavaScript, TypeScript, and Python runtimes.
 - `pnpm piston:status` - Checks status of the container.

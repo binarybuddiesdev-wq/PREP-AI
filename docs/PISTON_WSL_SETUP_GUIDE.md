@@ -45,6 +45,48 @@ We resolved these issues without modifying any application code by doing the fol
 
 ---
 
+## 2b. Additional fixes needed on newer Podman / WSL2 (Podman 6.x, WSL 2.7+)
+
+The setup above was written against an older Podman. On a fresh machine with
+**Podman Desktop 6.x** and **WSL 2.7+** three more things were required before
+`pnpm piston:start` + `pnpm piston:setup` worked end to end:
+
+1. **`piston-entrypoint.sh` must be LF, not CRLF.**
+   Git for Windows (`core.autocrlf=true`) rewrites it to CRLF on clone, which
+   breaks the shebang and the container exits 127
+   (`exec: /piston_api/src/docker-entrypoint.sh: not found`).
+   Fixed permanently by `.gitattributes` (`*.sh text eol=lf`). If you still hit
+   it: `dos2unix piston-entrypoint.sh` (or `perl -i -pe 's/\r\n$/\n/'`).
+
+2. **WSL2 mirrored networking** — `%USERPROFILE%\.wslconfig`:
+   ```ini
+   [wsl2]
+   networkingMode=mirrored
+   [experimental]
+   hostAddressLoopback=true
+   ```
+   Then `wsl --shutdown` and restart the Podman machine. Under the default NAT
+   mode, Podman 6 forwards published ports through a userspace path that WSL's
+   `localhost:2000` forwarding does not pick up — the container is healthy and
+   reachable from *inside* the VM but `curl http://127.0.0.1:2000` from Windows
+   just hangs / refuses. Mirrored mode makes container ports appear on Windows
+   `localhost` directly.
+
+3. **Pin GitHub's release-asset CDN** (already done in `types/piston.ts` via
+   `--add-host`). `ppman install` pulls runtimes from
+   `release-assets.githubusercontent.com` / `objects.githubusercontent.com`.
+   One of GitHub's anycast edges (`185.199.109.133`) was unroutable from this
+   network; an unhandled fetch timeout then crashes the whole Piston process
+   mid-install (symptom: `pnpm piston:setup` fails with
+   `TypeError: Cannot read properties of undefined (reading 'data')` from the
+   CLI, and `podman logs piston_api` shows `connect ETIMEDOUT 185.199.109.133:443`).
+   Pinning those hosts to `185.199.108.133` fixes it.
+
+Runtimes persist in the `piston_data` named volume, so `pnpm piston:setup` is a
+one-time step — after that just `pnpm piston:start` / `pnpm piston:stop`.
+`piston:stop` keeps the container (so it stays in the Podman Desktop list and
+`piston:start` just restarts it); `piston:remove` deletes it.
+
 ## 3. How to Run and Manage Piston
 
 We added a cross-platform TypeScript runner [piston.ts](file:///c:/antigravity-test/PrepAI/piston.ts) and utility scripts in the root [package.json](file:///c:/antigravity-test/PrepAI/package.json) to automate setup and management across Windows, macOS, and Linux shell environments.
@@ -54,9 +96,10 @@ We added a cross-platform TypeScript runner [piston.ts](file:///c:/antigravity-t
 | Script Command | Under the Hood | Description |
 | :--- | :--- | :--- |
 | **`pnpm piston:start`** | `tsx ../piston.ts start` | Boots up the Piston API container, automatically normalizing the workspace path, mounting the custom entrypoint, mapping the named volume, and binding port `127.0.0.1:2000`. |
-| **`pnpm piston:stop`** | `tsx ../piston.ts stop` | Safely stops and removes the running `piston_api` container. |
-| **`pnpm piston:status`** | `tsx ../piston.ts status` | Checks the container status (checking if running or exited). |
-| **`pnpm piston:setup`** | `tsx ../piston.ts setup` | Installs CLI package dependencies, then downloads and registers the 3 required language runtimes (JavaScript, TypeScript, and Python). |
+| **`pnpm piston:stop`** | `tsx ../types/piston.ts stop` | `podman stop` — stops the container but **keeps** it (shows as "Exited" in Podman Desktop). Restart with `piston:start`. |
+| **`pnpm piston:remove`** | `tsx ../types/piston.ts remove` | `podman rm -f` — deletes the `piston_api` container entirely. Use to recreate it with changed `podman run` flags. |
+| **`pnpm piston:status`** | `tsx ../types/piston.ts status` | Checks the container status (running or exited). |
+| **`pnpm piston:setup`** | `tsx ../types/piston.ts setup` | Installs CLI package dependencies, then downloads and registers the 3 required language runtimes (JavaScript, TypeScript, and Python). One-time — runtimes persist in the `piston_data` volume. |
 
 ---
 
