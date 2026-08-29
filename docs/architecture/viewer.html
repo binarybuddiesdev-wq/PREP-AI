@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepAI — Interactive Architecture & C4 Visualizer</title>
+    <!-- Tailwind CSS v3 via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' },
+                        slate: { 850: '#1e293b', 900: '#0f172a', 950: '#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Mermaid JS via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- SVG Pan Zoom via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <style>
+        .diagram-viewport {
+            position: relative;
+            width: 100%;
+            height: 75vh;
+            min-height: 600px;
+            overflow: hidden;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .diagram-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .diagram-view.active {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .diagram-view .mermaid {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .diagram-view svg {
+            display: block;
+            max-width: none !important;
+            max-height: none !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center font-bold text-white shadow-lg shadow-brand-500/20">
+                    P
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        PrepAI Architecture Visualizer
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-medium">C4 + Sequences</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Interactive system design viewer & diagram navigator</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="zoomIn()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition flex items-center gap-1 border border-slate-700">
+                    <span class="text-sm">+</span> Zoom In
+                </button>
+                <button onclick="zoomOut()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition flex items-center gap-1 border border-slate-700">
+                    <span class="text-sm">−</span> Zoom Out
+                </button>
+                <button onclick="resetZoom()" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white transition flex items-center gap-1 border border-brand-500">
+                    ↺ Fit & Center
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <div class="border-b border-slate-800 bg-slate-900 px-6">
+        <div class="max-w-7xl mx-auto flex gap-2 overflow-x-auto py-2.5 scrollbar-none" id="tabs">
+            <button onclick="switchTab('c4-context')" id="tab-c4-context" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition bg-brand-600 text-white shadow-md shadow-brand-600/20">
+                1. System Context (C4 L1)
+            </button>
+            <button onclick="switchTab('c4-container')" id="tab-c4-container" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+                2. Containers (C4 L2)
+            </button>
+            <button onclick="switchTab('c4-component')" id="tab-c4-component" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+                3. Components (C4 L3)
+            </button>
+            <button onclick="switchTab('seq-auth')" id="tab-seq-auth" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+                4. Flow: Auth Webhook
+            </button>
+            <button onclick="switchTab('seq-theory')" id="tab-seq-theory" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+                5. Flow: Theory AI Scoring
+            </button>
+            <button onclick="switchTab('seq-coding')" id="tab-seq-coding" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800">
+                6. Flow: Piston Sandbox
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col gap-4">
+
+        <!-- Info Header Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h2 id="diagram-title" class="text-lg font-semibold text-white">System Context Diagram (C4 Level 1)</h2>
+                <p id="diagram-desc" class="text-sm text-slate-400 mt-1">High-level view of PrepAI and its interactions with candidates, admins, Clerk Auth, NVIDIA NIM, and third-party SaaS APIs.</p>
+                <p class="text-xs text-slate-500 mt-2 font-mono"><a id="diagram-source-link" href="diagrams/c4-01-context.mmd" target="_blank" class="text-brand-400 hover:text-brand-300">↗ View source on GitHub</a></p>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 shrink-0">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Use Mouse / Touch to Drag & Pan
+            </div>
+        </div>
+
+        <!-- Diagram Display Viewport Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-2 diagram-viewport shadow-2xl">
+
+            <!-- Quick Zoom Overlay Controls -->
+            <div class="absolute bottom-6 right-6 z-30 flex flex-col gap-2 bg-slate-950/90 backdrop-blur p-2 rounded-xl border border-slate-800 shadow-xl">
+                <button onclick="zoomIn()" title="Zoom In" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center justify-center text-lg shadow">+</button>
+                <button onclick="zoomOut()" title="Zoom Out" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center justify-center text-lg shadow">−</button>
+                <button onclick="resetZoom()" title="Reset & Fit" class="w-8 h-8 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-bold flex items-center justify-center text-xs shadow">↺</button>
+            </div>
+
+            <!-- ============================================================
+                 ARCHITECTURE DIAGRAM VIEWS — AUTO-GENERATED BY BUILD SCRIPT
+                 ============================================================
+                 The content inside each <pre class="mermaid"> block is
+                 regenerated from docs/architecture/diagrams/*.mmd by
+                 `pnpm build:viewer` (scripts/build-architecture-viewer.ts).
+
+                 DO NOT edit the Mermaid source inside the <pre> tags by
+                 hand — your changes will be overwritten. Edit the .mmd
+                 file in docs/architecture/diagrams/ and re-run the script.
+
+                 The HTML markers below (BEGIN/END VIEW-C4-CONTENT etc.) are
+                 stable; the build script uses them to find and replace
+                 each diagram's content. If you rename a view's id, update
+                 the build script too.
+                 ============================================================ -->
+            <div id="view-c4-context" class="diagram-view active">
+                <!-- BEGIN VIEW-C4-CONTENT -->
+                <pre class="mermaid" data-src="diagrams/c4-01-context.mmd">%% C4 Level 1 — System Context
+%% Renders natively on GitHub, GitLab, Bitbucket, Obsidian, VS Code (with Mermaid plugin).
+%% Edit here, commit, code-review. No HTML viewer required.
+
+flowchart TB
+    subgraph Users ["Actors & Users"]
+        Candidate["🧑‍💻 Software Engineer / Candidate"]
+        Admin["🛠️ PrepAI Admin"]
+    end
+
+    subgraph Core ["PrepAI Core Platform"]
+        PrepAI["🚀 PrepAI Platform<br/>(NestJS Fastify + React 19 + Piston + Mastra AI)"]
+    end
+
+    subgraph External ["External Third-Party Integrations"]
+        Clerk["🔐 Clerk Auth"]
+        NIM["🤖 NVIDIA NIM LLM<br/>(primary)"]
+        Groq["⚡ Groq LLM<br/>(fallback, free tier)"]
+        Cloudinary["📁 Cloudinary PDF Storage"]
+        Resend["📧 Resend Email"]
+        Razorpay["💳 Razorpay Payments"]
+    end
+
+    Candidate -->|Practices theory, executes code, views analytics| PrepAI
+    Admin -->|Manages topics, curated questions, roles| PrepAI
+
+    PrepAI -->|Verifies JWT Bearer tokens & receives webhooks| Clerk
+    PrepAI -->|Sends prompts & receives AI evaluations| NIM
+    PrepAI -.->|Failover when NVIDIA unavailable| Groq
+    PrepAI -->|Stores & fetches PDF files| Cloudinary
+    PrepAI -->|Triggers email notifications| Resend
+    PrepAI -->|Creates payment orders & verifies webhooks| Razorpay
+
+    classDef userStyle fill:#1e293b,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef coreStyle fill:#312e81,stroke:#818cf8,stroke-width:3px,color:#fff;
+    classDef extStyle fill:#0f172a,stroke:#475569,stroke-width:2px,color:#94a3b8;
+    class Candidate,Admin userStyle;
+    class PrepAI coreStyle;
+    class Clerk,NIM,Groq,Cloudinary,Resend,Razorpay extStyle;
+</pre>
+                <!-- END VIEW-C4-CONTENT -->
+            </div>
+
+            <div id="view-c4-container" class="diagram-view">
+                <!-- BEGIN VIEW-C4-CONTAINER -->
+                <pre class="mermaid" data-src="diagrams/c4-02-container.mmd">%% C4 Level 2 — Container Diagram
+%% Shows the process boundaries inside the PrepAI system boundary.
+
+flowchart TB
+    User["🧑‍💻 User Browser / Client"]
+
+    subgraph SystemBoundary ["PrepAI Infrastructure Boundary"]
+        SPA["💻 React 19 SPA"]
+        API["⚡ NestJS Fastify API"]
+
+        subgraph DataStores ["Data & Cache Runtimes"]
+            Mongo[("🍃 MongoDB<br/>Users, Topics, Questions")]
+            Postgres[("🐘 PostgreSQL + pgvector<br/>Sessions, Answers, Vectors")]
+            Redis[("🔴 Redis Cache & Queue<br/>Rate Limits, BullMQ")]
+        end
+
+        subgraph ExecutionRuntimes ["Isolated Runtimes"]
+            Piston["🐳 Piston Sandbox Container"]
+            Mastra["🧠 Mastra AI Framework"]
+        end
+    end
+
+    ClerkExt["🔐 Clerk Auth"]
+    NIMExt["🤖 NVIDIA NIM API<br/>(primary)"]
+    GroqExt["⚡ Groq API<br/>(fallback)"]
+
+    User -->|HTTPS| SPA
+    SPA -->|Get Session JWT| ClerkExt
+    SPA -->|REST API Requests with Bearer JWT| API
+
+    API -->|Prisma Mongo| Mongo
+    API -->|Prisma Postgres| Postgres
+    API -->|ioredis BullMQ| Redis
+    API -->|HTTP REST| Piston
+    API -->|In-Process SDK<br/>OpenAI-compatible| Mastra
+    Mastra -->|HTTPS REST Prompts| NIMExt
+    Mastra -.->|Failover on error| GroqExt
+    ClerkExt -->|POST /webhooks/clerk| API
+
+    classDef spaStyle fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef apiStyle fill:#312e81,stroke:#818cf8,stroke-width:3px,color:#fff;
+    classDef dbStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef runtimeStyle fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff;
+    class SPA spaStyle;
+    class API apiStyle;
+    class Mongo,Postgres,Redis dbStyle;
+    class Piston,Mastra runtimeStyle;
+</pre>
+                <!-- END VIEW-C4-CONTAINER -->
+            </div>
+
+            <div id="view-c4-component" class="diagram-view">
+                <!-- BEGIN VIEW-C4-COMPONENT -->
+                <pre class="mermaid" data-src="diagrams/c4-03-component.mmd">%% C4 Level 3 — Component Diagram (NestJS Backend)
+%% Module breakdown of the NestJS API process.
+
+flowchart TB
+    subgraph Pipeline ["Global NestJS HTTP Pipeline"]
+        Cors["Fastify CORS / Helmet"] --> AuthGuard["ClerkAuthGuard"]
+        AuthGuard --> RolesGuard["RolesGuard"]
+        RolesGuard --> ThrottlePipe["Redis RateLimiter Pipe"]
+        ThrottlePipe --> Controller["NestJS Controllers"]
+        Controller --> TransformInt["TransformInterceptor"]
+        TransformInt --> ExFilter["HttpExceptionFilter"]
+    end
+
+    subgraph FeatureModules ["Feature Modules"]
+        Controller --> UserMod["UserModule / WebhookController"]
+        Controller --> TopicMod["TopicModule"]
+        Controller --> QuestionMod["QuestionModule"]
+        Controller --> TheoryMod["TheoryModule"]
+        Controller --> CodingMod["CodingModule"]
+        Controller --> PdfMod["PdfRagModule"]
+    end
+
+    subgraph Infrastructure ["Infrastructure Services"]
+        UserMod --> PrismaMongo["PrismaService Mongo"]
+        TopicMod --> PrismaMongo
+        QuestionMod --> PrismaMongo
+
+        TheoryMod --> PrismaPG["PrismaPostgresqlService Postgres"]
+        CodingMod --> PrismaPG
+        PdfMod --> PrismaPG
+
+        TheoryMod --> RedisSvc["Redis Cache & Quota Service"]
+        CodingMod --> RedisSvc
+
+        TheoryMod --> QueueSvc["BullMQ Job Queue Service"]
+        CodingMod --> QueueSvc
+    end
+
+    subgraph ExternalExecution ["External Execution Engine"]
+        QueueSvc -->|HTTP REST| PistonEngine["Piston Sandbox"]
+        QueueSvc -->|SDK Prompts| ProviderRouter["LLM Provider Router<br/>(getModel() in providers.ts)"]
+        ProviderRouter -->|HTTPS| NVIDIA["NVIDIA NIM API<br/>(primary)"]
+        ProviderRouter -.->|Failover on error| Groq["Groq API<br/>(fallback)"]
+    end
+
+    classDef pipeStyle fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#fff;
+    classDef modStyle fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef infraStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    class Cors,AuthGuard,RolesGuard,ThrottlePipe,Controller,TransformInt,ExFilter pipeStyle;
+    class UserMod,TopicMod,QuestionMod,TheoryMod,CodingMod,PdfMod modStyle;
+    class PrismaMongo,PrismaPG,RedisSvc,QueueSvc,ProviderRouter infraStyle;
+</pre>
+                <!-- END VIEW-C4-COMPONENT -->
+            </div>
+
+            <div id="view-seq-auth" class="diagram-view">
+                <!-- BEGIN VIEW-SEQ-AUTH -->
+                <pre class="mermaid" data-src="diagrams/seq-01-auth-webhook.mmd">%% Sequence Flow 1 — User Onboarding via Clerk Webhook
+
+sequenceDiagram
+    autonumber
+    actor Candidate as User / Candidate
+    participant Clerk as Clerk Auth Service
+    participant API as NestJS Webhook Controller
+    participant Mongo as MongoDB (User Collection)
+    participant SPA as React 19 Frontend
+
+    Candidate->>Clerk: Completes Sign Up (OAuth / Email)
+    Clerk-->>Candidate: Returns Session JWT Token
+    Clerk->>API: POST /webhooks/clerk (user.created payload)
+    Note over API: Verify Svix Webhook Signature
+    alt Signature Valid
+        API->>Mongo: Upsert User (clerkUserId, email, role="USER")
+        Mongo-->>API: User Created Success
+        API-->>Clerk: HTTP 200 OK
+    else Signature Invalid
+        API-->>Clerk: HTTP 400 Bad Request
+    end
+
+    Candidate->>SPA: Redirects to /app/dashboard
+    SPA->>API: GET /api/v1/users/me (Bearer JWT)
+    API->>Mongo: Find User by clerkUserId
+    Mongo-->>API: Return User Profile
+    API-->>SPA: HTTP 200 { data: user }
+</pre>
+                <!-- END VIEW-SEQ-AUTH -->
+            </div>
+
+            <div id="view-seq-theory" class="diagram-view">
+                <!-- BEGIN VIEW-SEQ-THEORY -->
+                <pre class="mermaid" data-src="diagrams/seq-02-theory-ai-scoring.mmd">%% Sequence Flow 2 — Theory Session & Async AI Answer Scoring
+
+sequenceDiagram
+    autonumber
+    actor Candidate as User / Candidate
+    participant SPA as React 19 Frontend
+    participant API as NestJS Theory Controller
+    participant Redis as Redis (Quota & BullMQ)
+    participant Mongo as MongoDB (Question Bank)
+    participant Worker as BullMQ Async Worker
+    participant Mastra as Mastra AI Agent
+    participant Provider as LLM Provider Router<br/>(NVIDIA primary, Groq fallback)
+    participant NIM as NVIDIA NIM (LLM)
+    participant Groq as Groq (LLM, fallback)
+    participant PG as PostgreSQL (Sessions & Answers)
+
+    Candidate->>SPA: Selects Topic & Clicks "Start Session"
+    SPA->>API: POST /api/v1/theory/session/start
+    API->>Redis: INCR quota:userId:YYYY-MM-DD:theory_sessions
+    alt Quota Exceeded
+        API-->>SPA: HTTP 429 Limit Reached
+    else Quota Allowed
+        API->>Mongo: Fetch N Questions
+        Mongo-->>API: Question List
+        API->>PG: Create TheorySession
+        PG-->>API: TheorySession Record
+        API-->>SPA: HTTP 201 Created { sessionId, questions }
+    end
+
+    Candidate->>SPA: Writes Answer & Clicks "Submit Answer"
+    SPA->>API: POST /api/v1/theory/session/:id/answer
+    API->>Redis: Enqueue Job into "theory-eval-queue"
+    API-->>SPA: HTTP 202 Accepted { jobId }
+
+    Worker->>Redis: Pop Job from queue
+    Worker->>Mastra: Execute TheoryEvaluatorAgent
+    Mastra->>Provider: chat(messages, schema)
+    Provider->>NIM: POST /chat/completions (Zod Output)
+    alt NVIDIA succeeds
+        NIM-->>Provider: JSON { aiScore, aiFeedback }
+    else NVIDIA fails (auth/429/5xx)
+        Provider->>Groq: POST /chat/completions (Zod Output)
+        Groq-->>Provider: JSON { aiScore, aiFeedback }
+    end
+    Provider-->>Mastra: Evaluation Result
+
+    Worker->>PG: Insert TheoryAnswer & Update TheorySession
+    SPA->>API: Poll GET /api/v1/theory/jobs/:jobId
+    API->>PG: Fetch Scored TheoryAnswer
+    PG-->>API: Scored Answer
+    API-->>SPA: HTTP 200 OK { aiScore, aiFeedback }
+</pre>
+                <!-- END VIEW-SEQ-THEORY -->
+            </div>
+
+            <div id="view-seq-coding" class="diagram-view">
+                <!-- BEGIN VIEW-SEQ-CODING -->
+                <pre class="mermaid" data-src="diagrams/seq-03-piston-sandbox.mmd">%% Sequence Flow 3 — Sandboxed Code Execution & AI Code Review
+
+sequenceDiagram
+    autonumber
+    actor Candidate as User / Candidate
+    participant SPA as React 19 Frontend
+    participant API as NestJS Coding Controller
+    participant Redis as Redis Quota
+    participant Piston as Piston Container (127.0.0.1:2000)
+    participant Worker as BullMQ Async Worker
+    participant Mastra as Mastra Code Reviewer
+    participant PG as PostgreSQL
+
+    Candidate->>SPA: Clicks "Run Code"
+    SPA->>API: POST /api/v1/coding/run
+    API->>Piston: POST /api/v2/execute
+    Note over Piston: Executes untrusted code in cgroup sandbox
+    Piston-->>API: HTTP 200 { run: { stdout, stderr } }
+    API-->>SPA: HTTP 200 OK { output }
+
+    Candidate->>SPA: Clicks "Submit Solution"
+    SPA->>API: POST /api/v1/coding/session/:id/submit
+    API->>Redis: INCR quota:userId:YYYY-MM-DD:coding_submits
+    API->>Piston: POST /api/v2/execute (Hidden test cases)
+    Piston-->>API: Test Results (passed: 5/5)
+
+    API->>Redis: Enqueue "code-review-queue"
+    API-->>SPA: HTTP 200 OK { status: "accepted" }
+
+    Worker->>Redis: Pop "code-review-queue"
+    Worker->>Mastra: Execute CodeReviewerAgent
+    Mastra-->>Worker: JSON { timeComplexity: "O(N)", spaceComplexity: "O(1)" }
+    Worker->>PG: Insert CodingAnswer
+</pre>
+                <!-- END VIEW-SEQ-CODING -->
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-900/50 py-4 px-6 text-center text-xs text-slate-500">
+        PrepAI Architecture Viewer • Source of truth:
+        <a href="diagrams/" class="text-brand-400 hover:text-brand-300">docs/diagrams/</a>
+        (Mermaid) • Rendered with Mermaid.js & SVG Pan-Zoom
+    </footer>
+
+    <!-- Tab Control & Mermaid Script -->
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            flowchart: { useMaxWidth: false, htmlLabels: true },
+            sequence: { useMaxWidth: false, showSequenceNumbers: true, actorMargin: 60, messageMargin: 40 },
+            themeVariables: {
+                primaryColor: '#4f46e5',
+                primaryTextColor: '#ffffff',
+                primaryBorderColor: '#6366f1',
+                lineColor: '#818cf8',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#0f172a',
+                fontSize: '16px'
+            }
+        });
+
+        const meta = {
+            'c4-context': {
+                title: 'System Context Diagram (C4 Level 1)',
+                desc: 'High-level view of PrepAI and its interactions with candidates, admins, Clerk Auth, NVIDIA NIM, and third-party SaaS APIs.'
+            },
+            'c4-container': {
+                title: 'Container Diagram (C4 Level 2)',
+                desc: 'Internal process boundaries: React 19 Frontend, NestJS API Server, MongoDB, PostgreSQL, Redis, Piston Engine, and Mastra AI.'
+            },
+            'c4-component': {
+                title: 'Component Diagram: NestJS Backend (C4 Level 3)',
+                desc: 'Modular breakdown of NestJS controllers, services, repositories, auth guards, interceptors, and BullMQ worker handlers.'
+            },
+            'seq-auth': {
+                title: 'Sequence Flow 1: User Onboarding via Clerk Webhook',
+                desc: 'Step-by-step lifecycle from user sign-up on Clerk to Svix-verified webhook user creation in MongoDB.'
+            },
+            'seq-theory': {
+                title: 'Sequence Flow 2: Theory Session & Async AI Answer Scoring',
+                desc: 'Atomic Redis rate limit check, question retrieval, BullMQ async AI answer evaluation via Mastra & NVIDIA NIM, and score persisting in Postgres.'
+            },
+            'seq-coding': {
+                title: 'Sequence Flow 3: Sandboxed Code Execution & AI Code Review',
+                desc: 'Untrusted code execution in Piston Podman container, test case validation, BullMQ async AI code review, and feedback storage.'
+            }
+        };
+
+        const panZoomInstances = {};
+
+        // Initialize pan-zoom on every diagram view. Safe to call multiple
+        // times — the second call just resize/fit/centers the existing
+        // instance. The SVGs themselves were rendered by Mermaid on
+        // startOnLoad.
+        function initializeAllPanZoom() {
+            document.querySelectorAll('.diagram-view').forEach(view => {
+                const tabId = view.id.replace('view-', '');
+                ensurePanZoom(tabId, view);
+            });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800';
+            });
+            const activeTabBtn = document.getElementById('tab-' + tabId);
+            if (activeTabBtn) {
+                activeTabBtn.className = 'tab-btn px-4 py-2 rounded-lg text-sm font-medium transition bg-brand-600 text-white shadow-md shadow-brand-600/20';
+            }
+
+            document.querySelectorAll('.diagram-view').forEach(view => view.classList.remove('active'));
+
+            const activeView = document.getElementById('view-' + tabId);
+            if (activeView) {
+                activeView.classList.add('active');
+            }
+
+            document.getElementById('diagram-title').innerText = meta[tabId].title;
+            document.getElementById('diagram-desc').innerText = meta[tabId].desc;
+
+            const link = document.getElementById('diagram-source-link');
+            if (link) {
+                const pre = activeView?.querySelector('pre.mermaid[data-src]');
+                if (pre) {
+                    const src = pre.getAttribute('data-src');
+                    link.setAttribute('href', src);
+                    link.textContent = '↗ View source: ' + src;
+                }
+            }
+
+            // Re-fit the pan-zoom for the newly-visible diagram.
+            const pz = panZoomInstances[tabId];
+            if (pz) {
+                try {
+                    pz.resize();
+                    pz.fit();
+                    pz.center();
+                } catch (e) { /* noop */ }
+            }
+        }
+
+        function ensurePanZoom(tabId, parentEl) {
+            if (!parentEl) return;
+            const svg = parentEl.querySelector('svg');
+            if (!svg) return;
+
+            if (!panZoomInstances[tabId] && typeof svgPanZoom !== 'undefined') {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = '100%';
+                panZoomInstances[tabId] = svgPanZoom(svg, {
+                    zoomEnabled: true,
+                    controlIconsEnabled: false,
+                    fit: true,
+                    center: true,
+                    minZoom: 0.2,
+                    maxZoom: 8,
+                    contain: false
+                });
+            } else if (panZoomInstances[tabId]) {
+                try {
+                    panZoomInstances[tabId].resize();
+                    panZoomInstances[tabId].fit();
+                    panZoomInstances[tabId].center();
+                } catch (e) { /* noop */ }
+            }
+        }
+
+        function getActivePanZoom() {
+            const activeView = document.querySelector('.diagram-view.active');
+            if (activeView) {
+                const tabId = activeView.id.replace('view-', '');
+                return panZoomInstances[tabId];
+            }
+            return null;
+        }
+
+        function zoomIn() {
+            const pz = getActivePanZoom();
+            if (pz) pz.zoomIn();
+        }
+
+        function zoomOut() {
+            const pz = getActivePanZoom();
+            if (pz) pz.zoomOut();
+        }
+
+        function resetZoom() {
+            const pz = getActivePanZoom();
+            if (pz) {
+                pz.resetZoom();
+                pz.fit();
+                pz.center();
+            }
+        }
+
+        // Expose to global so inline onclick="switchTab(...)" works.
+        window.switchTab = switchTab;
+        window.zoomIn = zoomIn;
+        window.zoomOut = zoomOut;
+        window.resetZoom = resetZoom;
+
+        // Once Mermaid has finished rendering (via startOnLoad), wire up
+        // pan-zoom on every diagram. The delay gives Mermaid time to
+        // process all 6 inline <pre class="mermaid"> blocks.
+        window.addEventListener('load', () => {
+            setTimeout(initializeAllPanZoom, 600);
+        });
+    </script>
+</body>
+</html>

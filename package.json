@@ -13,7 +13,9 @@
     "piston:stop": "pnpm --filter server exec tsx ../types/piston.ts stop",
     "piston:remove": "pnpm --filter server exec tsx ../types/piston.ts remove",
     "piston:setup": "pnpm --filter server exec tsx ../types/piston.ts setup",
-    "piston:status": "pnpm --filter server exec tsx ../types/piston.ts status"
+    "piston:status": "pnpm --filter server exec tsx ../types/piston.ts status",
+    "build:viewer": "pnpm --filter server exec tsx ../scripts/build-architecture-viewer.ts",
+    "build:viewer:check": "pnpm --filter server exec tsx ../scripts/build-architecture-viewer.ts --check"
   },
   "devDependencies": {
     "@playwright/test": "1.52.0",

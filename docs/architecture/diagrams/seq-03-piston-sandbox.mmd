@@ -1,0 +1,33 @@
+%% Sequence Flow 3 — Sandboxed Code Execution & AI Code Review
+
+sequenceDiagram
+    autonumber
+    actor Candidate as User / Candidate
+    participant SPA as React 19 Frontend
+    participant API as NestJS Coding Controller
+    participant Redis as Redis Quota
+    participant Piston as Piston Container (127.0.0.1:2000)
+    participant Worker as BullMQ Async Worker
+    participant Mastra as Mastra Code Reviewer
+    participant PG as PostgreSQL
+
+    Candidate->>SPA: Clicks "Run Code"
+    SPA->>API: POST /api/v1/coding/run
+    API->>Piston: POST /api/v2/execute
+    Note over Piston: Executes untrusted code in cgroup sandbox
+    Piston-->>API: HTTP 200 { run: { stdout, stderr } }
+    API-->>SPA: HTTP 200 OK { output }
+
+    Candidate->>SPA: Clicks "Submit Solution"
+    SPA->>API: POST /api/v1/coding/session/:id/submit
+    API->>Redis: INCR quota:userId:YYYY-MM-DD:coding_submits
+    API->>Piston: POST /api/v2/execute (Hidden test cases)
+    Piston-->>API: Test Results (passed: 5/5)
+
+    API->>Redis: Enqueue "code-review-queue"
+    API-->>SPA: HTTP 200 OK { status: "accepted" }
+
+    Worker->>Redis: Pop "code-review-queue"
+    Worker->>Mastra: Execute CodeReviewerAgent
+    Mastra-->>Worker: JSON { timeComplexity: "O(N)", spaceComplexity: "O(1)" }
+    Worker->>PG: Insert CodingAnswer

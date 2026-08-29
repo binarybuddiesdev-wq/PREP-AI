@@ -14,6 +14,12 @@ export const envSchema = z.object({
   NVIDIA_API_KEY: z.string().optional(),
   NVIDIA_BASE_URL: z.string().optional().default('https://integrate.api.nvidia.com/v1'),
   NVIDIA_MODEL: z.string().optional().default('meta/llama-3.1-8b-instruct'),
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_BASE_URL: z.string().optional().default('https://api.groq.com/openai/v1'),
+  GROQ_MODEL: z.string().optional().default('qwen/qwen3.8-27b'),
+  // Force a specific provider: undefined = auto-failover (NVIDIA first, Groq fallback),
+  // 'nvidia' = NVIDIA only, 'groq' = Groq only.
+  LLM_PROVIDER: z.enum(['nvidia', 'groq']).optional(),
 
   // Role-Based Limits — Theory
   THEORY_DAILY_SESSIONS_FREE: z.coerce.number().optional().default(3),

@@ -1,0 +1,27 @@
+%% Sequence Flow 1 — User Onboarding via Clerk Webhook
+
+sequenceDiagram
+    autonumber
+    actor Candidate as User / Candidate
+    participant Clerk as Clerk Auth Service
+    participant API as NestJS Webhook Controller
+    participant Mongo as MongoDB (User Collection)
+    participant SPA as React 19 Frontend
+
+    Candidate->>Clerk: Completes Sign Up (OAuth / Email)
+    Clerk-->>Candidate: Returns Session JWT Token
+    Clerk->>API: POST /webhooks/clerk (user.created payload)
+    Note over API: Verify Svix Webhook Signature
+    alt Signature Valid
+        API->>Mongo: Upsert User (clerkUserId, email, role="USER")
+        Mongo-->>API: User Created Success
+        API-->>Clerk: HTTP 200 OK
+    else Signature Invalid
+        API-->>Clerk: HTTP 400 Bad Request
+    end
+
+    Candidate->>SPA: Redirects to /app/dashboard
+    SPA->>API: GET /api/v1/users/me (Bearer JWT)
+    API->>Mongo: Find User by clerkUserId
+    Mongo-->>API: Return User Profile
+    API-->>SPA: HTTP 200 { data: user }

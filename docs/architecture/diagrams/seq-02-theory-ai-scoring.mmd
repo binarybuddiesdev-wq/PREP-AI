@@ -1,0 +1,51 @@
+%% Sequence Flow 2 — Theory Session & Async AI Answer Scoring
+
+sequenceDiagram
+    autonumber
+    actor Candidate as User / Candidate
+    participant SPA as React 19 Frontend
+    participant API as NestJS Theory Controller
+    participant Redis as Redis (Quota & BullMQ)
+    participant Mongo as MongoDB (Question Bank)
+    participant Worker as BullMQ Async Worker
+    participant Mastra as Mastra AI Agent
+    participant Provider as LLM Provider Router<br/>(NVIDIA primary, Groq fallback)
+    participant NIM as NVIDIA NIM (LLM)
+    participant Groq as Groq (LLM, fallback)
+    participant PG as PostgreSQL (Sessions & Answers)
+
+    Candidate->>SPA: Selects Topic & Clicks "Start Session"
+    SPA->>API: POST /api/v1/theory/session/start
+    API->>Redis: INCR quota:userId:YYYY-MM-DD:theory_sessions
+    alt Quota Exceeded
+        API-->>SPA: HTTP 429 Limit Reached
+    else Quota Allowed
+        API->>Mongo: Fetch N Questions
+        Mongo-->>API: Question List
+        API->>PG: Create TheorySession
+        PG-->>API: TheorySession Record
+        API-->>SPA: HTTP 201 Created { sessionId, questions }
+    end
+
+    Candidate->>SPA: Writes Answer & Clicks "Submit Answer"
+    SPA->>API: POST /api/v1/theory/session/:id/answer
+    API->>Redis: Enqueue Job into "theory-eval-queue"
+    API-->>SPA: HTTP 202 Accepted { jobId }
+
+    Worker->>Redis: Pop Job from queue
+    Worker->>Mastra: Execute TheoryEvaluatorAgent
+    Mastra->>Provider: chat(messages, schema)
+    Provider->>NIM: POST /chat/completions (Zod Output)
+    alt NVIDIA succeeds
+        NIM-->>Provider: JSON { aiScore, aiFeedback }
+    else NVIDIA fails (auth/429/5xx)
+        Provider->>Groq: POST /chat/completions (Zod Output)
+        Groq-->>Provider: JSON { aiScore, aiFeedback }
+    end
+    Provider-->>Mastra: Evaluation Result
+
+    Worker->>PG: Insert TheoryAnswer & Update TheorySession
+    SPA->>API: Poll GET /api/v1/theory/jobs/:jobId
+    API->>PG: Fetch Scored TheoryAnswer
+    PG-->>API: Scored Answer
+    API-->>SPA: HTTP 200 OK { aiScore, aiFeedback }

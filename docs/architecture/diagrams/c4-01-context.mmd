@@ -1,0 +1,39 @@
+%% C4 Level 1 — System Context
+%% Renders natively on GitHub, GitLab, Bitbucket, Obsidian, VS Code (with Mermaid plugin).
+%% Edit here, commit, code-review. No HTML viewer required.
+
+flowchart TB
+    subgraph Users ["Actors & Users"]
+        Candidate["🧑‍💻 Software Engineer / Candidate"]
+        Admin["🛠️ PrepAI Admin"]
+    end
+
+    subgraph Core ["PrepAI Core Platform"]
+        PrepAI["🚀 PrepAI Platform<br/>(NestJS Fastify + React 19 + Piston + Mastra AI)"]
+    end
+
+    subgraph External ["External Third-Party Integrations"]
+        Clerk["🔐 Clerk Auth"]
+        NIM["🤖 NVIDIA NIM LLM<br/>(primary)"]
+        Groq["⚡ Groq LLM<br/>(fallback, free tier)"]
+        Cloudinary["📁 Cloudinary PDF Storage"]
+        Resend["📧 Resend Email"]
+        Razorpay["💳 Razorpay Payments"]
+    end
+
+    Candidate -->|Practices theory, executes code, views analytics| PrepAI
+    Admin -->|Manages topics, curated questions, roles| PrepAI
+
+    PrepAI -->|Verifies JWT Bearer tokens & receives webhooks| Clerk
+    PrepAI -->|Sends prompts & receives AI evaluations| NIM
+    PrepAI -.->|Failover when NVIDIA unavailable| Groq
+    PrepAI -->|Stores & fetches PDF files| Cloudinary
+    PrepAI -->|Triggers email notifications| Resend
+    PrepAI -->|Creates payment orders & verifies webhooks| Razorpay
+
+    classDef userStyle fill:#1e293b,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef coreStyle fill:#312e81,stroke:#818cf8,stroke-width:3px,color:#fff;
+    classDef extStyle fill:#0f172a,stroke:#475569,stroke-width:2px,color:#94a3b8;
+    class Candidate,Admin userStyle;
+    class PrepAI coreStyle;
+    class Clerk,NIM,Groq,Cloudinary,Resend,Razorpay extStyle;

@@ -73,6 +73,21 @@ pnpm report             # open HTML report
 
 ## Architecture
 
+> **Read these first when you need to understand the system:**
+> - [`docs/architecture/README.md`](docs/architecture/README.md) — diagram + ADR index
+> - [`docs/architecture/services.md`](docs/architecture/services.md) — service catalog with owners and SLOs
+> - [`docs/architecture/nfrs.md`](docs/architecture/nfrs.md) — quantified non-functional requirements
+> - [`docs/architecture/terms-glossary.md`](docs/architecture/terms-glossary.md) — technical terms explained in simple English
+> - [`docs/architecture/TODO.md`](docs/architecture/TODO.md) — **list of architecture docs still to be written** (caching, queues, AI pipeline, RAG, runbooks, threat model, etc.)
+> - [`docs/adr/`](docs/adr/) — every meaningful design decision and why
+> - [`SYSTEM_DESIGN_REVIEW.md`](SYSTEM_DESIGN_REVIEW.md) — the design review that produced the action items above
+> - [`docs/architecture/viewer.html`](docs/architecture/viewer.html) — standalone interactive diagram viewer
+>
+> Before making any non-trivial architecture change (new service, new datastore, new
+> dependency, accepted tech debt), read the relevant ADRs and the NFRs doc, check
+> [TODO.md](docs/architecture/TODO.md) for related pending work, and add a new ADR
+> with the same PR.
+
 ### Two databases, two Prisma clients
 `server/prisma/schema.prisma` (MongoDB, default-generated client) holds `User`, `UserSettings`, `Topic`, `Question`. `server/prisma/schema.postgresql.prisma` generates a *separate* client into `src/generated/postgresql-client` (for Sessions/Answers-type relational data — see `server/README.md` planned modules). `PrismaService` (Mongo) is the default injectable everywhere; `PrismaPostgresqlService` wraps the Postgres client and **no-ops gracefully** if `POSTGRESQL_URL` is unset or the client hasn't been generated yet (checked at `onModuleInit`). When adding a feature, check which store it belongs in before assuming `PrismaService` is the only one.
 

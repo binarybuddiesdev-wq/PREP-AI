@@ -1,0 +1,51 @@
+%% C4 Level 3 — Component Diagram (NestJS Backend)
+%% Module breakdown of the NestJS API process.
+
+flowchart TB
+    subgraph Pipeline ["Global NestJS HTTP Pipeline"]
+        Cors["Fastify CORS / Helmet"] --> AuthGuard["ClerkAuthGuard"]
+        AuthGuard --> RolesGuard["RolesGuard"]
+        RolesGuard --> ThrottlePipe["Redis RateLimiter Pipe"]
+        ThrottlePipe --> Controller["NestJS Controllers"]
+        Controller --> TransformInt["TransformInterceptor"]
+        TransformInt --> ExFilter["HttpExceptionFilter"]
+    end
+
+    subgraph FeatureModules ["Feature Modules"]
+        Controller --> UserMod["UserModule / WebhookController"]
+        Controller --> TopicMod["TopicModule"]
+        Controller --> QuestionMod["QuestionModule"]
+        Controller --> TheoryMod["TheoryModule"]
+        Controller --> CodingMod["CodingModule"]
+        Controller --> PdfMod["PdfRagModule"]
+    end
+
+    subgraph Infrastructure ["Infrastructure Services"]
+        UserMod --> PrismaMongo["PrismaService Mongo"]
+        TopicMod --> PrismaMongo
+        QuestionMod --> PrismaMongo
+
+        TheoryMod --> PrismaPG["PrismaPostgresqlService Postgres"]
+        CodingMod --> PrismaPG
+        PdfMod --> PrismaPG
+
+        TheoryMod --> RedisSvc["Redis Cache & Quota Service"]
+        CodingMod --> RedisSvc
+
+        TheoryMod --> QueueSvc["BullMQ Job Queue Service"]
+        CodingMod --> QueueSvc
+    end
+
+    subgraph ExternalExecution ["External Execution Engine"]
+        QueueSvc -->|HTTP REST| PistonEngine["Piston Sandbox"]
+        QueueSvc -->|SDK Prompts| ProviderRouter["LLM Provider Router<br/>(getModel() in providers.ts)"]
+        ProviderRouter -->|HTTPS| NVIDIA["NVIDIA NIM API<br/>(primary)"]
+        ProviderRouter -.->|Failover on error| Groq["Groq API<br/>(fallback)"]
+    end
+
+    classDef pipeStyle fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#fff;
+    classDef modStyle fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef infraStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    class Cors,AuthGuard,RolesGuard,ThrottlePipe,Controller,TransformInt,ExFilter pipeStyle;
+    class UserMod,TopicMod,QuestionMod,TheoryMod,CodingMod,PdfMod modStyle;
+    class PrismaMongo,PrismaPG,RedisSvc,QueueSvc,ProviderRouter infraStyle;

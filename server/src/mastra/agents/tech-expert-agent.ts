@@ -1,10 +1,5 @@
 import { Agent } from '@mastra/core/agent';
-import { createOpenAI } from '@ai-sdk/openai';
-
-const nvidiaProvider = createOpenAI({
-  apiKey: process.env.NVIDIA_API_KEY || '',
-  baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-});
+import { getModel } from '../providers.js';
 
 export const techExpertAgent = new Agent({
   id: 'techExpertAgent',
@@ -22,6 +17,5 @@ export const techExpertAgent = new Agent({
   - Web3: Blockchain, Smart Contracts, DeFi, etc.
 
   Provide clear, accurate, and helpful answers. Include code examples when relevant. If unsure about something, say so honestly rather than guessing.`,
-  model: nvidiaProvider.chat('nvidia/llama-3.3-nemotron-super-49b-v1.5'),
-  // model: "anthropic/claude-sonnet-4-6"
+  model: getModel(),
 });

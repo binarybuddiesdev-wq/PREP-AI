@@ -21,6 +21,7 @@ The platform covers system design, coding, and domain-specific topics (React, Ty
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Backend API](#backend-api)
+- [System Design](#system-design)
 - [Getting Started](#getting-started)
 - [Testing](#testing)
 - [UI Prototype](#ui-prototype)
@@ -365,6 +366,32 @@ PrepAI/
 The backend is built with NestJS and Fastify, integrating Mastra LLM agents for technical interview feedback. 
 
 For the complete list of endpoints, payloads, and mock requests/responses, see the [README.md](file:///c:/antigravity-test/PrepAI/server/README.md) specification in the `server` directory.
+
+---
+
+## System Design
+
+PrepAI follows the architecture practices used at large engineering orgs (Google, Microsoft, Stripe, Spotify):
+
+- **C4 model** for system context, containers, and components
+- **Sequence diagrams** for the critical user flows
+- **Architecture Decision Records (ADRs)** for every meaningful design choice
+- **Service catalog** with owners, SLOs, and dependencies
+- **Non-functional requirements** doc with quantified targets
+
+All under [`docs/`](docs/). Edit diagrams in `.mmd` files (rendered natively by GitHub); use the [interactive viewer](docs/architecture/viewer.html) for offline browsing.
+
+| Doc | What it is |
+|---|---|
+| [docs/architecture/README.md](docs/architecture/README.md) | Index of all diagrams + decisions |
+| [docs/architecture/diagrams/](docs/architecture/diagrams/) | 6 C4 + sequence diagrams (`.mmd`) |
+| [docs/architecture/viewer.html](docs/architecture/viewer.html) | Standalone interactive viewer |
+| [docs/architecture/services.md](docs/architecture/services.md) | Service catalog (owner, SLO, deps) |
+| [docs/architecture/nfrs.md](docs/architecture/nfrs.md) | SLOs, scale, retention, cost ceilings |
+| [docs/architecture/terms-glossary.md](docs/architecture/terms-glossary.md) | Technical terms in plain English with analogies |
+| [docs/architecture/TODO.md](docs/architecture/TODO.md) | **Architecture docs still to be written** (caching, queues, AI pipeline, RAG, runbooks, threat model — 13 open) |
+| [docs/adr/](docs/adr/) | Architecture decision records |
+| [SYSTEM_DESIGN_REVIEW.md](SYSTEM_DESIGN_REVIEW.md) | The review that produced the action items above |
 
 ---
 

@@ -1,0 +1,47 @@
+%% C4 Level 2 — Container Diagram
+%% Shows the process boundaries inside the PrepAI system boundary.
+
+flowchart TB
+    User["🧑‍💻 User Browser / Client"]
+
+    subgraph SystemBoundary ["PrepAI Infrastructure Boundary"]
+        SPA["💻 React 19 SPA"]
+        API["⚡ NestJS Fastify API"]
+
+        subgraph DataStores ["Data & Cache Runtimes"]
+            Mongo[("🍃 MongoDB<br/>Users, Topics, Questions")]
+            Postgres[("🐘 PostgreSQL + pgvector<br/>Sessions, Answers, Vectors")]
+            Redis[("🔴 Redis Cache & Queue<br/>Rate Limits, BullMQ")]
+        end
+
+        subgraph ExecutionRuntimes ["Isolated Runtimes"]
+            Piston["🐳 Piston Sandbox Container"]
+            Mastra["🧠 Mastra AI Framework"]
+        end
+    end
+
+    ClerkExt["🔐 Clerk Auth"]
+    NIMExt["🤖 NVIDIA NIM API<br/>(primary)"]
+    GroqExt["⚡ Groq API<br/>(fallback)"]
+
+    User -->|HTTPS| SPA
+    SPA -->|Get Session JWT| ClerkExt
+    SPA -->|REST API Requests with Bearer JWT| API
+
+    API -->|Prisma Mongo| Mongo
+    API -->|Prisma Postgres| Postgres
+    API -->|ioredis BullMQ| Redis
+    API -->|HTTP REST| Piston
+    API -->|In-Process SDK<br/>OpenAI-compatible| Mastra
+    Mastra -->|HTTPS REST Prompts| NIMExt
+    Mastra -.->|Failover on error| GroqExt
+    ClerkExt -->|POST /webhooks/clerk| API
+
+    classDef spaStyle fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef apiStyle fill:#312e81,stroke:#818cf8,stroke-width:3px,color:#fff;
+    classDef dbStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef runtimeStyle fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff;
+    class SPA spaStyle;
+    class API apiStyle;
+    class Mongo,Postgres,Redis dbStyle;
+    class Piston,Mastra runtimeStyle;
