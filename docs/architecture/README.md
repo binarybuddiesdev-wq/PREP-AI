@@ -32,6 +32,7 @@ All under `docs/`. Every change goes through a PR.
 | L1 | [c4-01-context.mmd](diagrams/c4-01-context.mmd) | PrepAI, the users, and external systems (Clerk, NVIDIA NIM, Cloudinary, Resend, Razorpay) |
 | L2 | [c4-02-container.mmd](diagrams/c4-02-container.mmd) | Process boundaries: SPA, API, Mongo, Postgres, Redis, Piston, Mastra |
 | L3 | [c4-03-component.mmd](diagrams/c4-03-component.mmd) | NestJS modules, guards, interceptors, infrastructure services |
+| L3 | [c4-04-frontend-component.mmd](diagrams/c4-04-frontend-component.mmd) | Frontend (ui/) 7-layer N-Tier model — pages is the only layer that imports from data/ and logic/. Enforced by the `architect-review` skill. |
 
 ### Sequence flows
 
@@ -53,6 +54,8 @@ See [../adr/](../adr/) for the full index. Highlights:
 - [ADR-0004: BullMQ](../adr/0004-bullmq-for-async-jobs.md) — why a queue, not in-process promises
 - [ADR-0005: Redis quota](../adr/0005-redis-quota-counters.md) — why atomic INCR+EXPIRE
 - [ADR-0006: Defer Firecracker](../adr/0006-defer-firecracker-isolation.md) — accepted v1 risk
+- [ADR-0007: Groq LLM fallback](../adr/0007-add-groq-as-llm-fallback.md) — multi-provider failover routing
+- [ADR-0008: Frontend N-Tier](../adr/0008-frontend-n-tier.md) — 7-layer model with Reader/Command hooks
 
 ---
 
@@ -87,6 +90,8 @@ See [../adr/](../adr/) for the full index. Highlights:
 
 ## Related docs
 
+- [architecture.md](architecture.md) — **Master Software Architecture & System Design Blueprint** (Hexagonal modular monolith, dual Prisma ORM, Mastra AI failover routing, Piston execution sandbox, N-Tier CQRS layer boundaries, testing gates).
+- [frontend-refactor.md](frontend-refactor.md) — **Frontend N-Tier Refactor Plan & Playbook** (Granular 7-layer migration plan, Reader/Command hook patterns, file inventory).
 - [TODO.md](TODO.md) — **explicit list of architecture docs that are NOT YET
   WRITTEN**. Read this before assuming the system design is complete.
 - [SYSTEM_DESIGN_REVIEW.md](../../SYSTEM_DESIGN_REVIEW.md) — the design

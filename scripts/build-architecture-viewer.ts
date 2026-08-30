@@ -37,16 +37,17 @@ const HTML_PATH = join(ROOT, 'docs', 'architecture', 'viewer.html');
 const DIAGRAMS_DIR = join(ROOT, 'docs', 'architecture', 'diagrams');
 
 /**
- * The 6 (id, file) pairs that this script knows about. If you add a new
+ * The 7 (id, file) pairs that this script knows about. If you add a new
  * diagram, add it here AND to the HTML view with matching BEGIN/END markers.
  */
 const DIAGRAMS: ReadonlyArray<{ id: string; viewId: string; file: string }> = [
-  { id: 'c4-01-context',   viewId: 'c4-context',   file: 'c4-01-context.mmd' },
-  { id: 'c4-02-container', viewId: 'c4-container', file: 'c4-02-container.mmd' },
-  { id: 'c4-03-component', viewId: 'c4-component', file: 'c4-03-component.mmd' },
-  { id: 'seq-01-auth',     viewId: 'seq-auth',     file: 'seq-01-auth-webhook.mmd' },
-  { id: 'seq-02-theory',   viewId: 'seq-theory',   file: 'seq-02-theory-ai-scoring.mmd' },
-  { id: 'seq-03-coding',   viewId: 'seq-coding',   file: 'seq-03-piston-sandbox.mmd' },
+  { id: 'c4-01-context',         viewId: 'c4-context',     file: 'c4-01-context.mmd' },
+  { id: 'c4-02-container',       viewId: 'c4-container',   file: 'c4-02-container.mmd' },
+  { id: 'c4-03-component',       viewId: 'c4-component',   file: 'c4-03-component.mmd' },
+  { id: 'c4-04-frontend',        viewId: 'c4-frontend',    file: 'c4-04-frontend-component.mmd' },
+  { id: 'seq-01-auth',           viewId: 'seq-auth',       file: 'seq-01-auth-webhook.mmd' },
+  { id: 'seq-02-theory',         viewId: 'seq-theory',     file: 'seq-02-theory-ai-scoring.mmd' },
+  { id: 'seq-03-coding',         viewId: 'seq-coding',     file: 'seq-03-piston-sandbox.mmd' },
 ] as const;
 
 function fail(msg: string): never {

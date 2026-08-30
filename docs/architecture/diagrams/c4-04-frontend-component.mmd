@@ -1,0 +1,113 @@
+%% C4 Level 3 — Component Diagram (Frontend ui/)
+%% Layer model inside the React 19 SPA.
+%% See ADR-0008 and docs/architecture/frontend-refactor.md for the rationale.
+%% The single most important rule: pages/ is the only layer that imports
+%% from data/ and logic/. components/ is purely presentational.
+
+flowchart TB
+    Browser["🌐 User Browser"]
+
+    subgraph CompositionRoot ["Composition Root (ui/src/)"]
+        Main["main.tsx<br/>Vite entry"]
+        App["App.tsx<br/>Router + Clerk + Query gates"]
+        Providers["Providers<br/>ClerkProvider · QueryClientProvider · ReduxProvider"]
+        Main --> App
+        App --> Providers
+    end
+
+    subgraph ShellPages ["Pages (UI Shell — composition only)"]
+        Dash["DashboardPage.tsx"]
+        Settings["SettingsPage.tsx"]
+        SignIn["SignInPage.tsx"]
+        SignUp["SignUpPage.tsx"]
+    end
+
+    subgraph LogicLayer ["Logic (useXxxReader / useXxxCommand)"]
+        useUserReader["useUserReader()<br/>useQuery → GET /users/me"]
+        useSettingsReader["useSettingsReader()<br/>useQuery → GET /users/settings"]
+        useUpdateSettingsCmd["useUpdateSettingsCommand()<br/>useMutation → PATCH /users/settings"]
+        useSetupCmd["useSetupCompleteCommand()<br/>useMutation → PATCH /users/setup-complete"]
+    end
+
+    subgraph DataLayer ["Data (HTTP, DTOs, query keys, RTK)"]
+        ApiClient["api-client.ts<br/>ky + Bearer + getApiClient()"]
+        UserApi["user.api.ts<br/>getMe, getSettings, updateSettings, setupComplete"]
+        UserKeys["user.keys.ts<br/>userQueryKeys.me(), .settings()"]
+        UserTypes["user.types.ts<br/>IUser, IUpdateSettingsBody"]
+        Envelope["envelope.ts<br/>IApiEnvelope&lt;T&gt;"]
+        Store["store/<br/>RTK (client UI state only)"]
+        ApiClient --> UserApi
+        UserApi --> Envelope
+        UserApi --> UserKeys
+        UserApi --> UserTypes
+    end
+
+    subgraph UtilsLayer ["Utils (pure helpers, no React)"]
+        Cn["cn.ts"]
+        Formatters["formatDate.ts · formatNumber.ts"]
+        Validators["validators.ts"]
+    end
+
+    subgraph CoreLayer ["Core (constants, routes, env, branded types)"]
+        Env["env.ts"]
+        Routes["routes.ts"]
+        QueryPrefix["query-prefix.ts"]
+    end
+
+    subgraph ComponentsLayer ["Components (presentational only)"]
+        UICard["ui/Card.tsx · Button.tsx · Input.tsx"]
+        UserCard["user/UserCard.tsx<br/>(props only — no data imports)"]
+        SettingsForm["settings/SettingsForm.tsx<br/>(props only — no data imports)"]
+    end
+
+    Browser -->|HTTPS| Main
+
+    %% Pages are the only layer that imports from data/ and logic/
+    Dash -->|imports hook| useUserReader
+    Settings -->|imports hook| useSettingsReader
+    Settings -->|imports hook| useUpdateSettingsCmd
+    Dash -->|imports component| UserCard
+    Settings -->|imports component| SettingsForm
+    Dash -.->|imports component| UICard
+    Settings -.->|imports component| UICard
+
+    %% Logic is the only layer that calls useQuery/useMutation/getApiClient
+    useUserReader -->|useQuery| ApiClient
+    useSettingsReader -->|useQuery| ApiClient
+    useUpdateSettingsCmd -->|useMutation| ApiClient
+    useSetupCmd -->|useMutation| ApiClient
+    useUserReader -.->|query key| UserKeys
+    useSettingsReader -.->|query key| UserKeys
+    useUpdateSettingsCmd -.->|query key| UserKeys
+
+    %% Logic imports from data, data imports from core/utils
+    LogicLayer -.->|type-only imports| DataLayer
+    LogicLayer -->|query prefix| CoreLayer
+    DataLayer -->|envelope, types| CoreLayer
+    DataLayer -->|cn, formatters| UtilsLayer
+
+    %% Pages may import utils + core (constants, route names)
+    ShellPages -->|route names, env| CoreLayer
+    ShellPages -->|cn| UtilsLayer
+
+    %% External: API
+    subgraph ExternalAPI ["External: NestJS API"]
+        REST["REST /api/v1/*<br/>Clerk Bearer JWT"]
+    end
+    ApiClient -->|HTTPS + Bearer| REST
+
+    classDef shellStyle fill:#312e81,stroke:#818cf8,stroke-width:3px,color:#fff;
+    classDef logicStyle fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#fff;
+    classDef dataStyle fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#fff;
+    classDef utilStyle fill:#0f172a,stroke:#64748b,stroke-width:1px,color:#fff;
+    classDef coreStyle fill:#0f172a,stroke:#94a3b8,stroke-width:1px,color:#fff;
+    classDef compStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef extStyle fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff;
+
+    class Main,App,Providers,Dash,Settings,SignIn,SignUp shellStyle;
+    class useUserReader,useSettingsReader,useUpdateSettingsCmd,useSetupCmd logicStyle;
+    class ApiClient,UserApi,UserKeys,UserTypes,Envelope,Store dataStyle;
+    class Cn,Formatters,Validators utilStyle;
+    class Env,Routes,QueryPrefix coreStyle;
+    class UICard,UserCard,SettingsForm compStyle;
+    class REST extStyle;

@@ -17,6 +17,7 @@
 | [0005](0005-redis-quota-counters.md) | Redis (atomic INCR+EXPIRE) for daily quota counters | Accepted | 2026-08-29 |
 | [0006](0006-defer-firecracker-isolation.md) | Defer Firecracker/gVisor — accept Docker isolation in v1 | Accepted | 2026-08-29 |
 | [0007](0007-add-groq-as-llm-fallback.md) | Add Groq as LLM fallback (NVIDIA primary) | Accepted | 2026-08-29 |
+| [0008](0008-frontend-n-tier.md) | Frontend (ui/) N-Tier layer model with Reader/Command hooks | Accepted | 2026-08-30 |
 
 ---
 

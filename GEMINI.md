@@ -64,10 +64,10 @@ pnpm piston:stop     # `podman stop` — container is kept (Exited), restart wit
 pnpm piston:remove   # `podman rm -f` — delete the container entirely
 ```
 
-- `pnpm piston:start` uses a custom entrypoint ([piston-entrypoint.sh](file:///c:/antigravity-test/PrepAI/piston-entrypoint.sh)) to handle cgroup v2 controller limits in rootless WSL2/Podman (such as the missing `cpuset` controller), maps a named volume `piston_data` at `/piston` to persist installed languages, and binds the container port explicitly to IPv4 loopback `127.0.0.1:2000` to avoid Windows port-forwarding issues (the port is changed in `types/piston.ts`).
+- `pnpm piston:start` uses a custom entrypoint ([piston-entrypoint.sh](file:///c:/teja/coding/PREP-AI/piston-entrypoint.sh)) to handle cgroup v2 controller limits in rootless WSL2/Podman (such as the missing `cpuset` controller), maps a named volume `piston_data` at `/piston` to persist installed languages, and binds the container port explicitly to IPv4 loopback `127.0.0.1:2000` to avoid Windows port-forwarding issues (the port is changed in `types/piston.ts`).
 - Requires Podman Desktop running. Verify with `podman ps` and `curl http://127.0.0.1:2000/api/v2/runtimes`.
 - On Podman 6.x + WSL 2.7+ a fresh clone also needs: `.sh` files kept LF (`.gitattributes`), WSL2 `networkingMode=mirrored` in `%USERPROFILE%\.wslconfig` (+ `wsl --shutdown`), and the `--add-host` GitHub-CDN pins already in `types/piston.ts`. Runtimes persist in the `piston_data` volume, so `pnpm piston:setup` is one-time.
-- For details, troubleshooting, or manual steps, refer to [PISTON_WSL_SETUP_GUIDE.md](file:///c:/antigravity-test/PrepAI/docs/PISTON_WSL_SETUP_GUIDE.md) (see §2b for the newer-environment fixes).
+- For details, troubleshooting, or manual steps, refer to [PISTON_WSL_SETUP_GUIDE.md](file:///c:/teja/coding/PREP-AI/docs/PISTON_WSL_SETUP_GUIDE.md) (see §2b for the newer-environment fixes).
 
 ### E2E (Playwright, from repo root)
 ```bash
@@ -108,3 +108,18 @@ Routing is React Router with `SignedIn`/`SignedOut` (Clerk) gating `ProtectedRou
 
 ### Infrastructure dependencies
 AI/LLM calls go through Mastra agents (`server/src/mastra/`) calling NVIDIA NIM (`meta/llama-3.3-nemotron-super-49b-v1.5` per `server/README.md`, `.env.example` defaults to `llama-3.1-8b-instruct` — check `NVIDIA_MODEL` before assuming which). Redis (via `cache-manager-ioredis-yet`) is a global `CacheModule`. Cloudinary (PDFs), Resend (email), and Razorpay (payments) are referenced in docs/README but not yet implemented in `server/src/modules/` — check before assuming an integration exists.
+
+## Agent Skills & Guidelines
+
+This project has custom domain skills defined under [`.claude/skills/`](.claude/skills/). Every AI assistant MUST read and strictly adhere to the corresponding skill file before creating, modifying, or reviewing code in that domain:
+
+- **[`api-design`](.claude/skills/api-design/SKILL.md):** Creating/editing HTTP endpoints, DTOs, the `{success, message, data}` response envelope, Swagger schemas, and status codes.
+- **[`react-developer`](.claude/skills/react-developer/SKILL.md):** React 19 frontend components, pages, TanStack Query, Redux state, Clerk auth, and Tailwind styling.
+- **[`nestjs-developer`](.claude/skills/nestjs-developer/SKILL.md):** NestJS backend architecture, module wiring, Fastify types, guards, Pino logging, dependency injection, and the dual-database (Mongo + Postgres) split.
+- **[`prisma-database`](.claude/skills/prisma-database/SKILL.md):** Dual-database ORM rules (Mongo vs. Postgres), Prisma schemas, schema pushes, IDOR prevention, query patterns, and the `client_` no-op.
+- **[`testing`](.claude/skills/testing/SKILL.md):** Vitest specs, `vi.fn()` mocking, guard overrides, coverage thresholds (90%), and E2E setup.
+- **[`mastra-ai`](.claude/skills/mastra-ai/SKILL.md):** Mastra AI agents, LLM failover router (`providers.ts`), and Zod structured outputs.
+- **[`developer`](.claude/skills/developer/SKILL.md):** Development standards — naming conventions, documentation, testing, formatting, architecture constraints for the PrepAI monorepo.
+- **[`verify-implementation`](.claude/skills/verify-implementation/SKILL.md):** Tiered test verification gate — Tier 1 (format, lint, build, test) always, Tier 2 (e2e, coverage) before merge.
+- **[`architect-review`](.claude/skills/architect-review/SKILL.md):** Read-only review of frontend (ui/) changes against the 7-layer architecture in [`docs/architecture/architecture.md`](docs/architecture/architecture.md) §Frontend Refactor. Flags layer violations, naming issues, and structural defects. Use before merging any ui/ branch.
+

@@ -1,0 +1,5 @@
+{
+    "model": "claude-sonnet-5",
+    "thinkingModel": "claude-opus-4-8",
+    "includeCoAuthoredBy": false
+}
