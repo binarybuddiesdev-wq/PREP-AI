@@ -90,7 +90,6 @@ pnpm report             # open HTML report
 > - [`docs/architecture/terms-glossary.md`](docs/architecture/terms-glossary.md) — technical terms explained in simple English
 > - [`docs/architecture/TODO.md`](docs/architecture/TODO.md) — **list of architecture docs still to be written** (caching, queues, AI pipeline, RAG, runbooks, threat model, etc.)
 > - [`docs/adr/`](docs/adr/) — every meaningful design decision and why
-> - [`SYSTEM_DESIGN_REVIEW.md`](SYSTEM_DESIGN_REVIEW.md) — the design review that produced the action items above
 > - [`docs/architecture/viewer.html`](docs/architecture/viewer.html) — standalone interactive diagram viewer
 >
 > Before making any non-trivial architecture change (new service, new datastore, new

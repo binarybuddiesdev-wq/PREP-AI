@@ -1,0 +1,152 @@
+name: ci
+
+# ── Triggers ────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+# Cancel in-flight runs of the same branch on a new push
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Jobs ───────────────────────────────────────────────────────────
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install server dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Install UI dependencies
+        working-directory: ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (ESLint flat config)
+        # Single root-level ESLint config covers server/ + ui/
+        # (per `eslint.config.js` at the repo root).
+        run: pnpm lint
+
+      - name: Format check (Prettier)
+        run: pnpm format:check
+
+  test-server:
+    name: Server Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      # The server's CacheModule uses Redis when REDIS_HOST is set.
+      # Spin up a Redis service container so the cache import in
+      # `app.module.ts` doesn't crash. Tests that don't touch the cache
+      # will ignore it.
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Test-only env. Real values are not required for unit tests
+      # (mocked); these just satisfy `validateEnv` in
+      # `server/src/config/env.validation.ts`.
+      NODE_ENV: test
+      DATABASE_URL: mongodb://localhost:27017/prepai-test
+      REDIS_HOST: localhost
+      REDIS_PORT: '6379'
+      CLERK_PUBLISHABLE_KEY: pk_test_ci
+      CLERK_SECRET_KEY: sk_test_ci
+      NVIDIA_API_KEY: nvapi-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install server dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        working-directory: server
+        run: pnpm prisma:generate
+
+      - name: Build server
+        working-directory: server
+        run: pnpm build
+
+      - name: Run server unit tests
+        working-directory: server
+        run: pnpm test
+
+  test-ui:
+    name: UI Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install UI dependencies
+        working-directory: ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Build UI
+        working-directory: ui
+        run: pnpm build
+
+      - name: Run UI unit tests
+        working-directory: ui
+        run: pnpm test -- --run
+
+  # E2E is intentionally NOT in this workflow. The Playwright suite
+  # needs the dev servers running AND a Piston container (Podman, not
+  # available in GH Actions runners). Set up a separate `e2e.yml`
+  # workflow when you have a containerized dev stack. See:
+  # https://playwright.dev/docs/ci
