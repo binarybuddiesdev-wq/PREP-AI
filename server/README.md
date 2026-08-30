@@ -10,7 +10,7 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
 
 - **Framework**: NestJS (v11) with Fastify adapter for high performance.
 - **Language**: TypeScript (v6) in Strict mode.
-- **ORM & Databases**: 
+- **ORM & Databases**:
   - Prisma (v6)
   - MongoDB (Users, Topics, Questions, Chats)
   - PostgreSQL (Practice Sessions, Answers)
@@ -24,10 +24,12 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
 ## Development Setup
 
 ### Prerequisites
+
 - Node.js v18+
 - pnpm v9+
 
 ### Installation & Run
+
 1. Install server dependencies:
    ```bash
    pnpm install
@@ -36,7 +38,7 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
    ```bash
    pnpm start:dev
    ```
-   *Note: This runs Node natively with `--import @swc-node/register/esm-register` and `--env-file=../.env` to support TypeScript decorators and load environment keys early.*
+   _Note: This runs Node natively with `--import @swc-node/register/esm-register` and `--env-file=../.env` to support TypeScript decorators and load environment keys early._
 
 ---
 
@@ -45,10 +47,13 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
 All endpoint paths are prefixed with `/api/v1`.
 
 ### 1. Health Checks
+
 #### `GET /api/v1/health`
+
 Checks backend and database connectivity.
-* **Authentication**: None (Public)
-* **Response (200 OK)**:
+
+- **Authentication**: None (Public)
+- **Response (200 OK)**:
   ```json
   {
     "status": "ok"
@@ -56,17 +61,20 @@ Checks backend and database connectivity.
   ```
 
 ### 2. Tech Expert Assistant (AI)
+
 #### `POST /api/v1/tech-expert`
+
 Submits a technology query to the AI Tech Expert agent.
-* **Authentication**: None (Public in dev)
-* **Request Body** (`application/json`):
-  * `question` (string, required): The question to ask.
+
+- **Authentication**: None (Public in dev)
+- **Request Body** (`application/json`):
+  - `question` (string, required): The question to ask.
   ```json
   {
     "question": "Explain the difference between REST and GraphQL APIs."
   }
   ```
-* **Response (200 OK)**:
+- **Response (200 OK)**:
   ```json
   {
     "data": {
@@ -78,15 +86,8 @@ Submits a technology query to the AI Tech Expert agent.
           "GraphQL fetches exact requested fields in a single query.",
           "REST relies on HTTP caching; GraphQL requires custom query caching."
         ],
-        "examples": [
-          "GET /api/v1/users/1",
-          "query { user(id: 1) { name email } }"
-        ],
-        "relatedTopics": [
-          "OpenAPI",
-          "Apollo Client",
-          "gRPC"
-        ]
+        "examples": ["GET /api/v1/users/1", "query { user(id: 1) { name email } }"],
+        "relatedTopics": ["OpenAPI", "Apollo Client", "gRPC"]
       },
       "rawResponse": "..."
     },
@@ -94,7 +95,7 @@ Submits a technology query to the AI Tech Expert agent.
     "meta": {}
   }
   ```
-* **Validation Error (400 Bad Request)**:
+- **Validation Error (400 Bad Request)**:
   ```json
   {
     "statusCode": 400,
@@ -115,6 +116,7 @@ Submits a technology query to the AI Tech Expert agent.
 ## Implemented Modules
 
 ### Theory Practice Sessions (`/api/v1/theory`)
+
 Full theory practice module with 8 endpoints — session management, AI-evaluated answers, weak area detection, and score trends. See `routes.md` for the complete route table.
 
 ---

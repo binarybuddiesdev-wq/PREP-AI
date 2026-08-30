@@ -1,6 +1,6 @@
 ---
 name: frontend-developer
-description: "Dispatch for work in ui/src — React components, pages, hooks, Redux state, TanStack Query, Clerk auth, and tests. Owns the frontend layer of the PrepAI monorepo."
+description: 'Dispatch for work in ui/src — React components, pages, hooks, Redux state, TanStack Query, Clerk auth, and tests. Owns the frontend layer of the PrepAI monorepo.'
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 

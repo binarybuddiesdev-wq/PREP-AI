@@ -14,12 +14,12 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | yes | Display name (e.g. "React") |
-| `slug` | string | yes | URL-safe slug (e.g. "react") |
-| `category` | string | yes | Category group (e.g. "Frontend", "Backend") |
-| `icon` | string | no | Icon identifier |
+| Field      | Type   | Required | Description                                 |
+| ---------- | ------ | -------- | ------------------------------------------- |
+| `name`     | string | yes      | Display name (e.g. "React")                 |
+| `slug`     | string | yes      | URL-safe slug (e.g. "react")                |
+| `category` | string | yes      | Category group (e.g. "Frontend", "Backend") |
+| `icon`     | string | no       | Icon identifier                             |
 
 ```json
 {
@@ -49,9 +49,9 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 409 | Topic with this name or slug already exists |
+| Status | Message                                     |
+| ------ | ------------------------------------------- |
+| 409    | Topic with this name or slug already exists |
 
 ---
 
@@ -63,9 +63,9 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Query Parameters
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `category` | string | no | Filter by category (e.g. "Frontend") |
+| Param      | Type   | Required | Description                          |
+| ---------- | ------ | -------- | ------------------------------------ |
+| `category` | string | no       | Filter by category (e.g. "Frontend") |
 
 ### Response (200 OK)
 
@@ -95,8 +95,8 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param  | Type   | Description               |
+| ------ | ------ | ------------------------- |
 | `slug` | string | Topic slug (e.g. "react") |
 
 ### Response (200 OK)
@@ -117,9 +117,9 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Topic not found |
+| Status | Message         |
+| ------ | --------------- |
+| 404    | Topic not found |
 
 ---
 
@@ -131,9 +131,9 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `id` | string | MongoDB ObjectId |
+| Param | Type   | Description      |
+| ----- | ------ | ---------------- |
+| `id`  | string | MongoDB ObjectId |
 
 ### Request Body (all fields optional)
 
@@ -162,10 +162,10 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Topic not found |
-| 409 | Slug already taken |
+| Status | Message            |
+| ------ | ------------------ |
+| 404    | Topic not found    |
+| 409    | Slug already taken |
 
 ---
 
@@ -177,9 +177,9 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `id` | string | MongoDB ObjectId |
+| Param | Type   | Description      |
+| ----- | ------ | ---------------- |
+| `id`  | string | MongoDB ObjectId |
 
 ### Response (200 OK)
 
@@ -192,22 +192,22 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Topic not found |
-| 400 | Cannot delete topic with existing questions |
+| Status | Message                                     |
+| ------ | ------------------------------------------- |
+| 404    | Topic not found                             |
+| 400    | Cannot delete topic with existing questions |
 
 ---
 
 ## Summary
 
-| # | Method | Route | Description | Auth | Role |
-|---|--------|-------|-------------|------|------|
-| 1 | `POST` | `/topics` | Create topic | Bearer | ADMIN |
-| 2 | `GET` | `/topics` | List topics (optional `?category=` filter) | Bearer | Any |
-| 3 | `GET` | `/topics/:slug` | Get topic by slug | Bearer | Any |
-| 4 | `PATCH` | `/topics/:id` | Update topic | Bearer | ADMIN |
-| 5 | `DELETE` | `/topics/:id` | Delete topic | Bearer | ADMIN |
+| #   | Method   | Route           | Description                                | Auth   | Role  |
+| --- | -------- | --------------- | ------------------------------------------ | ------ | ----- |
+| 1   | `POST`   | `/topics`       | Create topic                               | Bearer | ADMIN |
+| 2   | `GET`    | `/topics`       | List topics (optional `?category=` filter) | Bearer | Any   |
+| 3   | `GET`    | `/topics/:slug` | Get topic by slug                          | Bearer | Any   |
+| 4   | `PATCH`  | `/topics/:id`   | Update topic                               | Bearer | ADMIN |
+| 5   | `DELETE` | `/topics/:id`   | Delete topic                               | Bearer | ADMIN |
 
 ## Model (MongoDB)
 

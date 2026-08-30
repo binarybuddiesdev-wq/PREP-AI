@@ -1,0 +1,97 @@
+name: Feature request
+description: Propose a new feature for the PrepAI platform.
+title: '[feat]: '
+labels: ['enhancement', 'triage']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests should be user-story shaped. We size work in
+        days, not T-shirt sizes, so please bring numbers where you can.
+
+  - type: input
+    id: summary
+    attributes:
+      label: One-line summary
+      placeholder: 'feat(ui): add per-question timer with pause/resume'
+    validations:
+      required: true
+
+  - type: textarea
+    id: user
+    attributes:
+      label: User story
+      description: >
+        As a [role], I want [capability], so that [benefit].
+      placeholder: |
+        As a free-tier user preparing for system-design interviews,
+        I want a per-question timer I can pause when I am interrupted,
+        so that I do not lose my streak when life happens.
+    validations:
+      required: true
+
+  - type: textarea
+    id: flow
+    attributes:
+      label: Detailed flow
+      description: Step-by-step description of the proposed behaviour.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Numbered checklist of testable conditions.
+      placeholder: |
+        - [ ] Timer shows MM:SS and counts up from 00:00
+        - [ ] Pause button stops the count, resume continues from the same value
+        - [ ] Auto-advance is disabled when the timer is paused
+        - [ ] Server receives `pausedMs` in the answer payload
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this PR explicitly does NOT do. Helps reviewers and future contributors.
+
+  - type: textarea
+    id: mocks
+    attributes:
+      label: Mockups / references
+      description: Figma, screenshot, link, ASCII sketch — anything that helps convey the idea.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - server — NestJS / API
+        - ui — React / frontend
+        - prisma — data model
+        - mastra — AI agents
+        - infra — Docker, CI, scripts
+        - docs — documentation / ADR only
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Success metrics (optional)
+      description: >
+        How will we know this shipped? DAU lift, conversion, latency delta,
+        NPS — concrete and measurable.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked the architecture TODO and existing ADRs for prior decisions
+        - label: I linked the relevant skill file (e.g. `.claude/skills/react-developer/SKILL.md`)
+        - label: I am willing to drive this through code review (not just spec)

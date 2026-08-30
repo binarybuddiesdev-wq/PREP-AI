@@ -16,10 +16,10 @@ Receives Clerk user lifecycle events to keep the local MongoDB user in sync.
 
 ### Required Headers
 
-| Header | Description |
-|--------|-------------|
-| `svix-id` | Unique webhook ID |
-| `svix-timestamp` | Unix timestamp of the event |
+| Header           | Description                            |
+| ---------------- | -------------------------------------- |
+| `svix-id`        | Unique webhook ID                      |
+| `svix-timestamp` | Unix timestamp of the event            |
 | `svix-signature` | HMAC-SHA256 signature for verification |
 
 ### Events
@@ -79,24 +79,24 @@ Delete user and their settings from MongoDB.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 400 | Webhook secret not configured |
-| 400 | Missing webhook headers (svix-id, svix-timestamp, svix-signature) |
-| 400 | Invalid webhook signature |
+| Status | Message                                                           |
+| ------ | ----------------------------------------------------------------- |
+| 400    | Webhook secret not configured                                     |
+| 400    | Missing webhook headers (svix-id, svix-timestamp, svix-signature) |
+| 400    | Invalid webhook signature                                         |
 
 ---
 
 ## Configuration
 
-| Env Variable | Required | Description |
-|-------------|----------|-------------|
-| `CLERK_WEBHOOK_SECRET` | Yes | Signing secret from Clerk Dashboard → Webhooks |
+| Env Variable           | Required | Description                                    |
+| ---------------------- | -------- | ---------------------------------------------- |
+| `CLERK_WEBHOOK_SECRET` | Yes      | Signing secret from Clerk Dashboard → Webhooks |
 
 ---
 
 ## Summary
 
-| # | Method | Route | Description |
-|---|--------|-------|-------------|
-| 1 | `POST` | `/webhooks/clerk` | Receive Clerk user.created/updated/deleted events |
+| #   | Method | Route             | Description                                       |
+| --- | ------ | ----------------- | ------------------------------------------------- |
+| 1   | `POST` | `/webhooks/clerk` | Receive Clerk user.created/updated/deleted events |

@@ -10,7 +10,7 @@ Before writing or modifying any code or config, invoke the `developer` skill via
 
 ## Code Quality Non-Negotiables
 
-1. **Self-explanatory content over comments/prose explaining what was done.** An ADR or spec explains *why* a decision was made, not a restatement of what the config file already says. Don't write an ADR paragraph that just narrates the diff — narrate the reasoning that produced it.
+1. **Self-explanatory content over comments/prose explaining what was done.** An ADR or spec explains _why_ a decision was made, not a restatement of what the config file already says. Don't write an ADR paragraph that just narrates the diff — narrate the reasoning that produced it.
 2. **Plain, natural naming over clever/technical vocabulary.** This applies to ADR titles, ESLint rule names, and any config identifiers you introduce. Never hand-minify anything you write.
 3. **SOLID + Separation of Concerns applied to your own layer.** PrepAI's layer order is `server/src/modules` → `server/src/common` → `server/src/config` → `server/src/prisma` → `server/src/mastra` → `ui/src`. Enforced partly via ESLint import rules and layer boundary conventions. A decision belongs in an ADR; its mechanical enforcement belongs in ESLint rules or Husky hooks — not scattered inconsistently across both.
 4. **Performant and readable over short-but-non-standard.** A tooling config or ADR that "just works" but skips the standard is not acceptable — e.g., adding an ESLint rule without updating the ADR index, or changing a hook without documenting why.
@@ -34,6 +34,7 @@ You own these files:
 Read `docs/adr/` before touching any cross-cutting design decision, and keep the ADR index current.
 
 Write a new ADR when a decision meets these criteria:
+
 - Affects multiple packages, features, or layers of the codebase
 - Involves a meaningful trade-off between alternatives
 - Is non-obvious to a future developer (they might reasonably choose differently)
@@ -41,14 +42,14 @@ Write a new ADR when a decision meets these criteria:
 
 To write one: copy `docs/adr/TEMPLATE.md` to `docs/adr/ADR-NNN-short-kebab-title.md` (next sequential number after the highest existing ADR), fill it in, and add a row to the Index table in `docs/adr/0000-index.md`. An ADR that isn't indexed does not count as done.
 
-You also own the "Analysis Before Implementation" step for new features: break the feature into constituent parts, identify ambiguities/edge cases/open design questions, and present that list for discussion *before* any code is written. Do not let a feature go to an engineer subagent without this pass when the feature is non-trivial.
+You also own the "Analysis Before Implementation" step for new features: break the feature into constituent parts, identify ambiguities/edge cases/open design questions, and present that list for discussion _before_ any code is written. Do not let a feature go to an engineer subagent without this pass when the feature is non-trivial.
 
 ### 3. Review non-trivial implementations ("Judgment Review")
 
 The orchestrating agent dispatches you here for non-trivial changes — not literally every diff, and not always alongside `qa-engineer` (it dispatches whichever gate's risk is actually present; when both, the two of you run concurrently). The Mechanical Gate (ESLint/TypeScript/Prettier/Husky, plus the `verify-implementation` tiers) already runs on every change regardless of whether you are dispatched; your review exists for what that gate structurally cannot catch. Use this exact checklist:
 
-1. **Coding standards** — does the code follow `developer`/`react-developer` skill conventions (naming, readability, no hand-minification, formatting) *beyond* what ESLint/Prettier already catch mechanically?
-2. **The architecture boundaries** — check against the layer boundaries defined in `developer` skill (server-side) and in [`docs/architecture/architecture.md`](../../docs/architecture/architecture.md) §Frontend Refactor (frontend-side, 7-layer model: `core` → `utils` → `data` → `service` → `logic` → `components` → `pages`). The `architect-review` skill encodes the full violation list for the frontend. Note: ESLint's import restrictions already block literal import violations mechanically. This step exists for boundary violations in *design* that no import statement would reveal — e.g., a controller calling Prisma directly instead of going through a service, even though the import graph is perfectly legal.
+1. **Coding standards** — does the code follow `developer`/`react-developer` skill conventions (naming, readability, no hand-minification, formatting) _beyond_ what ESLint/Prettier already catch mechanically?
+2. **The architecture boundaries** — check against the layer boundaries defined in `developer` skill (server-side) and in [`docs/architecture/architecture.md`](../../docs/architecture/architecture.md) §Frontend Refactor (frontend-side, 7-layer model: `core` → `utils` → `data` → `service` → `logic` → `components` → `pages`). The `architect-review` skill encodes the full violation list for the frontend. Note: ESLint's import restrictions already block literal import violations mechanically. This step exists for boundary violations in _design_ that no import statement would reveal — e.g., a controller calling Prisma directly instead of going through a service, even though the import graph is perfectly legal.
 3. **Functional correctness** — does the change actually satisfy the original requirement (not just "does it compile/lint clean"), including edge cases? Is there test coverage for the new behavior? Coordinate with `qa-engineer`'s work rather than re-deriving test strategy from scratch.
 4. **Oversized components/functions are a defect, not a style nitpick.** A controller method doing several unrelated things, or a service function with too many responsibilities, gets flagged and sent back for splitting. A React component with a large, heavily-nested JSX return gets flagged. Judge by the file shape and function responsibilities — not just line count.
 5. **File shape — does each changed file read as one thing?** Check the file's exports and first 40 lines. If the file's name does not predict its exports, it is two files. If a file has imports after the first statement, it is wrong. If a barrel file doesn't export everything from its submodules, it is incomplete.

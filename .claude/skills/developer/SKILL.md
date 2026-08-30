@@ -34,11 +34,11 @@ When modifying existing implementations:
 
 PrepAI is a pnpm monorepo with three packages:
 
-| Package | Layer | Responsibility |
-|---|---|---|
-| `server/` | Backend | NestJS + Fastify API, Prisma ORM, Mastra AI agents |
-| `ui/` | Frontend | React 19 + Vite, TanStack Query, Redux Toolkit, Clerk auth |
-| root | E2E + Infra | Playwright tests, Piston management, shared config |
+| Package   | Layer       | Responsibility                                             |
+| --------- | ----------- | ---------------------------------------------------------- |
+| `server/` | Backend     | NestJS + Fastify API, Prisma ORM, Mastra AI agents         |
+| `ui/`     | Frontend    | React 19 + Vite, TanStack Query, Redux Toolkit, Clerk auth |
+| root      | E2E + Infra | Playwright tests, Piston management, shared config         |
 
 ### Server — Module Structure
 
@@ -60,13 +60,13 @@ server/src/modules/<name>/
 
 ### Server — Layer Boundaries
 
-| Directory | May import from | Must NOT import |
-|---|---|---|
-| `server/src/modules/<name>/` | `common/`, `@/common`, `@prisma/client` | Other modules' internals |
-| `server/src/common/` | Nothing from modules | Modules |
-| `server/src/config/` | `@/common` | Modules |
-| `server/src/prisma/` | Nothing | Modules |
-| `server/src/mastra/` | `@/common` | Modules (agents call services directly) |
+| Directory                    | May import from                         | Must NOT import                         |
+| ---------------------------- | --------------------------------------- | --------------------------------------- |
+| `server/src/modules/<name>/` | `common/`, `@/common`, `@prisma/client` | Other modules' internals                |
+| `server/src/common/`         | Nothing from modules                    | Modules                                 |
+| `server/src/config/`         | `@/common`                              | Modules                                 |
+| `server/src/prisma/`         | Nothing                                 | Modules                                 |
+| `server/src/mastra/`         | `@/common`                              | Modules (agents call services directly) |
 
 ### Frontend — Structure
 

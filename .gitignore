@@ -17,12 +17,14 @@ test-results/
 playwright-report/
 blob-report/
 
-# IDE
-.vscode/
+# IDE — commit shared settings/extensions, ignore personal overrides
 .idea/
 *.swp
 *.swo
 *~
+.vscode/settings.local.json
+.vscode/tasks.json
+.vscode/launch.json
 
 # OS
 .DS_Store

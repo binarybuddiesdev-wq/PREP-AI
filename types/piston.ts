@@ -81,7 +81,7 @@ if (argsObj.action === 'start') {
       'piston_data:/piston',
       '-v',
       `"${normalizedPath}:/piston_api/src/docker-entrypoint.sh:ro"`,
-      'ghcr.io/engineer-man/piston'
+      'ghcr.io/engineer-man/piston',
     ]);
   }
 } else if (argsObj.action === 'stop') {

@@ -1,0 +1,116 @@
+# CODEOWNERS — auto-assign reviewers per path.
+#
+# Rules: the LAST matching pattern wins. List more specific paths AFTER
+# their parents so they take precedence.
+#
+# Conventions:
+#   - @prepai/backend          → server-side owners
+#   - @prepai/frontend         → ui-side owners
+#   - @prepai/ai               → Mastra / prompt engineers
+#   - @prepai/data             → Prisma / schema owners
+#   - @prepai/infra            → CI, Docker, scripts, deps
+#   - @prepai/docs             → Architecture, ADRs, skills
+#   - @prepai/security         → Security policy, auth, webhooks
+#   - @prepai/release          → CHANGELOG, version bumps
+#
+# Until the team grows, replace the team handles with a single personal
+# handle (e.g. `@uday`) and add handles as they join in the same PR that
+# grants repo access.
+
+# ── Default: every PR needs at least one backend review ───────────
+* @prepai/backend
+
+# ── Backend: server-side ownership ─────────────────────────────────
+/server/                              @prepai/backend
+/server/src/modules/                  @prepai/backend
+/server/src/common/                   @prepai/backend
+/server/src/config/                   @prepai/backend
+/server/src/prisma/                   @prepai/backend @prepai/data
+/server/prisma/                       @prepai/backend @prepai/data
+/server/test/                         @prepai/backend @prepai/security
+/server/nest-cli.json                 @prepai/backend
+/server/tsconfig*.json                @prepai/backend
+/server/package.json                  @prepai/backend @prepai/infra
+/server/vitest.config.ts              @prepai/backend
+
+# ── AI / Mastra ────────────────────────────────────────────────────
+/server/src/mastra/                   @prepai/ai @prepai/backend
+/server/src/mastra/agents/            @prepai/ai
+/server/src/mastra/providers.ts       @prepai/ai @prepai/security
+/server/src/mastra/mastra.config.ts   @prepai/ai
+
+# ── Frontend ───────────────────────────────────────────────────────
+/ui/                                  @prepai/frontend
+/ui/src/                              @prepai/frontend
+/ui/src/lib/api.ts                    @prepai/frontend @prepai/security
+/ui/src/lib/store/                    @prepai/frontend
+/ui/src/components/                   @prepai/frontend
+/ui/src/pages/                        @prepai/frontend
+/ui/package.json                      @prepai/frontend @prepai/infra
+/ui/eslint.config.js                  @prepai/frontend
+/ui/vite.config.ts                    @prepai/frontend @prepai/infra
+/ui/components.json                   @prepai/frontend
+/ui/tsconfig*.json                    @prepai/frontend
+/ui/vitest.config.ts                  @prepai/frontend
+
+# ── E2E / Playwright (root) ────────────────────────────────────────
+/e2e/                                 @prepai/frontend @prepai/backend
+/playwright.config.ts                 @prepai/frontend @prepai/backend
+
+# ── Scripts and infra ──────────────────────────────────────────────
+/scripts/                             @prepai/infra
+/types/                               @prepai/infra @prepai/backend
+/piston-cli/                          @prepai/infra
+/piston-entrypoint.sh                 @prepai/infra
+/docker-compose.yml                   @prepai/infra
+/Dockerfile                           @prepai/infra
+/.dockerignore                        @prepai/infra
+
+# ── Documentation and architecture ─────────────────────────────────
+/docs/                                @prepai/docs
+/docs/adr/                            @prepai/docs
+/docs/adr/0000-index.md               @prepai/docs @prepai/release
+/docs/architecture/                   @prepai/docs
+/docs/architecture/services.md        @prepai/docs
+/docs/architecture/TODO.md            @prepai/docs
+/routes/                              @prepai/docs @prepai/backend
+/prepai-ui.html                       @prepai/frontend
+/README.md                            @prepai/docs
+/FUTURE_FEATURES.md                   @prepai/docs
+/SECURITY.md                          @prepai/security
+/SECURITY_HALL_OF_FAME.md             @prepai/security
+/LICENSE                              @prepai/docs
+
+# ── Claude skills and agents ───────────────────────────────────────
+/.claude/                             @prepai/docs
+/.claude/skills/                      @prepai/docs
+/.claude/agents/                      @prepai/docs
+/.claude/settings.json                @prepai/docs
+
+# ── Repo hygiene and release ───────────────────────────────────────
+/.eslintrc*                           @prepai/infra
+/eslint.config.js                     @prepai/infra
+/prettier.config.js                   @prepai/infra
+/commitlint.config.js                 @prepai/release
+/.editorconfig                        @prepai/infra
+/.gitattributes                       @prepai/infra
+/.gitignore                           @prepai/infra
+/.nvmrc                               @prepai/infra
+/CHANGELOG.md                         @prepai/release
+/package.json                         @prepai/release @prepai/infra
+/pnpm-lock.yaml                       @prepai/infra
+/renovate.json                        @prepai/infra
+/tsconfig.json                        @prepai/infra
+
+# ── GitHub config ──────────────────────────────────────────────────
+/.github/                             @prepai/infra
+/.github/workflows/                   @prepai/infra @prepai/security
+/.github/CODEOWNERS                   @prepai/release
+/.github/PULL_REQUEST_TEMPLATE.md     @prepai/release
+/.github/SECURITY.md                  @prepai/security
+/.github/ISSUE_TEMPLATE/              @prepai/release
+/.github/dependabot.yml               @prepai/infra @prepai/security
+
+# ── Release and version bumps ──────────────────────────────────────
+/release-it.config.{js,cjs,mjs,ts}    @prepai/release
+/.release-it.json                     @prepai/release

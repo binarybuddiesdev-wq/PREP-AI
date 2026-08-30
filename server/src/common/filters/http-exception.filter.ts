@@ -5,7 +5,7 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
-  Logger
+  Logger,
 } from '@nestjs/common';
 
 @Catch()
@@ -35,18 +35,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     if (status >= 500) {
-      const errorMessage = exception instanceof Error
-        ? `${exception.message}\n${exception.stack}`
-        : JSON.stringify(exception);
+      const errorMessage =
+        exception instanceof Error
+          ? `${exception.message}\n${exception.stack}`
+          : JSON.stringify(exception);
       this.logger.error(
         `HTTP ${status} Error: ${errorMessage}`,
         `${request.method} ${request.url}`
       );
     } else {
-      this.logger.warn(
-        `HTTP ${status} Warning: ${message}`,
-        `${request.method} ${request.url}`
-      );
+      this.logger.warn(`HTTP ${status} Warning: ${message}`, `${request.method} ${request.url}`);
     }
 
     void reply.status(status).send({
@@ -63,7 +61,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return 'Internal server error';
     }
 
-    if (typeof exceptionResponse === 'object' && exceptionResponse !== null && 'message' in exceptionResponse) {
+    if (
+      typeof exceptionResponse === 'object' &&
+      exceptionResponse !== null &&
+      'message' in exceptionResponse
+    ) {
       const message = (exceptionResponse as { message: unknown }).message;
       if (Array.isArray(message)) {
         return message.join(', ');

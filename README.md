@@ -32,17 +32,17 @@ The platform covers system design, coding, and domain-specific topics (React, Ty
 
 The application has the following screens, each accessible via the sidebar navigation:
 
-| Screen | Description |
-|--------|-------------|
-| Landing | Public marketing page with hero, features, testimonials, CTA |
-| Auth | Login/signup with email and social providers |
-| Dashboard | KPIs, recent sessions, streak, score chart, weak areas |
-| Practice | 3 modes: Topic Practice, Weak Areas, PDF Study with AI feedback |
-| Coding | Algorithm problems with Monaco editor, test cases, AI verdict |
-| History | Past sessions with expandable Q&A and feedback |
-| Settings | Profile, notifications, preferences, AI config, documents |
-| Library | PDF viewer with zoom, navigation, fullscreen, bulk delete |
-| Chatbot | Floating AI assistant with topic-aware responses |
+| Screen    | Description                                                     |
+| --------- | --------------------------------------------------------------- |
+| Landing   | Public marketing page with hero, features, testimonials, CTA    |
+| Auth      | Login/signup with email and social providers                    |
+| Dashboard | KPIs, recent sessions, streak, score chart, weak areas          |
+| Practice  | 3 modes: Topic Practice, Weak Areas, PDF Study with AI feedback |
+| Coding    | Algorithm problems with Monaco editor, test cases, AI verdict   |
+| History   | Past sessions with expandable Q&A and feedback                  |
+| Settings  | Profile, notifications, preferences, AI config, documents       |
+| Library   | PDF viewer with zoom, navigation, fullscreen, bulk delete       |
+| Chatbot   | Floating AI assistant with topic-aware responses                |
 
 ---
 
@@ -166,6 +166,7 @@ Comprehensive user preferences organized into tabs.
 - **Tab navigation**: Profile, Notifications, Practice Preferences, AI & Sources, Documents, Plan, Danger Zone
 
 #### Profile
+
 - First Name, Last Name (side by side)
 - Email
 - Target Role dropdown: Frontend Engineer, Full-Stack Engineer, Backend Engineer, DevOps Engineer, Engineering Manager
@@ -174,6 +175,7 @@ Comprehensive user preferences organized into tabs.
 - Save Changes button
 
 #### Notifications
+
 - Toggle switches for:
   - Daily Practice Reminder (7 PM)
   - Weekly Progress Report (Sunday)
@@ -183,6 +185,7 @@ Comprehensive user preferences organized into tabs.
 - Save Preferences button
 
 #### Practice Preferences
+
 - Default Difficulty dropdown: Junior, Mid, Senior, Mixed (random)
 - Session Length dropdown: 5, 10, 15, 20 questions
 - Timer per Question dropdown: No timer, 2 min, 5 min, 10 min
@@ -192,28 +195,33 @@ Comprehensive user preferences organized into tabs.
 - Save Preferences button
 
 #### AI & Sources
+
 - **AI Model card**: Provider (NVIDIA NIM), Model (meta/llama-1.8b-instruct), Connection status (green dot + "Connected"), Test Connection button
 - **PDF Sources list**: Each PDF card shows name, size, page count, enable/disable toggle, delete button
 - **Web Search toggle**: Also search web for latest questions from official docs
 
 #### Documents
+
 - PDF upload area with drag-and-drop support
 - File list with toggle and delete for each uploaded PDF
 - Drag-over visual feedback (border color change, background highlight)
 
 #### Plan
+
 - **Current plan card**: Shows plan badge (FREE/Premium), plan name, description
 - **Limits grid**: Practice sessions, questions per session, coding problems, AI reviews — with current limits
 - **Upgrade section** (free users only): Monthly (₹299) and Yearly (₹1,999) plan cards with features
 - **Premium users**: Shows "Unlimited" for all limits, no upgrade section
 
 ### Sidebar Upgrade
+
 - "Upgrade to Premium" button in sidebar (visible for free users only)
 - Amber gradient background with sparkle icon
 - Click opens upgrade modal with plan selection
 - Hidden when user is Premium or Admin
 
 ### Payment (Razorpay)
+
 - **UPI**: Select app (GPay/PhonePe/Paytm/BHIM) → QR code + UPI ID input → Pay
 - **Card**: Enter card number, expiry, CVV, name → 6-digit OTP → Verify → Success
 - **Netbanking**: Select bank (SBI, HDFC, ICICI, etc.) → Redirect to bank page → Approve → Success
@@ -222,6 +230,7 @@ Comprehensive user preferences organized into tabs.
 - **Flow**: Upgrade Now → Razorpay checkout → Payment → Role updated to PREMIUM
 
 #### Danger Zone
+
 - **Reset All Progress**: Red-bordered card with description and "Reset Progress" button
 - **Delete Account**: Red-bordered card with description and "Delete Account" button
 - **Export All Data**: Red-bordered card with description and "Export Data" button
@@ -271,34 +280,34 @@ Cross-cutting functionality available on all screens.
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Bundler | Vite + esbuild | 8.1.0 |
-| Language | TypeScript (strict mode) | 6.0.3 |
-| UI Library | React | 19.2.7 |
-| Routing | React Router | 8.0.1 |
-| State Management | Redux Toolkit + React Redux | 2.12.0 / 9.3.0 |
-| Server State | TanStack Query | 5.101.2 |
-| Component Library | Shadcn UI (base-nova style) | 4.12.0 |
-| Styling | Tailwind CSS | 4.3.1 |
-| HTTP Client | ky | 2.0.2 |
-| Validation | Zod | 4.4.3 |
-| Forms | React Hook Form + @hookform/resolvers | 7.80.0 / 5.4.0 |
-| Auth | Clerk (@clerk/clerk-react) | 5.61.3 |
-| Unit Testing | Vitest + @testing-library/react + jsdom | 4.1.9 |
-| E2E Testing | Playwright | 1.52.0 |
-| Fonts | DM Sans + JetBrains Mono (Fontsource) | 5.2.8 |
-| Package Manager | pnpm | 11.5.0 |
+| Layer             | Technology                              | Version        |
+| ----------------- | --------------------------------------- | -------------- |
+| Bundler           | Vite + esbuild                          | 8.1.0          |
+| Language          | TypeScript (strict mode)                | 6.0.3          |
+| UI Library        | React                                   | 19.2.7         |
+| Routing           | React Router                            | 8.0.1          |
+| State Management  | Redux Toolkit + React Redux             | 2.12.0 / 9.3.0 |
+| Server State      | TanStack Query                          | 5.101.2        |
+| Component Library | Shadcn UI (base-nova style)             | 4.12.0         |
+| Styling           | Tailwind CSS                            | 4.3.1          |
+| HTTP Client       | ky                                      | 2.0.2          |
+| Validation        | Zod                                     | 4.4.3          |
+| Forms             | React Hook Form + @hookform/resolvers   | 7.80.0 / 5.4.0 |
+| Auth              | Clerk (@clerk/clerk-react)              | 5.61.3         |
+| Unit Testing      | Vitest + @testing-library/react + jsdom | 4.1.9          |
+| E2E Testing       | Playwright                              | 1.52.0         |
+| Fonts             | DM Sans + JetBrains Mono (Fontsource)   | 5.2.8          |
+| Package Manager   | pnpm                                    | 11.5.0         |
 
 ### Infrastructure
 
-| Service | Technology | Purpose |
-|---------|-----------|---------|
-| Code Execution | Piston (self-hosted) | Sandboxed code runner for JS/TS/Python |
-| Container Runtime | Podman Desktop | Runs Piston container locally |
-| Email | Resend | Transactional emails (reminders, reports) |
-| File Storage | Cloudinary | PDF upload and storage |
-| AI/LLM | NVIDIA NIM | Question generation, answer evaluation, chatbot |
+| Service           | Technology           | Purpose                                         |
+| ----------------- | -------------------- | ----------------------------------------------- |
+| Code Execution    | Piston (self-hosted) | Sandboxed code runner for JS/TS/Python          |
+| Container Runtime | Podman Desktop       | Runs Piston container locally                   |
+| Email             | Resend               | Transactional emails (reminders, reports)       |
+| File Storage      | Cloudinary           | PDF upload and storage                          |
+| AI/LLM            | NVIDIA NIM           | Question generation, answer evaluation, chatbot |
 
 ---
 
@@ -363,7 +372,7 @@ PrepAI/
 
 ## Backend API
 
-The backend is built with NestJS and Fastify, integrating Mastra LLM agents for technical interview feedback. 
+The backend is built with NestJS and Fastify, integrating Mastra LLM agents for technical interview feedback.
 
 For the complete list of endpoints, payloads, and mock requests/responses, see the [README.md](file:///c:/antigravity-test/PrepAI/server/README.md) specification in the `server` directory.
 
@@ -381,17 +390,17 @@ PrepAI follows the architecture practices used at large engineering orgs (Google
 
 All under [`docs/`](docs/). Edit diagrams in `.mmd` files (rendered natively by GitHub); use the [interactive viewer](docs/architecture/viewer.html) for offline browsing.
 
-| Doc | What it is |
-|---|---|
-| [docs/architecture/README.md](docs/architecture/README.md) | Index of all diagrams + decisions |
-| [docs/architecture/diagrams/](docs/architecture/diagrams/) | 6 C4 + sequence diagrams (`.mmd`) |
-| [docs/architecture/viewer.html](docs/architecture/viewer.html) | Standalone interactive viewer |
-| [docs/architecture/services.md](docs/architecture/services.md) | Service catalog (owner, SLO, deps) |
-| [docs/architecture/nfrs.md](docs/architecture/nfrs.md) | SLOs, scale, retention, cost ceilings |
-| [docs/architecture/terms-glossary.md](docs/architecture/terms-glossary.md) | Technical terms in plain English with analogies |
-| [docs/architecture/TODO.md](docs/architecture/TODO.md) | **Architecture docs still to be written** (caching, queues, AI pipeline, RAG, runbooks, threat model — 13 open) |
-| [docs/adr/](docs/adr/) | Architecture decision records |
-| [SYSTEM_DESIGN_REVIEW.md](SYSTEM_DESIGN_REVIEW.md) | The review that produced the action items above |
+| Doc                                                                        | What it is                                                                                                      |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [docs/architecture/README.md](docs/architecture/README.md)                 | Index of all diagrams + decisions                                                                               |
+| [docs/architecture/diagrams/](docs/architecture/diagrams/)                 | 6 C4 + sequence diagrams (`.mmd`)                                                                               |
+| [docs/architecture/viewer.html](docs/architecture/viewer.html)             | Standalone interactive viewer                                                                                   |
+| [docs/architecture/services.md](docs/architecture/services.md)             | Service catalog (owner, SLO, deps)                                                                              |
+| [docs/architecture/nfrs.md](docs/architecture/nfrs.md)                     | SLOs, scale, retention, cost ceilings                                                                           |
+| [docs/architecture/terms-glossary.md](docs/architecture/terms-glossary.md) | Technical terms in plain English with analogies                                                                 |
+| [docs/architecture/TODO.md](docs/architecture/TODO.md)                     | **Architecture docs still to be written** (caching, queues, AI pipeline, RAG, runbooks, threat model — 13 open) |
+| [docs/adr/](docs/adr/)                                                     | Architecture decision records                                                                                   |
+| [SYSTEM_DESIGN_REVIEW.md](SYSTEM_DESIGN_REVIEW.md)                         | The review that produced the action items above                                                                 |
 
 ---
 
@@ -442,12 +451,12 @@ Expected output: `"stdout":"2\n"` with `"code":0`
 
 #### Troubleshooting Piston
 
-| Issue | Solution |
-|-------|----------|
+| Issue                       | Solution                                               |
+| --------------------------- | ------------------------------------------------------ |
 | Container exits immediately | Run `podman rm -f piston_api` then `pnpm piston:start` |
-| Port 2000 in use | Change port in `types/piston.ts` (line 39) |
-| Podman not found | Ensure Podman Desktop is running and in PATH |
-| Runtimes not installed | Run `pnpm piston:setup` |
+| Port 2000 in use            | Change port in `types/piston.ts` (line 39)             |
+| Podman not found            | Ensure Podman Desktop is running and in PATH           |
+| Runtimes not installed      | Run `pnpm piston:setup`                                |
 
 ### 1. Clone the repository
 
@@ -519,16 +528,17 @@ npx playwright install chromium
 
 ## Resources & API Keys
 
-| Service | Purpose | Get Key At |
-|---------|---------|-----------|
-| **Clerk** | Authentication (Email, Google, GitHub, LinkedIn) | https://dashboard.clerk.com |
-| **NVIDIA NIM** | AI/LLM for question generation and feedback | https://build.nvidia.com |
-| **Cloudinary** | PDF file storage (25 GB free) | https://cloudinary.com |
-| **Resend** | Transactional emails (100/day free) | https://resend.com |
-| **Razorpay** | Payment gateway for premium upgrades | https://dashboard.razorpay.com |
-| **Podman Desktop** | Container runtime for Piston | https://podman-desktop.io |
+| Service            | Purpose                                          | Get Key At                     |
+| ------------------ | ------------------------------------------------ | ------------------------------ |
+| **Clerk**          | Authentication (Email, Google, GitHub, LinkedIn) | https://dashboard.clerk.com    |
+| **NVIDIA NIM**     | AI/LLM for question generation and feedback      | https://build.nvidia.com       |
+| **Cloudinary**     | PDF file storage (25 GB free)                    | https://cloudinary.com         |
+| **Resend**         | Transactional emails (100/day free)              | https://resend.com             |
+| **Razorpay**       | Payment gateway for premium upgrades             | https://dashboard.razorpay.com |
+| **Podman Desktop** | Container runtime for Piston                     | https://podman-desktop.io      |
 
 ### Clerk
+
 1. Sign up at https://dashboard.clerk.com
 2. Create a new application
 3. Enable providers: Email, Google, GitHub, LinkedIn
@@ -536,6 +546,7 @@ npx playwright install chromium
 5. Copy **Secret Key** → `CLERK_SECRET_KEY`
 
 ### NVIDIA NIM
+
 1. Sign up at https://build.nvidia.com
 2. Go to API Explorer
 3. Generate an API key
@@ -543,6 +554,7 @@ npx playwright install chromium
 5. Model used: `meta/llama-3.1-8b-instruct`
 
 ### Cloudinary
+
 1. Sign up at https://cloudinary.com
 2. Go to Dashboard → Account Details
 3. Copy **Cloud Name** → `CLOUDINARY_CLOUD_NAME`
@@ -550,12 +562,14 @@ npx playwright install chromium
 5. Copy **API Secret** → `CLOUDINARY_API_SECRET`
 
 ### Resend
+
 1. Sign up at https://resend.com
 2. Go to API Keys → Create API Key
 3. Copy key → `RESEND_API_KEY`
 4. Free tier: 100 emails/day
 
 ### Razorpay
+
 1. Sign up at https://dashboard.razorpay.com
 2. Go to Settings → API Keys
 3. Generate Test Mode keys
@@ -565,6 +579,7 @@ npx playwright install chromium
 7. Docs: https://razorpay.com/docs
 
 ### Piston (Code Execution)
+
 - Self-hosted, no API key needed
 - Runs locally via Podman container
 - Commands: `pnpm piston:start/stop/setup/status`

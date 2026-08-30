@@ -168,6 +168,7 @@ to re-run the build script. Cheap, fast, no false positives.
 
 `docs/architecture/viewer.html` is a single self-contained file.
 It loads:
+
 - `tailwindcss` (CDN) for styling
 - `mermaid@10` (CDN) for diagram rendering
 - `svg-pan-zoom` (CDN) for pan/zoom controls
@@ -176,7 +177,8 @@ The 6 diagrams are inlined as `<pre class="mermaid">` blocks.
 On page load, Mermaid's `startOnLoad: true` discovers them and
 replaces each `<pre>` with an `<svg>`. A 600ms `setTimeout` then
 initializes `svg-pan-zoom` on each SVG. Tabs use CSS `visibility`
-+ `opacity` to show/hide (no layout thrash).
+
+- `opacity` to show/hide (no layout thrash).
 
 Because the diagrams are **inlined**, the file works on `file://`
 (opening the HTML directly from disk) without any server. If you
@@ -200,6 +202,7 @@ python -m http.server 8765
 ```
 
 In the browser, click every tab and verify:
+
 - The diagram renders (not an error message)
 - The diagram is centered in the viewport (not stuck in a corner)
 - `+ Zoom In` and `− Zoom Out` actually zoom (not inert)
@@ -210,13 +213,13 @@ the diagram. Fix the `.mmd` file and re-run the build.
 
 ## 10. Troubleshooting
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `pnpm build:viewer` fails with "missing diagram file" | One of the 6 expected `.mmd` files is missing or renamed | Re-create the file or remove it from the `DIAGRAMS` array in the script |
-| `pnpm build:viewer` fails with "could not find <pre data-src=...>" | The HTML is missing the matching `<pre>` block for one of the diagrams | Add the `<pre>` block to the HTML (see §6) |
-| Diagram shows red text in the browser | Mermaid syntax error in the `.mmd` file | Open the `.mmd` in https://mermaid.live/ to debug |
-| Diagram is tiny in the corner | svg-pan-zoom init race — increase the 600ms delay in the HTML's `window.addEventListener('load', ...)` callback | Edit the delay, refresh the browser |
-| `pnpm build:viewer:check` fails in CI but local build works | The HTML was regenerated but not committed | `git add docs/architecture/viewer.html && git commit` |
+| Symptom                                                            | Cause                                                                                                           | Fix                                                                     |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `pnpm build:viewer` fails with "missing diagram file"              | One of the 6 expected `.mmd` files is missing or renamed                                                        | Re-create the file or remove it from the `DIAGRAMS` array in the script |
+| `pnpm build:viewer` fails with "could not find <pre data-src=...>" | The HTML is missing the matching `<pre>` block for one of the diagrams                                          | Add the `<pre>` block to the HTML (see §6)                              |
+| Diagram shows red text in the browser                              | Mermaid syntax error in the `.mmd` file                                                                         | Open the `.mmd` in https://mermaid.live/ to debug                       |
+| Diagram is tiny in the corner                                      | svg-pan-zoom init race — increase the 600ms delay in the HTML's `window.addEventListener('load', ...)` callback | Edit the delay, refresh the browser                                     |
+| `pnpm build:viewer:check` fails in CI but local build works        | The HTML was regenerated but not committed                                                                      | `git add docs/architecture/viewer.html && git commit`                   |
 
 ## 11. What an AI should do when asked to change the architecture
 

@@ -4,6 +4,6 @@ import { TheoryController } from './theory.controller.js';
 
 @Module({
   providers: [TheoryService],
-  controllers: [TheoryController]
+  controllers: [TheoryController],
 })
-export class TheoryModule { }
+export class TheoryModule {}

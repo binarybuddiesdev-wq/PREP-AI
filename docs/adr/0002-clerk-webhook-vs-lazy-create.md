@@ -1,6 +1,7 @@
 # ADR-0002: Clerk webhook (not lazy create) for user provisioning
 
 ## Status
+
 Accepted, 2026-08-29
 
 ## Context
@@ -19,6 +20,7 @@ We will use **webhook-driven** provisioning via `POST /webhooks/clerk`,
 handling `user.created`, `user.updated`, and `user.deleted`.
 
 The webhook handler:
+
 - Verifies the Svix signature (svix-id, svix-timestamp, svix-signature)
 - Rejects requests with timestamps outside ±5 minutes (replay protection)
 - Idempotently upserts the User document
@@ -27,6 +29,7 @@ The webhook handler:
 ## Consequences
 
 **Easier:**
+
 - First protected request is fast — User document already exists
 - No "user not found → create" branch in every protected controller
 - Deletion is consistent — `user.deleted` webhook removes the User and
@@ -34,6 +37,7 @@ The webhook handler:
 - Clerk handles retries on non-2xx
 
 **Harder:**
+
 - New endpoint to secure (signature verification, replay protection, rate
   limit on the public route)
 - Brief window between signup and webhook delivery where a user can sign in

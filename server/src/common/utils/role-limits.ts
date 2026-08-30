@@ -15,11 +15,11 @@ export function getTheoryLimits(role: string, config: ConfigService): RoleLimits
 
   return {
     dailySessions: isPremium
-      ? config.get<number>('THEORY_DAILY_SESSIONS_PREMIUM') ?? 999
-      : config.get<number>('THEORY_DAILY_SESSIONS_FREE') ?? 3,
+      ? (config.get<number>('THEORY_DAILY_SESSIONS_PREMIUM') ?? 999)
+      : (config.get<number>('THEORY_DAILY_SESSIONS_FREE') ?? 3),
     questionsPerSession: isPremium
-      ? config.get<number>('THEORY_QUESTIONS_PER_SESSION_PREMIUM') ?? 30
-      : config.get<number>('THEORY_QUESTIONS_PER_SESSION_FREE') ?? 10,
+      ? (config.get<number>('THEORY_QUESTIONS_PER_SESSION_PREMIUM') ?? 30)
+      : (config.get<number>('THEORY_QUESTIONS_PER_SESSION_FREE') ?? 10),
   };
 }
 
@@ -28,11 +28,11 @@ export function getCodingLimits(role: string, config: ConfigService): CodingLimi
 
   return {
     dailySolved: isPremium
-      ? config.get<number>('CODING_DAILY_SOLVED_PREMIUM') ?? 999
-      : config.get<number>('CODING_DAILY_SOLVED_FREE') ?? 5,
+      ? (config.get<number>('CODING_DAILY_SOLVED_PREMIUM') ?? 999)
+      : (config.get<number>('CODING_DAILY_SOLVED_FREE') ?? 5),
     dailyReviews: isPremium
-      ? config.get<number>('CODING_DAILY_REVIEWS_PREMIUM') ?? 999
-      : config.get<number>('CODING_DAILY_REVIEWS_FREE') ?? 3,
+      ? (config.get<number>('CODING_DAILY_REVIEWS_PREMIUM') ?? 999)
+      : (config.get<number>('CODING_DAILY_REVIEWS_FREE') ?? 3),
   };
 }
 

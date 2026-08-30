@@ -1,121 +1,119 @@
 import { PrismaService } from '@/prisma/prisma.service.js';
-import { ConflictException, Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CreateTopicDto, GetTopicsDto, UpdateTopicDto } from './dto/index.js';
-import { TOPIC_ALREADY_EXISTS, TOPIC_NOT_FOUND, CANNOT_DELETE_TOPIC_WITH_QUESTIONS, TOPIC_DELETED_LOG } from '@/common/index.js';
+import {
+  TOPIC_ALREADY_EXISTS,
+  TOPIC_NOT_FOUND,
+  CANNOT_DELETE_TOPIC_WITH_QUESTIONS,
+  TOPIC_DELETED_LOG,
+} from '@/common/index.js';
 
 @Injectable()
 export class TopicService {
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectPinoLogger(TopicService.name) private readonly logger: PinoLogger
+  ) {}
 
-    constructor(private readonly prisma: PrismaService, @InjectPinoLogger(TopicService.name) private readonly logger: PinoLogger) { }
+  async createTopic(dto: CreateTopicDto) {
+    const { name, category, slug, icon } = dto;
 
-    async createTopic(dto: CreateTopicDto) {
+    const existingTopic = await this.prisma.topic.findFirst({
+      where: {
+        OR: [{ name }, { slug }],
+      },
+    });
 
-        const { name, category, slug, icon } = dto;
-
-        const existingTopic = await this.prisma.topic.findFirst({
-            where: {
-                OR: [
-                    { name },
-                    { slug }
-                ]
-            }
-        })
-
-        if (existingTopic) {
-            throw new ConflictException(TOPIC_ALREADY_EXISTS);
-        }
-
-        const topic = await this.prisma.topic.create({
-            data: {
-                name,
-                slug,
-                category,
-                icon: icon ?? null,
-            }
-        })
-        this.logger.info({ topic }, 'topic created successfully')
-        return topic;
-
+    if (existingTopic) {
+      throw new ConflictException(TOPIC_ALREADY_EXISTS);
     }
 
-    async getAllCategories(dto: GetTopicsDto) {
+    const topic = await this.prisma.topic.create({
+      data: {
+        name,
+        slug,
+        category,
+        icon: icon ?? null,
+      },
+    });
+    this.logger.info({ topic }, 'topic created successfully');
+    return topic;
+  }
 
-        const { category } = dto;
+  async getAllCategories(dto: GetTopicsDto) {
+    const { category } = dto;
 
-        const where = category ? { category } : {};
+    const where = category ? { category } : {};
 
-        const topics = await this.prisma.topic.findMany({ where });
+    const topics = await this.prisma.topic.findMany({ where });
 
-        this.logger.info({ count: topics.length, category }, 'Topics fetched successfully');
+    this.logger.info({ count: topics.length, category }, 'Topics fetched successfully');
 
-        return topics;
+    return topics;
+  }
 
+  async getTopicBySlug(slug: string) {
+    const topic = await this.prisma.topic.findUnique({ where: { slug } });
+
+    if (!topic) {
+      throw new NotFoundException(TOPIC_NOT_FOUND);
     }
 
-    async getTopicBySlug(slug: string) {
+    this.logger.info({ slug }, 'Topic fetched successfully');
 
-        const topic = await this.prisma.topic.findUnique({ where: { slug } });
+    return topic;
+  }
 
-        if (!topic) {
-            throw new NotFoundException(TOPIC_NOT_FOUND);
-        }
+  async updateTopic(id: string, dto: UpdateTopicDto) {
+    const existing = await this.prisma.topic.findUnique({ where: { id } });
 
-        this.logger.info({ slug }, 'Topic fetched successfully');
-
-        return topic;
-
+    if (!existing) {
+      throw new NotFoundException(TOPIC_NOT_FOUND);
     }
 
-    async updateTopic(id: string, dto: UpdateTopicDto) {
-
-        const existing = await this.prisma.topic.findUnique({ where: { id } });
-
-        if (!existing) {
-            throw new NotFoundException(TOPIC_NOT_FOUND);
-        }
-
-        if (dto.slug && dto.slug !== existing.slug) {
-            const slugTaken = await this.prisma.topic.findUnique({ where: { slug: dto.slug } });
-            if (slugTaken) {
-                throw new ConflictException(TOPIC_ALREADY_EXISTS);
-            }
-        }
-
-        const topic = await this.prisma.topic.update({
-            where: { id },
-            data: {
-                ...(dto.name !== undefined && { name: dto.name }),
-                ...(dto.slug !== undefined && { slug: dto.slug }),
-                ...(dto.category !== undefined && { category: dto.category }),
-                ...(dto.icon !== undefined && { icon: dto.icon }),
-            },
-        });
-
-        this.logger.info({ id }, 'Topic updated successfully');
-
-        return topic;
-
+    if (dto.slug && dto.slug !== existing.slug) {
+      const slugTaken = await this.prisma.topic.findUnique({ where: { slug: dto.slug } });
+      if (slugTaken) {
+        throw new ConflictException(TOPIC_ALREADY_EXISTS);
+      }
     }
 
-    async deleteTopic(id: string) {
+    const topic = await this.prisma.topic.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.slug !== undefined && { slug: dto.slug }),
+        ...(dto.category !== undefined && { category: dto.category }),
+        ...(dto.icon !== undefined && { icon: dto.icon }),
+      },
+    });
 
-        const existing = await this.prisma.topic.findUnique({ where: { id } });
+    this.logger.info({ id }, 'Topic updated successfully');
 
-        if (!existing) {
-            throw new NotFoundException(TOPIC_NOT_FOUND);
-        }
+    return topic;
+  }
 
-        const questionCount = await this.prisma.question.count({ where: { topicId: id } });
+  async deleteTopic(id: string) {
+    const existing = await this.prisma.topic.findUnique({ where: { id } });
 
-        if (questionCount > 0) {
-            throw new BadRequestException(CANNOT_DELETE_TOPIC_WITH_QUESTIONS);
-        }
-
-        await this.prisma.topic.delete({ where: { id } });
-
-        this.logger.info({ id }, TOPIC_DELETED_LOG);
-
+    if (!existing) {
+      throw new NotFoundException(TOPIC_NOT_FOUND);
     }
 
+    const questionCount = await this.prisma.question.count({ where: { topicId: id } });
+
+    if (questionCount > 0) {
+      throw new BadRequestException(CANNOT_DELETE_TOPIC_WITH_QUESTIONS);
+    }
+
+    await this.prisma.topic.delete({ where: { id } });
+
+    this.logger.info({ id }, TOPIC_DELETED_LOG);
+  }
 }

@@ -14,8 +14,12 @@ export const configureApp = async (app: NestFastifyApplication) => {
   // Register Fastify plugins (Cors, Helmet, Rate Limiting, Multipart parsing)
   await registerFastifyPlugins(app);
 
-  // Set base path prefix
-  app.setGlobalPrefix('api/v1', { exclude: ['health'] });
+  // Set base path prefix. Health probes (`/health`, `/healthz`, `/readyz`)
+  // stay unprefixed so external probes (Kubernetes, load balancers, uptime
+  // monitors) do not need to know the API version.
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['health', 'healthz', 'readyz'],
+  });
 
   if (nodeEnv !== 'production') {
     setupSwagger(app);

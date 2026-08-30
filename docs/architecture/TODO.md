@@ -46,21 +46,21 @@ These are called out in `SYSTEM_DESIGN_REVIEW.md` §B and have no dedicated
 doc yet. They are **not optional polish** — each one describes a real
 design decision that has to be made before the feature ships.
 
-| # | Topic | Status | Priority | Why it matters |
-|---|---|---|---|---|
-| 1 | Caching strategy | `[Missing]` | High | Redis is wired but no doc says what to cache, for how long, or how to invalidate. Two devs will write two different cache layers. |
-| 2 | Background jobs / queue design | `[Missing]` | High | BullMQ is decided (ADR-0004) but no doc says queue topology, retry policy, concurrency limits, dead-letter handling. |
-| 3 | AI evaluation pipeline | `[Stub]` (provider failover in place) | High | Provider failover (NVIDIA → Groq) is wired in `server/src/mastra/providers.ts` and documented in [ADR-0007](../adr/0007-add-groq-as-llm-fallback.md). Still missing: prompt versioning, model A/B harness, eval set for regression, token budget per user, prompt-injection defenses, PII redaction. |
-| 4 | RAG pipeline | `[Missing]` | Medium | Chunking strategy, embedding model, retrieval top-k, source citation, re-index flow — all undecided. |
-| 5 | Piston isolation | `[Stub]` | Medium | ADR-0006 defers Firecracker, but no doc enumerates the v1 mitigations (`--network=none`, resource limits, worker pool). |
-| 6 | Multi-tenancy / data isolation | `[Missing]` | High | No doc states the per-userId rule, RLS strategy, or IDOR test requirement. |
-| 7 | Idempotency | `[Missing]` | High | No spec for `Idempotency-Key` header, Postgres table schema, TTL. |
-| 8 | Observability | `[Missing]` | Medium | pino is in use but no doc covers correlation IDs, RED metrics, tracing, error tracking, audit log. |
-| 9 | Payment state machine | `[Missing]` | Medium | Razorpay flow has no doc covering state machine, webhook idempotency, reconciliation, subscription handling. |
-| 10 | Notifications | `[Missing]` | Low | Email pipeline, retry, opt-out, per-timezone scheduling — all undecided. |
-| 11 | Disaster recovery | `[Missing]` | Medium | RPO/RTO are in `nfrs.md` but no runbook. |
-| 12 | Per-service runbooks | `[Stub]` | High | `services.md` lists 7 services with `*(TODO)*` runbook links. None written. |
-| 13 | Threat model | `[Missing]` | High | No STRIDE-style threat model. Required for any production PII handling. |
+| #   | Topic                          | Status                                                     | Priority | Why it matters                                                                                                                                                                                                                                                                                       |
+| --- | ------------------------------ | ---------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Caching strategy               | `[Missing]`                                                | High     | Redis is wired but no doc says what to cache, for how long, or how to invalidate. Two devs will write two different cache layers.                                                                                                                                                                    |
+| 2   | Background jobs / queue design | `[Missing]`                                                | High     | BullMQ is decided (ADR-0004) but no doc says queue topology, retry policy, concurrency limits, dead-letter handling.                                                                                                                                                                                 |
+| 3   | AI evaluation pipeline         | `[Stub]` (provider failover in place)                      | High     | Provider failover (NVIDIA → Groq) is wired in `server/src/mastra/providers.ts` and documented in [ADR-0007](../adr/0007-add-groq-as-llm-fallback.md). Still missing: prompt versioning, model A/B harness, eval set for regression, token budget per user, prompt-injection defenses, PII redaction. |
+| 4   | RAG pipeline                   | `[Missing]`                                                | Medium   | Chunking strategy, embedding model, retrieval top-k, source citation, re-index flow — all undecided.                                                                                                                                                                                                 |
+| 5   | Piston isolation               | `[Stub]`                                                   | Medium   | ADR-0006 defers Firecracker, but no doc enumerates the v1 mitigations (`--network=none`, resource limits, worker pool).                                                                                                                                                                              |
+| 6   | Multi-tenancy / data isolation | `[Missing]`                                                | High     | No doc states the per-userId rule, RLS strategy, or IDOR test requirement.                                                                                                                                                                                                                           |
+| 7   | Idempotency                    | `[Missing]`                                                | High     | No spec for `Idempotency-Key` header, Postgres table schema, TTL.                                                                                                                                                                                                                                    |
+| 8   | Observability                  | `[Done]` ([docs/observability.md](../../observability.md)) | Medium   | pino is in use but no doc covers correlation IDs, RED metrics, tracing, error tracking, audit log.                                                                                                                                                                                                   |
+| 9   | Payment state machine          | `[Missing]`                                                | Medium   | Razorpay flow has no doc covering state machine, webhook idempotency, reconciliation, subscription handling.                                                                                                                                                                                         |
+| 10  | Notifications                  | `[Missing]`                                                | Low      | Email pipeline, retry, opt-out, per-timezone scheduling — all undecided.                                                                                                                                                                                                                             |
+| 11  | Disaster recovery              | `[Missing]`                                                | Medium   | RPO/RTO are in `nfrs.md` but no runbook.                                                                                                                                                                                                                                                             |
+| 12  | Per-service runbooks           | `[Stub]`                                                   | High     | `services.md` lists 7 services with `*(TODO)*` runbook links. None written.                                                                                                                                                                                                                          |
+| 13  | Threat model                   | `[Missing]`                                                | High     | No STRIDE-style threat model. Required for any production PII handling.                                                                                                                                                                                                                              |
 
 ---
 
@@ -96,7 +96,7 @@ PII redaction in prompts. Streaming for perceived performance.
 
 **Starter in place:** `server/src/mastra/providers.ts` already implements
 NVIDIA-primary / Groq-failover via `LLM_PROVIDER` env var. The doc above
-is what the *rest* of the pipeline needs to look like.
+is what the _rest_ of the pipeline needs to look like.
 
 ### 4. RAG pipeline
 

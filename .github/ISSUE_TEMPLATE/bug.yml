@@ -1,0 +1,107 @@
+name: Bug report
+description: Report a reproducible bug in the PrepAI platform.
+title: '[bug]: '
+labels: ['bug', 'triage']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in every section
+        so the issue is reproducible on the first try.
+
+  - type: input
+    id: summary
+    attributes:
+      label: One-line summary
+      description: >
+        What broke? Prefix with the area (server, ui, piston, prisma, mastra, ci).
+      placeholder: 'ui: dashboard KPI chart shows wrong date for sessions across midnight'
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered list of the minimum steps to hit the bug.
+      placeholder: |
+        1. Sign in as a free user
+        2. Start a Theory session with topic = "React"
+        3. Submit answer to Q1
+        4. Observe…
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened? Paste the error message, stack trace, or screenshot.
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Branch, commit SHA, Node version, OS, browser.
+      placeholder: |
+        - Branch / commit: main @ abc1234
+        - Node: 22.11.0
+        - pnpm: 9.15.0
+        - OS: Windows 11 + WSL 2 (Ubuntu 24.04)
+        - Browser: Chrome 130
+        - Piston container: piston_api (running)
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: >
+        Paste the relevant slice of the server log (pino output), browser
+        console, or attach a screenshot. Use a code block for logs.
+      render: shell
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      description: How bad is this in production?
+      options:
+        - Blocker — production unusable
+        - High — main flow broken
+        - Medium — degraded, but a workaround exists
+        - Low — cosmetic or edge case
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround (if any)
+      description: How did you keep working while this was broken?
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for a duplicate
+          required: true
+        - label: I can reproduce this on the latest commit of `dev`
+          required: true
+        - label: I have not committed any secrets or `.env` values
+          required: true

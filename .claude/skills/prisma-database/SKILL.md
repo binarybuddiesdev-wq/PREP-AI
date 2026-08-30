@@ -34,9 +34,9 @@ PrepAI runs **two Prisma clients against two databases** in the same
 process. This is documented in ADR-0001 and is not optional. Before you
 add a model, you must decide which database it belongs in.
 
-| Database | Use it for | Models today |
-|---|---|---|
-| **MongoDB** (`PrismaService`) | Content data: user profile, settings, topics, questions, PDF metadata. Flexible shape, nested docs OK, evolving schema. | `User`, `UserSettings`, `Topic`, `Question` |
+| Database                                   | Use it for                                                                                                                        | Models today                                                                       |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **MongoDB** (`PrismaService`)              | Content data: user profile, settings, topics, questions, PDF metadata. Flexible shape, nested docs OK, evolving schema.           | `User`, `UserSettings`, `Topic`, `Question`                                        |
 | **PostgreSQL** (`PrismaPostgresqlService`) | Transactional data: sessions, answers, payments, jobs, idempotency keys, audit log, vectors. Joins, indexes, time-series queries. | `TheorySession`, `TheoryAnswer`, `CodingSession`, `CodingQuestion`, `CodingAnswer` |
 
 **The decision rule:**
@@ -81,12 +81,12 @@ This is why the Postgres client is imported as
 
 ### Available scripts (from `server/package.json`)
 
-| Script | What it does | When to run |
-|---|---|---|
-| `pnpm prisma:generate` | Generates both Prisma clients | After any schema change |
-| `pnpm prisma:push:mongodb` | Pushes the Mongo schema to the live DB | After schema change (dev only) |
-| `pnpm prisma:push:postgresql` | Pushes the Postgres schema | After schema change (dev only) |
-| `pnpm prisma:migrate:postgresql` | Creates a real migration file | When you want migration history |
+| Script                           | What it does                           | When to run                     |
+| -------------------------------- | -------------------------------------- | ------------------------------- |
+| `pnpm prisma:generate`           | Generates both Prisma clients          | After any schema change         |
+| `pnpm prisma:push:mongodb`       | Pushes the Mongo schema to the live DB | After schema change (dev only)  |
+| `pnpm prisma:push:postgresql`    | Pushes the Postgres schema             | After schema change (dev only)  |
+| `pnpm prisma:migrate:postgresql` | Creates a real migration file          | When you want migration history |
 
 **`db push` vs `migrate dev`:** use `db push` for fast iteration in
 dev. Use `migrate dev` when you want a real migration file in
@@ -126,7 +126,7 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     if (!process.env['POSTGRESQL_URL']) {
       this.logger.warn('POSTGRESQL_URL not set — PostgreSQL skipped');
-      return;        // ← graceful no-op
+      return; // ← graceful no-op
     }
     try {
       this.client = new PostgresPrismaClient();
@@ -267,6 +267,7 @@ in both schemas and look up manually. This is rare in practice.
 
 `UserSettings.profile`, `preferences`, `notifications` are all `Json?`.
 Use this for fields that:
+
 - Evolve frequently (new preference toggles added often)
 - Don't need to be queried (just stored and returned)
 - Are user-specific (not shared across users)
@@ -384,10 +385,12 @@ updates without overwriting fields with `undefined`.
    - `@@index([userId, createdAt])` for "recent activity" sorts
 
 4. **If the model lives in Postgres, the client must be regenerated**:
+
    ```bash
    pnpm prisma:generate
    pnpm prisma:push:postgresql
    ```
+
    (skip `push` if you only want type generation, not a real schema
    change)
 

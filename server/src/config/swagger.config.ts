@@ -19,6 +19,6 @@ export const setupSwagger = (app: NestFastifyApplication) => {
       filter: true,
       showExtensions: true,
       tryItOutEnabled: true,
-    }
+    },
   });
 };

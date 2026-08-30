@@ -1,0 +1,165 @@
+# Local development stack for PrepAI.
+#
+# Use this when:
+#   - You want a fresh database without installing Mongo/Postgres/Redis
+#     directly on the host (especially Windows + WSL).
+#   - CI runners need a reproducible environment.
+#   - You are pairing with a teammate and want to mirror their setup.
+#
+# It does NOT replace Podman / Docker for Piston — that one stays on the
+# host because it needs the WSL2 cgroup fix from piston-entrypoint.sh.
+#
+# Usage:
+#   podman-compose up -d           # start Mongo, Postgres, Redis
+#   podman-compose down -v         # stop and wipe volumes (full reset)
+#   podman-compose logs -f mongo   # tail logs for a service
+#
+# All data is stored in named volumes — destroy them with `down -v` if you
+# want a clean slate. Piston is intentionally NOT in this file; see
+# `docs/PISTON_WSL_SETUP_GUIDE.md`.
+
+name: prepai-dev
+
+services:
+  # ── MongoDB — users, topics, questions, PDF metadata (ADR-0001) ───
+  mongo:
+    image: mongo:7
+    container_name: prepai-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: prepai
+      MONGO_INITDB_ROOT_PASSWORD: prepai
+      MONGO_INITDB_DATABASE: prepai
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── PostgreSQL — sessions, answers, vectors, audit (ADR-0001, ADR-0003) ─
+  postgres:
+    image: postgres:16-alpine
+    container_name: prepai-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: prepai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d prepai']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Redis — CacheModule, rate limiter, daily quotas (ADR-0005) ───
+  redis:
+    image: redis:7-alpine
+    container_name: prepai-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ── Server — NestJS + Fastify in watch mode ─────────────────────
+  # Optional: comment out if you prefer running `pnpm start:dev`
+  # directly on the host (recommended for faster HMR on Windows).
+  server:
+    image: node:22-alpine
+    container_name: prepai-server
+    profiles: ['full']
+    working_dir: /app
+    command:
+      [
+        'sh',
+        '-c',
+        'corepack enable && pnpm install --frozen-lockfile && pnpm --filter server prisma:generate && pnpm --filter server start:dev',
+      ]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin
+      POSTGRESQL_URL: postgresql://postgres:postgres@postgres:5432/prepai
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      NODE_ENV: development
+      PORT: '3000'
+      HOST: '0.0.0.0'
+    ports:
+      - '3000:3000'
+    volumes:
+      # Workspace root files (required for `pnpm install --frozen-lockfile`
+      # and the pnpm workspace resolution that picks up `server/`).
+      - ./package.json:/app/package.json
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./eslint.config.js:/app/eslint.config.js
+      # Source code.
+      - ./server:/app/server
+      - ./scripts:/app/scripts
+      - ./types:/app/types
+      # The `.env` is mounted last so container-side defaults in
+      # `environment:` above win for `DATABASE_URL`/`POSTGRESQL_URL`
+      # unless the user has overridden them in `.env`.
+      - ./.env:/app/.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── UI — Vite dev server ────────────────────────────────────────
+  ui:
+    image: node:22-alpine
+    container_name: prepai-ui
+    profiles: ['full']
+    working_dir: /app
+    command:
+      [
+        'sh',
+        '-c',
+        'corepack enable && pnpm install --frozen-lockfile && cd ui && pnpm dev --host 0.0.0.0',
+      ]
+    env_file:
+      - .env
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./package.json:/app/package.json
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./eslint.config.js:/app/eslint.config.js
+      - ./ui:/app/ui
+    depends_on:
+      - server
+
+volumes:
+  mongo_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

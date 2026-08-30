@@ -1,0 +1,60 @@
+name: Documentation / ADR
+description: Propose or amend documentation, ADRs, runbooks, or skills.
+title: '[docs]: '
+labels: ['documentation', 'triage']
+assignees: []
+
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of change
+      options:
+        - New architecture decision record (ADR)
+        - Supersede an existing ADR
+        - New architecture deep-dive (caching, RAG, observability, …)
+        - Runbook addition
+        - Skill addition / update (`.claude/skills/`)
+        - README / quickstart update
+        - Comment / typo / wording fix
+    validations:
+      required: true
+
+  - type: input
+    id: target
+    attributes:
+      label: File path
+      description: Where should this change live? (relative to repo root)
+      placeholder: 'docs/adr/0009-idempotency-keys.md'
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this change needed? What problem does it solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision
+      description: What did you decide, and what alternatives were considered?
+
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences
+      description: Trade-offs, follow-up work, what becomes harder.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I followed the ADR template at `docs/adr/README.md`
+        - label: I updated `docs/adr/0000-index.md` for any new ADR
+        - label: I linked the doc from `docs/architecture/TODO.md` if it fills a gap
+        - label: I linked the doc from `docs/architecture/README.md` "Related docs"

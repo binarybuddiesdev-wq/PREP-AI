@@ -25,6 +25,13 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\" --ignore-path .gitignore",
     "commitlint": "commitlint --edit",
+    "release": "release-it",
+    "release:dry": "release-it --dry-run",
+    "seed": "pnpm --filter server exec tsx --env-file=../.env ../scripts/seed/seed.ts",
+    "seed:topics-only": "pnpm --filter server exec tsx --env-file=../.env ../scripts/seed/seed.ts --topics-only",
+    "seed:questions-only": "pnpm --filter server exec tsx --env-file=../.env ../scripts/seed/seed.ts --questions-only",
+    "docker:up": "podman-compose up -d",
+    "docker:down": "podman-compose down -v",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -48,6 +55,8 @@
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
+    "release-it": "^17.0.0",
+    "@release-it/conventional-changelog": "^8.0.0",
     "typescript": "5.8.3",
     "typescript-eslint": "^8.0.0"
   }

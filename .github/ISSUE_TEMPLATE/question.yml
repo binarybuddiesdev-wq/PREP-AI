@@ -1,0 +1,32 @@
+name: Question / support
+description: Ask a usage question, request clarification, or report documentation gaps.
+title: '[question]: '
+labels: ['question']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for "how do I…?" questions and unclear documentation.
+        For bugs use the **Bug report** template. For new features use the
+        **Feature request** template.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Be specific. Show what you tried and what confused you.
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What you tried
+      description: Commands you ran, files you read, search terms you used.
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected to find

@@ -1,6 +1,7 @@
 # ADR-0004: BullMQ (not in-process) for background jobs
 
 ## Status
+
 Accepted, 2026-08-29
 
 ## Context
@@ -15,6 +16,7 @@ handler:
 - Payment reconciliation (poll Razorpay for stuck orders)
 
 Options:
+
 1. **In-process `setImmediate` / Promises** — fastest to ship, no infra
 2. **BullMQ on Redis** — Redis-backed queue, retries, dead-letter, UI
 3. **Cloud Tasks / SQS** — managed, serverless, no Redis
@@ -26,6 +28,7 @@ We will use **BullMQ** with Redis as the backing store. Workers run in the
 same Node process in dev, a separate process in prod.
 
 Queue topology:
+
 - `theory-eval-queue` — concurrency 5, priority interactive, 3 retries
 - `code-review-queue` — concurrency 3, priority interactive, 3 retries
 - `pdf-ingest-queue` — concurrency 2, priority background, 5 retries
@@ -38,6 +41,7 @@ completion before running.
 ## Consequences
 
 **Easier:**
+
 - Request handlers return 202 with `jobId`; UI polls or uses SSE
 - Built-in retry with exponential backoff
 - Built-in dead-letter queue (failed jobs surface in Bull-Board)
@@ -45,6 +49,7 @@ completion before running.
 - Same Redis already installed for cache and quota
 
 **Harder:**
+
 - New infra dependency (Redis already required; not new)
 - New failure mode: queue is down → jobs queued but never run. Need
   monitoring on queue depth

@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "Prisma.prisma",
+    "bradlc.vscode-tailwindcss",
+    "ms-playwright.playwright",
+    "vitest.explorer",
+    "EditorConfig.EditorConfig",
+    "streetsidesoftware.code-spell-checker"
+  ],
+  "unwantedRecommendations": ["hookyqr.beautify", "oxymorons.waiter"]
+}

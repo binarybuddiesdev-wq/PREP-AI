@@ -64,13 +64,13 @@ The `TransformInterceptor` (global) wraps this in:
 
 ## HTTP status codes — the conventions
 
-| Method | Success | Common errors |
-|---|---|---|
-| `POST` (create) | `201 Created` | `400` validation, `409` conflict |
-| `POST` (action, not create) | `200 OK` or `202 Accepted` (if async) | `400`, `403`, `404` |
-| `GET` | `200 OK` | `404` |
-| `PATCH` | `200 OK` | `400`, `404`, `409` |
-| `DELETE` | `200 OK` (with `data: null`) or `204 No Content` | `404`, `409` |
+| Method                      | Success                                          | Common errors                    |
+| --------------------------- | ------------------------------------------------ | -------------------------------- |
+| `POST` (create)             | `201 Created`                                    | `400` validation, `409` conflict |
+| `POST` (action, not create) | `200 OK` or `202 Accepted` (if async)            | `400`, `403`, `404`              |
+| `GET`                       | `200 OK`                                         | `404`                            |
+| `PATCH`                     | `200 OK`                                         | `400`, `404`, `409`              |
+| `DELETE`                    | `200 OK` (with `data: null`) or `204 No Content` | `404`, `409`                     |
 
 Always set the status with `@HttpCode(201)` (or whatever) at the handler
 level — don't rely on the framework default. See `topic.controller.ts` for
@@ -133,6 +133,7 @@ of `routes/topics-api-spec.md`).
    `any` in a DTO field.
 
 5. **Create the barrel** at `dto/index.ts`:
+
    ```ts
    export * from './create-coding.dto.js';
    export * from './update-coding.dto.js';
@@ -167,10 +168,11 @@ of `routes/topics-api-spec.md`).
    `common/constants/api.constants.js`. **No business logic in schema files.**
 
 9. **Create the module** in `<name>.module.ts`:
+
    ```ts
    @Module({
      providers: [XService],
-     controllers: [XController]
+     controllers: [XController],
    })
    export class XModule {}
    ```
@@ -238,12 +240,14 @@ These are not guidelines. Code that violates them is wrong.
 11. **Never import the DTO barrel without the `.js` extension.** ESM
     / NodeNext requires the explicit extension even for barrel files. In
     a controller or service:
+
     ```ts
     // CORRECT
     import { CreateCodingDto } from './dto/index.js';
     // WRONG — silently resolves to nothing in some bundlers
     import { CreateCodingDto } from './dto';
     ```
+
     Same rule applies to `common/index.ts` re-exports — always
     `from '@/common/index.js'`, never just `from '@/common'`.
 

@@ -72,9 +72,8 @@ export function pickProvider(): ProviderName {
   }
   if (process.env.NVIDIA_API_KEY) return 'nvidia';
   if (process.env.GROQ_API_KEY) return 'groq';
-  throw new Error(
-    'No LLM provider configured. Set NVIDIA_API_KEY or GROQ_API_KEY in .env',
-  );
+  if (process.env.NODE_ENV === 'test') return 'nvidia';
+  throw new Error('No LLM provider configured. Set NVIDIA_API_KEY or GROQ_API_KEY in .env');
 }
 
 /**
@@ -86,7 +85,7 @@ export function pickProvider(): ProviderName {
  *   import { getModel } from '../providers.js';
  *   const model = getModel();  // auto-picks NVIDIA or Groq
  */
-export function getModel() {
+export function getModel(): ReturnType<ReturnType<typeof createOpenAI>['chat']> {
   const name = pickProvider();
   const provider = name === 'nvidia' ? nvidiaProvider : groqProvider;
   return provider.chat(defaultModel[name]());
@@ -100,9 +99,7 @@ export function getModel() {
  * ad-hoc eval) when you want a result no matter what. For agents, prefer
  * `getModel()` so the agent keeps the same model across a conversation.
  */
-export async function chatWithFailover<T>(
-  fn: (provider: ProviderName) => Promise<T>,
-): Promise<T> {
+export async function chatWithFailover<T>(fn: (provider: ProviderName) => Promise<T>): Promise<T> {
   const errors: unknown[] = [];
 
   for (const name of ['nvidia', 'groq'] as const) {
@@ -116,12 +113,13 @@ export async function chatWithFailover<T>(
 
   // If a forced provider was set, only that one was tried; surface its error.
   if (errors.length === 0) {
-    throw new Error(
-      'No LLM provider configured. Set NVIDIA_API_KEY or GROQ_API_KEY in .env',
-    );
+    throw new Error('No LLM provider configured. Set NVIDIA_API_KEY or GROQ_API_KEY in .env');
   }
   const summary = errors
-    .map((e) => `${(e as { provider: string }).provider}: ${(e as { error: unknown }).error instanceof Error ? (e as { error: Error }).error.message : String((e as { error: unknown }).error)}`)
+    .map(
+      (e) =>
+        `${(e as { provider: string }).provider}: ${(e as { error: unknown }).error instanceof Error ? (e as { error: Error }).error.message : String((e as { error: unknown }).error)}`
+    )
     .join(' | ');
   throw new Error(`All LLM providers failed. ${summary}`);
 }

@@ -1,4 +1,5 @@
 # PrepAI Software Architecture & System Design Blueprint
+
 **Project: PrepAI Monorepo**  
 **Classification: Comprehensive Technical Architecture, Layer Boundaries, Dependency Graph & Implementation Rules**
 
@@ -7,6 +8,7 @@
 ## 1. Executive Architecture Overview
 
 ### 1.1 Architectural Philosophy and Style
+
 PrepAI is architected as a **Clean, Hexagonal, Modular Monolith** combining decoupled domain boundaries, dual-database persistence, isolated AI orchestration, sandboxed code execution, and CQRS-inspired client-side state separation.
 
 The system synthesizes five core architectural paradigms:
@@ -15,7 +17,7 @@ The system synthesizes five core architectural paradigms:
 2. **Dual-Store Persistence Strategy:** Clean physical separation between:
    - **Document Store (MongoDB via `PrismaService`):** High-velocity, flexible schema domain models (Users, Topics, Questions, Settings).
    - **Relational & Vector Store (PostgreSQL via `PrismaPostgresqlService`):** Transactional sessions, historical answers, async job queues, analytics, and pgvector embeddings.
-   - *Graceful Degradation:* The PostgreSQL service initializes safely and no-ops gracefully when `POSTGRESQL_URL` is omitted.
+   - _Graceful Degradation:_ The PostgreSQL service initializes safely and no-ops gracefully when `POSTGRESQL_URL` is omitted.
 3. **Mastra AI Orchestration with Provider Routing:** Multi-model failover pipeline (NVIDIA NIM primary, Groq / OpenAI fallbacks) providing deterministic structured outputs governed by Zod schemas.
 4. **Sandboxed Code Execution Engine (Piston):** Containerized, rootless code execution isolated to IPv4 loopback (`127.0.0.1:2000`) with dynamic host cgroup controller detection.
 5. **N-Tier CQRS-Inspired Client Separation (`ui/`):** Strict layer separation between:
@@ -27,6 +29,7 @@ The system synthesizes five core architectural paradigms:
    - **Pages Layer (`pages/`):** Route views acting as composition roots.
 
 > **Companion Documentation:**
+>
 > - Detailed Frontend Refactor Plan & File Inventory: [frontend-refactor.md](frontend-refactor.md)
 > - Architectural Decision Record: [ADR 0008: Frontend N-Tier Architecture](../adr/0008-frontend-n-tier.md)
 
@@ -192,20 +195,20 @@ PREP-AI/
 
 ## 3. Layer Responsibilities & Boundary Matrix
 
-| Layer | Location | Primary Responsibilities | Non-Responsibilities | Allowed Dependencies | Forbidden Dependencies |
-|---|---|---|---|---|---|
-| **Server Presentation** | `server/src/modules/**/*.controller.ts` | • HTTP request routing<br>• Request DTO validation<br>• Swagger documentation<br>• Invoking application services | • Direct database queries<br>• AI prompting / LLM calls<br>• Business rule enforcement<br>• Manual envelope building | Module Services, DTOs, `@/common`, NestJS decorators | Prisma directly, External SDKs, other module controllers |
-| **Server Application Logic** | `server/src/modules/**/*.service.ts` | • Core business use cases<br>• Transaction management<br>• Orchestrating Prisma queries<br>• Invoking AI agents / Piston<br>• Pino structured logging | • Direct HTTP request/response handling<br>• Fastify raw request manipulation<br>• Formatting UI layouts | Prisma services, `@/common`, Mastra agents, Redis Cache | Fastify Request/Response, UI code, Controller classes |
-| **Server AI Layer** | `server/src/mastra/` | • LLM prompt engineering<br>• Model failover routing<br>• Zod structured output parsing<br>• Agent tools & memory | • Database writes<br>• HTTP routing<br>• Auth verification | LLM SDKs, `@/common`, Zod | Server modules, Fastify context, Prisma |
-| **Server Persistence** | `server/src/prisma/` | • Prisma client lifecycle<br>• MongoDB / Postgres connections<br>• Database error translation<br>• Connection pooling | • Business logic<br>• HTTP logic<br>• AI generation | `@prisma/client`, Pino logger | Server modules, Mastra, UI |
-| **Server Common (Leaf)** | `server/src/common/` | • Global guards (`ClerkAuth`, `Roles`)<br>• Response interceptors<br>• Exception filters<br>• Shared constants & schemas | • Domain business rules<br>• Direct database calls<br>• Feature-specific DTOs | NestJS core, Zod, Svix | Any server module (`modules/*`) |
-| **Frontend Core (Leaf)** | `ui/src/core/` | • Route names, env types, query key constants | • Runtime business logic<br>• React components | Node types, TypeScript built-ins | Any other `ui/` layer |
-| **Frontend Utils (Leaf)** | `ui/src/utils/` | • Pure helper functions (`cn()`, formatters)<br>• Zero React DOM | • Application state<br>• Business rules | `core/` | Any layer above `utils/` |
-| **Frontend Data** | `ui/src/data/` | • HTTP client (`apiClient.ts`)<br>• Per-resource API calls & types<br>• Client state (`data/store/`) | • Direct React rendering<br>• Calling hooks | `core/`, `utils/` | `service/`, `logic/`, `components/`, `pages/` |
-| **Frontend Service** | `ui/src/service/` | • 3rd-party SDK adapters (Clerk, future Stripe/Cloudinary) | • Storing business state<br>• UI rendering | `core/`, `utils/` | `data/`, `logic/`, `components/`, `pages/` |
-| **Frontend Logic (CQRS)** | `ui/src/logic/` | • **Reader hooks** (`useXxxReader` → `useQuery`)<br>• **Command hooks** (`useXxxCommand` → `useMutation`) | • Direct React DOM rendering<br>• CSS styling | `core/`, `utils/`, `data/`, `service/` | `components/`, `pages/` |
-| **Frontend Components** | `ui/src/components/` | • Presentational UI primitives & widgets<br>• Receives data strictly via props | • Direct network calls<br>• Importing `data/` or `logic/` | `core/`, `utils/`, `service/` | `data/`, `logic/`, `pages/` |
-| **Frontend Pages (Shell)** | `ui/src/pages/` | • Route components & composition roots<br>• Composes `components/` with `logic/` hooks | • Heavy business calculations (Delegate to logic hooks) | All frontend layers | (Top of frontend hierarchy) |
+| Layer                        | Location                                | Primary Responsibilities                                                                                                                              | Non-Responsibilities                                                                                                 | Allowed Dependencies                                    | Forbidden Dependencies                                   |
+| ---------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------- |
+| **Server Presentation**      | `server/src/modules/**/*.controller.ts` | • HTTP request routing<br>• Request DTO validation<br>• Swagger documentation<br>• Invoking application services                                      | • Direct database queries<br>• AI prompting / LLM calls<br>• Business rule enforcement<br>• Manual envelope building | Module Services, DTOs, `@/common`, NestJS decorators    | Prisma directly, External SDKs, other module controllers |
+| **Server Application Logic** | `server/src/modules/**/*.service.ts`    | • Core business use cases<br>• Transaction management<br>• Orchestrating Prisma queries<br>• Invoking AI agents / Piston<br>• Pino structured logging | • Direct HTTP request/response handling<br>• Fastify raw request manipulation<br>• Formatting UI layouts             | Prisma services, `@/common`, Mastra agents, Redis Cache | Fastify Request/Response, UI code, Controller classes    |
+| **Server AI Layer**          | `server/src/mastra/`                    | • LLM prompt engineering<br>• Model failover routing<br>• Zod structured output parsing<br>• Agent tools & memory                                     | • Database writes<br>• HTTP routing<br>• Auth verification                                                           | LLM SDKs, `@/common`, Zod                               | Server modules, Fastify context, Prisma                  |
+| **Server Persistence**       | `server/src/prisma/`                    | • Prisma client lifecycle<br>• MongoDB / Postgres connections<br>• Database error translation<br>• Connection pooling                                 | • Business logic<br>• HTTP logic<br>• AI generation                                                                  | `@prisma/client`, Pino logger                           | Server modules, Mastra, UI                               |
+| **Server Common (Leaf)**     | `server/src/common/`                    | • Global guards (`ClerkAuth`, `Roles`)<br>• Response interceptors<br>• Exception filters<br>• Shared constants & schemas                              | • Domain business rules<br>• Direct database calls<br>• Feature-specific DTOs                                        | NestJS core, Zod, Svix                                  | Any server module (`modules/*`)                          |
+| **Frontend Core (Leaf)**     | `ui/src/core/`                          | • Route names, env types, query key constants                                                                                                         | • Runtime business logic<br>• React components                                                                       | Node types, TypeScript built-ins                        | Any other `ui/` layer                                    |
+| **Frontend Utils (Leaf)**    | `ui/src/utils/`                         | • Pure helper functions (`cn()`, formatters)<br>• Zero React DOM                                                                                      | • Application state<br>• Business rules                                                                              | `core/`                                                 | Any layer above `utils/`                                 |
+| **Frontend Data**            | `ui/src/data/`                          | • HTTP client (`apiClient.ts`)<br>• Per-resource API calls & types<br>• Client state (`data/store/`)                                                  | • Direct React rendering<br>• Calling hooks                                                                          | `core/`, `utils/`                                       | `service/`, `logic/`, `components/`, `pages/`            |
+| **Frontend Service**         | `ui/src/service/`                       | • 3rd-party SDK adapters (Clerk, future Stripe/Cloudinary)                                                                                            | • Storing business state<br>• UI rendering                                                                           | `core/`, `utils/`                                       | `data/`, `logic/`, `components/`, `pages/`               |
+| **Frontend Logic (CQRS)**    | `ui/src/logic/`                         | • **Reader hooks** (`useXxxReader` → `useQuery`)<br>• **Command hooks** (`useXxxCommand` → `useMutation`)                                             | • Direct React DOM rendering<br>• CSS styling                                                                        | `core/`, `utils/`, `data/`, `service/`                  | `components/`, `pages/`                                  |
+| **Frontend Components**      | `ui/src/components/`                    | • Presentational UI primitives & widgets<br>• Receives data strictly via props                                                                        | • Direct network calls<br>• Importing `data/` or `logic/`                                                            | `core/`, `utils/`, `service/`                           | `data/`, `logic/`, `pages/`                              |
+| **Frontend Pages (Shell)**   | `ui/src/pages/`                         | • Route components & composition roots<br>• Composes `components/` with `logic/` hooks                                                                | • Heavy business calculations (Delegate to logic hooks)                                                              | All frontend layers                                     | (Top of frontend hierarchy)                              |
 
 ---
 
@@ -312,6 +315,7 @@ PREP-AI/
 ```
 
 #### Dual Client Rules:
+
 1. `PrismaService` connects to MongoDB (`DATABASE_URL`) and is the primary dependency for user management, curriculum topics, and questions.
 2. `PrismaPostgresqlService` connects to PostgreSQL (`POSTGRESQL_URL`). During `onModuleInit()`, it checks if `POSTGRESQL_URL` is set and whether the PostgreSQL client has been generated. If not, it logs a warning and gracefully operates in no-op mode without crashing the server.
 3. Feature services must explicitly declare which store they target. Never assume a single database instance holds all relations.
@@ -370,6 +374,7 @@ PREP-AI/
 ```
 
 #### Sandboxing Constraints:
+
 - **Port Binding:** Piston is bound strictly to `127.0.0.1:2000` to avoid Windows/WSL2 port forwarding conflicts.
 - **Persistent Runtimes:** Language packages are installed via `./piston-cli` into the persistent `piston_data` volume.
 - **Lifecycle Control:** Root scripts `pnpm piston:start`, `pnpm piston:stop`, `pnpm piston:status`, and `pnpm piston:setup` govern container operations.
@@ -435,6 +440,7 @@ The frontend encapsulates all data interactions inside dedicated hooks located i
 ```
 
 #### Reader Hook Example (`ui/src/logic/user/useUserReader.ts`):
+
 ```ts
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { apiClient } from '@/data/apiClient';
@@ -453,6 +459,7 @@ export const useUserReader = (): UseQueryResult<IUser, Error> =>
 ```
 
 #### Command Hook Example (`ui/src/logic/user/useUpdateSettingsCommand.ts`):
+
 ```ts
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { apiClient } from '@/data/apiClient';
@@ -472,6 +479,7 @@ export const useUpdateSettingsCommand = (): UseMutationResult<void, Error, IUpda
 ```
 
 #### Micro-Feature Folding Rule:
+
 - **Default:** Features split into `*.api.ts`, `*.types.ts`, `*.keys.ts`, and `index.ts`.
 - **Micro-Features:** For simple features with ≤ 1 read query and 0 mutations (e.g., `health`), types and keys may be folded directly into `health.api.ts`. The moment a mutation or command is added, it must split.
 
@@ -605,22 +613,22 @@ Uncaught exceptions are transformed into consistent error responses:
 
 ## 11. Naming Conventions & Code Standards
 
-| Artifact | Convention | Example |
-|---|---|---|
-| **TypeScript Interface** | PascalCase prefixed with `I` | `ITopicCardProps`, `IUserSession`, `IApiResponse<T>` |
-| **TypeScript Type / Enum** | PascalCase without `I` | `UserRole`, `QuestionCategory`, `DifficultyLevel` |
-| **React Component Files** | PascalCase ending in `.tsx` | `DashboardPage.tsx`, `UserCard.tsx`, `Button.tsx` |
-| **Hook & Utility Files** | camelCase ending in `.ts` | `useUserReader.ts`, `useUpdateSettingsCommand.ts`, `cn.ts` |
-| **Type Files** | `<Name>.types.ts` or `types.ts` | `UserCard.types.ts`, `user.types.ts` |
-| **Reader Hook** | camelCase prefixed with `use` and ending in `Reader` | `useUserReader`, `useTopicsReader` |
-| **Command Hook** | camelCase prefixed with `use` and ending in `Command` | `useUpdateSettingsCommand`, `useSubmitAnswerCommand` |
-| **Redux Slice** | camelCase ending in `Slice` | `uiSlice.ts`, `interviewUiSlice.ts` |
-| **NestJS Backend Files** | `kebab-case.ts` | `topic.service.ts`, `topic.controller.ts`, `create-topic.dto.ts` |
-| **NestJS Controller Class** | PascalCase ending in `Controller` | `TopicController`, `TheoryController` |
-| **NestJS Service Class** | PascalCase ending in `Service` | `TopicService`, `TheoryService` |
-| **NestJS Module Class** | PascalCase ending in `Module` | `TopicModule`, `AppModule` |
-| **DTO Class** | PascalCase ending in `Dto` | `CreateTopicDto`, `UpdateQuestionDto` |
-| **API Route Constants** | UPPER_SNAKE_CASE in `api.constants.ts` | `CREATE_TOPIC_SUCCESS`, `TOPIC_NOT_FOUND` |
+| Artifact                    | Convention                                            | Example                                                          |
+| --------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------- |
+| **TypeScript Interface**    | PascalCase prefixed with `I`                          | `ITopicCardProps`, `IUserSession`, `IApiResponse<T>`             |
+| **TypeScript Type / Enum**  | PascalCase without `I`                                | `UserRole`, `QuestionCategory`, `DifficultyLevel`                |
+| **React Component Files**   | PascalCase ending in `.tsx`                           | `DashboardPage.tsx`, `UserCard.tsx`, `Button.tsx`                |
+| **Hook & Utility Files**    | camelCase ending in `.ts`                             | `useUserReader.ts`, `useUpdateSettingsCommand.ts`, `cn.ts`       |
+| **Type Files**              | `<Name>.types.ts` or `types.ts`                       | `UserCard.types.ts`, `user.types.ts`                             |
+| **Reader Hook**             | camelCase prefixed with `use` and ending in `Reader`  | `useUserReader`, `useTopicsReader`                               |
+| **Command Hook**            | camelCase prefixed with `use` and ending in `Command` | `useUpdateSettingsCommand`, `useSubmitAnswerCommand`             |
+| **Redux Slice**             | camelCase ending in `Slice`                           | `uiSlice.ts`, `interviewUiSlice.ts`                              |
+| **NestJS Backend Files**    | `kebab-case.ts`                                       | `topic.service.ts`, `topic.controller.ts`, `create-topic.dto.ts` |
+| **NestJS Controller Class** | PascalCase ending in `Controller`                     | `TopicController`, `TheoryController`                            |
+| **NestJS Service Class**    | PascalCase ending in `Service`                        | `TopicService`, `TheoryService`                                  |
+| **NestJS Module Class**     | PascalCase ending in `Module`                         | `TopicModule`, `AppModule`                                       |
+| **DTO Class**               | PascalCase ending in `Dto`                            | `CreateTopicDto`, `UpdateQuestionDto`                            |
+| **API Route Constants**     | UPPER_SNAKE_CASE in `api.constants.ts`                | `CREATE_TOPIC_SUCCESS`, `TOPIC_NOT_FOUND`                        |
 
 ---
 
@@ -700,5 +708,6 @@ Uncaught exceptions are transformed into consistent error responses:
 ---
 
 > 📖 **Companion Frontend Blueprint & ADR:**
+>
 > - Detailed Migration Plan: [frontend-refactor.md](frontend-refactor.md)
 > - Architectural Decision Record: [ADR 0008: Frontend N-Tier Architecture](../adr/0008-frontend-n-tier.md)

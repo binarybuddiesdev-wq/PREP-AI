@@ -38,11 +38,19 @@ export async function getSettings(api: ReturnType<typeof useApiClient>) {
 
 export async function updateSettings(
   api: ReturnType<typeof useApiClient>,
-  body: { profile?: Record<string, unknown>; preferences?: Record<string, unknown>; notifications?: Record<string, unknown> },
+  body: {
+    profile?: Record<string, unknown>;
+    preferences?: Record<string, unknown>;
+    notifications?: Record<string, unknown>;
+  }
 ) {
-  return api.patch('users/settings', { json: body }).json<{ success: boolean; message: string; data: unknown }>();
+  return api
+    .patch('users/settings', { json: body })
+    .json<{ success: boolean; message: string; data: unknown }>();
 }
 
 export async function setupComplete(api: ReturnType<typeof useApiClient>) {
-  return api.patch('users/setup-complete').json<{ success: boolean; message: string; data: unknown }>();
+  return api
+    .patch('users/setup-complete')
+    .json<{ success: boolean; message: string; data: unknown }>();
 }

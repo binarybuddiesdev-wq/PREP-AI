@@ -42,15 +42,18 @@ const __dirname = dirname(__filename);
       }),
     }),
     PrismaModule,
-    HealthModule, TechExpertModule, UserModule, TopicModule, QuestionModule, TheoryModule
+    HealthModule,
+    TechExpertModule,
+    UserModule,
+    TopicModule,
+    QuestionModule,
+    TheoryModule,
   ],
   controllers: [],
   providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(SanitizeMiddleware)
-      .forRoutes('{*path}');
+    consumer.apply(SanitizeMiddleware).forRoutes('{*path}');
   }
 }

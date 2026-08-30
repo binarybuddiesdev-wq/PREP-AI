@@ -1,6 +1,7 @@
 # ADR-0001: Polyglot persistence — MongoDB + PostgreSQL
 
 ## Status
+
 Accepted, 2026-08-29
 
 ## Context
@@ -22,9 +23,9 @@ Postgres' JSONB works but loses tooling maturity for nested-document reads.
 
 We will run **two databases**:
 
-| Store | Data | Why |
-|---|---|---|
-| **MongoDB** (via `PrismaService`) | `User`, `UserSettings`, `Topic`, `Question`, `PdfSource` | Flexible schema, nested docs read in one query, easy evolution |
+| Store                                                     | Data                                                                                                                                                 | Why                                                                 |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **MongoDB** (via `PrismaService`)                         | `User`, `UserSettings`, `Topic`, `Question`, `PdfSource`                                                                                             | Flexible schema, nested docs read in one query, easy evolution      |
 | **PostgreSQL + pgvector** (via `PrismaPostgresqlService`) | `TheorySession`, `TheoryAnswer`, `CodingSession`, `CodingAnswer`, `Payment`, `Job`, `IdempotencyKey`, `AuditLog`, `UserWeaknessSnapshot`, embeddings | Joins, aggregations, transactions, pgvector for RAG, mature tooling |
 
 Cross-store references are string IDs (Clerk user ID, our own UUIDs). We do
@@ -34,12 +35,14 @@ the service layer.
 ## Consequences
 
 **Easier:**
+
 - Each store uses the right tool for its access pattern
 - Postgres + pgvector gives us a single store for transactional data AND vectors
 - Schema evolution in Mongo is friction-free
 - SQL aggregations for analytics are straightforward
 
 **Harder:**
+
 - Two connection pools, two ORM clients, two schema migrations
 - No atomic cross-store transaction (e.g., "user paid, upgrade role" must
   use the outbox pattern)

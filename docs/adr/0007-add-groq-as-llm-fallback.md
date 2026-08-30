@@ -1,6 +1,7 @@
 # ADR-0007: Add Groq as LLM fallback provider (NVIDIA primary)
 
 ## Status
+
 Accepted, 2026-08-29
 
 ## Context
@@ -16,6 +17,7 @@ Today the only LLM provider is NVIDIA NIM. NVIDIA works but:
   fastest. For code review where a user is waiting, faster = better UX.
 
 We need a **second provider** that is:
+
 - Free for the volume we use (solo project, ~10k AI calls/day max)
 - OpenAI-compatible (so Mastra's existing code works unchanged)
 - Reliable (production-grade SLA, not a hobby project)
@@ -46,6 +48,7 @@ We will use **two providers**:
   Free tier: 30 RPM, 1k RPD, 8k TPM, **2M TPD**. OpenAI-compatible.
 
 The selection is controlled by the `LLM_PROVIDER` env var:
+
 - `LLM_PROVIDER=groq` (or unset, with NVIDIA key present) → NVIDIA
 - `LLM_PROVIDER=groq` → Groq
 - `LLM_PROVIDER=nvidia` → NVIDIA only
@@ -59,6 +62,7 @@ active model. Switching providers is a one-env-var change.
 ## Consequences
 
 **Easier:**
+
 - NVIDIA outages no longer take us down
 - Devs can use Groq's generous free tier for iteration, save NVIDIA
   credits for the production-feel testing
@@ -67,6 +71,7 @@ active model. Switching providers is a one-env-var change.
 - Same OpenAI surface — no new SDK, no new package, no new failure mode
 
 **Harder:**
+
 - Two providers to monitor (uptime, rate limits, model deprecations)
 - Answer quality may differ between providers — `aiScore: 8.5` from
   NVIDIA may not be the same `8.5` from Groq for the same answer
@@ -84,7 +89,7 @@ active model. Switching providers is a one-env-var change.
   new SDK and a second client config). Worth adding as a third provider
   if NVIDIA + Groq both fail.
 - **Ollama locally** — perfect for dev if you have GPU. Recommended as
-  an *optional* addition later, not a replacement.
+  an _optional_ addition later, not a replacement.
 
 ## When to revisit
 

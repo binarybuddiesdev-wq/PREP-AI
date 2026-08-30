@@ -1,0 +1,77 @@
+# .dockerignore applies to Docker build context and any future container builds.
+# Keep the image small and reproducible by excluding everything that does not
+# need to live inside the container.
+
+# Dependencies — installed fresh inside the image
+node_modules
+.pnpm-store
+
+# Build output — produced inside the image
+dist
+build
+.next
+*.tsbuildinfo
+
+# Environment — never bake secrets into an image
+.env
+.env.local
+.env.*.local
+
+# Test output
+coverage
+test-results
+playwright-report
+blob-report
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Git metadata
+.git
+.gitignore
+.gitattributes
+
+# Repo-local helper directories
+.remember
+.mimocode
+.concepts
+.Decisions
+.docs
+
+# Documentation, ADRs and Claude config — not needed at runtime
+docs
+.claude
+.agents
+
+# Docker itself
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+.dockerignore
+
+# Top-level config the container does not need
+.husky
+commitlint.config.js
+eslint.config.js
+prettier.config.js
+playwright.config.ts
+tsconfig.json
+
+# Static assets and the standalone UI prototype
+public
+prepai-ui.html
+piston-entrypoint.sh

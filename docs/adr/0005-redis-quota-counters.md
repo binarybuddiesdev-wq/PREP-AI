@@ -1,11 +1,13 @@
 # ADR-0005: Redis (atomic INCR+EXPIRE) for daily quota counters
 
 ## Status
+
 Accepted, 2026-08-29
 
 ## Context
 
 We enforce role-based daily quotas on the server:
+
 - Theory sessions: 3/day (free), unlimited (premium)
 - Coding submissions: 5/day (free)
 - AI reviews: 3/day (free)
@@ -25,6 +27,7 @@ Two concurrent `session/start` calls at count=2 both see `< 3`, both insert,
 both increment — quota exceeded by 1. This is the classic TOCTOU race.
 
 Options:
+
 1. **Postgres transaction with `SELECT FOR UPDATE`** — works, but adds DB
    load on the hot path and serializes all quota checks
 2. **Postgres advisory lock** — fast, but couples quota key shape to lock id
@@ -39,9 +42,10 @@ Key shape: `quota:{userId}:{date}:{resource}` (e.g.
 `quota:user_2xKp9mNqR3:2026-08-29:theory_sessions`)
 
 Pseudocode:
+
 ```ts
 async function checkAndIncrementQuota(userId, resource, limit) {
-  const key = `quota:${userId}:${new Date().toISOString().slice(0,10)}:${resource}`;
+  const key = `quota:${userId}:${new Date().toISOString().slice(0, 10)}:${resource}`;
   const count = await redis.incr(key);
   if (count === 1) {
     // First hit today — set TTL to end of UTC day
@@ -61,12 +65,14 @@ instead of 3 is a small cost; a free user running 100 AI evals is a $50 bill).
 ## Consequences
 
 **Easier:**
+
 - Atomic check-and-increment, no race
 - No DB load on the hot path
 - TTL handles cleanup automatically
 - Pattern is well-understood (Stripe, GitHub, Cloudflare all do this)
 
 **Harder:**
+
 - New failure mode: Redis down → quota can't be enforced. Must decide fail
   open vs fail closed per resource
 - If Redis evicts the key (memory pressure), quota window resets — brief

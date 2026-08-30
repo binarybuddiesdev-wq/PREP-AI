@@ -3,6 +3,7 @@
 ## What is Clerk?
 
 Clerk is a **third-party authentication service**. It handles:
+
 - Sign-up / Sign-in forms
 - Password management
 - Email verification
@@ -20,8 +21,9 @@ Clerk gives you two types of keys:
 - **`pk_live_...`** — Production environment. Real users, real data. Never expose in dev repos.
 
 The frontend validates the key format before wrapping the app:
+
 ```typescript
-const isClerkValid = clerkPubKey && /^pk_(test|live)_/.test(clerkPubKey)
+const isClerkValid = clerkPubKey && /^pk_(test|live)_/.test(clerkPubKey);
 ```
 
 ---
@@ -115,12 +117,14 @@ Now any route handler can access `request.user.id` to know who's making the requ
 ## What's in PrepAI Currently
 
 ### Done:
+
 1. **Database Schema** — `User` model has `clerkId` field (unique) in `server/prisma/schema.prisma`
 2. **Backend Guard** — `ClerkAuthGuard` verifies Bearer tokens via `@clerk/clerk-sdk-node`
 3. **Frontend Provider** — `ClerkProvider` wraps the app (with valid key check)
 4. **Dependencies** — `@clerk/clerk-react` (frontend), `@clerk/clerk-sdk-node` (backend)
 
 ### Not Done Yet:
+
 - No Clerk UI components (`<SignIn />`, `<SignedIn>`, `<SignedOut>`)
 - No user sync logic (creating `User` record in DB after Clerk sign-up)
 - Routes not wired with `@UseGuards(ClerkAuthGuard)` yet

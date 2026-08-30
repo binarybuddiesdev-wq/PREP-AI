@@ -26,6 +26,8 @@ export enum ApiRoutes {
 
 export enum ApiOperation {
   HEALTH_CHECK = 'Health check',
+  HEALTH_LIVENESS = 'Liveness probe',
+  HEALTH_READINESS = 'Readiness probe',
   AUTH_REGISTER = 'Register a new user',
   AUTH_LOGIN = 'Login with credentials',
   AUTH_REFRESH = 'Refresh access token',
@@ -90,6 +92,15 @@ export const ERROR_MESSAGES = {
 } as const;
 
 export const EMAIL_IN_USE = 'Email already in use';
+
+// Health success / error messages
+export const HEALTH_OK = 'Service is alive';
+export const HEALTH_READY = 'Service is ready';
+export const HEALTH_NOT_READY = 'Service is not ready';
+export const HEALTH_DEGRADED = 'Service is degraded';
+export const HEALTH_MONGO_DOWN = 'MongoDB unreachable';
+export const HEALTH_POSTGRES_DOWN = 'PostgreSQL unreachable';
+export const HEALTH_REDIS_DOWN = 'Redis unreachable';
 
 // User success messages
 export const GET_ME_SUCCESS = 'User profile fetched successfully';

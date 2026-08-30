@@ -108,6 +108,7 @@ classes for that folder's components go in this file.
 - For 1 `.tsx` file in a folder, the rule is the same: one `styles.css`.
 
 **Never use:**
+
 - `style={{ ... }}` inline styles (except for genuinely dynamic values
   like `transform: \`translateX(${x}px)\`` where the value is computed
   at render time)
@@ -124,11 +125,7 @@ import { cn } from '@/lib/utils';
 export const Hello = (props: IHelloProps) => {
   const { className, name } = props;
 
-  return (
-    <div className={cn('rounded-lg border p-4', className)}>
-      Hello {name}
-    </div>
-  );
+  return <div className={cn('rounded-lg border p-4', className)}>Hello {name}</div>;
 };
 ```
 
@@ -308,7 +305,11 @@ folder entry point).
 export const Hello = (props: IHelloProps) => {
   const { name, age, onClick } = props;
 
-  return <button onClick={onClick}>Hello {name}, age {age}</button>;
+  return (
+    <button onClick={onClick}>
+      Hello {name}, age {age}
+    </button>
+  );
 };
 ```
 
@@ -317,7 +318,11 @@ Never destructure in the function signature:
 ```tsx
 // WRONG
 export const Hello = ({ name, age, onClick }: IHelloProps) => {
-  return <button onClick={onClick}>Hello {name}, age {age}</button>;
+  return (
+    <button onClick={onClick}>
+      Hello {name}, age {age}
+    </button>
+  );
 };
 ```
 
@@ -406,6 +411,7 @@ authenticated routes use `<ProtectedRoute>`. Both wrap `<SignedIn>` /
 ### Auth
 
 Use Clerk hooks directly:
+
 - `useUser()` for the current user
 - `useAuth()` for the session token (rare; `useApiClient` does this for you)
 - `useClerk()` for `signOut`, `openSignIn`, etc.

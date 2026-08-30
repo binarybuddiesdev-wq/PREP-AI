@@ -72,12 +72,12 @@ export default defineConfig({
 
 ### Available scripts (from `server/package.json`)
 
-| Script | What it does |
-|---|---|
-| `pnpm test` | `vitest run` — unit tests once |
-| `pnpm test:watch` | `vitest` — watch mode |
-| `pnpm test:coverage` | `vitest run --coverage` — with v8 report |
-| `pnpm test:e2e` | `vitest run --config vitest.config.e2e.ts` |
+| Script               | What it does                               |
+| -------------------- | ------------------------------------------ |
+| `pnpm test`          | `vitest run` — unit tests once             |
+| `pnpm test:watch`    | `vitest` — watch mode                      |
+| `pnpm test:coverage` | `vitest run --coverage` — with v8 report   |
+| `pnpm test:e2e`      | `vitest run --config vitest.config.e2e.ts` |
 
 ## The non-negotiable rules
 
@@ -105,9 +105,7 @@ to inject a mock service. The controller tests the HTTP layer only.
 // CORRECT — mock the service
 const module: TestingModule = await Test.createTestingModule({
   controllers: [TopicController],
-  providers: [
-    { provide: TopicService, useValue: topicService },
-  ],
+  providers: [{ provide: TopicService, useValue: topicService }],
 }).compile();
 
 // WRONG — calling the real service in a controller spec
@@ -315,8 +313,10 @@ describe('TopicController', () => {
       controllers: [TopicController],
       providers: [{ provide: TopicService, useValue: topicService }],
     })
-      .overrideGuard(ClerkAuthGuard).useClass(MockAuthGuard)
-      .overrideGuard(RolesGuard).useClass(MockAuthGuard)
+      .overrideGuard(ClerkAuthGuard)
+      .useClass(MockAuthGuard)
+      .overrideGuard(RolesGuard)
+      .useClass(MockAuthGuard)
       .compile();
 
     controller = module.get(TopicController);
@@ -325,15 +325,25 @@ describe('TopicController', () => {
 
   // 4. Tests: assert controller shape { message, data }
   it('returns the success envelope on create', async () => {
-    const result = await controller.createTopic({ name: 'React', category: 'practice', slug: 'react' });
+    const result = await controller.createTopic({
+      name: 'React',
+      category: 'practice',
+      slug: 'react',
+    });
     expect(result).toEqual({ message: expect.any(String), data: { id: '1', name: 'React' } });
-    expect(topicService.createTopic).toHaveBeenCalledWith({ name: 'React', category: 'practice', slug: 'react' });
+    expect(topicService.createTopic).toHaveBeenCalledWith({
+      name: 'React',
+      category: 'practice',
+      slug: 'react',
+    });
   });
 
   // 5. Error case: assert the thrown exception type
   it('throws ConflictException when slug already exists', async () => {
     topicService.createTopic.mockRejectedValue(new ConflictException('already exists'));
-    await expect(controller.createTopic({ name: 'React', category: 'practice', slug: 'react' })).rejects.toThrow(ConflictException);
+    await expect(
+      controller.createTopic({ name: 'React', category: 'practice', slug: 'react' })
+    ).rejects.toThrow(ConflictException);
   });
 });
 ```
@@ -472,16 +482,16 @@ describe('QuestionService', () => {
 
 ## The mocking reference table
 
-| What to mock | How | Pattern |
-|---|---|---|
-| Service (controller spec) | `{ provide: SomeService, useValue: mockObj }` | Inline mock object |
-| PrismaService (service spec) | `{ provide: PrismaService, useValue: prisma }` | Hand-built mock shaped like Prisma client |
-| PrismaPostgresqlService (service spec) | `{ provide: PrismaPostgresqlService, useValue: postgres }` | Mock shaped like `{ client_: { model: { ... } } }` |
-| Logger (service spec) | `{ provide: 'PinoLogger:ClassName', useValue: { info, warn, error } }` | PinoLogger + ClassName token |
-| ClerkAuthGuard (controller spec) | `.overrideGuard(ClerkAuthGuard).useClass(MockAuthGuard)` | Mock class implements `CanActivate` |
-| RolesGuard (controller spec) | `.overrideGuard(RolesGuard).useClass(MockAuthGuard)` | Same mock class for both guards |
-| External npm package | `vi.mock('package-name', () => ({ ... }))` | Top-level, not inside describe |
-| Local config module | `vi.mock('../../path/to/config.js', () => ({ ... }))` | Top-level, not inside describe |
+| What to mock                           | How                                                                    | Pattern                                            |
+| -------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------- |
+| Service (controller spec)              | `{ provide: SomeService, useValue: mockObj }`                          | Inline mock object                                 |
+| PrismaService (service spec)           | `{ provide: PrismaService, useValue: prisma }`                         | Hand-built mock shaped like Prisma client          |
+| PrismaPostgresqlService (service spec) | `{ provide: PrismaPostgresqlService, useValue: postgres }`             | Mock shaped like `{ client_: { model: { ... } } }` |
+| Logger (service spec)                  | `{ provide: 'PinoLogger:ClassName', useValue: { info, warn, error } }` | PinoLogger + ClassName token                       |
+| ClerkAuthGuard (controller spec)       | `.overrideGuard(ClerkAuthGuard).useClass(MockAuthGuard)`               | Mock class implements `CanActivate`                |
+| RolesGuard (controller spec)           | `.overrideGuard(RolesGuard).useClass(MockAuthGuard)`                   | Same mock class for both guards                    |
+| External npm package                   | `vi.mock('package-name', () => ({ ... }))`                             | Top-level, not inside describe                     |
+| Local config module                    | `vi.mock('../../path/to/config.js', () => ({ ... }))`                  | Top-level, not inside describe                     |
 
 ## The mock shape conventions
 
@@ -548,12 +558,12 @@ mockFn.mockImplementation((data) => { ... });
 
 The vitest coverage config enforces:
 
-| Metric | Threshold |
-|---|---|
-| Lines | 90% |
-| Statements | 90% |
-| Functions | 90% |
-| Branches | 90% |
+| Metric     | Threshold |
+| ---------- | --------- |
+| Lines      | 90%       |
+| Statements | 90%       |
+| Functions  | 90%       |
+| Branches   | 90%       |
 
 Run `pnpm test:coverage` to see the report. If your new spec does
 not push coverage above the threshold for a file, you need more test
@@ -602,19 +612,19 @@ Coverage report (if --coverage): lines/statements/functions/branches
 
 ## Common mistakes
 
-| Mistake | Symptom | Fix |
-|---|---|---|
-| `jest.fn()` instead of `vi.fn()` | `vi is not defined` or mock not working | Replace with `vi.fn()` |
-| Missing `.js` extension in import | `Cannot find module` at runtime | Add `.js` to every relative import |
-| Missing `findMany` in Prisma mock | `TypeError: prisma.topic.findMany is not a function` | Add every method the service calls |
-| Asserting `{ message, data }` in a service spec | Test fails — service returns raw data | Assert the raw return value |
-| Asserting raw data in a controller spec | Test fails — controller wraps in `{ message, data }` | Assert `{ message: expect.any(String), data: ... }` |
-| Guard override with `useValue` | Guard not actually overridden, test fails | Use `.overrideGuard(Guard).useClass(MockGuard)` |
-| `vi.mock()` inside `describe` | Mock not applied, real module loaded | Move `vi.mock()` to top of file |
-| No `beforeEach` recreating mocks | Stale mock state between tests | Recreate mocks inside `beforeEach` |
-| `vi.clearAllMocks()` not called when mocks at module scope | Call counts leak between tests | Add `vi.clearAllMocks()` to `beforeEach` |
-| Testing only happy path | Coverage < 90% on branches | Add exception path tests for every `throw` |
-| Real Prisma in controller spec | Slow test, hits database | Mock the service with `useValue` |
+| Mistake                                                    | Symptom                                              | Fix                                                 |
+| ---------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- |
+| `jest.fn()` instead of `vi.fn()`                           | `vi is not defined` or mock not working              | Replace with `vi.fn()`                              |
+| Missing `.js` extension in import                          | `Cannot find module` at runtime                      | Add `.js` to every relative import                  |
+| Missing `findMany` in Prisma mock                          | `TypeError: prisma.topic.findMany is not a function` | Add every method the service calls                  |
+| Asserting `{ message, data }` in a service spec            | Test fails — service returns raw data                | Assert the raw return value                         |
+| Asserting raw data in a controller spec                    | Test fails — controller wraps in `{ message, data }` | Assert `{ message: expect.any(String), data: ... }` |
+| Guard override with `useValue`                             | Guard not actually overridden, test fails            | Use `.overrideGuard(Guard).useClass(MockGuard)`     |
+| `vi.mock()` inside `describe`                              | Mock not applied, real module loaded                 | Move `vi.mock()` to top of file                     |
+| No `beforeEach` recreating mocks                           | Stale mock state between tests                       | Recreate mocks inside `beforeEach`                  |
+| `vi.clearAllMocks()` not called when mocks at module scope | Call counts leak between tests                       | Add `vi.clearAllMocks()` to `beforeEach`            |
+| Testing only happy path                                    | Coverage < 90% on branches                           | Add exception path tests for every `throw`          |
+| Real Prisma in controller spec                             | Slow test, hits database                             | Mock the service with `useValue`                    |
 
 ## Adding a new spec — the procedure
 

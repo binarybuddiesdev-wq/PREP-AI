@@ -6,169 +6,169 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
 
 class MockAuthGuard implements CanActivate {
-    canActivate(context: ExecutionContext): boolean {
-        return true;
-    }
+  canActivate(context: ExecutionContext): boolean {
+    return true;
+  }
 }
 
 describe('UserController', () => {
-    let controller: UserController;
-    let userService: {
-        findByClerkId: ReturnType<typeof vi.fn>;
-        findOrCreateUser: ReturnType<typeof vi.fn>;
-        getSettings: ReturnType<typeof vi.fn>;
-        upsertSettings: ReturnType<typeof vi.fn>;
-        markSetupComplete: ReturnType<typeof vi.fn>;
+  let controller: UserController;
+  let userService: {
+    findByClerkId: ReturnType<typeof vi.fn>;
+    findOrCreateUser: ReturnType<typeof vi.fn>;
+    getSettings: ReturnType<typeof vi.fn>;
+    upsertSettings: ReturnType<typeof vi.fn>;
+    markSetupComplete: ReturnType<typeof vi.fn>;
+  };
+
+  const mockUser = {
+    id: 'user_001',
+    clerkUserId: 'clerk_123',
+    email: 'john@example.com',
+    name: 'John Doe',
+    avatarUrl: 'https://example.com/avatar.jpg',
+    role: 'USER',
+    isNewUser: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockCurrentUser = 'clerk_123';
+
+  beforeEach(async () => {
+    userService = {
+      findByClerkId: vi.fn(),
+      findOrCreateUser: vi.fn(),
+      getSettings: vi.fn(),
+      upsertSettings: vi.fn(),
+      markSetupComplete: vi.fn(),
     };
 
-    const mockUser = {
-        id: 'user_001',
-        clerkUserId: 'clerk_123',
-        email: 'john@example.com',
-        name: 'John Doe',
-        avatarUrl: 'https://example.com/avatar.jpg',
-        role: 'USER',
-        isNewUser: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    const mockPinoLogger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
     };
 
-    const mockCurrentUser = 'clerk_123';
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [UserController],
+      providers: [
+        { provide: UserService, useValue: userService },
+        { provide: 'PinoLogger:UserController', useValue: mockPinoLogger },
+      ],
+    })
+      .overrideGuard(ClerkAuthGuard)
+      .useClass(MockAuthGuard)
+      .overrideGuard(RolesGuard)
+      .useClass(MockAuthGuard)
+      .compile();
 
-    beforeEach(async () => {
-        userService = {
-            findByClerkId: vi.fn(),
-            findOrCreateUser: vi.fn(),
-            getSettings: vi.fn(),
-            upsertSettings: vi.fn(),
-            markSetupComplete: vi.fn(),
-        };
+    controller = module.get<UserController>(UserController);
+  });
 
-        const mockPinoLogger = {
-            info: vi.fn(),
-            warn: vi.fn(),
-            error: vi.fn(),
-            debug: vi.fn(),
-        };
+  describe('me', () => {
+    it('should return current user profile', async () => {
+      userService.findOrCreateUser.mockResolvedValue(mockUser);
 
-        const module: TestingModule = await Test.createTestingModule({
-            controllers: [UserController],
-            providers: [
-                { provide: UserService, useValue: userService },
-                { provide: 'PinoLogger:UserController', useValue: mockPinoLogger },
-            ],
-        })
-        .overrideGuard(ClerkAuthGuard)
-        .useClass(MockAuthGuard)
-        .overrideGuard(RolesGuard)
-        .useClass(MockAuthGuard)
-        .compile();
+      const result = await controller.me(mockCurrentUser);
 
-        controller = module.get<UserController>(UserController);
+      expect(result).toEqual({ message: expect.any(String), data: mockUser });
+      expect(userService.findOrCreateUser).toHaveBeenCalledWith('clerk_123');
+    });
+  });
+
+  describe('getSettings', () => {
+    it('should return user settings', async () => {
+      const mockSettings = {
+        id: 'settings_001',
+        userId: 'user_001',
+        profile: { targetRole: 'Frontend' },
+        preferences: { defaultDifficulty: 'Mid' },
+        notifications: { dailyReminder: true },
+      };
+      userService.getSettings.mockResolvedValue(mockSettings);
+
+      const result = await controller.getSettings(mockCurrentUser);
+
+      expect(result).toEqual({ message: expect.any(String), data: mockSettings });
+      expect(userService.getSettings).toHaveBeenCalledWith('clerk_123');
     });
 
-    describe('me', () => {
-        it('should return current user profile', async () => {
-            userService.findOrCreateUser.mockResolvedValue(mockUser);
+    it('should return null settings if not found', async () => {
+      userService.getSettings.mockResolvedValue(null);
 
-            const result = await controller.me(mockCurrentUser);
+      const result = await controller.getSettings(mockCurrentUser);
 
-            expect(result).toEqual({ message: expect.any(String), data: mockUser });
-            expect(userService.findOrCreateUser).toHaveBeenCalledWith('clerk_123');
-        });
+      expect(result).toEqual({ message: expect.any(String), data: null });
+    });
+  });
+
+  describe('updateSettings', () => {
+    it('should update user settings', async () => {
+      const updateData = {
+        profile: { targetRole: 'Backend' },
+        preferences: { defaultDifficulty: 'Senior' },
+      };
+      const updatedSettings = {
+        id: 'settings_001',
+        userId: 'user_001',
+        ...updateData,
+        notifications: null,
+      };
+      userService.upsertSettings.mockResolvedValue(updatedSettings);
+
+      const result = await controller.updateSettings(mockCurrentUser, updateData);
+
+      expect(result).toEqual({ message: expect.any(String), data: updatedSettings });
+      expect(userService.upsertSettings).toHaveBeenCalledWith('clerk_123', updateData);
     });
 
-    describe('getSettings', () => {
-        it('should return user settings', async () => {
-            const mockSettings = {
-                id: 'settings_001',
-                userId: 'user_001',
-                profile: { targetRole: 'Frontend' },
-                preferences: { defaultDifficulty: 'Mid' },
-                notifications: { dailyReminder: true },
-            };
-            userService.getSettings.mockResolvedValue(mockSettings);
+    it('should handle partial updates', async () => {
+      const updateData = { notifications: { dailyReminder: false } };
+      userService.upsertSettings.mockResolvedValue(updateData);
 
-            const result = await controller.getSettings(mockCurrentUser);
+      const result = await controller.updateSettings(mockCurrentUser, updateData);
 
-            expect(result).toEqual({ message: expect.any(String), data: mockSettings });
-            expect(userService.getSettings).toHaveBeenCalledWith('clerk_123');
-        });
-
-        it('should return null settings if not found', async () => {
-            userService.getSettings.mockResolvedValue(null);
-
-            const result = await controller.getSettings(mockCurrentUser);
-
-            expect(result).toEqual({ message: expect.any(String), data: null });
-        });
+      expect(result).toEqual({ message: expect.any(String), data: updateData });
     });
 
-    describe('updateSettings', () => {
-        it('should update user settings', async () => {
-            const updateData = {
-                profile: { targetRole: 'Backend' },
-                preferences: { defaultDifficulty: 'Senior' },
-            };
-            const updatedSettings = {
-                id: 'settings_001',
-                userId: 'user_001',
-                ...updateData,
-                notifications: null,
-            };
-            userService.upsertSettings.mockResolvedValue(updatedSettings);
+    it('should handle empty update', async () => {
+      userService.upsertSettings.mockResolvedValue(null);
 
-            const result = await controller.updateSettings(mockCurrentUser, updateData);
+      const result = await controller.updateSettings(mockCurrentUser, {});
 
-            expect(result).toEqual({ message: expect.any(String), data: updatedSettings });
-            expect(userService.upsertSettings).toHaveBeenCalledWith('clerk_123', updateData);
-        });
+      expect(result).toEqual({ message: expect.any(String), data: null });
+    });
+  });
 
-        it('should handle partial updates', async () => {
-            const updateData = { notifications: { dailyReminder: false } };
-            userService.upsertSettings.mockResolvedValue(updateData);
+  describe('setupComplete', () => {
+    it('should mark setup as complete', async () => {
+      const updatedUser = { ...mockUser, isNewUser: false };
+      userService.findOrCreateUser.mockResolvedValue(mockUser);
+      userService.markSetupComplete.mockResolvedValue(updatedUser);
 
-            const result = await controller.updateSettings(mockCurrentUser, updateData);
+      const result = await controller.setupComplete(mockCurrentUser);
 
-            expect(result).toEqual({ message: expect.any(String), data: updateData });
-        });
+      expect(result).toEqual({ message: expect.any(String), data: mockUser });
+      expect(userService.markSetupComplete).toHaveBeenCalledWith('clerk_123');
+    });
+  });
 
-        it('should handle empty update', async () => {
-            userService.upsertSettings.mockResolvedValue(null);
+  describe('getUserByClerkId (admin)', () => {
+    it('should return user by clerk ID', async () => {
+      userService.findByClerkId.mockResolvedValue(mockUser);
 
-            const result = await controller.updateSettings(mockCurrentUser, {});
+      const result = await controller.getUserByClerkId('clerk_123');
 
-            expect(result).toEqual({ message: expect.any(String), data: null });
-        });
+      expect(result).toEqual({ message: expect.any(String), data: mockUser });
+      expect(userService.findByClerkId).toHaveBeenCalledWith('clerk_123');
     });
 
-    describe('setupComplete', () => {
-        it('should mark setup as complete', async () => {
-            const updatedUser = { ...mockUser, isNewUser: false };
-            userService.findOrCreateUser.mockResolvedValue(mockUser);
-            userService.markSetupComplete.mockResolvedValue(updatedUser);
+    it('should throw NotFoundException if user not found', async () => {
+      userService.findByClerkId.mockResolvedValue(null);
 
-            const result = await controller.setupComplete(mockCurrentUser);
-
-            expect(result).toEqual({ message: expect.any(String), data: mockUser });
-            expect(userService.markSetupComplete).toHaveBeenCalledWith('clerk_123');
-        });
+      await expect(controller.getUserByClerkId('nonexistent')).rejects.toThrow(NotFoundException);
     });
-
-    describe('getUserByClerkId (admin)', () => {
-        it('should return user by clerk ID', async () => {
-            userService.findByClerkId.mockResolvedValue(mockUser);
-
-            const result = await controller.getUserByClerkId('clerk_123');
-
-            expect(result).toEqual({ message: expect.any(String), data: mockUser });
-            expect(userService.findByClerkId).toHaveBeenCalledWith('clerk_123');
-        });
-
-        it('should throw NotFoundException if user not found', async () => {
-            userService.findByClerkId.mockResolvedValue(null);
-
-            await expect(controller.getUserByClerkId('nonexistent')).rejects.toThrow(NotFoundException);
-        });
-    });
+  });
 });

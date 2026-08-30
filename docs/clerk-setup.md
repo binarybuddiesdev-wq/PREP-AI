@@ -12,10 +12,10 @@
 1. Go to **Clerk Dashboard** → Left sidebar → **API Keys**
 2. You'll see two keys:
 
-| Key | Value | Where to use |
-|-----|-------|--------------|
+| Key                 | Value            | Where to use                            |
+| ------------------- | ---------------- | --------------------------------------- |
 | **Publishable Key** | `pk_test_xxx...` | Frontend (`VITE_CLERK_PUBLISHABLE_KEY`) |
-| **Secret Key** | `sk_test_xxx...` | Backend (`CLERK_SECRET_KEY`) |
+| **Secret Key**      | `sk_test_xxx...` | Backend (`CLERK_SECRET_KEY`)            |
 
 3. Copy both values into your `.env` file
 

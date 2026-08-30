@@ -27,20 +27,20 @@ All under `docs/`. Every change goes through a PR.
 
 ### C4 — system context, containers, components
 
-| Level | File | What it shows |
-|---|---|---|
-| L1 | [c4-01-context.mmd](diagrams/c4-01-context.mmd) | PrepAI, the users, and external systems (Clerk, NVIDIA NIM, Cloudinary, Resend, Razorpay) |
-| L2 | [c4-02-container.mmd](diagrams/c4-02-container.mmd) | Process boundaries: SPA, API, Mongo, Postgres, Redis, Piston, Mastra |
-| L3 | [c4-03-component.mmd](diagrams/c4-03-component.mmd) | NestJS modules, guards, interceptors, infrastructure services |
-| L3 | [c4-04-frontend-component.mmd](diagrams/c4-04-frontend-component.mmd) | Frontend (ui/) 7-layer N-Tier model — pages is the only layer that imports from data/ and logic/. Enforced by the `architect-review` skill. |
+| Level | File                                                                  | What it shows                                                                                                                               |
+| ----- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1    | [c4-01-context.mmd](diagrams/c4-01-context.mmd)                       | PrepAI, the users, and external systems (Clerk, NVIDIA NIM, Cloudinary, Resend, Razorpay)                                                   |
+| L2    | [c4-02-container.mmd](diagrams/c4-02-container.mmd)                   | Process boundaries: SPA, API, Mongo, Postgres, Redis, Piston, Mastra                                                                        |
+| L3    | [c4-03-component.mmd](diagrams/c4-03-component.mmd)                   | NestJS modules, guards, interceptors, infrastructure services                                                                               |
+| L3    | [c4-04-frontend-component.mmd](diagrams/c4-04-frontend-component.mmd) | Frontend (ui/) 7-layer N-Tier model — pages is the only layer that imports from data/ and logic/. Enforced by the `architect-review` skill. |
 
 ### Sequence flows
 
-| File | What it shows |
-|---|---|
-| [seq-01-auth-webhook.mmd](diagrams/seq-01-auth-webhook.mmd) | User signs up → Clerk webhook → Svix verify → Mongo upsert → first API call |
+| File                                                                  | What it shows                                                                 |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [seq-01-auth-webhook.mmd](diagrams/seq-01-auth-webhook.mmd)           | User signs up → Clerk webhook → Svix verify → Mongo upsert → first API call   |
 | [seq-02-theory-ai-scoring.mmd](diagrams/seq-02-theory-ai-scoring.mmd) | Start session → Redis quota check → BullMQ enqueue → AI eval → score persists |
-| [seq-03-piston-sandbox.mmd](diagrams/seq-03-piston-sandbox.mmd) | Submit code → Piston execute → BullMQ code review → complexity analysis |
+| [seq-03-piston-sandbox.mmd](diagrams/seq-03-piston-sandbox.mmd)       | Submit code → Piston execute → BullMQ code review → complexity analysis       |
 
 ---
 
@@ -94,6 +94,8 @@ See [../adr/](../adr/) for the full index. Highlights:
 - [frontend-refactor.md](frontend-refactor.md) — **Frontend N-Tier Refactor Plan & Playbook** (Granular 7-layer migration plan, Reader/Command hook patterns, file inventory).
 - [TODO.md](TODO.md) — **explicit list of architecture docs that are NOT YET
   WRITTEN**. Read this before assuming the system design is complete.
+- [../observability.md](../observability.md) — logging, metrics, tracing,
+  alerting, audit log. `/healthz` and `/readyz` reference.
 - [SYSTEM_DESIGN_REVIEW.md](../../SYSTEM_DESIGN_REVIEW.md) — the design
   review that produced the action items in this folder
 - [../../Decisions/](../../Decisions/) — earlier product/UX decision docs

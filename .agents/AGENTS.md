@@ -11,6 +11,7 @@ When setting up or troubleshooting the Piston code execution engine in this work
 5. **CLI / Package Installation:** Runtimes are installed using the utility CLI at `./piston-cli`. Do not download packages directly or manually construct container environments.
 
 Use the following scripts defined in the root `package.json`:
+
 - `pnpm piston:start` - Runs the container with the required volume and custom entrypoint.
 - `pnpm piston:stop` - Stops the container but keeps it (restart with `piston:start`).
 - `pnpm piston:remove` - Deletes the container entirely.

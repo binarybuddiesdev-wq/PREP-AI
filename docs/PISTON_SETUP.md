@@ -121,11 +121,11 @@ cli/index.js ppman install rust
 
 ## API Reference
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v2/runtimes` | GET | List installed language runtimes |
-| `/api/v2/execute` | POST | Execute code |
-| `/api/v2/connect` | WebSocket | Interactive execution |
+| Endpoint           | Method    | Description                      |
+| ------------------ | --------- | -------------------------------- |
+| `/api/v2/runtimes` | GET       | List installed language runtimes |
+| `/api/v2/execute`  | POST      | Execute code                     |
+| `/api/v2/connect`  | WebSocket | Interactive execution            |
 
 ### Execute Request Body
 
@@ -163,10 +163,10 @@ cli/index.js ppman install rust
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
+| Issue                      | Fix                                                           |
+| -------------------------- | ------------------------------------------------------------- |
 | `podman` command not found | Make sure Podman Desktop is running and podman CLI is in PATH |
-| Container fails to start | Ensure `--privileged` flag is used (required for sandboxing) |
-| Port 2000 already in use | Change port: `-p 2001:2000` and update API URL accordingly |
-| `ppman` install fails | Check container is running: `podman ps` |
-| Windows line ending issues | Use Git Bash or set `core.autocrlf=false` in git config |
+| Container fails to start   | Ensure `--privileged` flag is used (required for sandboxing)  |
+| Port 2000 already in use   | Change port: `-p 2001:2000` and update API URL accordingly    |
+| `ppman` install fails      | Check container is running: `podman ps`                       |
+| Windows line ending issues | Use Git Bash or set `core.autocrlf=false` in git config       |

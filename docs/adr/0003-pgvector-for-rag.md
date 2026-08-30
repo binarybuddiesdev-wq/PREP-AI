@@ -1,6 +1,7 @@
 # ADR-0003: pgvector (not Pinecone/Qdrant) for RAG embeddings
 
 ## Status
+
 Accepted, 2026-08-29
 
 ## Context
@@ -19,6 +20,7 @@ need a vector store. Options:
 We will use **pgvector** inside the existing PostgreSQL instance.
 
 Schema:
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 
@@ -41,6 +43,7 @@ Query: `SELECT id, content FROM pdf_chunk WHERE user_id = $1 AND deleted_at IS N
 ## Consequences
 
 **Easier:**
+
 - One database for transactional + vector data — single backup, single
   connection pool, single transaction boundary
 - Metadata filtering is SQL: `WHERE user_id = $1 AND pdf_id = $2` joins
@@ -49,6 +52,7 @@ Query: `SELECT id, content FROM pdf_chunk WHERE user_id = $1 AND deleted_at IS N
 - Free and open-source
 
 **Harder:**
+
 - pgvector tops out around 10M vectors per table at acceptable latency;
   if we cross that we migrate to Qdrant or Pinecone
 - Index tuning (`lists` parameter) is needed as data grows — re-index

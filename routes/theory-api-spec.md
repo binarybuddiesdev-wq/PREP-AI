@@ -8,11 +8,11 @@ All endpoints require Bearer token authentication (Clerk).
 
 ## Role-Based Limits
 
-| | Free (USER) | Premium / Admin |
-|---|---|---|
-| **Daily practice sessions** | 3 per day | Unlimited |
-| **Questions per session** | 10 max | 30 max |
-| **AI-generated questions (Weak Areas / PDF Study)** | 10 max | 30 max |
+|                                                     | Free (USER) | Premium / Admin |
+| --------------------------------------------------- | ----------- | --------------- |
+| **Daily practice sessions**                         | 3 per day   | Unlimited       |
+| **Questions per session**                           | 10 max      | 30 max          |
+| **AI-generated questions (Weak Areas / PDF Study)** | 10 max      | 30 max          |
 
 ### How Limits Are Enforced
 
@@ -22,12 +22,12 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `THEORY_DAILY_SESSIONS_FREE` | 3 | Max daily sessions for free users |
-| `THEORY_DAILY_SESSIONS_PREMIUM` | 999 | Max daily sessions for premium users |
-| `THEORY_QUESTIONS_PER_SESSION_FREE` | 10 | Max questions per session for free users |
-| `THEORY_QUESTIONS_PER_SESSION_PREMIUM` | 30 | Max questions per session for premium users |
+| Variable                               | Default | Description                                 |
+| -------------------------------------- | ------- | ------------------------------------------- |
+| `THEORY_DAILY_SESSIONS_FREE`           | 3       | Max daily sessions for free users           |
+| `THEORY_DAILY_SESSIONS_PREMIUM`        | 999     | Max daily sessions for premium users        |
+| `THEORY_QUESTIONS_PER_SESSION_FREE`    | 10      | Max questions per session for free users    |
+| `THEORY_QUESTIONS_PER_SESSION_PREMIUM` | 30      | Max questions per session for premium users |
 
 ---
 
@@ -41,12 +41,12 @@ Create a new theory practice session.
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `topicId` | string | no | MongoDB Topic ID. Required for "topic" mode. |
-| `mode` | string | yes | `"topic"` \| `"weak"` \| `"pdf"` |
-| `difficulty` | string | yes | `"Junior"` \| `"Mid"` \| `"Senior"` |
-| `totalQuestions` | number | yes | Number of questions. Max: 10 (free), 30 (premium). |
+| Field            | Type   | Required | Description                                        |
+| ---------------- | ------ | -------- | -------------------------------------------------- |
+| `topicId`        | string | no       | MongoDB Topic ID. Required for "topic" mode.       |
+| `mode`           | string | yes      | `"topic"` \| `"weak"` \| `"pdf"`                   |
+| `difficulty`     | string | yes      | `"Junior"` \| `"Mid"` \| `"Senior"`                |
+| `totalQuestions` | number | yes      | Number of questions. Max: 10 (free), 30 (premium). |
 
 ```json
 {
@@ -82,11 +82,11 @@ Create a new theory practice session.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 400 | Validation failed (missing required fields) |
-| 400 | Topic not found (when topicId provided but invalid) |
-| 403 | Daily session limit reached (free users: 3/day) |
+| Status | Message                                             |
+| ------ | --------------------------------------------------- |
+| 400    | Validation failed (missing required fields)         |
+| 400    | Topic not found (when topicId provided but invalid) |
+| 403    | Daily session limit reached (free users: 3/day)     |
 
 ---
 
@@ -100,15 +100,15 @@ Fetch questions from the question bank for the current session.
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | TheorySession ID |
 
 ### Query Parameters
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `limit` | number | no | Number of questions to fetch (default: 10) |
+| Param   | Type   | Required | Description                                |
+| ------- | ------ | -------- | ------------------------------------------ |
+| `limit` | number | no       | Number of questions to fetch (default: 10) |
 
 ### Response (200 OK)
 
@@ -130,10 +130,10 @@ Fetch questions from the question bank for the current session.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Session not found |
-| 403 | Not session owner |
+| Status | Message           |
+| ------ | ----------------- |
+| 404    | Session not found |
+| 403    | Not session owner |
 
 ---
 
@@ -147,18 +147,18 @@ Submit a user's answer for a question. AI evaluates and returns score + feedback
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | TheorySession ID |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `questionId` | string | no | MongoDB Question ID. Null for AI-generated questions. |
-| `questionText` | string | yes | The question text (stored for history) |
-| `userAnswer` | string | yes | User's text answer |
-| `timeTaken` | number | no | Time taken in seconds |
+| Field          | Type   | Required | Description                                           |
+| -------------- | ------ | -------- | ----------------------------------------------------- |
+| `questionId`   | string | no       | MongoDB Question ID. Null for AI-generated questions. |
+| `questionText` | string | yes      | The question text (stored for history)                |
+| `userAnswer`   | string | yes      | User's text answer                                    |
+| `timeTaken`    | number | no       | Time taken in seconds                                 |
 
 ```json
 {
@@ -191,12 +191,12 @@ Submit a user's answer for a question. AI evaluates and returns score + feedback
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 400 | Validation failed |
-| 404 | Session not found |
-| 403 | Not session owner |
-| 409 | Session already completed |
+| Status | Message                   |
+| ------ | ------------------------- |
+| 400    | Validation failed         |
+| 404    | Session not found         |
+| 403    | Not session owner         |
+| 409    | Session already completed |
 
 ---
 
@@ -210,8 +210,8 @@ Mark session as completed and compute final average score.
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | TheorySession ID |
 
 ### Response (200 OK)
@@ -239,11 +239,11 @@ Mark session as completed and compute final average score.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Session not found |
-| 403 | Not session owner |
-| 409 | Session already completed |
+| Status | Message                   |
+| ------ | ------------------------- |
+| 404    | Session not found         |
+| 403    | Not session owner         |
+| 409    | Session already completed |
 
 ---
 
@@ -257,8 +257,8 @@ Get a single session with all its answers.
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | TheorySession ID |
 
 ### Response (200 OK)
@@ -298,10 +298,10 @@ Get a single session with all its answers.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Session not found |
-| 403 | Not session owner |
+| Status | Message           |
+| ------ | ----------------- |
+| 404    | Session not found |
+| 403    | Not session owner |
 
 ---
 
@@ -315,10 +315,10 @@ Get all past sessions for the current user.
 
 ### Query Parameters
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `page` | number | no | Page number (default: 1) |
-| `limit` | number | no | Items per page (default: 20) |
+| Param   | Type   | Required | Description                  |
+| ------- | ------ | -------- | ---------------------------- |
+| `page`  | number | no       | Page number (default: 1)     |
+| `limit` | number | no       | Items per page (default: 20) |
 
 ### Response (200 OK)
 
@@ -351,9 +351,9 @@ Get all past sessions for the current user.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 400 | Invalid pagination params |
+| Status | Message                   |
+| ------ | ------------------------- |
+| 400    | Invalid pagination params |
 
 ---
 
@@ -402,9 +402,9 @@ Get the user's last N session scores for the dashboard chart.
 
 ### Query Parameters
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `limit` | number | no | Number of sessions (default: 7) |
+| Param   | Type   | Required | Description                     |
+| ------- | ------ | -------- | ------------------------------- |
+| `limit` | number | no       | Number of sessions (default: 7) |
 
 ### Response (200 OK)
 
@@ -428,13 +428,13 @@ Get the user's last N session scores for the dashboard chart.
 
 ## Summary
 
-| # | Method | Route | Description |
-|---|--------|-------|-------------|
-| 1 | `POST` | `/theory/session/start` | Start a new practice session |
-| 2 | `GET` | `/theory/session/:sessionId/questions` | Get questions for session |
-| 3 | `POST` | `/theory/session/:sessionId/answer` | Submit answer (AI evaluates) |
-| 4 | `POST` | `/theory/session/:sessionId/complete` | Complete session |
-| 5 | `GET` | `/theory/session/:sessionId` | Get session detail with answers |
-| 6 | `GET` | `/theory/sessions` | Get session history (paginated) |
-| 7 | `GET` | `/theory/weak-areas` | Get topics below 70% score |
-| 8 | `GET` | `/theory/score-trend` | Get score trend for chart |
+| #   | Method | Route                                  | Description                     |
+| --- | ------ | -------------------------------------- | ------------------------------- |
+| 1   | `POST` | `/theory/session/start`                | Start a new practice session    |
+| 2   | `GET`  | `/theory/session/:sessionId/questions` | Get questions for session       |
+| 3   | `POST` | `/theory/session/:sessionId/answer`    | Submit answer (AI evaluates)    |
+| 4   | `POST` | `/theory/session/:sessionId/complete`  | Complete session                |
+| 5   | `GET`  | `/theory/session/:sessionId`           | Get session detail with answers |
+| 6   | `GET`  | `/theory/sessions`                     | Get session history (paginated) |
+| 7   | `GET`  | `/theory/weak-areas`                   | Get topics below 70% score      |
+| 8   | `GET`  | `/theory/score-trend`                  | Get score trend for chart       |

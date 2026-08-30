@@ -8,10 +8,10 @@ All endpoints require Bearer token authentication (Clerk).
 
 ## Role-Based Limits
 
-| | Free (USER) | Premium / Admin |
-|---|---|---|
-| **Daily solved problems** | 5 per day | Unlimited |
-| **Daily AI reviews** | 3 per day | Unlimited |
+|                           | Free (USER) | Premium / Admin |
+| ------------------------- | ----------- | --------------- |
+| **Daily solved problems** | 5 per day   | Unlimited       |
+| **Daily AI reviews**      | 3 per day   | Unlimited       |
 
 ### How Limits Are Enforced
 
@@ -21,12 +21,12 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CODING_DAILY_SOLVED_FREE` | 5 | Max daily solved problems for free users |
-| `CODING_DAILY_SOLVED_PREMIUM` | 999 | Max daily solved problems for premium users |
-| `CODING_DAILY_REVIEWS_FREE` | 3 | Max daily AI reviews for free users |
-| `CODING_DAILY_REVIEWS_PREMIUM` | 999 | Max daily AI reviews for premium users |
+| Variable                       | Default | Description                                 |
+| ------------------------------ | ------- | ------------------------------------------- |
+| `CODING_DAILY_SOLVED_FREE`     | 5       | Max daily solved problems for free users    |
+| `CODING_DAILY_SOLVED_PREMIUM`  | 999     | Max daily solved problems for premium users |
+| `CODING_DAILY_REVIEWS_FREE`    | 3       | Max daily AI reviews for free users         |
+| `CODING_DAILY_REVIEWS_PREMIUM` | 999     | Max daily AI reviews for premium users      |
 
 ---
 
@@ -40,10 +40,10 @@ Fetch all coding problems with optional filtering.
 
 ### Query Parameters
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `topic` | string | no | Filter by topic (e.g. "Arrays", "Stacks", "Trees") |
-| `difficulty` | string | no | Filter by difficulty (`"Easy"` \| `"Medium"` \| `"Hard"`) |
+| Param        | Type   | Required | Description                                               |
+| ------------ | ------ | -------- | --------------------------------------------------------- |
+| `topic`      | string | no       | Filter by topic (e.g. "Arrays", "Stacks", "Trees")        |
+| `difficulty` | string | no       | Filter by difficulty (`"Easy"` \| `"Medium"` \| `"Hard"`) |
 
 ### Response (200 OK)
 
@@ -76,9 +76,9 @@ Get a single problem with full details, examples, constraints, and code template
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `id` | string | Problem ID or slug |
+| Param | Type   | Description        |
+| ----- | ------ | ------------------ |
+| `id`  | string | Problem ID or slug |
 
 ### Response (200 OK)
 
@@ -114,9 +114,9 @@ Get a single problem with full details, examples, constraints, and code template
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Problem not found |
+| Status | Message           |
+| ------ | ----------------- |
+| 404    | Problem not found |
 
 ---
 
@@ -130,9 +130,9 @@ Create a new coding practice session.
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `problemIds` | string[] | no | Specific problem IDs to include. If omitted, picks from all problems. |
+| Field        | Type     | Required | Description                                                           |
+| ------------ | -------- | -------- | --------------------------------------------------------------------- |
+| `problemIds` | string[] | no       | Specific problem IDs to include. If omitted, picks from all problems. |
 
 ```json
 {
@@ -161,9 +161,9 @@ Create a new coding practice session.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 400 | Validation failed |
+| Status | Message           |
+| ------ | ----------------- |
+| 400    | Validation failed |
 
 ---
 
@@ -177,17 +177,17 @@ Run submitted code against problem examples for testing. Does not count toward d
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | CodingSession ID |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `problemId` | string | yes | Problem ID |
-| `language` | string | yes | `"javascript"` \| `"typescript"` \| `"python"` |
-| `code` | string | yes | The user's code |
+| Field       | Type   | Required | Description                                    |
+| ----------- | ------ | -------- | ---------------------------------------------- |
+| `problemId` | string | yes      | Problem ID                                     |
+| `language`  | string | yes      | `"javascript"` \| `"typescript"` \| `"python"` |
+| `code`      | string | yes      | The user's code                                |
 
 ```json
 {
@@ -229,11 +229,11 @@ Run submitted code against problem examples for testing. Does not count toward d
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Session not found |
-| 403 | Not session owner |
-| 404 | Problem not found |
+| Status | Message           |
+| ------ | ----------------- |
+| 404    | Session not found |
+| 403    | Not session owner |
+| 404    | Problem not found |
 
 ---
 
@@ -247,17 +247,17 @@ Submit a solution for evaluation. This counts toward the daily solved limit. If 
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | CodingSession ID |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `problemId` | string | yes | Problem ID |
-| `language` | string | yes | `"javascript"` \| `"typescript"` \| `"python"` |
-| `code` | string | yes | The user's code |
+| Field       | Type   | Required | Description                                    |
+| ----------- | ------ | -------- | ---------------------------------------------- |
+| `problemId` | string | yes      | Problem ID                                     |
+| `language`  | string | yes      | `"javascript"` \| `"typescript"` \| `"python"` |
+| `code`      | string | yes      | The user's code                                |
 
 ```json
 {
@@ -291,12 +291,12 @@ Submit a solution for evaluation. This counts toward the daily solved limit. If 
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 400 | Validation failed |
-| 404 | Session not found |
-| 403 | Not session owner |
-| 403 | Daily solved limit reached |
+| Status | Message                    |
+| ------ | -------------------------- |
+| 400    | Validation failed          |
+| 404    | Session not found          |
+| 403    | Not session owner          |
+| 403    | Daily solved limit reached |
 
 ---
 
@@ -310,16 +310,16 @@ Request an AI-powered code review. This counts toward the daily AI review limit.
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | CodingSession ID |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `answerId` | string | yes | The CodingAnswer ID to review |
-| `problemId` | string | yes | Problem ID (for context) |
+| Field       | Type   | Required | Description                   |
+| ----------- | ------ | -------- | ----------------------------- |
+| `answerId`  | string | yes      | The CodingAnswer ID to review |
+| `problemId` | string | yes      | Problem ID (for context)      |
 
 ```json
 {
@@ -348,13 +348,13 @@ Request an AI-powered code review. This counts toward the daily AI review limit.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 400 | Validation failed |
-| 404 | Session not found |
-| 403 | Not session owner |
-| 404 | Answer not found |
-| 403 | Daily review limit reached |
+| Status | Message                    |
+| ------ | -------------------------- |
+| 400    | Validation failed          |
+| 404    | Session not found          |
+| 403    | Not session owner          |
+| 404    | Answer not found           |
+| 403    | Daily review limit reached |
 
 ---
 
@@ -368,8 +368,8 @@ Get a coding session with all submitted answers.
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | CodingSession ID |
 
 ### Response (200 OK)
@@ -413,10 +413,10 @@ Get a coding session with all submitted answers.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Session not found |
-| 403 | Not session owner |
+| Status | Message           |
+| ------ | ----------------- |
+| 404    | Session not found |
+| 403    | Not session owner |
 
 ---
 
@@ -430,8 +430,8 @@ Mark a coding session as completed.
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param       | Type   | Description      |
+| ----------- | ------ | ---------------- |
 | `sessionId` | string | CodingSession ID |
 
 ### Response (200 OK)
@@ -455,11 +455,11 @@ Mark a coding session as completed.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | Session not found |
-| 403 | Not session owner |
-| 409 | Session already completed |
+| Status | Message                   |
+| ------ | ------------------------- |
+| 404    | Session not found         |
+| 403    | Not session owner         |
+| 409    | Session already completed |
 
 ---
 
@@ -473,10 +473,10 @@ Get all past coding sessions for the current user.
 
 ### Query Parameters
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `page` | number | no | Page number (default: 1) |
-| `limit` | number | no | Items per page (default: 20) |
+| Param   | Type   | Required | Description                  |
+| ------- | ------ | -------- | ---------------------------- |
+| `page`  | number | no       | Page number (default: 1)     |
+| `limit` | number | no       | Items per page (default: 20) |
 
 ### Response (200 OK)
 
@@ -535,15 +535,15 @@ Get the user's daily coding stats and streak.
 
 ## Summary
 
-| # | Method | Route | Description |
-|---|--------|-------|-------------|
-| 1 | `GET` | `/coding/problems` | List problems with optional filters |
-| 2 | `GET` | `/coding/problems/:id` | Get problem detail with templates |
-| 3 | `POST` | `/coding/session/start` | Start a coding session |
-| 4 | `POST` | `/coding/session/:sessionId/run` | Run code against examples (test) |
-| 5 | `POST` | `/coding/session/:sessionId/submit` | Submit solution (counts toward daily limit) |
-| 6 | `POST` | `/coding/session/:sessionId/review` | Request AI code review |
-| 7 | `GET` | `/coding/session/:sessionId` | Get session detail with answers |
-| 8 | `POST` | `/coding/session/:sessionId/complete` | Complete a session |
-| 9 | `GET` | `/coding/sessions` | Get session history (paginated) |
-| 10 | `GET` | `/coding/stats` | Get daily coding stats and streak |
+| #   | Method | Route                                 | Description                                 |
+| --- | ------ | ------------------------------------- | ------------------------------------------- |
+| 1   | `GET`  | `/coding/problems`                    | List problems with optional filters         |
+| 2   | `GET`  | `/coding/problems/:id`                | Get problem detail with templates           |
+| 3   | `POST` | `/coding/session/start`               | Start a coding session                      |
+| 4   | `POST` | `/coding/session/:sessionId/run`      | Run code against examples (test)            |
+| 5   | `POST` | `/coding/session/:sessionId/submit`   | Submit solution (counts toward daily limit) |
+| 6   | `POST` | `/coding/session/:sessionId/review`   | Request AI code review                      |
+| 7   | `GET`  | `/coding/session/:sessionId`          | Get session detail with answers             |
+| 8   | `POST` | `/coding/session/:sessionId/complete` | Complete a session                          |
+| 9   | `GET`  | `/coding/sessions`                    | Get session history (paginated)             |
+| 10  | `GET`  | `/coding/stats`                       | Get daily coding stats and streak           |

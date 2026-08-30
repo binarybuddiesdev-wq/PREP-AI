@@ -1,6 +1,7 @@
 # ADR-0006: Defer Firecracker/gVisor — accept Docker-level isolation in v1
 
 ## Status
+
 Accepted, 2026-08-29
 
 ## Context
@@ -11,6 +12,7 @@ but not a true security boundary — Docker shares the host kernel; a kernel
 exploit escapes the container.
 
 Production code-execution platforms use stronger isolation:
+
 - **gVisor** (Google) — intercepts syscalls, ~2-5% overhead
 - **Firecracker** (AWS Lambda) — microVM, ~125ms cold start, near-native perf
 - **Kata Containers** — similar to gVisor
@@ -34,6 +36,7 @@ customers, isolate to gVisor or Firecracker.
 ## Consequences
 
 **Easier:**
+
 - Ships fast; we already have Piston working
 - No new infra (no gVisor/Firecracker daemon to operate)
 - Acceptable for v1: all data is the user's own code running on the user's
@@ -42,6 +45,7 @@ customers, isolate to gVisor or Firecracker.
   a public code-execution SaaS
 
 **Harder:**
+
 - **Real security risk:** a determined attacker can escape the container
   and read the host filesystem, including the Cloudinary creds, the
   Clerk webhook secret, and other users' PDF chunks on the host

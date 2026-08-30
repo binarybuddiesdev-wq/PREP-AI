@@ -39,7 +39,7 @@ Links to docs, prior art, RFCs, blog posts, Slack threads, etc.
 - One decision per ADR. If you find yourself writing "and," split into two.
 - Keep under one page. If you can't, the decision is too big and should be
   broken down.
-- Include the *negative* consequences. An ADR that only lists pros is
+- Include the _negative_ consequences. An ADR that only lists pros is
   propaganda.
 - Date format: `YYYY-MM-DD`.
 - Status `Accepted` means the team agreed. `Proposed` means one person wants

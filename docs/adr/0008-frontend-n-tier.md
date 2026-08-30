@@ -47,22 +47,22 @@ monorepo (`core` → `utils` → `data` → `service` → `logic` →
 - `components` = presentational UI
 
 We can't mirror that as separate packages (PrepAI is a single-app
-monorepo, not a workspace), but the *layer model* transfers cleanly to
+monorepo, not a workspace), but the _layer model_ transfers cleanly to
 subfolders inside `ui/src/`.
 
 ## Decision
 
 We will adopt a **7-layer N-Tier model** inside `ui/src/`:
 
-| # | Layer | Directory | Responsibility |
-|---|---|---|---|
-| 1 | **Core** | `ui/src/core/` | App-wide constants, route names, env-var types, query-key prefix, branded types. No runtime code. |
-| 2 | **Utils** | `ui/src/utils/` | Pure helpers — `cn()`, `formatDate()`, `formatNumber()`, validators. Zero React, zero network. |
-| 3 | **Data** | `ui/src/data/` | HTTP client (`api-client.ts`), per-resource DTOs, query-key factories, RTK store + slices (client state only), response envelope types. |
-| 4 | **Service** | `ui/src/service/` | Reserved for future third-party SDK adapters (Clerk, Stripe, Cloudinary). Deferred until 2nd SDK lands. |
-| 5 | **Logic** | `ui/src/logic/` | **Reader hooks** (`useXxxReader()` → `useQuery` wrappers) and **Command hooks** (`useXxxCommand()` → `useMutation` wrappers). One hook per file. Owns query-key invalidation. |
-| 6 | **Components** | `ui/src/components/` | Shadcn primitives + feature components. Purely presentational. Receives data via props. |
-| 7 | **Pages (UI shell)** | `ui/src/pages/` | Route components. Composes components + logic. The only layer that imports from `data/` and `logic/` directly. |
+| #   | Layer                | Directory            | Responsibility                                                                                                                                                                |
+| --- | -------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Core**             | `ui/src/core/`       | App-wide constants, route names, env-var types, query-key prefix, branded types. No runtime code.                                                                             |
+| 2   | **Utils**            | `ui/src/utils/`      | Pure helpers — `cn()`, `formatDate()`, `formatNumber()`, validators. Zero React, zero network.                                                                                |
+| 3   | **Data**             | `ui/src/data/`       | HTTP client (`api-client.ts`), per-resource DTOs, query-key factories, RTK store + slices (client state only), response envelope types.                                       |
+| 4   | **Service**          | `ui/src/service/`    | Reserved for future third-party SDK adapters (Clerk, Stripe, Cloudinary). Deferred until 2nd SDK lands.                                                                       |
+| 5   | **Logic**            | `ui/src/logic/`      | **Reader hooks** (`useXxxReader()` → `useQuery` wrappers) and **Command hooks** (`useXxxCommand()` → `useMutation` wrappers). One hook per file. Owns query-key invalidation. |
+| 6   | **Components**       | `ui/src/components/` | Shadcn primitives + feature components. Purely presentational. Receives data via props.                                                                                       |
+| 7   | **Pages (UI shell)** | `ui/src/pages/`      | Route components. Composes components + logic. The only layer that imports from `data/` and `logic/` directly.                                                                |
 
 Three named decisions that fall out of the model:
 
@@ -104,14 +104,14 @@ merging any `ui/` branch.
   provider needed.
 - Reader/Command hooks are unit-testable in isolation, which is the
   basis for AI-driven flow verification.
-- A layer violation is caught by `architect-review` *before* it ships,
+- A layer violation is caught by `architect-review` _before_ it ships,
   not by a human staring at a PR.
 - The page becomes a thin composition file: it imports hooks, imports
   components, returns JSX. If a page exceeds ~150 lines, it's a signal
   the page is doing more than composition and needs to be split.
 - New resources slot into a known shape: `data/<resource>/` for API
-  + types + keys, `logic/<resource>/` for Reader/Command hooks,
-  `components/<feature>/` for UI.
+  - types + keys, `logic/<resource>/` for Reader/Command hooks,
+    `components/<feature>/` for UI.
 
 **Harder:**
 

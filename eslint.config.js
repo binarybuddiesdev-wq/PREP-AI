@@ -36,6 +36,7 @@ export default tseslint.config(
       'piston-cli/**',
       'docs/architecture/viewer.html', // generated artifact
       'scripts/build-architecture-viewer.ts', // requires tsx to lint
+      'server/src/generated/**', // Prisma-generated client code
     ],
   },
 
@@ -45,7 +46,7 @@ export default tseslint.config(
 
   // ── Node & Root Configs: Node globals, no React ─────────────────
   {
-    files: ['server/**/*.ts', '*.js', 'types/**/*.ts', 'scripts/**/*.ts'],
+    files: ['server/**/*.ts', '*.js', 'release.config.cjs', 'types/**/*.ts', 'scripts/**/*.ts'],
     languageOptions: {
       globals: { ...globals.node },
     },

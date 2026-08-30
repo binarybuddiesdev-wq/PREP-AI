@@ -37,7 +37,7 @@ git log --oneline dev..HEAD
 ```
 
 The three-dot `dev...HEAD` is deliberate — it diffs against the merge base,
-so the review sees what this branch *adds* and not what the base moved on to
+so the review sees what this branch _adds_ and not what the base moved on to
 independently. Use two dots (`dev..HEAD`) only for `git log`, where it
 already means "commits on HEAD not on dev".
 
@@ -49,7 +49,7 @@ Discard backend paths (anything under `server/`, `piston/`, `e2e/`,
 
 - **Already on `dev`, or zero commits ahead of it** — review uncommitted
   work instead: `git diff HEAD` for tracked changes plus `git status
-  --porcelain` for untracked files. Say which fallback you took.
+--porcelain` for untracked files. Say which fallback you took.
 - **An argument overrides the default** — accept a path (`ui/src/pages`),
   a ref, a commit range (`abc123..def456`), or `--staged`. Resolve it and
   state the resolved scope before proceeding.
@@ -82,7 +82,7 @@ novelty is.**
   conditional fixes, config value tweaks.
 - **Mechanical sweep** — the same known-correct edit repeated across many
   files, introducing no new interface, pattern, or behavior. The test:
-  *is correctness decided by mechanical ground truth?* If "lint is silent,
+  _is correctness decided by mechanical ground truth?_ If "lint is silent,
   types check, tests pass" fully establishes the change is right, the
   judgment gate has nothing to judge.
 - **Non-trivial** — adds or changes a `useXxxReader` / `useXxxCommand`
@@ -181,10 +181,10 @@ re-reading the architecture doc):
 
 - **Passengers** — a file exports something not predicted by its name (e.g. `userCard.tsx` exporting both `UserCard` and `formatUserName`).
 - **Imports after the first statement** — no ESLint rule covers this in `ui/`; the judgment gate is the only check.
-- **Deep import past a directory's `index.ts` barrel** — e.g. `import { getMe } from '@/data/user/user.api'` instead of `import { getMe } from '@/data/user'`. Flag only the ones *this change adds*, never the backlog.
+- **Deep import past a directory's `index.ts` barrel** — e.g. `import { getMe } from '@/data/user/user.api'` instead of `import { getMe } from '@/data/user'`. Flag only the ones _this change adds_, never the backlog.
 - **Stringly-typed domain value** — a parameter or field typed `string` whose real domain is a closed set (a status, a mode, a type tag). Wants a union.
 - **Trailing `export { ... }` block in a non-barrel file** — e.g. `const Foo = ...; const Bar = ...; export { Foo, Bar };` instead of `export const Foo = ...; export const Bar = ...;`. Exception: barrel/`index.ts`.
-- **Oversized file** — a file this change substantially modified (50+ added lines, or a quarter of its lines touched) that is over 250 lines when the change is done. *Blocker* if the file ended the change larger than it started and was already over 250; *Should-fix* otherwise. Brand-new files are exempt from the ceiling — judge them on the other shape items instead.
+- **Oversized file** — a file this change substantially modified (50+ added lines, or a quarter of its lines touched) that is over 250 lines when the change is done. _Blocker_ if the file ended the change larger than it started and was already over 250; _Should-fix_ otherwise. Brand-new files are exempt from the ceiling — judge them on the other shape items instead.
 
 ### What NOT to flag (other skills' territory)
 
@@ -237,7 +237,7 @@ File-shape findings (oversized files, passengers, scattered types, deep
 imports past a barrel, stringly-typed values, imports not at the top,
 trailing export blocks in non-barrel files) get their **own section**,
 separate from the main ranked list, with its own severities. A single
-merged ranked list is *what buried these before*: file-shape findings lose
+merged ranked list is _what buried these before_: file-shape findings lose
 every ranking contest against correctness findings, because a correctness
 Blocker will always out-rank a "this file is doing three things" Should-fix
 in a shared list, even when the file-shape finding is the one the repo
@@ -249,7 +249,7 @@ owner actually cares about.
   if a finding isn't worth Should-fix, don't report it at all, in this
   section or any other.
 - **Ceiling: only two things may be a Blocker here** — a file already over
-  250 lines that ended the change *larger* than it started, or a file
+  250 lines that ended the change _larger_ than it started, or a file
   this change substantially modified (50+ added lines, or a quarter of
   its lines touched) that is still over 250 lines when the change is
   done. Everything else in this section is Should-fix.
@@ -276,7 +276,7 @@ judgment):**
 3. **Deep imports past a directory's `index.ts` barrel.** A consumer
    reaching into a sibling file (e.g. `from '@/data/user/user.api'`) instead
    of the directory's public surface (`from '@/data/user'`). Flag only the
-   ones *this change adds*, never the backlog.
+   ones _this change adds_, never the backlog.
 4. **Stringly-typed domain values.** A parameter or field typed `string`
    whose real domain is a closed set (an attribute name, a mode, a status).
    It wants a union. Flag only where the set is genuinely closed and

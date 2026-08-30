@@ -65,15 +65,15 @@ server/src/mastra/
 
 ### What it exports
 
-| Export | Type | Purpose |
-|---|---|---|
-| `defaultModel` | `{ nvidia: () => string, groq: () => string }` | Default model per provider, overridable via env |
-| `ProviderName` | `type` | `'nvidia' \| 'groq'` |
-| `pickProvider()` | `function` | Returns which provider to use based on env and API keys |
-| `getModel()` | `function` | Returns a `LanguageModelV1` by calling `provider.chat(modelName)` |
-| `chatWithFailover<T>()` | `async function` | Tries NVIDIA first, then Groq; returns first success |
-| `nvidiaProvider` | `const` | `createOpenAI({...})` instance for NVIDIA NIM |
-| `groqProvider` | `const` | `createOpenAI({...})` instance for Groq |
+| Export                  | Type                                           | Purpose                                                           |
+| ----------------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
+| `defaultModel`          | `{ nvidia: () => string, groq: () => string }` | Default model per provider, overridable via env                   |
+| `ProviderName`          | `type`                                         | `'nvidia' \| 'groq'`                                              |
+| `pickProvider()`        | `function`                                     | Returns which provider to use based on env and API keys           |
+| `getModel()`            | `function`                                     | Returns a `LanguageModelV1` by calling `provider.chat(modelName)` |
+| `chatWithFailover<T>()` | `async function`                               | Tries NVIDIA first, then Groq; returns first success              |
+| `nvidiaProvider`        | `const`                                        | `createOpenAI({...})` instance for NVIDIA NIM                     |
+| `groqProvider`          | `const`                                        | `createOpenAI({...})` instance for Groq                           |
 
 ### How it works
 
@@ -131,12 +131,12 @@ export const techExpertAgent = new Agent({
 
 **The 4 required properties:**
 
-| Property | Type | Convention |
-|---|---|---|
-| `id` | `string` | camelCase matching the export name (`'techExpertAgent'`) |
-| `name` | `string` | Human-readable title (`'Tech Expert Agent'`) |
-| `instructions` | `string` | Template literal — the system prompt |
-| `model` | `LanguageModelV1` | Always `getModel()` — no other model configuration |
+| Property       | Type              | Convention                                               |
+| -------------- | ----------------- | -------------------------------------------------------- |
+| `id`           | `string`          | camelCase matching the export name (`'techExpertAgent'`) |
+| `name`         | `string`          | Human-readable title (`'Tech Expert Agent'`)             |
+| `instructions` | `string`          | Template literal — the system prompt                     |
+| `model`        | `LanguageModelV1` | Always `getModel()` — no other model configuration       |
 
 **No tools, no schema, no middleware** are defined on agents
 currently. They are intentionally minimal. If you need tools or
@@ -207,12 +207,12 @@ const response = await agent.generate(prompt, {
 const data = response.object;
 ```
 
-| Property | Purpose |
-|---|---|
-| `schema` | Zod schema — validates and shapes the output |
-| `jsonPromptInjection` | `true` — forces the agent to return JSON |
-| `errorStrategy` | `'fallback'` — if structured output fails, use `fallbackValue` |
-| `fallbackValue` | Plain object — returned when structured output fails |
+| Property              | Purpose                                                        |
+| --------------------- | -------------------------------------------------------------- |
+| `schema`              | Zod schema — validates and shapes the output                   |
+| `jsonPromptInjection` | `true` — forces the agent to return JSON                       |
+| `errorStrategy`       | `'fallback'` — if structured output fails, use `fallbackValue` |
+| `fallbackValue`       | Plain object — returned when structured output fails           |
 
 ## The types and schemas pattern
 
@@ -327,8 +327,8 @@ and `.text`:
 
 ```ts
 mockGenerate.mockResolvedValue({
-  object: { /* parsed structured data */ },
-  text: JSON.stringify({ /* same data */ }),
+  object: {/* parsed structured data */},
+  text: JSON.stringify({/* same data */}),
 });
 ```
 
@@ -358,7 +358,7 @@ and failover. Calling a provider directly bypasses all of that.
 export const mastra = new Mastra({
   agents: {
     techExpertAgent,
-    newAgent,  // ← new agent added here
+    newAgent, // ← new agent added here
   },
 });
 
@@ -438,7 +438,7 @@ const fallbackValue = { topic: 'unknown', summary: '', keyPoints: [] };
 
 // WRONG — mismatch causes runtime validation errors
 const techAnswerSchema = z.object({ topic: z.string() });
-const fallbackValue = { topic: 'unknown', summary: '' };  // extra field
+const fallbackValue = { topic: 'unknown', summary: '' }; // extra field
 ```
 
 The `fallbackValue` is used as-is when structured output fails,
@@ -498,16 +498,16 @@ ESM / NodeNext — both relative imports (`./`, `../`) AND path alias imports (`
 
 ## When something is broken
 
-| Symptom | First place to look |
-|---|---|
-| `mastra.getAgent('id')` returns `undefined` | Agent not registered in `mastra.config.ts`, or `id` mismatch |
-| `agent.generate()` throws timeout | Provider unreachable (NVIDIA/Groq API key missing or expired) |
-| Structured output fails (falls back to `fallbackValue`) | Zod schema mismatch — the agent's output doesn't match the schema |
-| `response.object` is `undefined` | `jsonPromptInjection: true` missing, or agent returned plain text |
-| `TypeError: Cannot read properties of undefined (reading 'generate')` | `getAgent` returned `undefined` — check `id` and registration |
-| Provider error (401/403) | Missing or expired API key — check `.env.example` and `env.validation.ts` |
-| Wrong model called | `LLM_PROVIDER` env var or `NVIDIA_MODEL`/`GROQ_MODEL` override |
-| `vi.mock` not applied, real module loaded | `vi.mock()` must be at top level of the spec file, not inside `describe` |
+| Symptom                                                               | First place to look                                                       |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `mastra.getAgent('id')` returns `undefined`                           | Agent not registered in `mastra.config.ts`, or `id` mismatch              |
+| `agent.generate()` throws timeout                                     | Provider unreachable (NVIDIA/Groq API key missing or expired)             |
+| Structured output fails (falls back to `fallbackValue`)               | Zod schema mismatch — the agent's output doesn't match the schema         |
+| `response.object` is `undefined`                                      | `jsonPromptInjection: true` missing, or agent returned plain text         |
+| `TypeError: Cannot read properties of undefined (reading 'generate')` | `getAgent` returned `undefined` — check `id` and registration             |
+| Provider error (401/403)                                              | Missing or expired API key — check `.env.example` and `env.validation.ts` |
+| Wrong model called                                                    | `LLM_PROVIDER` env var or `NVIDIA_MODEL`/`GROQ_MODEL` override            |
+| `vi.mock` not applied, real module loaded                             | `vi.mock()` must be at top level of the spec file, not inside `describe`  |
 
 ## Conventions this project does NOT follow (intentionally)
 

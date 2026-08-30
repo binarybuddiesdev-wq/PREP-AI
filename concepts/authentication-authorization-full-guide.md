@@ -1,6 +1,7 @@
 # Authentication & Authorization — Complete Guide (Zero to Hero)
 
 ## Table of Contents
+
 1. [Authentication vs Authorization](#1-authentication-vs-authorization)
 2. [How HTTP Works (The Problem)](#2-how-http-works-the-problem)
 3. [Sessions vs Tokens](#3-sessions-vs-tokens)
@@ -19,6 +20,7 @@
 **Definition:** The process of verifying **who** a user is.
 
 **Examples:**
+
 - Entering email + password to log in
 - Scanning fingerprint
 - Entering OTP sent to phone
@@ -32,6 +34,7 @@
 **Definition:** The process of verifying **what** a user is allowed to do.
 
 **Examples:**
+
 - Admin can delete users, regular user cannot
 - Free user can see 5 questions, pro user can see unlimited
 - User A can edit their own profile, but not User B's
@@ -136,10 +139,12 @@ Each request is like a stranger walking in. The server has no idea Requests 1, 2
 ```
 
 **Pros:**
+
 - Simple to understand
 - Server controls everything
 
 **Cons:**
+
 - Server must store sessions (memory/database)
 - Doesn't scale well (multiple servers = session sync issues)
 - Doesn't work well with mobile apps
@@ -177,12 +182,14 @@ Each request is like a stranger walking in. The server has no idea Requests 1, 2
 ```
 
 **Pros:**
+
 - Server is stateless (no session storage)
 - Scales easily (multiple servers, no sync needed)
 - Works great with mobile apps
 - Token contains user info (less DB lookups)
 
 **Cons:**
+
 - Token can be larger than session ID
 - Harder to revoke (can't just delete from server)
 
@@ -224,11 +231,11 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTYiLCJlbWFpbCI6ImpvaG5
 
 ```json
 {
-  "userId": "123456",        // Who you are
+  "userId": "123456", // Who you are
   "email": "john@example.com",
-  "role": "USER",            // What you can do
-  "iat": 1719628800,         // Issued At (when token was created)
-  "exp": 1719715200          // Expiration (when token expires)
+  "role": "USER", // What you can do
+  "iat": 1719628800, // Issued At (when token was created)
+  "exp": 1719715200 // Expiration (when token expires)
 }
 ```
 
@@ -276,11 +283,9 @@ import jwt from 'jsonwebtoken';
 const SECRET = 'my-super-secret-key';
 
 // Creating a token
-const token = jwt.sign(
-  { userId: '123', email: 'john@example.com', role: 'USER' },
-  SECRET,
-  { expiresIn: '24h' }
-);
+const token = jwt.sign({ userId: '123', email: 'john@example.com', role: 'USER' }, SECRET, {
+  expiresIn: '24h',
+});
 // Returns: "eyJhbGciOiJIUzI1NiIs..."
 
 // Verifying a token
@@ -352,6 +357,7 @@ A strategy is a **plugin** that handles a specific authentication method:
 ### Passport vs Direct JWT Verification
 
 **Without Passport (direct):**
+
 ```typescript
 // You manually verify
 const token = request.headers.authorization.split(' ')[1];
@@ -360,6 +366,7 @@ request.user = decoded;
 ```
 
 **With Passport:**
+
 ```typescript
 // Passport handles it via strategy
 passport.authenticate('jwt', { session: false });
@@ -394,6 +401,7 @@ Passport = The security guard system (who checks ID cards, and how)
 ```
 
 You can have:
+
 - **JWT without Passport** — You manually verify the token
 - **Passport without JWT** — You use Passport with password-based auth
 - **JWT + Passport** — Passport uses JWT strategy to verify tokens
@@ -617,6 +625,7 @@ Step 7: Route handler executes
 ```
 
 **In PrepAI:**
+
 - Clerk handles authentication (sign-up, sign-in, tokens)
 - ClerkAuthGuard handles authorization (verifying tokens, protecting routes)
 - Database stores user info linked by `clerkId`

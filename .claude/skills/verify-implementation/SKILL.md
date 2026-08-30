@@ -45,14 +45,14 @@ These are slow; run them only when the change reaches these areas, and always be
 
 ## What changed → which tiers
 
-| What the change touched | Tier 1 | Tier 2 |
-|---|---|---|
-| `server/src/modules/<name>/*` (any module) | ✅ format, build, test | `pnpm test:e2e` if API endpoints changed |
-| `server/src/common/*` (shared utilities) | ✅ format, build, test | `pnpm test:e2e` if shared behavior affects e2e flows |
-| `server/prisma/*` (schemas) | ✅ format, build, test | `pnpm prisma:generate` + `pnpm test:e2e` if data model changed |
-| `ui/src/**/*` (any frontend file) | ✅ format, lint, build, test | `pnpm test:e2e` if UI flows changed |
-| `server/src/mastra/agents/*` (AI agents) | ✅ format, build, test | `pnpm test:e2e` if agent behavior affects API responses |
-| **Before any merge to main** | ✅ all Tier 1 commands | ✅ `pnpm test:e2e` + `pnpm test:coverage` |
+| What the change touched                    | Tier 1                       | Tier 2                                                         |
+| ------------------------------------------ | ---------------------------- | -------------------------------------------------------------- |
+| `server/src/modules/<name>/*` (any module) | ✅ format, build, test       | `pnpm test:e2e` if API endpoints changed                       |
+| `server/src/common/*` (shared utilities)   | ✅ format, build, test       | `pnpm test:e2e` if shared behavior affects e2e flows           |
+| `server/prisma/*` (schemas)                | ✅ format, build, test       | `pnpm prisma:generate` + `pnpm test:e2e` if data model changed |
+| `ui/src/**/*` (any frontend file)          | ✅ format, lint, build, test | `pnpm test:e2e` if UI flows changed                            |
+| `server/src/mastra/agents/*` (AI agents)   | ✅ format, build, test       | `pnpm test:e2e` if agent behavior affects API responses        |
+| **Before any merge to main**               | ✅ all Tier 1 commands       | ✅ `pnpm test:e2e` + `pnpm test:coverage`                      |
 
 When unsure whether a change reaches a Tier 2 area, run that tier.
 

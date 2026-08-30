@@ -9,6 +9,7 @@
 > the destination the `ui/` refactor is heading to.
 >
 > **See also:**
+>
 > - [ADR-0008](../adr/0008-frontend-n-tier.md) — Context, Decision,
 >   Consequences, Alternatives
 > - [`react-developer/SKILL.md`](../../.claude/skills/react-developer/SKILL.md)
@@ -33,32 +34,32 @@
 
 ## 1. Decisions confirmed
 
-| # | Decision | Choice | Rationale |
-|---|---|---|---|
-| 1 | **Scope** | Frontend (`ui/`) only | Backend NestJS module structure is already adequate; no full-stack refactor. |
-| 2 | **Component file naming** | **`PascalCase.tsx`** (`DashboardPage.tsx`, `UserCard.tsx`) | Overrides the prior `react-developer` skill Rule #10 (was camelCase). Matches the React community default, matches Shadcn UI, matches the four existing files. Skill update is part of the same atomic commit as the refactor. |
-| 3 | **Hook file naming** | `camelCase.ts` (`useUserReader.ts`, `useUpdateSettingsCommand.ts`) | Standard React hooks convention. |
-| 4 | **Types & barrels** | `<Name>.types.ts`, `index.ts` | Per the `react-developer` skill rule #1 (interfaces in separate `.ts` files) and rule #2 (one `index.ts` per folder). |
-| 5 | **Hook naming** | **`useXxxReader()` for reads, `useXxxCommand()` for writes** | CQRS-Lite, matches the reference App Designer project's `useModelReader` / `useCommandExecutor` vocabulary, lets the `architect-review` skill speak one language. |
-| 6 | **`service/` layer** | **Defer.** Add when the 2nd SDK lands (Cloudinary / Resend / Razorpay). | One customer doesn't justify a folder. Clerk stays in `app/` (provider wiring) and `lib/` (current location) until a second adapter is needed. |
-| 7 | **Reader/Command tests** | Headless unit tests with mocked `QueryClient` + mocked `getApiClient()`. No DOM mount needed. | Lets the Mastra AI agent verify flows programmatically. |
-| 8 | **Undo/redo** | **Deferred.** No `useXxxCommand().undo()`. The hook pattern exists for AI-agent invocation + structural consistency, not for history. | Premature; add when there's a real product need. |
-| 9 | **Test file location** | Co-located (`UserCard.test.tsx` next to `UserCard.tsx`) | Matches vitest config and `react-developer` skill. |
-| 10 | **`App.tsx` location** | `ui/src/App.tsx` (composition root, kept at `ui/src/` root) | Single-app monorepo; `apps/<app>/src/` flattening not needed. |
+| #   | Decision                  | Choice                                                                                                                                | Rationale                                                                                                                                                                                                                      |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Scope**                 | Frontend (`ui/`) only                                                                                                                 | Backend NestJS module structure is already adequate; no full-stack refactor.                                                                                                                                                   |
+| 2   | **Component file naming** | **`PascalCase.tsx`** (`DashboardPage.tsx`, `UserCard.tsx`)                                                                            | Overrides the prior `react-developer` skill Rule #10 (was camelCase). Matches the React community default, matches Shadcn UI, matches the four existing files. Skill update is part of the same atomic commit as the refactor. |
+| 3   | **Hook file naming**      | `camelCase.ts` (`useUserReader.ts`, `useUpdateSettingsCommand.ts`)                                                                    | Standard React hooks convention.                                                                                                                                                                                               |
+| 4   | **Types & barrels**       | `<Name>.types.ts`, `index.ts`                                                                                                         | Per the `react-developer` skill rule #1 (interfaces in separate `.ts` files) and rule #2 (one `index.ts` per folder).                                                                                                          |
+| 5   | **Hook naming**           | **`useXxxReader()` for reads, `useXxxCommand()` for writes**                                                                          | CQRS-Lite, matches the reference App Designer project's `useModelReader` / `useCommandExecutor` vocabulary, lets the `architect-review` skill speak one language.                                                              |
+| 6   | **`service/` layer**      | **Defer.** Add when the 2nd SDK lands (Cloudinary / Resend / Razorpay).                                                               | One customer doesn't justify a folder. Clerk stays in `app/` (provider wiring) and `lib/` (current location) until a second adapter is needed.                                                                                 |
+| 7   | **Reader/Command tests**  | Headless unit tests with mocked `QueryClient` + mocked `getApiClient()`. No DOM mount needed.                                         | Lets the Mastra AI agent verify flows programmatically.                                                                                                                                                                        |
+| 8   | **Undo/redo**             | **Deferred.** No `useXxxCommand().undo()`. The hook pattern exists for AI-agent invocation + structural consistency, not for history. | Premature; add when there's a real product need.                                                                                                                                                                               |
+| 9   | **Test file location**    | Co-located (`UserCard.test.tsx` next to `UserCard.tsx`)                                                                               | Matches vitest config and `react-developer` skill.                                                                                                                                                                             |
+| 10  | **`App.tsx` location**    | `ui/src/App.tsx` (composition root, kept at `ui/src/` root)                                                                           | Single-app monorepo; `apps/<app>/src/` flattening not needed.                                                                                                                                                                  |
 
 ---
 
 ## 2. The seven layers
 
-| # | Layer | Directory | Responsibility | May import from | Must NOT import from |
-|---|---|---|---|---|---|
-| 1 | **Core** | `ui/src/core/` | App-wide constants, route names, env-var types, query-key prefix, branded types. No runtime code. | (nothing) | anything else |
-| 2 | **Utils** | `ui/src/utils/` | Pure helpers — `cn()`, `formatDate()`, `formatNumber()`, `isValidEmail()`. Zero React, zero network. | `core/` | any layer above |
-| 3 | **Data** | `ui/src/data/` | HTTP client (`api-client.ts`), per-resource DTOs, query-key factories, RTK store + slices (client state only), response envelope types. | `core/`, `utils/` | `service/`, `logic/`, `components/`, `pages/` |
-| 4 | **Service** | `ui/src/service/` | *(Deferred — see Decision 6.)* Reserved for future third-party SDK adapters. | `core/`, `utils/` | `data/`, `logic/`, `components/`, `pages/` |
-| 5 | **Logic** | `ui/src/logic/` | **Reader hooks** (`useXxxReader()` → `useQuery` wrappers) and **Command hooks** (`useXxxCommand()` → `useMutation` wrappers). One hook per file. Owns query-key invalidation. | `core/`, `utils/`, `data/`, `service/` | `components/`, `pages/` |
-| 6 | **Components** | `ui/src/components/` | Shadcn primitives + feature components. Purely presentational. Receives data via props. | `core/`, `utils/`, `service/` (when added) | `data/`, `logic/`, `pages/` |
-| 7 | **Pages (UI shell)** | `ui/src/pages/` | Route components. Composes components + logic. The only layer that imports from `data/` and `logic/` directly. | any layer | (top of stack) |
+| #   | Layer                | Directory            | Responsibility                                                                                                                                                                | May import from                            | Must NOT import from                          |
+| --- | -------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------- |
+| 1   | **Core**             | `ui/src/core/`       | App-wide constants, route names, env-var types, query-key prefix, branded types. No runtime code.                                                                             | (nothing)                                  | anything else                                 |
+| 2   | **Utils**            | `ui/src/utils/`      | Pure helpers — `cn()`, `formatDate()`, `formatNumber()`, `isValidEmail()`. Zero React, zero network.                                                                          | `core/`                                    | any layer above                               |
+| 3   | **Data**             | `ui/src/data/`       | HTTP client (`api-client.ts`), per-resource DTOs, query-key factories, RTK store + slices (client state only), response envelope types.                                       | `core/`, `utils/`                          | `service/`, `logic/`, `components/`, `pages/` |
+| 4   | **Service**          | `ui/src/service/`    | _(Deferred — see Decision 6.)_ Reserved for future third-party SDK adapters.                                                                                                  | `core/`, `utils/`                          | `data/`, `logic/`, `components/`, `pages/`    |
+| 5   | **Logic**            | `ui/src/logic/`      | **Reader hooks** (`useXxxReader()` → `useQuery` wrappers) and **Command hooks** (`useXxxCommand()` → `useMutation` wrappers). One hook per file. Owns query-key invalidation. | `core/`, `utils/`, `data/`, `service/`     | `components/`, `pages/`                       |
+| 6   | **Components**       | `ui/src/components/` | Shadcn primitives + feature components. Purely presentational. Receives data via props.                                                                                       | `core/`, `utils/`, `service/` (when added) | `data/`, `logic/`, `pages/`                   |
+| 7   | **Pages (UI shell)** | `ui/src/pages/`      | Route components. Composes components + logic. The only layer that imports from `data/` and `logic/` directly.                                                                | any layer                                  | (top of stack)                                |
 
 ### 2.1 The single most important rule
 
@@ -75,9 +76,9 @@ the architecture coherent.
   `@/data/user/`. It only declares `user: IUser` in its props (types only).
 - A page in `pages/` does:
   ```ts
-  import { useUserReader } from '@/logic/user';           // hook
+  import { useUserReader } from '@/logic/user'; // hook
   import { useUpdateSettingsCommand } from '@/logic/user'; // hook
-  import { UserCard } from '@/components/user';           // presentational
+  import { UserCard } from '@/components/user'; // presentational
   ```
   …and **nothing** from `@/data/` at runtime. Type-only imports from `data/`
   are fine (they're erased at compile time).
@@ -89,6 +90,7 @@ the architecture coherent.
 ### 3.1 Reader hook (query)
 
 A Reader hook is a thin wrapper around `useQuery` that owns:
+
 - the query key (from a query-key factory in `data/<resource>/<resource>.keys.ts`)
 - the envelope unwrap
 - the error mapping
@@ -115,6 +117,7 @@ export const useUserReader = (): UseQueryResult<IUser, Error> =>
 ### 3.2 Command hook (mutation)
 
 A Command hook is a thin wrapper around `useMutation` that owns:
+
 - the `mutationFn`
 - the `onSuccess` invalidation of related query keys
 - the type of the request and response
@@ -128,11 +131,7 @@ import { updateSettings } from '@/data/user/user.api';
 import { userQueryKeys } from '@/data/user/user.keys';
 import type { IUpdateSettingsBody } from '@/data/user/user.types';
 
-export const useUpdateSettingsCommand = (): UseMutationResult<
-  void,
-  Error,
-  IUpdateSettingsBody
-> => {
+export const useUpdateSettingsCommand = (): UseMutationResult<void, Error, IUpdateSettingsBody> => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => updateSettings(getApiClient(), body).then(() => undefined),
@@ -411,12 +410,12 @@ ui/src/
 
 ### 6.3 `ui/` moves/renames (8 ops)
 
-| From | To |
-|---|---|
-| `ui/src/lib/api.ts` | deleted; split into `data/api-client.ts` + `data/user/user.api.ts` |
-| `ui/src/lib/utils.ts` | `ui/src/utils/cn.ts` |
-| `ui/src/store/index.ts` | `ui/src/data/store/index.ts` (split into `rootReducer.ts` + `slices/ui.slice.ts`) |
-| `ui/src/components/ui/button.tsx` | `ui/src/components/ui/Button.tsx` (PascalCase per Decision 2) |
+| From                              | To                                                                                |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `ui/src/lib/api.ts`               | deleted; split into `data/api-client.ts` + `data/user/user.api.ts`                |
+| `ui/src/lib/utils.ts`             | `ui/src/utils/cn.ts`                                                              |
+| `ui/src/store/index.ts`           | `ui/src/data/store/index.ts` (split into `rootReducer.ts` + `slices/ui.slice.ts`) |
+| `ui/src/components/ui/button.tsx` | `ui/src/components/ui/Button.tsx` (PascalCase per Decision 2)                     |
 
 **No page renames needed** — `DashboardPage.tsx`, `SettingsPage.tsx`,
 `SignInPage.tsx`, `SignUpPage.tsx` are all already `PascalCase.tsx` per

@@ -2,8 +2,10 @@ import { IsString, IsNotEmpty, IsIn, IsOptional, IsNumber, Min, Max } from 'clas
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class StartSessionDto {
-
-  @ApiPropertyOptional({ example: '507f1f77bcf86cd799439011', description: 'MongoDB Topic ID. Required for topic mode.' })
+  @ApiPropertyOptional({
+    example: '507f1f77bcf86cd799439011',
+    description: 'MongoDB Topic ID. Required for topic mode.',
+  })
   @IsOptional()
   @IsString()
   topicId?: string;

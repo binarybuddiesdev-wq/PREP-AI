@@ -1,6 +1,7 @@
 # Webhooks — What They Are and How PrepAI Uses Them
 
 ## Table of Contents
+
 1. [What is a Webhook?](#1-what-is-a-webhook)
 2. [Webhook vs API Call](#2-webhook-vs-api-call)
 3. [How Clerk Webhooks Work](#3-how-clerk-webhooks-work)
@@ -60,6 +61,7 @@ They're opposites:
 ```
 
 ### API Call (Your server asks)
+
 ```
 Your Backend                    Clerk
      │                            │
@@ -71,6 +73,7 @@ Your Backend                    Clerk
 ```
 
 ### Webhook (Clerk tells your server)
+
 ```
 Clerk                          Your Backend
   │                                │
@@ -94,6 +97,7 @@ Clerk                          Your Backend
 You tell Clerk: "When something happens to a user, send a POST request to my server."
 
 In Clerk Dashboard:
+
 ```
 Webhooks → Add Endpoint
 URL: https://your-app.com/api/v1/webhooks/clerk
@@ -139,11 +143,11 @@ Step 5: Your server creates a User document in MongoDB
 
 ### User Events (what PrepAI cares about)
 
-| Event | When It Fires | What PrepAI Does |
-|-------|---------------|------------------|
-| `user.created` | New user signs up | Create User doc in MongoDB |
-| `user.updated` | User changes name/email/avatar | Update User doc in MongoDB |
-| `user.deleted` | User deletes account | Delete User + UserSettings from MongoDB |
+| Event          | When It Fires                  | What PrepAI Does                        |
+| -------------- | ------------------------------ | --------------------------------------- |
+| `user.created` | New user signs up              | Create User doc in MongoDB              |
+| `user.updated` | User changes name/email/avatar | Update User doc in MongoDB              |
+| `user.deleted` | User deletes account           | Delete User + UserSettings from MongoDB |
 
 ### Other Events (not relevant to PrepAI now)
 
@@ -173,6 +177,7 @@ Backend checks: "Does this user exist in MongoDB?"
 ```
 
 **Problems:**
+
 - First API call is slow (needs to create user)
 - Every protected endpoint needs "user not found → create" fallback logic
 - Race condition: what if two requests come at the same time?
@@ -199,6 +204,7 @@ Fast response, no fallback needed
 ```
 
 **Benefits:**
+
 - User record exists before any API call needs it
 - No "lazy create" logic in every endpoint
 - Clerk handles retries if your server is down
@@ -314,11 +320,11 @@ POST /api/v1/webhooks/clerk
 
 ### What It Handles
 
-| Event | MongoDB Action |
-|-------|----------------|
+| Event          | MongoDB Action                                                                   |
+| -------------- | -------------------------------------------------------------------------------- |
 | `user.created` | Create User doc (clerkUserId, email, name, avatarUrl, role=USER, isNewUser=true) |
-| `user.updated` | Update email, name, avatarUrl if changed |
-| `user.deleted` | Delete User doc + UserSettings doc |
+| `user.updated` | Update email, name, avatarUrl if changed                                         |
+| `user.deleted` | Delete User doc + UserSettings doc                                               |
 
 ### What Comes in the Payload
 
@@ -327,9 +333,7 @@ POST /api/v1/webhooks/clerk
   "type": "user.created",
   "data": {
     "id": "user_abc123",
-    "email_addresses": [
-      { "email_address": "john@gmail.com", "id": "email_123" }
-    ],
+    "email_addresses": [{ "email_address": "john@gmail.com", "id": "email_123" }],
     "first_name": "John",
     "last_name": "Doe",
     "image_url": "https://lh3.googleusercontent.com/..."
@@ -339,12 +343,12 @@ POST /api/v1/webhooks/clerk
 
 ### What We Extract
 
-| Clerk Field | MongoDB Field |
-|-------------|---------------|
-| `data.id` | `clerkUserId` |
-| `data.email_addresses[0].email_address` | `email` |
-| `data.first_name + data.last_name` | `name` |
-| `data.image_url` | `avatarUrl` |
+| Clerk Field                             | MongoDB Field |
+| --------------------------------------- | ------------- |
+| `data.id`                               | `clerkUserId` |
+| `data.email_addresses[0].email_address` | `email`       |
+| `data.first_name + data.last_name`      | `name`        |
+| `data.image_url`                        | `avatarUrl`   |
 
 ---
 

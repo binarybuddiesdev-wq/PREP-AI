@@ -137,8 +137,8 @@ Fetch any user by their Clerk ID.
 
 ### Path Parameters
 
-| Param | Type | Description |
-|-------|------|-------------|
+| Param         | Type   | Description                            |
+| ------------- | ------ | -------------------------------------- |
 | `clerkUserId` | string | Clerk user ID (e.g. `user_2xKp9mNqR3`) |
 
 ### Response (200 OK)
@@ -160,21 +160,21 @@ Fetch any user by their Clerk ID.
 
 ### Errors
 
-| Status | Message |
-|--------|---------|
-| 404 | User not found |
+| Status | Message        |
+| ------ | -------------- |
+| 404    | User not found |
 
 ---
 
 ## Summary
 
-| # | Method | Route | Description | Auth | Role |
-|---|--------|-------|-------------|------|------|
-| 1 | `GET` | `/users/me` | Get current user profile | Bearer | Any |
-| 2 | `GET` | `/users/settings` | Get user settings | Bearer | Any |
-| 3 | `PATCH` | `/users/settings` | Update user settings | Bearer | Any |
-| 4 | `PATCH` | `/users/setup-complete` | Mark setup wizard complete | Bearer | Any |
-| 5 | `GET` | `/users/:clerkUserId` | Get user by Clerk ID | Bearer | ADMIN |
+| #   | Method  | Route                   | Description                | Auth   | Role  |
+| --- | ------- | ----------------------- | -------------------------- | ------ | ----- |
+| 1   | `GET`   | `/users/me`             | Get current user profile   | Bearer | Any   |
+| 2   | `GET`   | `/users/settings`       | Get user settings          | Bearer | Any   |
+| 3   | `PATCH` | `/users/settings`       | Update user settings       | Bearer | Any   |
+| 4   | `PATCH` | `/users/setup-complete` | Mark setup wizard complete | Bearer | Any   |
+| 5   | `GET`   | `/users/:clerkUserId`   | Get user by Clerk ID       | Bearer | ADMIN |
 
 ## Models (MongoDB)
 

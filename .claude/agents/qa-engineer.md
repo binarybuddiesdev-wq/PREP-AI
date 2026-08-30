@@ -23,14 +23,14 @@ Before you can judge whether coverage is adequate, work out what the change actu
 
 Map that footprint onto the testing tiers:
 
-| What the change touched | Test tier | Tool |
-|---|---|---|
-| `server/src/modules/<name>/*` | Unit + integration | `pnpm test` (server) |
-| `server/src/common/*` | Unit + integration | `pnpm test` (server) |
-| `server/src/mastra/agents/*` | Unit + integration | `pnpm test` (server) |
-| `ui/src/**/*` | Unit + integration | `pnpm test` (ui) |
-| API endpoints changed | E2E | `pnpm test:e2e` |
-| Prisma schema changed | Unit + integration + E2E | `pnpm test` + `pnpm test:e2e` |
+| What the change touched       | Test tier                | Tool                          |
+| ----------------------------- | ------------------------ | ----------------------------- |
+| `server/src/modules/<name>/*` | Unit + integration       | `pnpm test` (server)          |
+| `server/src/common/*`         | Unit + integration       | `pnpm test` (server)          |
+| `server/src/mastra/agents/*`  | Unit + integration       | `pnpm test` (server)          |
+| `ui/src/**/*`                 | Unit + integration       | `pnpm test` (ui)              |
+| API endpoints changed         | E2E                      | `pnpm test:e2e`               |
+| Prisma schema changed         | Unit + integration + E2E | `pnpm test` + `pnpm test:e2e` |
 
 For each tier the footprint calls for, confirm a test actually exists **and** actually exercises the changed path — not just a same-named test file that happens to pass.
 

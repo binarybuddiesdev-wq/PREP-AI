@@ -13,16 +13,14 @@ export const registerFastifyPlugins = async (app: NestFastifyApplication) => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"]
-      }
-    }
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
   });
 
   // CORS Configuration (supports CSV production origins)
   await app.register(fastifyCors, {
-    origin: nodeEnv === 'production'
-      ? process.env.CORS_ORIGIN?.split(',') ?? []
-      : '*',
+    origin: nodeEnv === 'production' ? (process.env.CORS_ORIGIN?.split(',') ?? []) : '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   });
 

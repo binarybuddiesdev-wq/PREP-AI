@@ -12,7 +12,8 @@ export interface ITechExpertRequest {
 
 export class TechExpertRequestDto implements ITechExpertRequest {
   @ApiProperty({
-    description: 'Ask any technology-related question - programming, cloud, AI/ML, databases, DevOps, etc.',
+    description:
+      'Ask any technology-related question - programming, cloud, AI/ML, databases, DevOps, etc.',
     example: 'Explain the difference between REST and GraphQL APIs.',
     type: String,
   })

@@ -130,7 +130,7 @@ export class TopicService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectPinoLogger(TopicService.name)
-    private readonly logger: PinoLogger,
+    private readonly logger: PinoLogger
   ) {}
 
   async createTopic(dto: CreateTopicDto) {
@@ -323,7 +323,7 @@ concerns are middleware, guards, or interceptors — not controller code.
 
 ## Project-specific decisions (encoded as ADRs)
 
-Read these once. They explain the *why* behind the rules above.
+Read these once. They explain the _why_ behind the rules above.
 
 - **ADR-0001 — Polyglot persistence (Mongo + Postgres).** Which DB for
   which model. Never mix.
@@ -414,16 +414,16 @@ These are global infra. The procedure:
 
 ## When something is broken
 
-| Symptom | First place to look |
-|---|---|
-| 401 Unauthorized | `ClerkAuthGuard` — token format, CLERK_SECRET_KEY, webhook fired? |
-| 403 Forbidden | `RolesGuard` — `@Roles('ADMIN')` mismatch, or Clerk webhook hasn't fired so `user.role` is undefined |
-| 404 Not Found | Service threw `NotFoundException` — query by id, was the row created? |
-| 409 Conflict | Service threw `ConflictException` — duplicate check failing or wrong |
-| 422 Validation | DTO decorator mismatch — class-validator stripped the field? |
-| 500 Internal | Stack trace in `logs/`. Common causes: Prisma not generated, env var unset, Postgres client not generated yet |
-| Endpoint not found | Module not registered in `app.module.ts` |
-| Env validation error at boot | `env.validation.ts` rejected an env var — usually a typo or missing required var |
+| Symptom                           | First place to look                                                                                            |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 401 Unauthorized                  | `ClerkAuthGuard` — token format, CLERK_SECRET_KEY, webhook fired?                                              |
+| 403 Forbidden                     | `RolesGuard` — `@Roles('ADMIN')` mismatch, or Clerk webhook hasn't fired so `user.role` is undefined           |
+| 404 Not Found                     | Service threw `NotFoundException` — query by id, was the row created?                                          |
+| 409 Conflict                      | Service threw `ConflictException` — duplicate check failing or wrong                                           |
+| 422 Validation                    | DTO decorator mismatch — class-validator stripped the field?                                                   |
+| 500 Internal                      | Stack trace in `logs/`. Common causes: Prisma not generated, env var unset, Postgres client not generated yet  |
+| Endpoint not found                | Module not registered in `app.module.ts`                                                                       |
+| Env validation error at boot      | `env.validation.ts` rejected an env var — usually a typo or missing required var                               |
 | Postgres "Database not available" | `POSTGRESQL_URL` unset OR client not generated yet. The service no-ops gracefully; check the warn log at boot. |
 
 ## Testing patterns
@@ -436,6 +436,7 @@ These are global infra. The procedure:
 - **Coverage threshold:** 90% on lines/statements/functions/branches
 
 For a new module, write at minimum:
+
 - `controller.spec.ts` — every handler, success + error path
 - `service.spec.ts` — every public method, success + every thrown
   exception

@@ -1,6 +1,6 @@
 ---
 name: backend-developer
-description: "Dispatch for work in server/src — NestJS modules, controllers, services, Prisma queries, Mastra agents, env config, and tests. Owns the backend layer of the PrepAI monorepo."
+description: 'Dispatch for work in server/src — NestJS modules, controllers, services, Prisma queries, Mastra agents, env config, and tests. Owns the backend layer of the PrepAI monorepo.'
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 

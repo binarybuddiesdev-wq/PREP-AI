@@ -4,16 +4,16 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
-    constructor(
-        @InjectPinoLogger(LoggerMiddleware.name)
-        private readonly logger: PinoLogger
-    ) { }
+  constructor(
+    @InjectPinoLogger(LoggerMiddleware.name)
+    private readonly logger: PinoLogger
+  ) {}
 
-    use(req: FastifyRequest['raw'], res: FastifyReply['raw'], next: () => void) {
-        this.logger.info(`Incoming request: ${req.method} ${req.url}`);
-        res.on('finish', () => {
-            this.logger.info(`${req.method} ${req.url} -> ${res.statusCode}`);
-        });
-        next();
-    }
+  use(req: FastifyRequest['raw'], res: FastifyReply['raw'], next: () => void) {
+    this.logger.info(`Incoming request: ${req.method} ${req.url}`);
+    res.on('finish', () => {
+      this.logger.info(`${req.method} ${req.url} -> ${res.statusCode}`);
+    });
+    next();
+  }
 }

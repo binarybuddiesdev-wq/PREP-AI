@@ -63,8 +63,10 @@ export default function SettingsPage() {
         }
         if (s?.notifications && typeof s.notifications === 'object') {
           const notifs = s.notifications as Record<string, unknown>;
-          if (typeof notifs.dailyReminder === 'boolean') setDailyReminder(notifs.dailyReminder as boolean);
-          if (typeof notifs.weeklyReport === 'boolean') setWeeklyReport(notifs.weeklyReport as boolean);
+          if (typeof notifs.dailyReminder === 'boolean')
+            setDailyReminder(notifs.dailyReminder as boolean);
+          if (typeof notifs.weeklyReport === 'boolean')
+            setWeeklyReport(notifs.weeklyReport as boolean);
         }
       } catch (err) {
         console.error('Failed to load in SettingsPage:', err);
@@ -130,10 +132,17 @@ export default function SettingsPage() {
       <header className="border-b border-white/10 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link to="/dashboard" className="inline-flex items-center gap-2 font-bold text-lg">
-            <div className="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center text-black text-xs font-extrabold">P</div>
+            <div className="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center text-black text-xs font-extrabold">
+              P
+            </div>
             PrepAI
           </Link>
-          <Link to="/dashboard" className="text-sm text-zinc-400 hover:text-white transition-colors">Back to Dashboard</Link>
+          <Link
+            to="/dashboard"
+            className="text-sm text-zinc-400 hover:text-white transition-colors"
+          >
+            Back to Dashboard
+          </Link>
         </div>
       </header>
 
@@ -174,7 +183,9 @@ export default function SettingsPage() {
 
         {/* UserSettings Model */}
         <section className="bg-[#18181b] border border-white/10 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4 text-amber-400">UserSettings Model (MongoDB)</h2>
+          <h2 className="text-lg font-semibold mb-4 text-amber-400">
+            UserSettings Model (MongoDB)
+          </h2>
 
           <div className="space-y-5">
             <div>
@@ -194,7 +205,9 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-1">Experience Level</label>
+              <label className="block text-sm font-medium text-zinc-400 mb-1">
+                Experience Level
+              </label>
               <select
                 value={experienceLevel}
                 onChange={(e) => setExperienceLevel(e.target.value)}
@@ -237,7 +250,9 @@ export default function SettingsPage() {
               {saving ? 'Saving...' : 'Save Settings'}
             </button>
             {message && (
-              <span className={`text-sm ${message.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
+              <span
+                className={`text-sm ${message.includes('success') ? 'text-green-400' : 'text-red-400'}`}
+              >
                 {message}
               </span>
             )}

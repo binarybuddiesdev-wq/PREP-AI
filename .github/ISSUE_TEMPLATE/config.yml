@@ -1,0 +1,27 @@
+{
+  '$schema': 'https://json.schemastore.org/issue-forms-config.json',
+  'blank_issues_enabled': false,
+  'contact_links':
+    [
+      {
+        'name': 'Architecture docs',
+        'url': 'https://github.com/anomalyco/PrepAI/tree/main/docs/architecture',
+        'about': 'C4 diagrams, ADRs, services catalog, NFRs.',
+      },
+      {
+        'name': 'Skills catalog',
+        'url': 'https://github.com/anomalyco/PrepAI/tree/main/.claude/skills',
+        'about': 'Backend, frontend, database, AI, testing, architecture rules.',
+      },
+      {
+        'name': 'Getting started',
+        'url': 'https://github.com/anomalyco/PrepAI/blob/main/README.md#getting-started',
+        'about': 'Install, env, Piston, dev servers.',
+      },
+      {
+        'name': 'Report a security vulnerability',
+        'url': 'https://github.com/anomalyco/PrepAI/security/advisories/new',
+        'about': 'Please do NOT file security issues publicly. Use private disclosure.',
+      },
+    ],
+}

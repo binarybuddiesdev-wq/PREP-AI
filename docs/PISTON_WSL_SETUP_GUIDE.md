@@ -10,8 +10,8 @@ When running the standard Piston Docker image (`ghcr.io/engineer-man/piston`) un
 
 1. **Cgroups v2 Controller Delegation Limits:**
    The default entrypoint script (`docker-entrypoint.sh`) attempts to write `+cpuset +cpu +io +memory +pids` to the root cgroup's `cgroup.subtree_control`.
-   * Under rootless WSL2, the `cpuset` controller is not delegated to the user namespace by default.
-   * Attempting to enable `cpuset` when it's not present in `/sys/fs/cgroup/cgroup.controllers` causes the container startup to fail with:
+   - Under rootless WSL2, the `cpuset` controller is not delegated to the user namespace by default.
+   - Attempting to enable `cpuset` when it's not present in `/sys/fs/cgroup/cgroup.controllers` causes the container startup to fail with:
      ```
      docker-entrypoint.sh: line 22: echo: write error: No such file or directory
      ```
@@ -33,9 +33,9 @@ We resolved these issues without modifying any application code by doing the fol
 
 1. **Created a Custom Entrypoint Script (`piston-entrypoint.sh`):**
    We placed [piston-entrypoint.sh](file:///c:/antigravity-test/PrepAI/piston-entrypoint.sh) in the root of the workspace. This script:
-   * Dynamically reads available controllers from `/sys/fs/cgroup/cgroup.controllers`.
-   * Enables **only** the controllers that are supported (e.g. `cpu`, `io`, `memory`, `pids`), successfully filtering out unsupported ones like `cpuset`.
-   * Mounts read-write cgroups and starts the application normally.
+   - Dynamically reads available controllers from `/sys/fs/cgroup/cgroup.controllers`.
+   - Enables **only** the controllers that are supported (e.g. `cpu`, `io`, `memory`, `pids`), successfully filtering out unsupported ones like `cpuset`.
+   - Mounts read-write cgroups and starts the application normally.
 
 2. **Created a Named Volume:**
    We created a named volume `piston_data` in Podman to store runtimes/packages persistency across container restarts.
@@ -59,16 +59,18 @@ The setup above was written against an older Podman. On a fresh machine with
    it: `dos2unix piston-entrypoint.sh` (or `perl -i -pe 's/\r\n$/\n/'`).
 
 2. **WSL2 mirrored networking** — `%USERPROFILE%\.wslconfig`:
+
    ```ini
    [wsl2]
    networkingMode=mirrored
    [experimental]
    hostAddressLoopback=true
    ```
+
    Then `wsl --shutdown` and restart the Podman machine. Under the default NAT
    mode, Podman 6 forwards published ports through a userspace path that WSL's
    `localhost:2000` forwarding does not pick up — the container is healthy and
-   reachable from *inside* the VM but `curl http://127.0.0.1:2000` from Windows
+   reachable from _inside_ the VM but `curl http://127.0.0.1:2000` from Windows
    just hangs / refuses. Mirrored mode makes container ports appear on Windows
    `localhost` directly.
 
@@ -93,13 +95,13 @@ We added a cross-platform TypeScript runner [piston.ts](file:///c:/antigravity-t
 
 ### Commands Reference
 
-| Script Command | Under the Hood | Description |
-| :--- | :--- | :--- |
-| **`pnpm piston:start`** | `tsx ../piston.ts start` | Boots up the Piston API container, automatically normalizing the workspace path, mounting the custom entrypoint, mapping the named volume, and binding port `127.0.0.1:2000`. |
-| **`pnpm piston:stop`** | `tsx ../types/piston.ts stop` | `podman stop` — stops the container but **keeps** it (shows as "Exited" in Podman Desktop). Restart with `piston:start`. |
-| **`pnpm piston:remove`** | `tsx ../types/piston.ts remove` | `podman rm -f` — deletes the `piston_api` container entirely. Use to recreate it with changed `podman run` flags. |
-| **`pnpm piston:status`** | `tsx ../types/piston.ts status` | Checks the container status (running or exited). |
-| **`pnpm piston:setup`** | `tsx ../types/piston.ts setup` | Installs CLI package dependencies, then downloads and registers the 3 required language runtimes (JavaScript, TypeScript, and Python). One-time — runtimes persist in the `piston_data` volume. |
+| Script Command           | Under the Hood                  | Description                                                                                                                                                                                     |
+| :----------------------- | :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`pnpm piston:start`**  | `tsx ../piston.ts start`        | Boots up the Piston API container, automatically normalizing the workspace path, mounting the custom entrypoint, mapping the named volume, and binding port `127.0.0.1:2000`.                   |
+| **`pnpm piston:stop`**   | `tsx ../types/piston.ts stop`   | `podman stop` — stops the container but **keeps** it (shows as "Exited" in Podman Desktop). Restart with `piston:start`.                                                                        |
+| **`pnpm piston:remove`** | `tsx ../types/piston.ts remove` | `podman rm -f` — deletes the `piston_api` container entirely. Use to recreate it with changed `podman run` flags.                                                                               |
+| **`pnpm piston:status`** | `tsx ../types/piston.ts status` | Checks the container status (running or exited).                                                                                                                                                |
+| **`pnpm piston:setup`**  | `tsx ../types/piston.ts setup`  | Installs CLI package dependencies, then downloads and registers the 3 required language runtimes (JavaScript, TypeScript, and Python). One-time — runtimes persist in the `piston_data` volume. |
 
 ---
 
@@ -108,22 +110,31 @@ We added a cross-platform TypeScript runner [piston.ts](file:///c:/antigravity-t
 If you ever need to manually run or verify the setup, perform the following steps from the **root workspace directory** (`c:\antigravity-test\PrepAI`):
 
 ### Step 1: Start the container
+
 Run the start command to boot up the container:
+
 ```bash
 pnpm piston:start
 ```
-*Note: Make sure your Podman machine/desktop is running.*
+
+_Note: Make sure your Podman machine/desktop is running._
 
 ### Step 2: Check status and logs
+
 Check if the container status shows as `Up`:
+
 ```bash
 pnpm piston:status
 ```
+
 Verify the logs to ensure the API server started successfully:
+
 ```bash
 podman logs piston_api
 ```
-*Expected Output:*
+
+_Expected Output:_
+
 ```
 Available cgroup controllers: cpu io memory pids
 Initialized cgroup with controllers:  +cpu +io +memory +pids
@@ -132,15 +143,21 @@ Initialized cgroup with controllers:  +cpu +io +memory +pids
 ```
 
 ### Step 3: Install language runtimes
+
 Run the setup command to install the required languages:
+
 ```bash
 pnpm piston:setup
 ```
+
 Verify they were installed correctly by querying the runtimes endpoint:
+
 ```bash
 curl http://127.0.0.1:2000/api/v2/runtimes
 ```
-*Expected Output:*
+
+_Expected Output:_
+
 ```json
 [
   {
@@ -169,11 +186,15 @@ curl http://127.0.0.1:2000/api/v2/runtimes
 You can test executing code against the local API.
 
 ### JavaScript Execution
+
 Create a payload JSON or call directly:
+
 ```bash
 curl -X POST http://127.0.0.1:2000/api/v2/execute -H "Content-Type: application/json" -d "{\"language\":\"js\",\"version\":\"*\",\"files\":[{\"content\":\"console.log('Piston is working!')\"}]}"
 ```
-*Expected Output:*
+
+_Expected Output:_
+
 ```json
 {
   "run": {
@@ -191,10 +212,13 @@ curl -X POST http://127.0.0.1:2000/api/v2/execute -H "Content-Type: application/
 ```
 
 ### Python Execution
+
 ```bash
 curl -X POST http://127.0.0.1:2000/api/v2/execute -H "Content-Type: application/json" -d "{\"language\":\"py\",\"version\":\"*\",\"files\":[{\"content\":\"print('Python Piston is working!')\"}]}"
 ```
-*Expected Output:*
+
+_Expected Output:_
+
 ```json
 {
   "run": {
