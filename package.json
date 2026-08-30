@@ -15,11 +15,36 @@
     "piston:setup": "pnpm --filter server exec tsx ../types/piston.ts setup",
     "piston:status": "pnpm --filter server exec tsx ../types/piston.ts status",
     "build:viewer": "pnpm --filter server exec tsx ../scripts/build-architecture-viewer.ts",
-    "build:viewer:check": "pnpm --filter server exec tsx ../scripts/build-architecture-viewer.ts --check"
+    "build:viewer:check": "pnpm --filter server exec tsx ../scripts/build-architecture-viewer.ts --check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\" --ignore-path .gitignore",
+    "commitlint": "commitlint --edit",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@eslint/js": "^10.0.0",
     "@playwright/test": "1.52.0",
     "@types/node": "22.15.3",
-    "typescript": "5.8.3"
+    "eslint": "^10.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "globals": "^15.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "5.8.3",
+    "typescript-eslint": "^8.0.0"
   }
 }

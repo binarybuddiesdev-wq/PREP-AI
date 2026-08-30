@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Commit-msg hook. Runs on `git commit` after the editor closes.
+# Validates the commit message against `commitlint.config.js`
+# (Conventional Commits + repo-registered scopes).
+
+. "$(dirname -- "$0")/_/husky.sh"
+
+pnpm exec commitlint --edit "$1"

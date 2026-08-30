@@ -3,3 +3,12 @@
 # rewrites it to CRLF, which breaks the shebang -> container exits 127
 # ("exec: /piston_api/src/docker-entrypoint.sh: not found"). Force LF.
 *.sh text eol=lf
+
+# Husky hook scripts: same reason as above. A CRLF shebang breaks the
+# hook under Git for Windows.
+.husky/* text eol=lf
+
+# Default for text files: let Git normalize line endings, but don't
+# force a specific EOL. Use the above explicit rules for files that
+# MUST be LF.
+* text=auto

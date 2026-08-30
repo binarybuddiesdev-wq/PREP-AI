@@ -39,6 +39,9 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 
+# Husky
+.husky/_/
+
 # Misc
 *.local
 .cache/

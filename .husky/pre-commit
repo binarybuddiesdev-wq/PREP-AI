@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+# Pre-commit hook. Runs on `git commit`.
+#
+# - `set -e` is required: without it, a failing gate in the middle of a
+#   chain would be swallowed and the script's exit status would come
+#   from whatever ran last. Same reason as the App Designer repo's
+#   `.husky/pre-commit`.
+# - We run `lint-staged`, which only touches files staged for this
+#   commit. This is intentionally fast (< 1 second for a typical
+#   commit touching 1-5 files).
+# - We do NOT run the full repo's lint/type-check here. That belongs
+#   in the `verify-implementation` skill's Mechanical Gate, which
+#   runs on every commit (via AI agents) and before merge.
+
+. "$(dirname -- "$0")/_/husky.sh"
+
+pnpm exec lint-staged
