@@ -123,3 +123,84 @@ This project has custom domain skills defined under [`.claude/skills/`](.claude/
 - **[`verify-implementation`](.claude/skills/verify-implementation/SKILL.md):** Tiered test verification gate — Tier 1 (format, lint, build, test) always, Tier 2 (e2e, coverage) before merge.
 - **[`architect-review`](.claude/skills/architect-review/SKILL.md):** Read-only review of frontend (ui/) changes against the 7-layer architecture in [`docs/architecture/architecture.md`](docs/architecture/architecture.md) §Frontend Refactor. Flags layer violations, naming issues, and structural defects. Use before merging any ui/ branch.
 
+---
+
+## Role Dispatch
+
+This section tells the orchestrating (main) agent when to invoke which of the four role-based subagents defined in [`.claude/agents/`](.claude/agents/) (`architect.md`, `backend-developer.md`, `frontend-developer.md`, `qa-engineer.md`) and which skills to invoke. Its goal is to pay the cost of subagent dispatch only where genuine judgment is needed, not on every trivial diff. There are two checkpoints, run in this order for any change:
+
+### Checkpoint 1 — The Mechanical Gate
+
+Also called the **Test Gate** in the agent definitions — same thing. Mechanical, no subagent dispatch, governed entirely by the [`verify-implementation`](.claude/skills/verify-implementation/SKILL.md) skill: its Tier 1 (format, build, test) runs on every change unconditionally; its Tier 2 (e2e, coverage) runs conditionally, when the change reaches those areas. Run directly by whichever engineer subagent (or the main agent) made the change. See the skill's "What changed → which tiers" table for the selection rule.
+
+**Standing instruction** (folded into `architect.md`'s responsibility 1): a recurring or rule-shaped finding from the Judgment Review gets promoted into a mechanical rule — a new ESLint rule, a stricter pre-commit hook — rather than staying a remembered instruction.
+
+### Checkpoint 2 — The Judgment Review
+
+Dispatched only for non-trivial changes — see the decision rule below. The table's first four rows are dispatches for direct implementation/design work; the last two rows are the after-the-fact review-gate triggers for the same `architect` / `qa-engineer` subagents once implementation is done.
+
+| Task touches | Dispatch |
+|---|---|
+| `server/src/modules/<name>/*`, `server/src/common/*`, `server/src/prisma/*`, `server/src/mastra/*` | `backend-developer` |
+| `ui/src/**` (any frontend file or page) | `frontend-developer` |
+| Writing/expanding test coverage as part of a feature | `qa-engineer` |
+| Cross-cutting architecture decisions, ADRs, new feature specs, or non-trivial `ui/` changes | `architect` (and the `architect-review` skill for ui/ layer-boundary violations) |
+| **After a *non-trivial* implementation** (see definition below) — the Mechanical Gate has already run by this point | `qa-engineer` and/or `architect`, whichever gate's risk is actually present. When both apply, dispatch them **concurrently in one message**. `qa-engineer`: coverage-gap check + per-change regression reasoning, grounded in the Mechanical Gate's already-produced output. `architect`: coding standards (beyond what lint catches) + the 10 Core Principles + architecture boundaries + functional correctness + oversized-component check |
+| **Either review gate reports an issue** | dispatch back to the engineer who owns that code — `backend-developer` / `frontend-developer` — to fix it; then re-review **only the flagged item and what the fix touched**, unless the fix changed behavior or structure (see below) |
+
+#### What a dispatch prompt must carry
+
+A subagent starts with **no share of the orchestrating agent's context**. Anything already established — the file list, the line numbers, the tool output, the classification of what's wrong, the decision already taken and why — must be restated in the dispatch prompt, or the subagent spends most of its run re-deriving it. This is the single largest avoidable cost in the dispatch model, and it multiplies with every agent in a parallel fan-out: N agents rediscovering the same facts N times.
+
+Every dispatch prompt states:
+
+1. **The concrete work list** — exact paths and line numbers, not "the files with lint errors". If the orchestrating agent already ran the tool that produces the list, paste the relevant slice of that output.
+2. **What has already been decided, and why** — the approach, the rejected alternatives, and any user decision that constrains the work. Without this a subagent re-litigates settled choices, or quietly picks a different one.
+3. **The scope boundary** — what this agent owns and what a *concurrent* agent owns. When fanning out, name the files each agent must not touch. Shared files (a barrel, a config, a shared helper) belong to exactly one agent; say which.
+4. **Prerequisites and their owner** — if the task depends on something another agent in the same batch is creating, say so explicitly rather than letting each assume someone else did it.
+5. **The verification to run, and the expected result** — the Mechanical Gate commands plus the number the agent should reach.
+
+When fanning out, prefer splitting by **directory ownership** over splitting by task type — it makes the boundaries in (3) self-evident and keeps two agents off the same file.
+
+#### Trivial vs. non-trivial decision rule
+
+A concrete rule for the orchestrating agent to apply, not "use judgment":
+
+- **Trivial** (Mechanical Gate only, no subagent dispatch) — single-file, no new/changed public interface, exported type, DTO, or ADR-relevant decision; no new pattern introduced. Examples: renames, typo/wording fixes, single-conditional or single-log-line fixes, config value tweaks, a bug fix that doesn't change a function's contract.
+- **Mechanical sweep** (Mechanical Gate only, no subagent dispatch, **regardless of file count**) — the same known-correct edit repeated across many files, introducing no new interface, pattern, or behavior. The test for this class: *is correctness decided by mechanical ground truth?* If "lint is silent, types check, tests pass" fully establishes the change is right, a judgment agent has nothing left to judge. Examples: conforming to a newly enabled lint rule, a repo-wide rename, replacing an inline stub with an existing shared helper, extracting a stateless private method to a module-level function with unchanged behavior.
+  - **File count is not a risk signal — design novelty is.** An 80-file substitution of one identical expression carries less risk than a four-line change to error handling in two files. Route novelty and behavior change to the Judgment Review, not breadth.
+  - This class does **not** absorb a change that alters behavior, even by one line. If a sweep turns up a genuine defect along the way (a swallowed error, a missing edge case), that specific fix is non-trivial on its own and gets the full Judgment Review — split it out of the sweep rather than reclassifying the whole sweep.
+- **Non-trivial** (Judgment Review applies) — anything that adds or changes an exported `useXxxReader` / `useXxxCommand` hook, a service interface, an exported component/hook/type; introduces a pattern not already used elsewhere in that layer; touches `data/api-client.ts` or the RTK store; changes behavior, error handling, or a public contract; any new feature work regardless of size; any `ui/` change beyond a one-line fix.
+- When genuinely ambiguous, default to non-trivial (dispatch) — a wasted Judgment Review pass costs far less than a missed regression. But "spans multiple files" alone is **not** that ambiguity: apply the Mechanical sweep test first.
+
+#### Which gate, and why they run concurrently
+
+Both gates read the Mechanical Gate's already-produced output, and **neither re-runs the suite.** Because that output already exists before either is dispatched, `architect` is not waiting on anything `qa-engineer` produces — serializing them buys no information and doubles the latency. Each reports independently; the orchestrating agent merges the two reports.
+
+Dispatch only the gate whose risk is actually present:
+
+- **`qa-engineer` alone** when the risk is coverage — new or changed logic whose tests are thin, or a change whose regression surface is wider than the diff.
+- **`architect` alone** when the risk is design — a new pattern, a layer-boundary question, or an oversized component in an already well-tested path. For `ui/` changes, also invoke the [`architect-review`](.claude/skills/architect-review/SKILL.md) skill, which encodes the full frontend violation list.
+- **Both, concurrently,** when both apply, or when genuinely unsure which. But "it's non-trivial" is not by itself a reason to dispatch both.
+
+This replaces an earlier `qa-engineer` → `architect` ordering whose stated purpose was to catch a broken build before reasoning about architecture on top of it. The Mechanical Gate already catches that, upstream of both — so do not reintroduce the ordering as an apparent improvement.
+
+#### Fix-and-re-review mechanics
+
+Neither review gate is a dead end, and neither silently patches around what it finds. When either flags something, the fix belongs to whichever engineer subagent owns that code — `backend-developer` for `server/`, `frontend-developer` for `ui/`. The only work a review-gate agent does directly: `qa-engineer` may write a genuinely missing *test* (test-only, not a production fix); `architect` may write/update an ADR or a dev-setup/tooling file (its own domain, and the preferred outcome whenever a finding is rule-shaped). An actual implementation defect — bug, missed edge case, oversized component, principle violation — always goes back to the owning engineer.
+
+**Scope the re-review to the fix.** Re-run the Mechanical Gate always. Then:
+
+- **Fix confined to what was flagged** (a rename, an added guard, a split component, a new test) — re-review only that item and the files the fix touched, and only by the gate that raised it. A naming nit does not justify a second full pass of both gates.
+- **Fix changed behavior, a public contract, or structure beyond the flagged site** — re-run both gates in full, concurrently. Widening the blast radius is exactly what the full pass exists for.
+
+The orchestrating agent runs this loop, not the subagents — none of the four agent definitions in `.claude/agents/` have `Agent`-tool access, so they cannot dispatch each other directly. Each subagent returns its findings as its final report; whichever agent dispatched the original engineer (typically the main loop) reads that report and re-dispatches the fix.
+
+#### Convergence bound
+
+If the same category of issue survives 2 fix-and-re-review cycles (e.g. `architect` flags the same principle violation twice after two attempted fixes), stop looping automatically and surface it to the user instead of continuing indefinitely. There is no unbounded "repeat until clean" loop.
+
+#### Known gap
+
+Nobody reviews `architect`'s own direct edits (an ADR, an `eslint.config.js` change). This is a real limitation, not an implied guarantee of oversight everywhere.
+
