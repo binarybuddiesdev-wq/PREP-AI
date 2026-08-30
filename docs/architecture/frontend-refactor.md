@@ -503,10 +503,7 @@ commit so the git history is clean).
 
 - [ADR-0008: Frontend N-Tier layer model](../adr/0008-frontend-n-tier.md) — Context, Decision, Consequences, Alternatives
 - [`architecture.md`](architecture.md) — full-stack monorepo blueprint (server + ui + piston + e2e)
-- `ARCHITECTURE_GUIDE.md` — App Designer reference architecture (919 lines), the source of the N-Tier model
-- `C:\Users\udayn\Downloads\.claude\component-designer-spec.md` — Component Designer's architecture
-- `C:\Users\udayn\Downloads\.claude\CLAUDE.md` — App Designer project overview
-- `C:\Users\udayn\Downloads\.claude\skills\architect-review\skill.md` — the read-only review pattern the `architect-review` skill is modeled on
+- The App Designer reference architecture (the source of the N-Tier model that informed this design) — see [ADR-0008's References section](../adr/0008-frontend-n-tier.md#references) for the equivalent citations.
 - `CLAUDE.md` (project root) — project overview
 - `.claude/skills/developer/SKILL.md` — general dev standards
 - `.claude/skills/react-developer/SKILL.md` — presentational rules + Rule #10 (PascalCase) updated in the same commit

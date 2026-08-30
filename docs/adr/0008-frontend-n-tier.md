@@ -175,11 +175,7 @@ merging any `ui/` branch.
 
 - [`../architecture/frontend-refactor.md`](../architecture/frontend-refactor.md) — the granular migration plan, file inventory, folder structure, and anti-patterns
 - [`../architecture/architecture.md`](../architecture/architecture.md) — the full-stack monorepo blueprint this layer model sits inside
-- [App Designer's `ARCHITECTURE_GUIDE.md`](../../../ARCHITECTURE_GUIDE.md) — the reference project's N-Tier model (919 lines)
-- App Designer's `component-designer-spec.md` §"Architecture & Monorepo" — the 6-package pattern this 7-folder model mirrors
-- [App Designer's `architect-review` skill](../../../Users/udayn/Downloads/.claude/skills/architect-review/skill.md) — the read-only review protocol this project's skill is modeled on
-- [App Designer's ADR-006](../../../Users/udayn/Downloads/.claude/skills/architect-review/skill.md) — UI → Data boundary, ModelReader + CommandExecutor
-- [App Designer's ADR-007](../../../Users/udayn/Downloads/.claude/skills/architect-review/skill.md) — Command pattern for all state mutations
+- The App Designer's 6-package N-Tier model (`packages/core` → `utils` → `data` → `service` → `logic` → `components` → `ui`) was the source of inspiration for this 7-folder model. The App Designer `architect-review` skill was the source protocol for our `architect-review` skill. References to App Designer's own docs (e.g. the reference architecture guide, `component-designer-spec.md`, App Designer's `architect-review` skill) are intentionally not linked here — those files were outside-repo reference material and have since been removed from the local source. The design principles that informed this ADR are captured in the **Context**, **Decision**, and **Alternatives Considered** sections above.
 - [`../../.claude/skills/architect-review/SKILL.md`](../../.claude/skills/architect-review/SKILL.md) — this project's read-only frontend review skill
 - [`../../.claude/skills/react-developer/SKILL.md`](../../.claude/skills/react-developer/SKILL.md) — Rule #10 (PascalCase) updated in the same commit
 - [`SYSTEM_DESIGN_REVIEW.md`](../../SYSTEM_DESIGN_REVIEW.md) — the design review that produced the action item to harden the frontend layer model
