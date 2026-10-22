@@ -48,7 +48,7 @@ server   ui   e2e   root   deps   config   docs   skills   agents   arch
 | `deps`   | Dependency bumps in any `package.json` (without other code changes)                                                              |
 | `config` | Tooling config: `eslint.config.js`, `prettier.config.js`, `commitlint.config.js`, `.husky/*`, `.nvmrc`, `.vscode/*`              |
 | `docs`   | `docs/**` (architecture docs, ADRs)                                                                                              |
-| `skills` | `.claude/skills/**`                                                                                                              |
+| `skills` | `.claude/skills/**`, `ui/.claude/skills/**`, `server/.claude/skills/**`                                                          |
 | `agents` | `.claude/agents/**`                                                                                                              |
 | `arch`   | `docs/architecture/**` + `docs/adr/**` together (cross-cutting architecture work)                                                |
 
@@ -73,7 +73,7 @@ If your change genuinely doesn't fit any listed scope, omit the scope (`docs: โ€
 - Separate from the summary with a blank line
 - Explain **what** changed and **why**, not how
 - Wrap lines at 72 characters
-- Reference related ADRs (`ADR-0008: Frontend N-Tier layer model`), skills (`architect-review/SKILL.md`), or docs (`docs/architecture/frontend-refactor.md`) when relevant
+- Reference related ADRs (`ADR-0008: Frontend N-Tier layer model`), skills (`server-architect-review`, `ui-architect-review`), or docs (`docs/architecture/frontend-refactor.md`) when relevant
 
 ## Process
 
@@ -123,7 +123,7 @@ Adds no-restricted-imports rules per ADR-0008. Components/
 no longer imports from data/ or logic/. utils/ and core/
 cannot import from any other layer. Catches the cheap
 violations at lint time; the rest still goes through
-architect-review.
+the stack architect-review skills.
 
 Per docs/architecture/frontend-refactor.md ยง2.
 ```

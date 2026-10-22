@@ -93,5 +93,5 @@ body:
       label: Checklist
       options:
         - label: I checked the architecture TODO and existing ADRs for prior decisions
-        - label: I linked the relevant skill file (e.g. `.claude/skills/react-developer/SKILL.md`)
+        - label: I linked the relevant skill file (e.g. `ui/.claude/skills/react-developer/SKILL.md`)
         - label: I am willing to drive this through code review (not just spec)

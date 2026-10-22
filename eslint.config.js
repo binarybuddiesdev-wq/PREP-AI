@@ -46,7 +46,14 @@ export default tseslint.config(
 
   // ── Node & Root Configs: Node globals, no React ─────────────────
   {
-    files: ['server/**/*.ts', '*.js', 'release.config.cjs', 'types/**/*.ts', 'scripts/**/*.ts'],
+    files: [
+      'server/**/*.ts',
+      '*.js',
+      'release.config.cjs',
+      'types/**/*.ts',
+      'scripts/**/*.ts',
+      'scripts/**/*.js',
+    ],
     languageOptions: {
       globals: { ...globals.node },
     },

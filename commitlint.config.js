@@ -15,7 +15,7 @@
  *   - deps                 — dependency bumps in any package
  *   - config               — tooling config (eslint, prettier, husky, etc.)
  *   - docs                 — docs/ folder
- *   - skills               — .claude/skills/ folder
+ *   - skills               — .claude/skills/ folders (root, ui/, server/)
  *   - agents               — .claude/agents/ folder
  *   - arch                 — architecture docs / ADRs / diagrams
  *

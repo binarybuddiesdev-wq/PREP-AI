@@ -122,7 +122,7 @@ PREP-AI/
 │   │   │   ├── constants/
 │   │   │   │   └── api.constants.ts  # ApiTags, ApiRoutes, ApiOperation, Error/Success messages
 │   │   │   ├── decorators/           # @Public, @Roles, @CurrentUser
-│   │   │   ├── filters/              # HttpExceptionFilter (Global error transformer)
+│   │   │   ├── filters/              # GlobalExceptionFilter (Global error transformer)
 │   │   │   ├── guards/               # ClerkAuthGuard, RolesGuard
 │   │   │   ├── interceptors/          # TransformInterceptor ({ success, message, data })
 │   │   │   ├── middleware/           # SanitizeMiddleware, LoggerMiddleware
@@ -567,7 +567,7 @@ export interface ApiResponse<T> {
 - Controllers return plain objects: `{ message: TOPIC_CREATED_SUCCESS, data: topic }`.
 - The interceptor automatically wraps the response into the standardized structure.
 
-### 9.2 Global Exception Filter (`HttpExceptionFilter`)
+### 9.2 Global Exception Filter (`GlobalExceptionFilter`)
 
 Uncaught exceptions are transformed into consistent error responses:
 

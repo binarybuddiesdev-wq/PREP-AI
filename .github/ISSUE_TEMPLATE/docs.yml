@@ -14,7 +14,7 @@ body:
         - Supersede an existing ADR
         - New architecture deep-dive (caching, RAG, observability, …)
         - Runbook addition
-        - Skill addition / update (`.claude/skills/`)
+        - Skill addition / update (`.claude/skills/`, `ui/.claude/skills/`, `server/.claude/skills/`)
         - README / quickstart update
         - Comment / typo / wording fix
     validations:

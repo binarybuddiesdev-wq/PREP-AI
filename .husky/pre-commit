@@ -15,3 +15,6 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 pnpm exec lint-staged
+
+# Instruction files (skills, agents, CLAUDE.md) must stay consistent with each other and with the repo.
+node scripts/check-agent-docs.js

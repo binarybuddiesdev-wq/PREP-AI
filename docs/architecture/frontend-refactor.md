@@ -12,9 +12,9 @@
 >
 > - [ADR-0008](../adr/0008-frontend-n-tier.md) — Context, Decision,
 >   Consequences, Alternatives
-> - [`react-developer/SKILL.md`](../../.claude/skills/react-developer/SKILL.md)
+> - [`react-developer/SKILL.md`](../../ui/.claude/skills/react-developer/SKILL.md)
 >   — Rule #10 (file naming)
-> - [`architect-review/SKILL.md`](../../.claude/skills/architect-review/SKILL.md)
+> - [`ui-architect-review/SKILL.md`](../../ui/.claude/skills/ui-architect-review/SKILL.md)
 >   — the read-only review skill that enforces this plan
 
 ---
@@ -25,7 +25,7 @@
 - **§2** — the seven layers and what each can import
 - **§3** — the Reader / Command hook pattern
 - **§4** — folder structure
-- **§5** — what the `architect-review` skill checks
+- **§5** — what the `ui-architect-review` skill checks
 - **§6** — migration plan (one atomic commit, verified against `ui/src/`)
 - **§7** — anti-patterns rejected
 - **§8** — references
@@ -40,7 +40,7 @@
 | 2   | **Component file naming** | **`PascalCase.tsx`** (`DashboardPage.tsx`, `UserCard.tsx`)                                                                            | Overrides the prior `react-developer` skill Rule #10 (was camelCase). Matches the React community default, matches Shadcn UI, matches the four existing files. Skill update is part of the same atomic commit as the refactor. |
 | 3   | **Hook file naming**      | `camelCase.ts` (`useUserReader.ts`, `useUpdateSettingsCommand.ts`)                                                                    | Standard React hooks convention.                                                                                                                                                                                               |
 | 4   | **Types & barrels**       | `<Name>.types.ts`, `index.ts`                                                                                                         | Per the `react-developer` skill rule #1 (interfaces in separate `.ts` files) and rule #2 (one `index.ts` per folder).                                                                                                          |
-| 5   | **Hook naming**           | **`useXxxReader()` for reads, `useXxxCommand()` for writes**                                                                          | CQRS-Lite, matches the reference App Designer project's `useModelReader` / `useCommandExecutor` vocabulary, lets the `architect-review` skill speak one language.                                                              |
+| 5   | **Hook naming**           | **`useXxxReader()` for reads, `useXxxCommand()` for writes**                                                                          | CQRS-Lite, matches the reference App Designer project's `useModelReader` / `useCommandExecutor` vocabulary, lets the `ui-architect-review` skill speak one language.                                                           |
 | 6   | **`service/` layer**      | **Defer.** Add when the 2nd SDK lands (Cloudinary / Resend / Razorpay).                                                               | One customer doesn't justify a folder. Clerk stays in `app/` (provider wiring) and `lib/` (current location) until a second adapter is needed.                                                                                 |
 | 7   | **Reader/Command tests**  | Headless unit tests with mocked `QueryClient` + mocked `getApiClient()`. No DOM mount needed.                                         | Lets the Mastra AI agent verify flows programmatically.                                                                                                                                                                        |
 | 8   | **Undo/redo**             | **Deferred.** No `useXxxCommand().undo()`. The hook pattern exists for AI-agent invocation + structural consistency, not for history. | Premature; add when there's a real product need.                                                                                                                                                                               |
@@ -330,7 +330,7 @@ ui/src/
 
 ---
 
-## 5. What the `architect-review` skill checks
+## 5. What the `ui-architect-review` skill checks
 
 The skill is read-only. For a UI change, it dispatches one judgment gate.
 It flags:
@@ -403,9 +403,9 @@ ui/src/
 
 ### 6.2 Skills update (same commit)
 
-- Update `.claude/skills/react-developer/SKILL.md` Rule #10 ✅ **DONE**
-- Write `.claude/skills/architect-review/SKILL.md` based on §5 of this document ✅ **DONE**
-- Update `CLAUDE.md` and `GEMINI.md` skill tables to include `architect-review` ✅ **DONE**
+- Update `ui/.claude/skills/react-developer/SKILL.md` Rule #10 ✅ **DONE**
+- Write `ui/.claude/skills/ui-architect-review/SKILL.md` based on §5 of this document ✅ **DONE**
+- Update `CLAUDE.md` and `GEMINI.md` skill tables to include `ui-architect-review` ✅ **DONE**
 - Update `.claude/agents/architect.md` and `frontend-developer.md` to reference the new skill ✅ **DONE**
 
 ### 6.3 `ui/` moves/renames (8 ops)
@@ -474,7 +474,7 @@ the new rule.
 - 1 ESLint config change
 - 4 page refactors
 - 1 skill update (`react-developer/SKILL.md` Rule #10) — already done
-- 1 new skill (`architect-review/SKILL.md`) — already done
+- 1 new skill (`ui-architect-review/SKILL.md`) — already done
 - 2 cross-reference edits (`CLAUDE.md` and `GEMINI.md` skill tables) — already done
 - 1 ADR (`docs/adr/0008-frontend-n-tier.md`) — already written
 - 1 architecture doc (`docs/architecture/frontend-refactor.md`) — this file
@@ -505,6 +505,6 @@ commit so the git history is clean).
 - The App Designer reference architecture (the source of the N-Tier model that informed this design) — see [ADR-0008's References section](../adr/0008-frontend-n-tier.md#references) for the equivalent citations.
 - `CLAUDE.md` (project root) — project overview
 - `.claude/skills/developer/SKILL.md` — general dev standards
-- `.claude/skills/react-developer/SKILL.md` — presentational rules + Rule #10 (PascalCase) updated in the same commit
-- `.claude/skills/nestjs-developer/SKILL.md` — backend, unaffected by this refactor
-- `.claude/skills/architect-review/SKILL.md` — the read-only frontend review skill
+- `ui/.claude/skills/react-developer/SKILL.md` — presentational rules + Rule #10 (PascalCase) updated in the same commit
+- `server/.claude/skills/nestjs-developer/SKILL.md` — backend, unaffected by this refactor
+- `ui/.claude/skills/ui-architect-review/SKILL.md` — the read-only frontend review skill

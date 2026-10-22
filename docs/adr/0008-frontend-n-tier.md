@@ -77,7 +77,7 @@ Three named decisions that fall out of the model:
 2. **Hook naming: `useXxxReader` / `useXxxCommand`** (not
    `useXxxQuery` / `useXxxMutation`). Rationale: matches the reference
    App Designer project's `useModelReader` / `useCommandExecutor`
-   vocabulary; mirrors the `architect-review` skill's terminology
+   vocabulary; mirrors the `ui-architect-review` skill's terminology
    (Reader/Command rather than Query/Mutation); consistent across reads
    and writes.
 
@@ -86,7 +86,7 @@ Three named decisions that fall out of the model:
    current location (`app/` for provider wiring, `lib/` for hooks)
    until a second adapter is needed.
 
-The `architect-review` skill (`.claude/skills/architect-review/SKILL.md`)
+The `ui-architect-review` skill (`ui/.claude/skills/ui-architect-review/SKILL.md`)
 encodes the violation list for this model: hard violations (e.g.
 `components/` importing from `data/` or `logic/`, `useQuery` called
 outside `logic/`, `useApiClient` called outside `data/` or `logic/`)
@@ -104,7 +104,7 @@ merging any `ui/` branch.
   provider needed.
 - Reader/Command hooks are unit-testable in isolation, which is the
   basis for AI-driven flow verification.
-- A layer violation is caught by `architect-review` _before_ it ships,
+- A layer violation is caught by `ui-architect-review` _before_ it ships,
   not by a human staring at a PR.
 - The page becomes a thin composition file: it imports hooks, imports
   components, returns JSX. If a page exceeds ~150 lines, it's a signal
@@ -124,7 +124,7 @@ merging any `ui/` branch.
   For a micro-feature (≤1 query, ≤0 mutations, ≤1 type), the
   `data/` files may be folded into one — see the micro-feature
   exception in the refactor doc.
-- **One more skill to remember.** `architect-review` is the new
+- **One more skill to remember.** `ui-architect-review` is the new
   pre-merge gate for `ui/` branches, alongside `verify-implementation`.
 - **`react-developer` skill Rule #10 was overridden.** Existing files
   were already PascalCase (so no renames were needed during the
@@ -144,11 +144,11 @@ merging any `ui/` branch.
 - **Layer the rules into ESLint only (no skill, no doc).** Reject: ESLint
   catches literal import violations but not design violations ("a page
   contains business logic", "a hook file has too many responsibilities",
-  "a resource folder has no `keys.ts`"). The `architect-review` skill
+  "a resource folder has no `keys.ts`"). The `ui-architect-review` skill
   encodes the design-level rules.
 - **Use `useXxxQuery` / `useXxxMutation` instead of
   `useXxxReader` / `useXxxCommand`.** Reject: Reader/Command maps 1:1
-  to the reference project's vocabulary and the `architect-review`
+  to the reference project's vocabulary and the `ui-architect-review`
   skill's terminology. The 60/40 trade-off (conventional React naming
   vs. CQRS-Lite vocabulary) went to the side that keeps the project
   consistent with the reference and gives the AI agent one vocabulary
@@ -175,7 +175,7 @@ merging any `ui/` branch.
 
 - [`../architecture/frontend-refactor.md`](../architecture/frontend-refactor.md) — the granular migration plan, file inventory, folder structure, and anti-patterns
 - [`../architecture/architecture.md`](../architecture/architecture.md) — the full-stack monorepo blueprint this layer model sits inside
-- The App Designer's 6-package N-Tier model (`packages/core` → `utils` → `data` → `service` → `logic` → `components` → `ui`) was the source of inspiration for this 7-folder model. The App Designer `architect-review` skill was the source protocol for our `architect-review` skill. References to App Designer's own docs (e.g. the reference architecture guide, `component-designer-spec.md`, App Designer's `architect-review` skill) are intentionally not linked here — those files were outside-repo reference material and have since been removed from the local source. The design principles that informed this ADR are captured in the **Context**, **Decision**, and **Alternatives Considered** sections above.
-- [`../../.claude/skills/architect-review/SKILL.md`](../../.claude/skills/architect-review/SKILL.md) — this project's read-only frontend review skill
-- [`../../.claude/skills/react-developer/SKILL.md`](../../.claude/skills/react-developer/SKILL.md) — Rule #10 (PascalCase) updated in the same commit
+- The App Designer's 6-package N-Tier model (`packages/core` → `utils` → `data` → `service` → `logic` → `components` → `ui`) was the source of inspiration for this 7-folder model. The App Designer `architect-review` skill was the source protocol for our `ui-architect-review` skill. References to App Designer's own docs (e.g. the reference architecture guide, `component-designer-spec.md`, App Designer's `architect-review` skill) are intentionally not linked here — those files were outside-repo reference material and have since been removed from the local source. The design principles that informed this ADR are captured in the **Context**, **Decision**, and **Alternatives Considered** sections above.
+- [`../../ui/.claude/skills/ui-architect-review/SKILL.md`](../../ui/.claude/skills/ui-architect-review/SKILL.md) — this project's read-only frontend review skill
+- [`../../ui/.claude/skills/react-developer/SKILL.md`](../../ui/.claude/skills/react-developer/SKILL.md) — Rule #10 (PascalCase) updated in the same commit
 - [`SYSTEM_DESIGN_REVIEW.md`](../../SYSTEM_DESIGN_REVIEW.md) — the design review that produced the action item to harden the frontend layer model

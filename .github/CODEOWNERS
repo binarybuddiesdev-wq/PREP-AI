@@ -84,6 +84,8 @@
 # ── Claude skills and agents ───────────────────────────────────────
 /.claude/                             @prepai/docs
 /.claude/skills/                      @prepai/docs
+/ui/.claude/skills/                   @prepai/docs
+/server/.claude/skills/               @prepai/docs
 /.claude/agents/                      @prepai/docs
 /.claude/settings.json                @prepai/docs
 
