@@ -1,0 +1,4 @@
+allowBuilds:
+  # postinstall only prints Clerk's telemetry notice and writes a notice-state file in the
+  # user's config folder. The app does not need it, so the script stays blocked.
+  '@clerk/shared': false
