@@ -27,7 +27,7 @@ Work out what the change touches: the components and hooks that import the chang
 | ------------------------------ | ----------------------------------------- | --------------------------------- |
 | A component or page            | Testing Library render + interaction test | `pnpm test -- --run` in `ui/`     |
 | A hook or pure function        | Direct test (hook via `renderHook`)       | `pnpm test -- --run` in `ui/`     |
-| `lib/api.ts` or a query key    | Test with the network mocked              | `pnpm test -- --run` in `ui/`     |
+| `service/api/` or a query key  | Test with the network mocked              | `pnpm test -- --run` in `ui/`     |
 | A routed flow, sign-in, gating | Playwright ui smoke                       | `pnpm test:ui` from the repo root |
 
 **Know the current state.** `ui/` has no test files today, so bare `vitest run` exits 1 with "No test files found". That is not the engineer's regression; their change owes its own test, and `ui/` has no coverage threshold configured, so do not claim one. Bare `pnpm test` is watch mode and never exits: use `pnpm test -- --run`.

@@ -1,6 +1,6 @@
 # API contract rules
 
-Reference for the `api-design` skill. Treat every endpoint as a **published interface with a consumer**: `ui/` calls it through `ui/src/lib/api.ts`, and the spec in `routes/<name>-api-spec.md` is what the consumer was written against. A contract change that compiles on the server can still break the UI at runtime.
+Reference for the `api-design` skill. Treat every endpoint as a **published interface with a consumer**: `ui/` calls it through `ui/src/service/api/`, and the spec in `routes/<name>-api-spec.md` is what the consumer was written against. A contract change that compiles on the server can still break the UI at runtime.
 
 These are the defaults for **new and changed** endpoints. Existing endpoints that differ are listed under "Known backlog" at the end; they are not precedent.
 
@@ -24,7 +24,7 @@ Because `ui/` lives in this repository, a breaking change is **one change set**:
 **Every contract change ends with a "UI impact" note** in your report:
 
 - the endpoints added or changed;
-- the functions to add or change in `ui/src/lib/api.ts`, and the pages or hooks that consume them;
+- the functions to add or change in `ui/src/service/api/`, and the pages or hooks that consume them;
 - whether the change is additive or breaking.
 
 The UI branches on **status code**, not message text. Messages may be reworded only together with `routes/<name>-api-spec.md` and the tests that assert them.

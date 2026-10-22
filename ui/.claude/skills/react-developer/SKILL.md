@@ -28,7 +28,7 @@ These govern **new and substantially modified code** (see § Existing code and k
 1. **Interfaces live in a sibling `*.types.ts`**, never inline in a `.tsx`. They are `I`-prefixed and named for what they serve: `IHelloProps`, `IUseUserReturn`. The server uses the same `I` prefix.
 2. **A feature folder has an `index.ts` barrel**, and consumers import from the folder (`@/components/hello`), never from a file inside it. Exempt: `components/ui/` (shadcn), `assets/`, `test/`, `lib/`.
 3. **Tailwind first.** Compose classes with `cn()`. A per-folder `styles.css` (`@apply`) only for custom classes utilities express badly. No inline `style={{}}` (except a genuinely computed value) and no CSS-in-JS.
-4. **Shared helpers go in `ui/src/lib/`, one concern per file.** `@/lib/utils` is the file `lib/utils.ts` (shadcn's `cn()`); never create a `lib/utils/` folder beside it.
+4. **Shared helpers go in `ui/src/utils/`, one concern per file.** `@/utils` is the file `utils/cn.ts` (shadcn's `cn()`); never create a `utils/` folder beside it.
 5. **Memoize on evidence.** A `memo()` pays off only if the wrap is correct (arrow form with `displayName`) **and** callers pass reference-stable props. Check both together.
 6. **One component per file, as a named export.** The file is `PascalCase.tsx` and matches the component name. No default exports.
 7. **Arrow functions only** for components, hooks and helpers.
@@ -44,7 +44,7 @@ The rules above govern **new and substantially modified code**. Some existing fi
 | Existing code                                                          | Rule it does not meet                     |
 | ---------------------------------------------------------------------- | ----------------------------------------- |
 | `App.tsx` and the four pages in `pages/` are `export default function` | #6 named exports, #7 arrow functions      |
-| `lib/api.ts` declares `useApiClient` with `function`                   | #7 arrow functions                        |
+| `service/api/` declares `useApiClient` with `function`                 | #7 arrow functions                        |
 | `pages/SettingsPage.tsx` calls `fetch` directly, three times           | all API calls go through `useApiClient()` |
 | `store/index.ts` holds only a placeholder reducer                      | no real slices exist yet                  |
 | No `*.test.tsx` files exist                                            | `frontend-testing`                        |
@@ -81,7 +81,7 @@ How to apply this:
 | `function Hello()` on a new component                                      | `const Hello = (props: IHelloProps) => {…}`                          |
 | `({ name, age }: IHelloProps)` in the signature                            | `(props)` then `const { name, age } = props`                         |
 | `memo()` on a component whose caller passes a fresh object or inline arrow | Stabilise the props with `useCallback`/`useMemo`, or drop the `memo` |
-| A `lib/utils/` folder next to `lib/utils.ts`                               | Put the helper in `lib/<concern>.ts`                                 |
+| A `utils/` folder next to `utils/cn.ts`                                    | Put the helper in `utils/<concern>.ts`                               |
 | `fetch(...)` in a page or component                                        | `useApiClient()` (see `frontend-data-fetching`)                      |
 | An empty `styles.css` created to satisfy a rule                            | Delete it; Tailwind is enough                                        |
 

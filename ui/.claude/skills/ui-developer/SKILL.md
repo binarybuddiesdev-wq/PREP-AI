@@ -43,7 +43,7 @@ Read what the change needs: the files you modify, their direct imports, their ca
 
 ## Reuse before build
 
-Search for the concept and its synonyms first (`grep -rn "formatDate\|dateFormat" ui/src`), then check `ui/src/components/ui/` (shadcn primitives) and `ui/src/lib/`. Build new only when nothing fits.
+Search for the concept and its synonyms first (`grep -rn "formatDate\|dateFormat" ui/src`), then check `ui/src/components/ui/` (shadcn primitives) and `ui/src/utils/`. Build new only when nothing fits.
 
 ## Design principles
 

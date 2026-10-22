@@ -8,7 +8,7 @@ These are the patterns PrepAI already uses. Mirror them.
 
 ### Routing
 
-`ui/src/App.tsx` declares the route tree. Public routes use `<PublicRoute>`,
+`ui/src/app/App.tsx` declares the route tree. Public routes use `<PublicRoute>`,
 authenticated routes use `<ProtectedRoute>`. Both wrap `<SignedIn>` /
 `<SignedOut>` from Clerk. New routes follow the same pattern:
 

@@ -107,11 +107,11 @@ Styling order of preference:
   at render time)
 - `styled-components` or any CSS-in-JS library
 
-**Tailwind convention:** use the `cn()` helper from `@/lib/utils` to compose
+**Tailwind convention:** use the `cn()` helper from `@/utils` to compose
 class names cleanly. Don't concatenate class names with string templates.
 
 ```tsx
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils';
 
 export const Hello = (props: IHelloProps) => {
   const { className, name } = props;
@@ -128,10 +128,10 @@ const buttonClass = (active: boolean) =>
   cn('rounded-md px-3 py-1', active && 'bg-amber-500 text-black');
 ```
 
-### 4. Shared helpers live in `ui/src/lib/`, one concern per file
+### 4. Shared helpers live in `ui/src/utils/`, one concern per file
 
-`@/lib/utils` resolves to the file `ui/src/lib/utils.ts`, which holds shadcn's
-`cn()`. **Do not create a `lib/utils/` directory next to it** — `@/lib/utils`
+`@/utils` resolves to the file `ui/src/utils/cn.ts`, which holds shadcn's
+`cn()`. **Do not create a `utils/` directory next to it** — `@/utils`
 would then be ambiguous. Put new helpers in a file named for the concern:
 
 ```ts
@@ -140,11 +140,11 @@ export const formatDate = (date: Date): string => { ... };
 export const formatCurrency = (n: number, currency = 'USD'): string => { ... };
 ```
 
-- Keep `lib/utils.ts` for `cn()` only.
-- API access belongs in `lib/api.ts` (see the `frontend-data-fetching` skill).
+- Keep `utils/cn.ts` for `cn()` only.
+- API access belongs in `service/api/` (see the `frontend-data-fetching` skill).
 - When `lib/` outgrows flat files, convert it to concern folders in one
-  dedicated change (`lib/utils.ts` → `lib/utils/index.ts` + `lib/utils/cn.ts`)
-  and update every `@/lib/utils` import in that same change.
+  dedicated change (`utils/cn.ts` → `lib/utils/index.ts` + `lib/utils/cn.ts`)
+  and update every `@/utils` import in that same change.
 
 ### 5. `React.memo`, `useMemo`, `useCallback` — use when it matters
 
@@ -244,7 +244,7 @@ import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 
 // 2. Internal alias imports (@/...)
-import { useApiClient } from '@/lib/api';
+import { useApiClient } from '@/service/api';
 import { Button } from '@/components/ui/button';
 import type { IUserProfile } from '@/types/user.types';
 

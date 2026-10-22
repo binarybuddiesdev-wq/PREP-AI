@@ -1,6 +1,6 @@
 ---
 name: frontend-data-fetching
-description: Use when fetching, caching or mutating server data in the PrepAI ui/ app — useApiClient, the ky client and Clerk token, lib/api.ts endpoint functions, TanStack Query useQuery/useMutation, query keys, loading/error/empty states, or replacing a direct fetch call. Frontend only; the endpoints themselves are designed with api-design.
+description: Use when fetching, caching or mutating server data in the PrepAI ui/ app — useApiClient, the ky client and Clerk token, service/api/ endpoint functions, TanStack Query useQuery/useMutation, query keys, loading/error/empty states, or replacing a direct fetch call. Frontend only; the endpoints themselves are designed with api-design.
 ---
 
 # Frontend Data Fetching
@@ -9,8 +9,8 @@ How `ui/` talks to the backend: one client, one cache, one place per concern. Co
 
 ## The moving parts
 
-- **`useApiClient()`** (`ui/src/lib/api.ts`) returns a `ky` instance prefixed with `${VITE_API_BASE_URL}/api/v1` (default `http://localhost:3000`). Its `beforeRequest` hook reads the Clerk session token with `getToken()` and sets `Authorization: Bearer …`. `throwHttpErrors` is on, so a non-2xx response **throws** a ky `HTTPError` whose `error.response.status` is the status.
-- **Endpoint functions** in `lib/api.ts` (`getMe`, `getSettings`, `updateSettings`, `setupComplete`) take the client as their first argument and return the parsed JSON.
+- **`useApiClient()`** (`ui/src/service/api/`) returns a `ky` instance prefixed with `${VITE_API_BASE_URL}/api/v1` (default `http://localhost:3000`). Its `beforeRequest` hook reads the Clerk session token with `getToken()` and sets `Authorization: Bearer …`. `throwHttpErrors` is on, so a non-2xx response **throws** a ky `HTTPError` whose `error.response.status` is the status.
+- **Endpoint functions** in `service/api/` (`getMe`, `getSettings`, `updateSettings`, `setupComplete`) take the client as their first argument and return the parsed JSON.
 - **The response envelope** is `{ success, message, data }`. Today those functions type `data` as `unknown`.
 - **Providers** (`main.tsx`, outermost first): `ClerkProvider` → Redux `Provider` → `QueryClientProvider` (a default `new QueryClient()`) → `BrowserRouter`. TanStack Query is installed and wired, but no code uses `useQuery` or `useMutation` yet.
 
@@ -31,7 +31,7 @@ How `ui/` talks to the backend: one client, one cache, one place per concern. Co
 ## The pattern
 
 ```ts
-// lib/queryKeys.ts
+// logic/<resource>/<resource>.keys.ts
 export const userKeys = {
   all: ['users'] as const,
   me: () => [...userKeys.all, 'me'] as const,
@@ -43,7 +43,7 @@ export const userKeys = {
 // pages/settings/useUserSettings.ts
 import { useAuth } from '@clerk/clerk-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getSettings, updateSettings, useApiClient } from '@/lib/api';
+import { getSettings, updateSettings, useApiClient } from '@/service/api';
 import { userKeys } from '@/lib/queryKeys';
 import type { IUpdateSettingsBody } from './settings.types';
 
@@ -73,7 +73,7 @@ The component renders `settingsQuery.isPending`, `settingsQuery.isError` and the
 
 `docs/architecture/frontend-refactor.md` puts API access in `data/` and hooks in `logic/`. **Those folders do not exist yet.** Until the refactor lands:
 
-- endpoint functions stay in `lib/api.ts` (split into `lib/<resource>.api.ts` when it grows), and key factories in `lib/queryKeys.ts`;
+- endpoint functions stay in `service/api/` (split into `service/api/<resource>.api.ts` when it grows), and key factories in `logic/<resource>/<resource>.keys.ts`;
 - a hook used by one page or feature lives in that feature's folder (`pages/settings/useUserSettings.ts`); a hook shared by several goes in `lib/`.
 
 Do not create `data/` or `logic/` inside an unrelated feature. If your change needs them, say so in your report.
@@ -86,7 +86,7 @@ TanStack Query retries failed queries three times by default. For a 4xx that is 
 
 - `pages/DashboardPage.tsx` syncs the user in a `useEffect` and `console.log`s the result.
 - `pages/SettingsPage.tsx` calls `fetch` three times with a hand-built `Authorization` header, keeps the data in `useState`, and writes debugging `console.error` lines (including whether a token was retrieved).
-- `lib/api.ts` types `data` as `unknown`.
+- `service/api/` types `data` as `unknown`.
 
 Replace these when a change substantially rewrites the file, or in a dedicated change. New code uses the pattern above.
 

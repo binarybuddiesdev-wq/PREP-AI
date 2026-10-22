@@ -70,7 +70,7 @@ vi.mock('@clerk/clerk-react', () => ({
 }));
 
 const getSettings = vi.fn();
-vi.mock('@/lib/api', () => ({
+vi.mock('@/service/api', () => ({
   useApiClient: () => ({}),
   getSettings: (...args: unknown[]) => getSettings(...args),
 }));

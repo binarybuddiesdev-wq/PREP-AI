@@ -30,7 +30,7 @@ The baseline for **every** change under `server/`. Framework mechanics (imports,
 
 ### Impact analysis for existing code
 
-Before changing existing code, write down what it affects: the callers and callees, the other module that reads the same collection or table, and **the UI** (`ui/src/lib/api.ts` and the pages that consume the endpoint). A changed route, field, status or message breaks the UI unless the change is additive (`api-design` § contract). Then cover both the new behaviour and the existing behaviour you touched with specs.
+Before changing existing code, write down what it affects: the callers and callees, the other module that reads the same collection or table, and **the UI** (`ui/src/service/api/` and the pages that consume the endpoint). A changed route, field, status or message breaks the UI unless the change is additive (`api-design` § contract). Then cover both the new behaviour and the existing behaviour you touched with specs.
 
 ### Bounded investigation
 

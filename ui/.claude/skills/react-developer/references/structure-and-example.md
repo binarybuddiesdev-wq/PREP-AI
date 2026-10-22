@@ -19,7 +19,7 @@ ui/src/components/hello/
 Plus, if it has shared helpers:
 
 ```
-ui/src/lib/utils/
+ui/src/utils/
 └── hello-helpers.ts               # pure functions used by hello/*
 ```
 
@@ -79,7 +79,7 @@ export interface IHelloProps {
 ```tsx
 // ui/src/components/hello/Hello.tsx
 import { memo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils';
 
 import type { IHelloProps } from './Hello.types';
 

@@ -10,7 +10,7 @@ Frontend skills live in `ui/.claude/skills/` and are listed only after a file un
 | ------------------------------------------------------------------- | -------------------------- |
 | Before writing or modifying any frontend code                       | `ui-developer`             |
 | Before creating or changing a component, page, hook, route or style | `react-developer`          |
-| Before fetching or mutating server data, or touching `lib/api.ts`   | `frontend-data-fetching`   |
+| Before fetching or mutating server data, or touching `service/api/` | `frontend-data-fetching`   |
 | Before writing or changing a `*.test.tsx` / `*.test.ts`             | `frontend-testing`         |
 | After finishing an implementation, before calling it done           | `ui-verify-implementation` |
 | Before adding, bumping or removing a dependency                     | `ui-upgrade-packages`      |
@@ -39,9 +39,9 @@ If pnpm stops with `ERR_PNPM_IGNORED_BUILDS` (it names `@clerk/shared`), that is
 
 ### Frontend
 
-Routing is React Router with `SignedIn`/`SignedOut` (Clerk) gating `ProtectedRoute`/`PublicRoute` wrappers in `App.tsx`. Server state goes through TanStack Query; client/global UI state through Redux Toolkit (`store/index.ts`). All API calls go through `useApiClient()` (`lib/api.ts`), a `ky` instance that auto-attaches the Clerk session token as a Bearer header and is prefixed with `${VITE_API_BASE_URL}/api/v1` — don't call `fetch`/`ky` directly from components. UI components follow Shadcn UI conventions (`components.json`, `components/ui/`) with Tailwind v4.
+Routing is React Router with `SignedIn`/`SignedOut` (Clerk) gating `ProtectedRoute`/`PublicRoute` wrappers in `app/RouteGuards.tsx`. Server state goes through TanStack Query; client/global UI state through Redux Toolkit (`data/store`). All API calls go through `useApiClient()` (`service/api/`), a `ky` instance that auto-attaches the Clerk session token as a Bearer header and is prefixed with `${VITE_API_BASE_URL}/api/v1` — don't call `fetch`/`ky` directly from components. UI components follow Shadcn UI conventions (`components.json`, `components/ui/`) with Tailwind v4.
 
-`ui/src` today contains `components/` (shadcn primitives under `components/ui/`), `lib/` (`api.ts`, `utils.ts`), `pages/`, `store/` and `test/`. `docs/architecture/frontend-refactor.md` and ADR-0008 describe a 7-layer target (`core`, `utils`, `data`, `service`, `logic`, `components`, `pages`); those other folders do not exist yet, so do not invent them inside an unrelated feature.
+`ui/src` follows the layers in ADR-0009: `core` (types, constants, routes, env), `utils` (pure helpers), `service` (HTTP client, Clerk adapter; no business logic), `data` (Redux store), `logic` (Reader/Command hooks over TanStack Query), `components` (props in, events out; shadcn primitives under `components/ui/`), `pages` (route shells, named exports) and `app` (providers, routes, guards). Lower layers never import from higher ones. Each layer folder exposes an `index.ts` barrel.
 
 ### Path aliases
 
@@ -53,4 +53,4 @@ Routing is React Router with `SignedIn`/`SignedOut` (Clerk) gating `ProtectedRou
 
 ## Known gaps in the frontend
 
-`react-developer` lists what is **backlog, not precedent**: default-exported pages, `fetch` called directly in `SettingsPage`, a placeholder Redux store. `ui/` has no tests yet, so each change owes its own (`frontend-testing`). Reviews flag only what a diff adds.
+`ui/` has no tests yet, so each change owes its own (`frontend-testing`). The ESLint layer-boundary rules from ADR-0009 are not enabled yet. Reviews flag only what a diff adds.

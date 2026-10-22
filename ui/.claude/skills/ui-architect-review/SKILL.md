@@ -62,7 +62,7 @@ Cheap, objective, answerable from the diff alone, so it runs even on a one-line 
 
 - **Trivial** — single file, no new or changed exported component, hook, type or prop, no new route or state slice, no new pattern. Renames, typo fixes, a single-conditional fix, a class tweak.
 - **Mechanical sweep** — the same known-correct edit repeated, introducing no new interface, pattern or behaviour. The test: _is correctness decided by mechanical ground truth?_ If "lint is silent, it builds, tests pass" fully establishes it, there is nothing to judge.
-- **Non-trivial** — adds or changes an exported component, hook or type; a route; a Redux slice; `lib/api.ts` or a query key; Clerk gating; introduces a pattern new to that area; changes behaviour, error handling or the backend contract it depends on; any new feature work.
+- **Non-trivial** — adds or changes an exported component, hook or type; a route; a Redux slice; `service/api/` or a query key; Clerk gating; introduces a pattern new to that area; changes behaviour, error handling or the backend contract it depends on; any new feature work.
 
 A trivial change or sweep still gets the mandatory walk and the default correctness pass; only the judgment gates are skipped. Say so, report the gate and walk results, and stop. Offer a forced pass; do not manufacture one. A sweep that turns up a real defect: split that fix out and treat it as non-trivial.
 
