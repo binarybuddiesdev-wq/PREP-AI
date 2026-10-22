@@ -5,9 +5,8 @@
  * defaults). Single source of truth for both `server/` (Node/TS) and
  * `ui/` (browser/TSX) with project-specific rules:
  *
- *  - Frontend 7-layer N-Tier model enforced via `no-restricted-imports` —
- *    see `docs/architecture/frontend-refactor.md` §2 and the
- *    `architect-review` skill for the canonical violation list.
+ *  - Frontend layer boundaries live in `ui/eslint.config.js`
+ *    (see `docs/architecture/frontend-refactor.md` §1).
  *  - Backend NestJS module boundaries enforced — see
  *    `docs/architecture/architecture.md` §3.
  *  - `reportUnusedDisableDirectives: 'error'` replaces the need for the
@@ -99,70 +98,8 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
 
-      // ── Frontend 7-layer N-Tier model (per `frontend-refactor.md` §2) ──
-      // The architect-review skill enforces these. We surface the cheap
-      // ones (literal import violations) here so they fail at lint time,
-      // not at review time.
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            // components/ must not import from data/ or logic/
-            {
-              group: ['@/data/*', '@/data', '@/logic/*', '@/logic'],
-              message:
-                'components/ is presentational only. Import data via a Reader hook in pages/ or a Command hook in a container. See docs/architecture/frontend-refactor.md §2.',
-            },
-            // data/ must not import from logic/ (circular layer)
-            {
-              group: ['@/logic/*', '@/logic'],
-              message:
-                'data/ cannot import from logic/ — that would be a circular layer. See docs/architecture/frontend-refactor.md §2.',
-            },
-            // utils/ is a leaf — no layer imports allowed
-            {
-              group: [
-                '@/data/*',
-                '@/data',
-                '@/logic/*',
-                '@/logic',
-                '@/components/*',
-                '@/components',
-                '@/pages/*',
-                '@/pages',
-                '@/core/*',
-                '@/core',
-                '@/service/*',
-                '@/service',
-              ],
-              message:
-                'utils/ is a leaf layer. It cannot import from any other ui/ layer. See docs/architecture/frontend-refactor.md §4.2.',
-            },
-            // core/ is the bottom — no layer imports allowed
-            {
-              group: [
-                '@/data/*',
-                '@/data',
-                '@/logic/*',
-                '@/logic',
-                '@/components/*',
-                '@/components',
-                '@/pages/*',
-                '@/pages',
-                '@/utils/*',
-                '@/utils',
-                '@/service/*',
-                '@/service',
-              ],
-              message:
-                'core/ is the bottom layer. It cannot import from any other ui/ layer. See docs/architecture/frontend-refactor.md §4.1.',
-            },
-            // pages/ is the seam — it can import from anywhere, but the
-            // lint rule above already prevents data/ and logic/ from being
-            // imported anywhere except pages/. So this is allowed by default.
-          ],
-        },
-      ],
+      // Frontend layer-boundary rules live in `ui/eslint.config.js`; ESLint 10 uses that
+      // file for `ui/` files, so rules placed here would never apply to them.
     },
   },
 

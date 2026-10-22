@@ -15,7 +15,7 @@ Link the issue, ticket, or ADR this PR implements or moves forward.
 Examples:
 - Fixes #123
 - Closes #456
-- Refs ADR-0008 (Frontend N-Tier layer model)
+- Refs ADR-0009 (Frontend layers)
 - Refs docs/architecture/services.md
 -->
 

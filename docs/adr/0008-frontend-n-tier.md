@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted, 2026-08-30
+Superseded in part by [ADR-0009](0009-frontend-layers.md), 2026-10-22. The layer model and Reader/Command hooks stand; HTTP now lives in `service/`, not `data/`, and the layer names and migration plan below are historical.
 
 ## Context
 

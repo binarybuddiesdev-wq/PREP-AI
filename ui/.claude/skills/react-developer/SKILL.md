@@ -26,7 +26,7 @@ Not for `server/`: that is `nestjs-developer`.
 These govern **new and substantially modified code** (see § Existing code and known backlog). One line each; the full rule with correct and wrong examples is in [`references/rules.md`](references/rules.md).
 
 1. **Interfaces live in a sibling `*.types.ts`**, never inline in a `.tsx`. They are `I`-prefixed and named for what they serve: `IHelloProps`, `IUseUserReturn`. The server uses the same `I` prefix.
-2. **A feature folder has an `index.ts` barrel**, and consumers import from the folder (`@/components/hello`), never from a file inside it. Exempt: `components/ui/` (shadcn), `assets/`, `test/`, `lib/`.
+2. **A feature folder has an `index.ts` barrel**, and consumers import from the folder (`@/components/hello`), never from a file inside it. Exempt: `components/ui/` (shadcn), `assets/`, `test/`.
 3. **Tailwind first.** Compose classes with `cn()`. A per-folder `styles.css` (`@apply`) only for custom classes utilities express badly. No inline `style={{}}` (except a genuinely computed value) and no CSS-in-JS.
 4. **Shared helpers go in `ui/src/utils/`, one concern per file.** `@/utils` is the file `utils/cn.ts` (shadcn's `cn()`); never create a `utils/` folder beside it.
 5. **Memoize on evidence.** A `memo()` pays off only if the wrap is correct (arrow form with `displayName`) **and** callers pass reference-stable props. Check both together.

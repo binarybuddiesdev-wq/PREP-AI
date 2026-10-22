@@ -72,8 +72,7 @@ Every folder has an `index.ts` that re-exports whatever is needed externally.
 - For a feature folder with **one** `.tsx` file: still have an `index.ts` that
   re-exports it.
 - **Exempt (not feature folders):** `components/ui/` (shadcn-generated
-  primitives, imported as `@/components/ui/button`), `assets/`, `test/`, and
-  `lib/` (flat single-purpose modules). Do not hand-edit shadcn output to
+  primitives, imported as `@/components/ui/button`), `assets/`, and `test/`. Do not hand-edit shadcn output to
   satisfy these rules; regenerate or extend it with a wrapper.
 - Pages import from the folder, not from the file:
   ```tsx
@@ -130,21 +129,19 @@ const buttonClass = (active: boolean) =>
 
 ### 4. Shared helpers live in `ui/src/utils/`, one concern per file
 
-`@/utils` resolves to the file `ui/src/utils/cn.ts`, which holds shadcn's
-`cn()`. **Do not create a `utils/` directory next to it** — `@/utils`
-would then be ambiguous. Put new helpers in a file named for the concern:
+`@/utils` is the barrel for `ui/src/utils/`, which holds shadcn's `cn()` in
+`cn.ts`. Put each new helper in a file named for its concern and export it
+from the barrel:
 
 ```ts
-// lib/format.ts
-export const formatDate = (date: Date): string => { ... };
+// utils/formatCurrency.ts
 export const formatCurrency = (n: number, currency = 'USD'): string => { ... };
 ```
 
-- Keep `utils/cn.ts` for `cn()` only.
+- `utils/` holds pure functions only; no hooks, no I/O, no state.
 - API access belongs in `service/api/` (see the `frontend-data-fetching` skill).
-- When `lib/` outgrows flat files, convert it to concern folders in one
-  dedicated change (`utils/cn.ts` → `lib/utils/index.ts` + `lib/utils/cn.ts`)
-  and update every `@/utils` import in that same change.
+- Do not create a folder named like a file beside it (`utils/format/` next to
+  `utils/format.ts`); the import path would be ambiguous.
 
 ### 5. `React.memo`, `useMemo`, `useCallback` — use when it matters
 

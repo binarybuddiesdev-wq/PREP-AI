@@ -69,14 +69,13 @@ export const useUserSettings = () => {
 
 The component renders `settingsQuery.isPending`, `settingsQuery.isError` and the data, and calls `saveSettings.mutate(body)`.
 
-## Where things live (interim)
+## Where things live
 
-`docs/architecture/frontend-refactor.md` puts API access in `data/` and hooks in `logic/`. **Those folders do not exist yet.** Until the refactor lands:
+Per ADR-0009:
 
-- endpoint functions stay in `service/api/` (split into `service/api/<resource>.api.ts` when it grows), and key factories in `logic/<resource>/<resource>.keys.ts`;
-- a hook used by one page or feature lives in that feature's folder (`pages/settings/useUserSettings.ts`); a hook shared by several goes in `lib/`.
-
-Do not create `data/` or `logic/` inside an unrelated feature. If your change needs them, say so in your report.
+- the `ky` client and endpoint functions (`getMe`, `getSettings`, …) are in `service/api/`, one `<resource>.api.ts` per resource; they take the client as the first argument;
+- Readers (`use<Thing>Reader`) and Commands (`use<Thing>Command`) are in `logic/<resource>/`, with key factories in `<resource>.keys.ts`;
+- pages call Readers and Commands only, never `service/api`; components never fetch.
 
 ## Retries and errors
 

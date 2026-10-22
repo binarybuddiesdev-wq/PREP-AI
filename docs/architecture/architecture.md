@@ -31,7 +31,7 @@ The system synthesizes five core architectural paradigms:
 > **Companion Documentation:**
 >
 > - Detailed Frontend Refactor Plan & File Inventory: [frontend-refactor.md](frontend-refactor.md)
-> - Architectural Decision Record: [ADR 0008: Frontend N-Tier Architecture](../adr/0008-frontend-n-tier.md)
+> - Architectural Decision Record: [ADR 0009: Frontend layers](../adr/0009-frontend-layers.md) (extends ADR 0008)
 
 ---
 
@@ -102,7 +102,7 @@ PREP-AI/
 │   │   ├── services.md               # Service catalog, owners, dependencies, and SLOs
 │   │   ├── nfrs.md                   # Non-functional requirements (latencies, availability)
 │   │   └── README.md                 # Architecture Index & Diagrams Catalog
-│   └── adr/                          # Architecture Decision Records (ADR 0001 - 0008)
+│   └── adr/                          # Architecture Decision Records (ADR 0001 - 0009)
 ├── e2e/                              # Playwright End-to-End multi-project test suites
 │   ├── backend/                      # Server integration & API flow tests
 │   ├── frontend/                     # UI interaction & visual journey tests
@@ -710,4 +710,4 @@ Uncaught exceptions are transformed into consistent error responses:
 > 📖 **Companion Frontend Blueprint & ADR:**
 >
 > - Detailed Migration Plan: [frontend-refactor.md](frontend-refactor.md)
-> - Architectural Decision Record: [ADR 0008: Frontend N-Tier Architecture](../adr/0008-frontend-n-tier.md)
+> - Architectural Decision Record: [ADR 0009: Frontend layers](../adr/0009-frontend-layers.md) (extends ADR 0008)

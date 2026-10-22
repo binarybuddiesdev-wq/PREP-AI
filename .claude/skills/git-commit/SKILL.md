@@ -125,7 +125,7 @@ cannot import from any other layer. Catches the cheap
 violations at lint time; the rest still goes through
 the stack architect-review skills.
 
-Per docs/architecture/frontend-refactor.md §2.
+Per docs/architecture/frontend-refactor.md §1.
 ```
 
 ## Pitfalls
