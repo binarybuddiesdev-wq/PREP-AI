@@ -66,6 +66,7 @@ pnpm report             # open HTML report
 > - [`docs/architecture/nfrs.md`](docs/architecture/nfrs.md) — quantified non-functional requirements
 > - [`docs/architecture/terms-glossary.md`](docs/architecture/terms-glossary.md) — technical terms explained in simple English
 > - [`docs/architecture/TODO.md`](docs/architecture/TODO.md) — **list of architecture docs still to be written** (caching, queues, AI pipeline, RAG, runbooks, threat model, etc.)
+> - [`docs/WORKLOG.md`](docs/WORKLOG.md) — **day-by-day log of what was done and what is still open; read first, and add an entry at the end of each session**
 > - [`docs/adr/`](docs/adr/) — every meaningful design decision and why
 > - [`docs/architecture/viewer.html`](docs/architecture/viewer.html) — standalone interactive diagram viewer
 >
