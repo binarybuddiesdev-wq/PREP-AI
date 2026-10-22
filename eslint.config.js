@@ -15,10 +15,18 @@
  *
  * Run from the repo root:  pnpm lint
  */
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
+
+// typescript-eslint refuses to guess when more than one ESLint config in the process
+// registers a tsconfig root (this file and `ui/eslint.config.js`, which resolves
+// `typescript-eslint` from here whenever `ui/node_modules` is not installed). Naming
+// the root explicitly makes `pnpm lint` independent of which packages are installed.
+const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
   // ── Global ignores ────────────────────────────────────────────────
@@ -160,6 +168,9 @@ export default tseslint.config(
 
   // ── Global rule tuning ──────────────────────────────────────────
   {
+    languageOptions: {
+      parserOptions: { tsconfigRootDir },
+    },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
     },

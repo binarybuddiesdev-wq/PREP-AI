@@ -23,8 +23,12 @@ export class UpdateTopicDto {
   @IsIn(['practice', 'coding'])
   category?: string;
 
-  @ApiPropertyOptional({ example: '⚛️', description: 'Optional emoji icon' })
+  @ApiPropertyOptional({
+    example: '⚛️',
+    description: 'Optional emoji icon; null clears it',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
-  icon?: string;
+  icon?: string | null;
 }

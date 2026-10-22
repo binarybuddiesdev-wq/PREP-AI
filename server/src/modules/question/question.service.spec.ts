@@ -8,7 +8,7 @@ import {
   QUESTION_NOT_FOUND,
   TOPIC_NOT_FOUND,
   INVALID_DIFFICULTY,
-} from '@/common/constants/api.constants.js';
+} from '@/common/index.js';
 
 describe('QuestionService', () => {
   let service: QuestionService;
