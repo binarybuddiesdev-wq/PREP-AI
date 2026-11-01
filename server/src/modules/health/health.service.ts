@@ -1,41 +1,22 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.js';
-import { Redis } from 'ioredis';
 import { HEALTH_POSTGRES_DOWN, HEALTH_REDIS_DOWN } from '@/common/constants/api.constants.js';
+import { RedisService } from '@/common/redis/redis.service.js';
 
 import type { IDependencyReport, IReadinessReport, ILivenessReport } from './health.types.js';
 
 const PING_TIMEOUT_MS = 1000;
 
 @Injectable()
-export class HealthService implements OnModuleDestroy {
-  private redisClient: Redis | undefined;
-
+export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly postgres: PrismaPostgresqlService,
-    private readonly config: ConfigService,
+    private readonly redis: RedisService,
     @InjectPinoLogger(HealthService.name)
     private readonly logger: PinoLogger
-  ) {
-    const host = this.config.get<string>('REDIS_HOST');
-    const port = this.config.get<number>('REDIS_PORT');
-    if (host) {
-      this.redisClient = new Redis({
-        host,
-        port: port ?? 6379,
-        lazyConnect: true,
-        maxRetriesPerRequest: 1,
-        enableOfflineQueue: false,
-      });
-    }
-  }
-
-  onModuleDestroy(): void {
-    this.redisClient?.disconnect();
-  }
+  ) {}
 
   liveness(): ILivenessReport {
     return {
@@ -109,12 +90,8 @@ export class HealthService implements OnModuleDestroy {
 
   private async checkRedis(): Promise<IDependencyReport> {
     const started = Date.now();
-    const client = this.redisClient;
-    if (!client) {
-      return { status: 'skipped', error: 'REDIS_HOST not configured' };
-    }
     try {
-      await this.withTimeout(client.ping(), PING_TIMEOUT_MS);
+      await this.withTimeout(this.redis.ping(), PING_TIMEOUT_MS);
       return { status: 'up', latencyMs: Date.now() - started };
     } catch (error) {
       return {

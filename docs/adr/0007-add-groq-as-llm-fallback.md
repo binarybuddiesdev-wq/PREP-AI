@@ -47,17 +47,15 @@ We will use **two providers**:
 - **Groq** (fallback) — `qwen/qwen3.8-27b` (configurable via `GROQ_MODEL`).
   Free tier: 30 RPM, 1k RPD, 8k TPM, **2M TPD**. OpenAI-compatible.
 
-The selection is controlled by the `LLM_PROVIDER` env var:
+The `LLM_PROVIDER` env var can pin a single provider. When unset, calls try
+configured providers in order (NVIDIA, then Groq). If neither key is set, the
+server can start, but AI requests return the feature's normal fallback/error.
+An unsupported provider value is treated as a configuration error.
 
-- `LLM_PROVIDER=groq` (or unset, with NVIDIA key present) → NVIDIA
-- `LLM_PROVIDER=groq` → Groq
-- `LLM_PROVIDER=nvidia` → NVIDIA only
-- unset, no NVIDIA key → Groq
-- unset, no NVIDIA key and no Groq key → fail with clear error
-
-The Mastra agent code is **provider-agnostic**: it just calls
-`getModel()` from `server/src/mastra/providers.ts`, which returns the
-active model. Switching providers is a one-env-var change.
+The provider helper in `server/src/mastra/providers.ts` performs failover for
+the tech expert and theory answer evaluation requests. Each retry explicitly
+passes that provider's model to the agent. Provider clients are created when
+the model is requested so config loaded from `.env` is honored.
 
 ## Consequences
 

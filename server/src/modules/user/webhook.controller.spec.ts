@@ -1,8 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import { WebhookController } from './webhook.controller.js';
 import { UserService } from './user.service.js';
+import type { ClerkWebhookEventDto } from './dto/index.js';
 import { BadRequestException } from '@nestjs/common';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { verifyWebhookMock } = vi.hoisted(() => ({ verifyWebhookMock: vi.fn() }));
 
 // Mock svix
 vi.mock('svix', () => {
@@ -10,6 +16,7 @@ vi.mock('svix', () => {
     Webhook: class MockWebhook {
       constructor(_secret: string) {}
       verify(_body: string, _headers: Record<string, string>) {
+        verifyWebhookMock(_body, _headers);
         // Verification passes by default in tests
       }
     },
@@ -18,6 +25,7 @@ vi.mock('svix', () => {
 
 describe('WebhookController', () => {
   let controller: WebhookController;
+  const config = { get: vi.fn(() => 'whsec_test_secret') };
   let userService: {
     createUser: ReturnType<typeof vi.fn>;
     updateUser: ReturnType<typeof vi.fn>;
@@ -47,7 +55,21 @@ describe('WebhookController', () => {
     'svix-signature': 'v1,signature123',
   };
 
+  const invokeWebhook = (
+    body: unknown,
+    headers: typeof validHeaders = validHeaders,
+    rawBody: Buffer = Buffer.from(JSON.stringify(body))
+  ) =>
+    controller.handleClerkWebhook(
+      body as unknown as ClerkWebhookEventDto,
+      headers['svix-id'],
+      headers['svix-timestamp'],
+      headers['svix-signature'],
+      { rawBody } as RawBodyRequest<FastifyRequest>
+    );
+
   beforeEach(async () => {
+    config.get.mockReturnValue('whsec_test_secret');
     userService = {
       createUser: vi.fn(),
       updateUser: vi.fn(),
@@ -64,21 +86,25 @@ describe('WebhookController', () => {
       controllers: [WebhookController],
       providers: [
         { provide: UserService, useValue: userService },
+        { provide: ConfigService, useValue: config },
         { provide: 'PinoLogger:WebhookController', useValue: mockPinoLogger },
       ],
     }).compile();
 
     controller = module.get<WebhookController>(WebhookController);
-
-    // Set webhook secret for tests
-    process.env['CLERK_WEBHOOK_SECRET'] = 'whsec_test_secret';
-  });
-
-  afterEach(() => {
-    delete process.env['CLERK_WEBHOOK_SECRET'];
   });
 
   describe('handleClerkWebhook', () => {
+    it('verifies the original raw request body', async () => {
+      userService.createUser.mockResolvedValue(mockUser);
+      const rawBody = Buffer.from('{ "type" : "user.created", "data" : {"id":"clerk_123"} }');
+      const body = { type: 'user.created', data: { id: 'clerk_123' } };
+
+      await invokeWebhook(body, validHeaders, rawBody);
+
+      expect(verifyWebhookMock).toHaveBeenCalledWith(rawBody, expect.any(Object));
+    });
+
     it('should handle user.created event', async () => {
       userService.createUser.mockResolvedValue(mockUser);
 
@@ -93,12 +119,7 @@ describe('WebhookController', () => {
         },
       };
 
-      const result = await controller.handleClerkWebhook(
-        body as any,
-        validHeaders['svix-id'],
-        validHeaders['svix-timestamp'],
-        validHeaders['svix-signature']
-      );
+      const result = await invokeWebhook(body);
 
       expect(result).toEqual({ received: true, userId: 'user_001' });
       expect(userService.createUser).toHaveBeenCalledWith(body.data);
@@ -118,12 +139,7 @@ describe('WebhookController', () => {
         },
       };
 
-      const result = await controller.handleClerkWebhook(
-        body as any,
-        validHeaders['svix-id'],
-        validHeaders['svix-timestamp'],
-        validHeaders['svix-signature']
-      );
+      const result = await invokeWebhook(body);
 
       expect(result).toEqual({ received: true, userId: 'user_001' });
       expect(userService.updateUser).toHaveBeenCalledWith('clerk_123', {
@@ -144,12 +160,7 @@ describe('WebhookController', () => {
         },
       };
 
-      const result = await controller.handleClerkWebhook(
-        body as any,
-        validHeaders['svix-id'],
-        validHeaders['svix-timestamp'],
-        validHeaders['svix-signature']
-      );
+      const result = await invokeWebhook(body);
 
       expect(result).toEqual({ received: true });
       expect(userService.deleteUser).toHaveBeenCalledWith('clerk_123');
@@ -161,37 +172,25 @@ describe('WebhookController', () => {
         data: { id: 'session_123' },
       };
 
-      const result = await controller.handleClerkWebhook(
-        body as any,
-        validHeaders['svix-id'],
-        validHeaders['svix-timestamp'],
-        validHeaders['svix-signature']
-      );
+      const result = await invokeWebhook(body);
 
       expect(result).toEqual({ received: true, skipped: true });
     });
 
     it('should throw BadRequestException if webhook secret not configured', async () => {
-      delete process.env['CLERK_WEBHOOK_SECRET'];
+      config.get.mockReturnValue(undefined as never);
 
       const body = { type: 'user.created', data: { id: 'clerk_123' } };
 
-      await expect(
-        controller.handleClerkWebhook(
-          body as any,
-          validHeaders['svix-id'],
-          validHeaders['svix-timestamp'],
-          validHeaders['svix-signature']
-        )
-      ).rejects.toThrow(BadRequestException);
+      await expect(invokeWebhook(body)).rejects.toThrow('Webhook processing is not configured');
     });
 
     it('should throw BadRequestException if svix headers missing', async () => {
       const body = { type: 'user.created', data: { id: 'clerk_123' } };
 
-      await expect(controller.handleClerkWebhook(body as any, '', '', '')).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(
+        invokeWebhook(body, { 'svix-id': '', 'svix-timestamp': '', 'svix-signature': '' })
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should handle user.updated with missing names gracefully', async () => {
@@ -207,12 +206,7 @@ describe('WebhookController', () => {
         },
       };
 
-      const result = await controller.handleClerkWebhook(
-        body as any,
-        validHeaders['svix-id'],
-        validHeaders['svix-timestamp'],
-        validHeaders['svix-signature']
-      );
+      await invokeWebhook(body);
 
       expect(userService.updateUser).toHaveBeenCalledWith('clerk_123', {
         email: 'john@example.com',

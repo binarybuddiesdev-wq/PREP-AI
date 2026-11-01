@@ -48,7 +48,7 @@ design decision that has to be made before the feature ships.
 
 | #   | Topic                          | Status                                                     | Priority | Why it matters                                                                                                                                                                                                                                                                                       |
 | --- | ------------------------------ | ---------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Caching strategy               | `[Missing]`                                                | High     | Redis is wired but no doc says what to cache, for how long, or how to invalidate. Two devs will write two different cache layers.                                                                                                                                                                    |
+| 1   | Caching strategy               | `[Missing]`                                                | High     | Redis currently stores atomic theory session quota counters; caching of application data, TTLs, and invalidation is undecided.                                                                                                                                                                       |
 | 2   | Background jobs / queue design | `[Missing]`                                                | High     | BullMQ is decided (ADR-0004) but no doc says queue topology, retry policy, concurrency limits, dead-letter handling.                                                                                                                                                                                 |
 | 3   | AI evaluation pipeline         | `[Stub]` (provider failover in place)                      | High     | Provider failover (NVIDIA → Groq) is wired in `server/src/mastra/providers.ts` and documented in [ADR-0007](../adr/0007-add-groq-as-llm-fallback.md). Still missing: prompt versioning, model A/B harness, eval set for regression, token budget per user, prompt-injection defenses, PII redaction. |
 | 4   | RAG pipeline                   | `[Missing]`                                                | Medium   | Chunking strategy, embedding model, retrieval top-k, source citation, re-index flow — all undecided.                                                                                                                                                                                                 |
@@ -71,11 +71,11 @@ Consequences, Open Questions**. Use the existing ADRs as a template.
 
 ### 1. Caching strategy
 
-What goes in Redis: question bank, topic list, user settings, weak-areas
-rollup, AI review results (by code hash). What NEVER: PII, authoritative
-quota counters (Postgres is system of record). TTL strategy: 5 min for
-derived, 1h for stable, 24h+ for AI. Cache-aside vs write-through.
-Stampede protection (single-flight). Memory budget. Hit rate metric.
+Redis currently stores theory-session quota counters with an atomic Lua
+reservation and UTC-day TTL. Decide separately whether derived data such as
+topics, settings, or weak-area rollups should be cached, including invalidation,
+memory budget, and hit-rate metrics. Do not treat Redis as the system of
+record for users, sessions, or answers.
 
 ### 2. Background jobs / queue design
 

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TheoryController } from './theory.controller.js';
+import { StartSessionDto } from './dto/start-session.dto.js';
 import { TheoryService } from './theory.service.js';
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -16,7 +17,7 @@ import {
 } from '@/common/constants/api.constants.js';
 
 class MockAuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  canActivate(_context: ExecutionContext): boolean {
     return true;
   }
 }
@@ -119,7 +120,7 @@ describe('TheoryController', () => {
     it('should start a session and return success', async () => {
       theoryService.startSession.mockResolvedValue(mockSession);
 
-      const dto = {
+      const dto: StartSessionDto = {
         topicId: 'topic_001',
         mode: 'topic',
         difficulty: 'Mid',
@@ -135,7 +136,7 @@ describe('TheoryController', () => {
     it('should pass userId from auth to service', async () => {
       theoryService.startSession.mockResolvedValue(mockSession);
 
-      const dto = {
+      const dto: StartSessionDto = {
         mode: 'weak',
         difficulty: 'Senior',
         totalQuestions: 5,

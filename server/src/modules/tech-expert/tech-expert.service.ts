@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { z } from 'zod';
 import { mastra } from '../../mastra/mastra.config.js';
+import { chatWithFailover, getModel } from '../../mastra/providers.js';
 import {
   ITechExpertRequest,
   ITechExpertResponse,
@@ -25,14 +25,17 @@ export class TechExpertService {
         relatedTopics: [],
       };
 
-      const response = await agent.generate(payload.question, {
-        structuredOutput: {
-          schema: techAnswerSchema,
-          jsonPromptInjection: true,
-          errorStrategy: 'fallback',
-          fallbackValue: fallback,
-        },
-      });
+      const response = await chatWithFailover((provider) =>
+        agent.generate(payload.question, {
+          model: getModel(provider),
+          structuredOutput: {
+            schema: techAnswerSchema,
+            jsonPromptInjection: true,
+            errorStrategy: 'fallback',
+            fallbackValue: fallback,
+          },
+        })
+      );
 
       const answer = (response.object as TechAnswer) || fallback;
 

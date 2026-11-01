@@ -35,16 +35,6 @@
 
 import { createOpenAI } from '@ai-sdk/openai';
 
-const nvidiaProvider = createOpenAI({
-  apiKey: process.env.NVIDIA_API_KEY || '',
-  baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-});
-
-const groqProvider = createOpenAI({
-  apiKey: process.env.GROQ_API_KEY || '',
-  baseURL: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
-});
-
 /**
  * The default model name for each provider. Override via env if you want
  * to try a different model on the same provider (e.g. NVIDIA has
@@ -61,19 +51,21 @@ export type ProviderName = keyof typeof defaultModel;
  * Pick which provider to use based on:
  *   1. `LLM_PROVIDER` env var if set (explicit override)
  *   2. NVIDIA if its key is set (default)
- *   3. Groq as last resort
+ *   3. NVIDIA as a placeholder model when no key is present, so the app can
+ *      start and report missing AI configuration only when an AI endpoint is used
  *
- * Throws if neither provider has a key configured.
+ * The NVIDIA placeholder keeps Mastra agents constructible when AI is not configured.
+ * `chatWithFailover` refuses to make a request until a provider key is present.
  */
 export function pickProvider(): ProviderName {
   const forced = process.env.LLM_PROVIDER;
-  if (forced === 'nvidia' || forced === 'groq') {
-    return forced;
+  if (forced) {
+    if (forced === 'nvidia' || forced === 'groq') return forced;
+    throw new Error(`Unsupported LLM_PROVIDER "${forced}". Expected "nvidia" or "groq".`);
   }
   if (process.env.NVIDIA_API_KEY) return 'nvidia';
   if (process.env.GROQ_API_KEY) return 'groq';
-  if (process.env.NODE_ENV === 'test') return 'nvidia';
-  throw new Error('No LLM provider configured. Set NVIDIA_API_KEY or GROQ_API_KEY in .env');
+  return 'nvidia';
 }
 
 /**
@@ -85,9 +77,16 @@ export function pickProvider(): ProviderName {
  *   import { getModel } from '../providers.js';
  *   const model = getModel();  // auto-picks NVIDIA or Groq
  */
-export function getModel(): ReturnType<ReturnType<typeof createOpenAI>['chat']> {
-  const name = pickProvider();
-  const provider = name === 'nvidia' ? nvidiaProvider : groqProvider;
+export function getModel(
+  name: ProviderName = pickProvider()
+): ReturnType<ReturnType<typeof createOpenAI>['chat']> {
+  const provider = createOpenAI({
+    apiKey: name === 'nvidia' ? process.env.NVIDIA_API_KEY || '' : process.env.GROQ_API_KEY || '',
+    baseURL:
+      name === 'nvidia'
+        ? (process.env.NVIDIA_BASE_URL ?? 'https://integrate.api.nvidia.com/v1')
+        : (process.env.GROQ_BASE_URL ?? 'https://api.groq.com/openai/v1'),
+  });
   return provider.chat(defaultModel[name]());
 }
 
@@ -102,7 +101,18 @@ export function getModel(): ReturnType<ReturnType<typeof createOpenAI>['chat']> 
 export async function chatWithFailover<T>(fn: (provider: ProviderName) => Promise<T>): Promise<T> {
   const errors: unknown[] = [];
 
-  for (const name of ['nvidia', 'groq'] as const) {
+  const configuredOverride = process.env.LLM_PROVIDER;
+  if (configuredOverride && configuredOverride !== 'nvidia' && configuredOverride !== 'groq') {
+    throw new Error(
+      `Unsupported LLM_PROVIDER "${configuredOverride}". Expected "nvidia" or "groq".`
+    );
+  }
+  const forcedProvider = configuredOverride as ProviderName | undefined;
+  const providerOrder: ProviderName[] = forcedProvider
+    ? [forcedProvider]
+    : (['nvidia', 'groq'] as ProviderName[]).filter(hasKey);
+
+  for (const name of providerOrder) {
     if (!hasKey(name)) continue;
     try {
       return await fn(name);
@@ -128,5 +138,3 @@ function hasKey(name: ProviderName): boolean {
   if (name === 'nvidia') return Boolean(process.env.NVIDIA_API_KEY);
   return Boolean(process.env.GROQ_API_KEY);
 }
-
-export { nvidiaProvider, groqProvider };

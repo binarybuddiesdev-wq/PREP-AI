@@ -22,9 +22,9 @@ ADR-0008 proposed a layered `ui/src` but nothing was implemented: pages were def
 | `pages`      | route shells composing logic and components (named exports)    |
 | `app`        | composition root: providers, routes, route guards              |
 
-The deliberate difference from ADR-0008: HTTP lives in `service`, not `data`, because it is external I/O. `data` holds only client state.
+The deliberate difference from ADR-0008: HTTP lives in `service`, not `data`, because it is external I/O. `data` holds client-owned shared state.
 
 ## Consequences
 
 - The old `lib/` and `store/` folders are removed; `@/utils` replaces `@/lib/utils` (shadcn alias updated).
-- Follow-ups: ESLint layer-boundary rules in `ui/eslint.config.js`, Vitest tests, and a short CLAUDE.md per layer folder.
+- Follow-ups completed: ESLint layer-boundary rules in `ui/eslint.config.js`, colocated Vitest coverage, and short `CLAUDE.md` guidance for the implemented layers.

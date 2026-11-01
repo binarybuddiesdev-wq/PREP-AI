@@ -32,9 +32,9 @@ ui/src/
   app/         App, AppProviders, AppRoutes, RouteGuards
   components/  auth, dashboard, form, layout, settings, ui (shadcn)
   core/        api, user, env.ts, routes.ts
-  data/        store
+  data/        Redux Toolkit store and client-side state
   logic/       api, auth, user, queryClient.ts
-  pages/       DashboardPage, SettingsPage, SignInPage, SignUpPage
+  pages/       DashboardPage, SettingsPage, SignInPage, SignUpPage, index.ts
   service/     api (ky client, user.api.ts), auth (Clerk adapter, widgets)
   utils/       cn.ts, formatDate.ts
 ```
@@ -50,7 +50,7 @@ Conventions: arrow-function components with `X.tsx` + `X.types.ts` (props `IXPro
 ## 5. Anti-patterns
 
 - `fetch`/`ky` outside `service/`.
-- Server state in Redux.
+- Duplicating server state outside TanStack Query.
 - Business logic in components or `service/`.
 - Default-exported pages.
 - Inline query-key arrays.

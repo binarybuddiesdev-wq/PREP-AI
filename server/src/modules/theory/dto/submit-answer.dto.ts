@@ -1,6 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+
+const MAX_QUESTION_ID_LENGTH = 64;
+const MAX_QUESTION_TEXT_LENGTH = 2000;
+const MAX_USER_ANSWER_LENGTH = 8000;
 
 export class SubmitAnswerDto {
   @ApiPropertyOptional({
@@ -9,6 +13,7 @@ export class SubmitAnswerDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(MAX_QUESTION_ID_LENGTH)
   questionId?: string;
 
   @ApiProperty({
@@ -17,6 +22,7 @@ export class SubmitAnswerDto {
   })
   @IsNotEmpty()
   @IsString()
+  @MaxLength(MAX_QUESTION_TEXT_LENGTH)
   questionText!: string;
 
   @ApiProperty({
@@ -25,6 +31,7 @@ export class SubmitAnswerDto {
   })
   @IsNotEmpty()
   @IsString()
+  @MaxLength(MAX_USER_ANSWER_LENGTH)
   userAnswer!: string;
 
   @ApiPropertyOptional({ example: 120, description: 'Time taken in seconds' })

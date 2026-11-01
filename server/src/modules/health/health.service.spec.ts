@@ -6,7 +6,7 @@ describe('HealthService', () => {
   let service: HealthService;
   let prisma: { $runCommandRaw: ReturnType<typeof vi.fn> };
   let postgres: { client_: { $queryRaw: ReturnType<typeof vi.fn> } | undefined };
-  let mockRedis: { ping: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> };
+  let mockRedis: { ping: ReturnType<typeof vi.fn> };
   let pinoLogger: {
     info: ReturnType<typeof vi.fn>;
     warn: ReturnType<typeof vi.fn>;
@@ -18,7 +18,6 @@ describe('HealthService', () => {
     postgres = { client_: undefined };
     mockRedis = {
       ping: vi.fn().mockResolvedValue('PONG'),
-      disconnect: vi.fn(),
     };
     pinoLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
@@ -30,9 +29,7 @@ describe('HealthService', () => {
             new HealthService(
               prisma as never,
               postgres as never,
-              {
-                get: vi.fn((key: string) => (key === 'REDIS_HOST' ? 'localhost' : undefined)),
-              } as never,
+              mockRedis as never,
               pinoLogger as never
             ),
         },
@@ -40,8 +37,6 @@ describe('HealthService', () => {
     }).compile();
 
     service = module.get<HealthService>(HealthService);
-    // Inject a mocked Redis client since the real one would require network access.
-    (service as unknown as { redisClient: unknown }).redisClient = mockRedis;
   });
 
   describe('liveness', () => {
@@ -76,7 +71,6 @@ describe('HealthService', () => {
 
     it('should mark not-ready when Mongo is down', async () => {
       prisma.$runCommandRaw.mockRejectedValue(new Error('connect ECONNREFUSED'));
-      (service as unknown as { redisClient: unknown }).redisClient = undefined;
 
       const result = await service.readiness();
       expect(result.status).toBe('not-ready');
@@ -93,15 +87,6 @@ describe('HealthService', () => {
       expect(result.status).toBe('not-ready');
       expect(result.checks.redis.status).toBe('down');
       expect(result.checks.redis.error).toContain('redis not reachable');
-    });
-
-    it('should mark skipped when no Redis client is configured', async () => {
-      (service as unknown as { redisClient: undefined }).redisClient = undefined;
-      prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
-
-      const result = await service.readiness();
-      expect(result.checks.redis.status).toBe('skipped');
-      expect(result.checks.redis.error).toContain('REDIS_HOST');
     });
 
     it('should mark up when Postgres client is configured and responding', async () => {
@@ -122,19 +107,6 @@ describe('HealthService', () => {
       const result = await service.readiness();
       expect(result.status).toBe('not-ready');
       expect(result.checks.postgres.status).toBe('down');
-    });
-  });
-
-  describe('onModuleDestroy', () => {
-    it('should disconnect the Redis client if one was created', () => {
-      service.onModuleDestroy();
-      expect(mockRedis.disconnect).toHaveBeenCalled();
-    });
-
-    it('should be a no-op when no Redis client was created', () => {
-      (service as unknown as { redisClient: undefined }).redisClient = undefined;
-      service.onModuleDestroy();
-      expect(mockRedis.disconnect).not.toHaveBeenCalled();
     });
   });
 });

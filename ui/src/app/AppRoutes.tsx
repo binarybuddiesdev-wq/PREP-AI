@@ -1,9 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { ROUTES } from '@/core';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { SignInPage } from '@/pages/SignInPage';
-import { SignUpPage } from '@/pages/SignUpPage';
+import { DashboardPage, SettingsPage, SignInPage, SignUpPage } from '@/pages';
 import { ProtectedRoute, PublicRoute } from './RouteGuards';
 
 export const AppRoutes = () => (

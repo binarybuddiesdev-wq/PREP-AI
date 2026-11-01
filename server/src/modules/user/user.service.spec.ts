@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service.js';
 import { PrismaService } from '@/prisma/prisma.service.js';
+import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -70,6 +71,7 @@ describe('UserService', () => {
       providers: [
         UserService,
         { provide: PrismaService, useValue: prisma },
+        { provide: ConfigService, useValue: { get: vi.fn(() => 'sk_test_secret') } },
         { provide: 'PinoLogger:UserService', useValue: mockPinoLogger },
       ],
     }).compile();
@@ -124,7 +126,7 @@ describe('UserService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({ ...mockUser, name: '' });
 
-      const result = await service.createUser(dtoNoName);
+      await service.createUser(dtoNoName);
 
       expect(prisma.user.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ name: '' }),
@@ -136,7 +138,7 @@ describe('UserService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({ ...mockUser, avatarUrl: null });
 
-      const result = await service.createUser(dtoNoAvatar);
+      await service.createUser(dtoNoAvatar);
 
       expect(prisma.user.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ avatarUrl: undefined }),

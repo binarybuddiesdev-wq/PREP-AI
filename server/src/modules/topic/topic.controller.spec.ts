@@ -18,7 +18,7 @@ import {
 } from '@/common/index.js';
 
 class MockAuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  canActivate(_context: ExecutionContext): boolean {
     return true;
   }
 }

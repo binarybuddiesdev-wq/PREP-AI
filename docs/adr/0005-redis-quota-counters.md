@@ -1,4 +1,4 @@
-# ADR-0005: Redis (atomic INCR+EXPIRE) for daily quota counters
+# ADR-0005: Redis atomic reservations for daily quotas
 
 ## Status
 
@@ -6,7 +6,9 @@ Accepted, 2026-08-29
 
 ## Context
 
-We enforce role-based daily quotas on the server:
+The server needs atomic role-based daily quotas. Currently, only theory
+session creation uses Redis quota reservations; coding and AI-review quotas
+remain planned:
 
 - Theory sessions: 3/day (free), unlimited (premium)
 - Coding submissions: 5/day (free)
@@ -36,45 +38,39 @@ Options:
 
 ## Decision
 
-We will use **Redis `INCR` + `EXPIRE`** for daily quota counters.
+Use an atomic Redis Lua reservation for implemented daily quotas. Theory
+session creation increments only when the count is below the limit and sets
+the expiry in the same operation. If PostgreSQL session creation then fails,
+the reservation is released. Redis outages fail closed for theory session
+creation with HTTP 503 so concurrent requests cannot exceed the quota.
 
 Key shape: `quota:{userId}:{date}:{resource}` (e.g.
 `quota:user_2xKp9mNqR3:2026-08-29:theory_sessions`)
 
-Pseudocode:
+The current implementation is `RedisService.reserveQuota` and
+`RedisService.releaseQuota` in `server/src/common/redis/redis.service.ts`.
+The reservation key is:
 
 ```ts
-async function checkAndIncrementQuota(userId, resource, limit) {
-  const key = `quota:${userId}:${new Date().toISOString().slice(0, 10)}:${resource}`;
-  const count = await redis.incr(key);
-  if (count === 1) {
-    // First hit today — set TTL to end of UTC day
-    const secondsUntilMidnight = 86400 - (Math.floor(Date.now() / 1000) % 86400);
-    await redis.expire(key, secondsUntilMidnight);
-  }
-  if (count > limit) return { allowed: false, count, limit };
-  return { allowed: true, count, limit };
-}
+`quota:{userId}:{UTC date}:theory_sessions`;
 ```
 
 Postgres remains the system of record (the actual sessions/answers are
-written there). Redis is the rate-limiter. On Redis failure, **fail open for
-non-AI quotas, fail closed for AI quotas** (a free user running 6 sessions
-instead of 3 is a small cost; a free user running 100 AI evals is a $50 bill).
+written there). Redis is the atomic quota counter. Any future quota resource
+must document its Redis failure behavior before implementation.
 
 ## Consequences
 
 **Easier:**
 
-- Atomic check-and-increment, no race
+- Atomic quota reservation, no concurrent overbooking
 - No DB load on the hot path
 - TTL handles cleanup automatically
 - Pattern is well-understood (Stripe, GitHub, Cloudflare all do this)
 
 **Harder:**
 
-- New failure mode: Redis down → quota can't be enforced. Must decide fail
-  open vs fail closed per resource
+- New failure mode: Redis down prevents theory session creation (HTTP 503)
 - If Redis evicts the key (memory pressure), quota window resets — brief
   window where user could exceed quota. Accept the risk
 - Need a reconciliation strategy: if Redis is wiped, what happens? On next

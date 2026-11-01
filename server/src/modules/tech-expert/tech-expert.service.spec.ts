@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import { TechExpertService } from './tech-expert.service.js';
 import { TechAnswer } from './tech-expert.types.js';
 
@@ -26,8 +26,13 @@ describe('TechExpertService', () => {
 
   beforeEach(() => {
     service = new TechExpertService();
+    vi.stubEnv('LLM_PROVIDER', '');
+    vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+    vi.stubEnv('GROQ_API_KEY', 'groq-test-key');
     vi.clearAllMocks();
   });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   it('should successfully ask a question and return structured response', async () => {
     // Arrange
@@ -64,8 +69,20 @@ describe('TechExpertService', () => {
     // Assert
     expect(result).toEqual({
       data: null,
-      error: errorMessage,
+      error: `All LLM providers failed. nvidia: ${errorMessage} | groq: ${errorMessage}`,
       meta: {},
     });
+  });
+
+  it('retries with the fallback provider after the primary provider fails', async () => {
+    mockGenerate
+      .mockRejectedValueOnce(new Error('NVIDIA unavailable'))
+      .mockResolvedValueOnce({ object: mockAnswer, text: JSON.stringify(mockAnswer) });
+
+    const result = await service.askQuestion({ question: 'Explain REST vs GraphQL' });
+
+    expect(mockGenerate).toHaveBeenCalledTimes(2);
+    expect(result.data?.answer).toEqual(mockAnswer);
+    expect(result.error).toBeNull();
   });
 });

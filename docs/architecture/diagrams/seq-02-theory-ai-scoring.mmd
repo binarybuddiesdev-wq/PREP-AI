@@ -1,51 +1,45 @@
-%% Sequence Flow 2 — Theory Session & Async AI Answer Scoring
+%% Current synchronous theory-session flow.
+%% Background evaluation with BullMQ remains planned (ADR-0004, TODO.md).
 
 sequenceDiagram
     autonumber
-    actor Candidate as User / Candidate
-    participant SPA as React 19 Frontend
-    participant API as NestJS Theory Controller
-    participant Redis as Redis (Quota & BullMQ)
-    participant Mongo as MongoDB (Question Bank)
-    participant Worker as BullMQ Async Worker
-    participant Mastra as Mastra AI Agent
-    participant Provider as LLM Provider Router<br/>(NVIDIA primary, Groq fallback)
-    participant NIM as NVIDIA NIM (LLM)
-    participant Groq as Groq (LLM, fallback)
-    participant PG as PostgreSQL (Sessions & Answers)
+    actor Candidate as User
+    participant API as NestJS Theory API
+    participant Clerk as Clerk token verification
+    participant Redis as Redis quota counter
+    participant Mongo as MongoDB question bank
+    participant PG as PostgreSQL sessions and answers
+    participant Mastra as Theory evaluator agent
+    participant Router as NVIDIA primary / Groq fallback
 
-    Candidate->>SPA: Selects Topic & Clicks "Start Session"
-    SPA->>API: POST /api/v1/theory/session/start
-    API->>Redis: INCR quota:userId:YYYY-MM-DD:theory_sessions
-    alt Quota Exceeded
-        API-->>SPA: HTTP 429 Limit Reached
-    else Quota Allowed
-        API->>Mongo: Fetch N Questions
-        Mongo-->>API: Question List
-        API->>PG: Create TheorySession
-        PG-->>API: TheorySession Record
-        API-->>SPA: HTTP 201 Created { sessionId, questions }
+    Candidate->>API: POST /api/v1/theory/session/start
+    API->>Clerk: Verify Bearer token
+    Clerk-->>API: Clerk user ID
+    API->>Redis: Atomically reserve daily session quota
+    alt Quota reached
+        Redis-->>API: Rejected
+        API-->>Candidate: HTTP 403 quota limit
+    else Quota available
+        Redis-->>API: Reservation granted
+        API->>PG: Create session
+        PG-->>API: Session
+        API-->>Candidate: Session created
     end
 
-    Candidate->>SPA: Writes Answer & Clicks "Submit Answer"
-    SPA->>API: POST /api/v1/theory/session/:id/answer
-    API->>Redis: Enqueue Job into "theory-eval-queue"
-    API-->>SPA: HTTP 202 Accepted { jobId }
-
-    Worker->>Redis: Pop Job from queue
-    Worker->>Mastra: Execute TheoryEvaluatorAgent
-    Mastra->>Provider: chat(messages, schema)
-    Provider->>NIM: POST /chat/completions (Zod Output)
-    alt NVIDIA succeeds
-        NIM-->>Provider: JSON { aiScore, aiFeedback }
-    else NVIDIA fails (auth/429/5xx)
-        Provider->>Groq: POST /chat/completions (Zod Output)
-        Groq-->>Provider: JSON { aiScore, aiFeedback }
+    Candidate->>API: POST /api/v1/theory/session/:id/answer
+    API->>PG: Verify ownership and reserve answer slot
+    alt Session full or no longer active
+        PG-->>API: Reservation rejected
+        API-->>Candidate: HTTP 409 session cannot accept answer
+    else Slot reserved
+        API->>Mastra: Generate score and feedback
+        Mastra->>Router: Evaluate answer
+        alt NVIDIA fails and Groq is configured
+            Router->>Router: Retry with Groq
+        end
+        Router-->>Mastra: Structured score and feedback
+        Mastra-->>API: Evaluation result
+        API->>PG: Save answer
+        PG-->>API: Saved answer
+        API-->>Candidate: HTTP 200 score and feedback
     end
-    Provider-->>Mastra: Evaluation Result
-
-    Worker->>PG: Insert TheoryAnswer & Update TheorySession
-    SPA->>API: Poll GET /api/v1/theory/jobs/:jobId
-    API->>PG: Fetch Scored TheoryAnswer
-    PG-->>API: Scored Answer
-    API-->>SPA: HTTP 200 OK { aiScore, aiFeedback }

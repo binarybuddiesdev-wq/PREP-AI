@@ -9,7 +9,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ bodyLimit: 10 * 1024 * 1024 }),
-    { bufferLogs: true }
+    { bufferLogs: true, rawBody: true }
   );
 
   await configureApp(app);

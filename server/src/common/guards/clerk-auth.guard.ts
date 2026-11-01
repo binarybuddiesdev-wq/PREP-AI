@@ -3,8 +3,9 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-  Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator.js';
@@ -12,11 +13,10 @@ import { PrismaService } from '@/prisma/prisma.service.js';
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
-  private readonly logger = new Logger(ClerkAuthGuard.name);
-
   constructor(
     private readonly reflector: Reflector,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -40,25 +40,29 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid authorization header format');
     }
 
+    const secretKey = this.config.get<string>('CLERK_SECRET_KEY');
+    if (!secretKey) {
+      throw new ServiceUnavailableException('Authentication is not configured on this server');
+    }
+    const client = createClerkClient({ secretKey });
+    let payload;
+
     try {
-      const secretKey = process.env.CLERK_SECRET_KEY;
-      const client = createClerkClient({ secretKey });
-      const payload = await client.verifyToken(token);
-
-      const clerkUserId = payload.sub;
-      const user = await this.prisma.user.findUnique({
-        where: { clerkUserId },
-      });
-
-      request.user = {
-        id: clerkUserId,
-        email: user?.email ?? ((payload as Record<string, unknown>).email as string) ?? '',
-        role: user?.role ?? 'USER',
-      };
-      return true;
-    } catch (error) {
-      this.logger.error('Clerk token verification failed', error);
+      payload = await client.verifyToken(token);
+    } catch {
       throw new UnauthorizedException('Invalid session token');
     }
+
+    const clerkUserId = payload.sub;
+    const user = await this.prisma.user.findUnique({
+      where: { clerkUserId },
+    });
+
+    request.user = {
+      id: clerkUserId,
+      email: user?.email ?? ((payload as Record<string, unknown>).email as string) ?? '',
+      role: user?.role ?? 'USER',
+    };
+    return true;
   }
 }

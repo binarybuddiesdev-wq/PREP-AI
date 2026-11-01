@@ -219,7 +219,7 @@ flowchart TB
     User["🧑‍💻 User Browser / Client"]
 
     subgraph SystemBoundary ["PrepAI Infrastructure Boundary"]
-        SPA["💻 React 19 SPA<br/>(7-layer N-Tier — see c4-04)"]
+        SPA["💻 React 19 SPA<br/>(7 feature layers + app root — see c4-04)"]
         API["⚡ NestJS Fastify API"]
 
         subgraph DataStores ["Data & Cache Runtimes"]
@@ -265,176 +265,168 @@ flowchart TB
 
             <div id="view-c4-component" class="diagram-view">
                 <!-- BEGIN VIEW-C4-COMPONENT -->
-                <pre class="mermaid" data-src="diagrams/c4-03-component.mmd">%% C4 Level 3 — Component Diagram (NestJS Backend)
-%% Module breakdown of the NestJS API process.
+                <pre class="mermaid" data-src="diagrams/c4-03-component.mmd">%% C4 Level 3 — Components currently implemented in the NestJS API.
+%% Planned workers and feature modules are documented in TODO.md.
 
 flowchart TB
-    subgraph Pipeline ["Global NestJS HTTP Pipeline"]
-        Cors["Fastify CORS / Helmet"] --> AuthGuard["ClerkAuthGuard"]
-        AuthGuard --> RolesGuard["RolesGuard"]
-        RolesGuard --> ThrottlePipe["Redis RateLimiter Pipe"]
-        ThrottlePipe --> Controller["NestJS Controllers"]
-        Controller --> TransformInt["TransformInterceptor"]
-        TransformInt --> ExFilter["HttpExceptionFilter"]
+    Client["React SPA / API clients"]
+
+    subgraph Api["NestJS + Fastify API"]
+        Plugins["CORS · Helmet · in-process rate limit · multipart"]
+        Guards["Controller guards: Clerk auth + roles"]
+        Validation["Global DTO validation"]
+        Controllers["HTTP controllers"]
+        Services["Feature services"]
+        Envelope["Transform interceptor"]
+        Errors["Global exception filter"]
+
+        Plugins --> Guards --> Validation --> Controllers --> Services
+        Controllers --> Envelope
+        Envelope --> Errors
     end
 
-    subgraph FeatureModules ["Feature Modules"]
-        Controller --> UserMod["UserModule / WebhookController"]
-        Controller --> TopicMod["TopicModule"]
-        Controller --> QuestionMod["QuestionModule"]
-        Controller --> TheoryMod["TheoryModule"]
-        Controller --> CodingMod["CodingModule"]
-        Controller --> PdfMod["PdfRagModule"]
+    subgraph Features["Implemented feature modules"]
+        User["User + Clerk webhook"]
+        Topic["Topic"]
+        Question["Question bank"]
+        Theory["Theory sessions + answers"]
+        TechExpert["Tech expert answers"]
+        Health["Liveness + readiness"]
     end
 
-    subgraph Infrastructure ["Infrastructure Services"]
-        UserMod --> PrismaMongo["PrismaService Mongo"]
-        TopicMod --> PrismaMongo
-        QuestionMod --> PrismaMongo
+    Services --> User
+    Services --> Topic
+    Services --> Question
+    Services --> Theory
+    Services --> TechExpert
+    Controllers --> Health
 
-        TheoryMod --> PrismaPG["PrismaPostgresqlService Postgres"]
-        CodingMod --> PrismaPG
-        PdfMod --> PrismaPG
-
-        TheoryMod --> RedisSvc["Redis Cache & Quota Service"]
-        CodingMod --> RedisSvc
-
-        TheoryMod --> QueueSvc["BullMQ Job Queue Service"]
-        CodingMod --> QueueSvc
+    subgraph Stores["Infrastructure"]
+        Mongo["MongoDB · users/settings/topics/questions"]
+        Postgres["PostgreSQL · theory sessions/answers; coding schema exists without API"]
+        Redis["RedisService · atomic daily theory quota + readiness ping"]
     end
 
-    subgraph ExternalExecution ["External Execution Engine"]
-        QueueSvc -->|HTTP REST| PistonEngine["Piston Sandbox"]
-        QueueSvc -->|SDK Prompts| ProviderRouter["LLM Provider Router<br/>(getModel() in providers.ts)"]
-        ProviderRouter -->|HTTPS| NVIDIA["NVIDIA NIM API<br/>(primary)"]
-        ProviderRouter -.->|Failover on error| Groq["Groq API<br/>(fallback)"]
+    User --> Mongo
+    Topic --> Mongo
+    Question --> Mongo
+    Theory --> Mongo
+    Theory --> Postgres
+    Theory --> Redis
+    Health --> Mongo
+    Health --> Postgres
+    Health --> Redis
+
+    subgraph Ai["Synchronous AI calls"]
+        Mastra["Mastra agents"]
+        Router["NVIDIA primary · Groq fallback"]
     end
 
-    classDef pipeStyle fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#fff;
-    classDef modStyle fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
-    classDef infraStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
-    class Cors,AuthGuard,RolesGuard,ThrottlePipe,Controller,TransformInt,ExFilter pipeStyle;
-    class UserMod,TopicMod,QuestionMod,TheoryMod,CodingMod,PdfMod modStyle;
-    class PrismaMongo,PrismaPG,RedisSvc,QueueSvc,ProviderRouter infraStyle;
+    Theory --> Mastra
+    TechExpert --> Mastra
+    Mastra --> Router
+
+    Client --> Plugins
+    Router -->|HTTPS| Providers["NVIDIA NIM / Groq"]
+
+    classDef pipeline fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#fff;
+    classDef feature fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef infra fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    class Plugins,Guards,Validation,Controllers,Envelope,Errors pipeline;
+    class User,Topic,Question,Theory,TechExpert,Health feature;
+    class Mongo,Postgres,Redis,Mastra,Router,Providers infra;
 </pre>
                 <!-- END VIEW-C4-COMPONENT -->
             </div>
 
             <div id="view-c4-frontend" class="diagram-view">
                 <!-- BEGIN VIEW-C4-FRONTEND -->
-                <pre class="mermaid" data-src="diagrams/c4-04-frontend-component.mmd">%% C4 Level 3 — Component Diagram (Frontend ui/)
-%% Layer model inside the React 19 SPA.
-%% See ADR-0008 and docs/architecture/frontend-refactor.md for the rationale.
-%% The single most important rule: pages/ is the only layer that imports
-%% from data/ and logic/. components/ is purely presentational.
+                <pre class="mermaid" data-src="diagrams/c4-04-frontend-component.mmd">%% C4 Level 3 — Frontend component and layer diagram.
+%% Layer rules are defined in ADR-0009 and frontend-refactor.md.
 
 flowchart TB
-    Browser["🌐 User Browser"]
+    Browser["User Browser"]
 
-    subgraph CompositionRoot ["Composition Root (ui/src/)"]
-        Main["main.tsx<br/>Vite entry"]
-        App["App.tsx<br/>Router + Clerk + Query gates"]
-        Providers["Providers<br/>ClerkProvider · QueryClientProvider · ReduxProvider"]
-        Main --> App
-        App --> Providers
+    subgraph AppLayer["app — composition root"]
+        App["App / AppErrorBoundary"]
+        Providers["AppProviders<br/>Clerk · Redux · Query · Router"]
+        Routes["AppRoutes / RouteGuards"]
+        App --> Providers --> Routes
     end
 
-    subgraph ShellPages ["Pages (UI Shell — composition only)"]
-        Dash["DashboardPage.tsx"]
-        Settings["SettingsPage.tsx"]
-        SignIn["SignInPage.tsx"]
-        SignUp["SignUpPage.tsx"]
+    subgraph PagesLayer["pages — route shells"]
+        Dashboard["DashboardPage"]
+        Settings["SettingsPage"]
+        SignIn["SignInPage"]
+        SignUp["SignUpPage"]
     end
 
-    subgraph LogicLayer ["Logic (useXxxReader / useXxxCommand)"]
-        useUserReader["useUserReader()<br/>useQuery → GET /users/me"]
-        useSettingsReader["useSettingsReader()<br/>useQuery → GET /users/settings"]
-        useUpdateSettingsCmd["useUpdateSettingsCommand()<br/>useMutation → PATCH /users/settings"]
-        useSetupCmd["useSetupCompleteCommand()<br/>useMutation → PATCH /users/setup-complete"]
+    subgraph LogicLayer["logic — readers and commands"]
+        UserReader["useUserReader / useSettingsReader"]
+        UpdateCommand["useUpdateSettingsCommand"]
+        AuthHooks["useSessionReader / useSignOutCommand"]
+        QueryClient["queryClient.ts"]
     end
 
-    subgraph DataLayer ["Data (HTTP, DTOs, query keys, RTK)"]
-        ApiClient["api-client.ts<br/>ky + Bearer + getApiClient()"]
-        UserApi["user.api.ts<br/>getMe, getSettings, updateSettings, setupComplete"]
-        UserKeys["user.keys.ts<br/>userQueryKeys.me(), .settings()"]
-        UserTypes["user.types.ts<br/>IUser, IUpdateSettingsBody"]
-        Envelope["envelope.ts<br/>IApiEnvelope&lt;T&gt;"]
-        Store["store/<br/>RTK (client UI state only)"]
+    subgraph ServiceLayer["service — external I/O adapters"]
+        ApiClient["apiClient.ts<br/>ky + Clerk bearer token"]
+        UserApi["user.api.ts<br/>getMe / getSettings / updateSettings"]
+        ClerkAdapter["auth/<br/>Clerk provider, hooks, widgets"]
         ApiClient --> UserApi
-        UserApi --> Envelope
-        UserApi --> UserKeys
-        UserApi --> UserTypes
     end
 
-    subgraph UtilsLayer ["Utils (pure helpers, no React)"]
-        Cn["cn.ts"]
-        Formatters["formatDate.ts · formatNumber.ts"]
-        Validators["validators.ts"]
+    subgraph DataLayer["data — shared client-owned Redux state"]
+        Store["store / rootReducer"]
     end
 
-    subgraph CoreLayer ["Core (constants, routes, env, branded types)"]
-        Env["env.ts"]
-        Routes["routes.ts"]
-        QueryPrefix["query-prefix.ts"]
+    subgraph ComponentsLayer["components — presentational UI"]
+        Layout["layout / auth / form"]
+        DashboardComponents["dashboard"]
+        SettingsComponents["settings"]
     end
 
-    subgraph ComponentsLayer ["Components (presentational only)"]
-        UICard["ui/Card.tsx · Button.tsx · Input.tsx"]
-        UserCard["user/UserCard.tsx<br/>(props only — no data imports)"]
-        SettingsForm["settings/SettingsForm.tsx<br/>(props only — no data imports)"]
+    subgraph UtilsLayer["utils — pure helpers"]
+        Cn["cn"]
+        FormatDate["formatDate"]
     end
 
-    Browser -->|HTTPS| Main
-
-    %% Pages are the only layer that imports from data/ and logic/
-    Dash -->|imports hook| useUserReader
-    Settings -->|imports hook| useSettingsReader
-    Settings -->|imports hook| useUpdateSettingsCmd
-    Dash -->|imports component| UserCard
-    Settings -->|imports component| SettingsForm
-    Dash -.->|imports component| UICard
-    Settings -.->|imports component| UICard
-
-    %% Logic is the only layer that calls useQuery/useMutation/getApiClient
-    useUserReader -->|useQuery| ApiClient
-    useSettingsReader -->|useQuery| ApiClient
-    useUpdateSettingsCmd -->|useMutation| ApiClient
-    useSetupCmd -->|useMutation| ApiClient
-    useUserReader -.->|query key| UserKeys
-    useSettingsReader -.->|query key| UserKeys
-    useUpdateSettingsCmd -.->|query key| UserKeys
-
-    %% Logic imports from data, data imports from core/utils
-    LogicLayer -.->|type-only imports| DataLayer
-    LogicLayer -->|query prefix| CoreLayer
-    DataLayer -->|envelope, types| CoreLayer
-    DataLayer -->|cn, formatters| UtilsLayer
-
-    %% Pages may import utils + core (constants, route names)
-    ShellPages -->|route names, env| CoreLayer
-    ShellPages -->|cn| UtilsLayer
-
-    %% External: API
-    subgraph ExternalAPI ["External: NestJS API"]
-        REST["REST /api/v1/*<br/>Clerk Bearer JWT"]
+    subgraph CoreLayer["core — types, constants and configuration"]
+        RoutesCore["routes"]
+        UserTypes["user types and settings options"]
+        ApiTypes["API types and environment"]
     end
-    ApiClient -->|HTTPS + Bearer| REST
 
-    classDef shellStyle fill:#312e81,stroke:#818cf8,stroke-width:3px,color:#fff;
-    classDef logicStyle fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#fff;
-    classDef dataStyle fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#fff;
-    classDef utilStyle fill:#0f172a,stroke:#64748b,stroke-width:1px,color:#fff;
-    classDef coreStyle fill:#0f172a,stroke:#94a3b8,stroke-width:1px,color:#fff;
-    classDef compStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
-    classDef extStyle fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff;
+    Browser --> App
+    Routes --> Dashboard
+    Routes --> Settings
+    Routes --> SignIn
+    Routes --> SignUp
+    Dashboard --> UserReader
+    Dashboard --> AuthHooks
+    Settings --> UserReader
+    Settings --> UpdateCommand
+    SignIn --> ClerkAdapter
+    SignUp --> ClerkAdapter
+    UserReader --> ApiClient
+    UpdateCommand --> ApiClient
+    AuthHooks --> ClerkAdapter
+    LogicLayer --> Store
+    PagesLayer --> ComponentsLayer
+    LogicLayer --> CoreLayer
+    ServiceLayer --> CoreLayer
+    DataLayer --> CoreLayer
+    ComponentsLayer --> CoreLayer
+    ComponentsLayer --> UtilsLayer
+    PagesLayer --> CoreLayer
 
-    class Main,App,Providers,Dash,Settings,SignIn,SignUp shellStyle;
-    class useUserReader,useSettingsReader,useUpdateSettingsCmd,useSetupCmd logicStyle;
-    class ApiClient,UserApi,UserKeys,UserTypes,Envelope,Store dataStyle;
-    class Cn,Formatters,Validators utilStyle;
-    class Env,Routes,QueryPrefix coreStyle;
-    class UICard,UserCard,SettingsForm compStyle;
-    class REST extStyle;
+    classDef appStyle fill:#312e81,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef pageStyle fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#fff;
+    classDef layerStyle fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#fff;
+    classDef componentStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    class App,Providers,Routes appStyle;
+    class Dashboard,Settings,SignIn,SignUp pageStyle;
+    class UserReader,UpdateCommand,AuthHooks,QueryClient,ApiClient,UserApi,ClerkAdapter,Store layerStyle;
+    class Layout,DashboardComponents,SettingsComponents componentStyle;
 </pre>
                 <!-- END VIEW-C4-FRONTEND -->
             </div>
@@ -474,57 +466,51 @@ sequenceDiagram
 
             <div id="view-seq-theory" class="diagram-view">
                 <!-- BEGIN VIEW-SEQ-THEORY -->
-                <pre class="mermaid" data-src="diagrams/seq-02-theory-ai-scoring.mmd">%% Sequence Flow 2 — Theory Session & Async AI Answer Scoring
+                <pre class="mermaid" data-src="diagrams/seq-02-theory-ai-scoring.mmd">%% Current synchronous theory-session flow.
+%% Background evaluation with BullMQ remains planned (ADR-0004, TODO.md).
 
 sequenceDiagram
     autonumber
-    actor Candidate as User / Candidate
-    participant SPA as React 19 Frontend
-    participant API as NestJS Theory Controller
-    participant Redis as Redis (Quota & BullMQ)
-    participant Mongo as MongoDB (Question Bank)
-    participant Worker as BullMQ Async Worker
-    participant Mastra as Mastra AI Agent
-    participant Provider as LLM Provider Router<br/>(NVIDIA primary, Groq fallback)
-    participant NIM as NVIDIA NIM (LLM)
-    participant Groq as Groq (LLM, fallback)
-    participant PG as PostgreSQL (Sessions & Answers)
+    actor Candidate as User
+    participant API as NestJS Theory API
+    participant Clerk as Clerk token verification
+    participant Redis as Redis quota counter
+    participant Mongo as MongoDB question bank
+    participant PG as PostgreSQL sessions and answers
+    participant Mastra as Theory evaluator agent
+    participant Router as NVIDIA primary / Groq fallback
 
-    Candidate->>SPA: Selects Topic & Clicks "Start Session"
-    SPA->>API: POST /api/v1/theory/session/start
-    API->>Redis: INCR quota:userId:YYYY-MM-DD:theory_sessions
-    alt Quota Exceeded
-        API-->>SPA: HTTP 429 Limit Reached
-    else Quota Allowed
-        API->>Mongo: Fetch N Questions
-        Mongo-->>API: Question List
-        API->>PG: Create TheorySession
-        PG-->>API: TheorySession Record
-        API-->>SPA: HTTP 201 Created { sessionId, questions }
+    Candidate->>API: POST /api/v1/theory/session/start
+    API->>Clerk: Verify Bearer token
+    Clerk-->>API: Clerk user ID
+    API->>Redis: Atomically reserve daily session quota
+    alt Quota reached
+        Redis-->>API: Rejected
+        API-->>Candidate: HTTP 403 quota limit
+    else Quota available
+        Redis-->>API: Reservation granted
+        API->>PG: Create session
+        PG-->>API: Session
+        API-->>Candidate: Session created
     end
 
-    Candidate->>SPA: Writes Answer & Clicks "Submit Answer"
-    SPA->>API: POST /api/v1/theory/session/:id/answer
-    API->>Redis: Enqueue Job into "theory-eval-queue"
-    API-->>SPA: HTTP 202 Accepted { jobId }
-
-    Worker->>Redis: Pop Job from queue
-    Worker->>Mastra: Execute TheoryEvaluatorAgent
-    Mastra->>Provider: chat(messages, schema)
-    Provider->>NIM: POST /chat/completions (Zod Output)
-    alt NVIDIA succeeds
-        NIM-->>Provider: JSON { aiScore, aiFeedback }
-    else NVIDIA fails (auth/429/5xx)
-        Provider->>Groq: POST /chat/completions (Zod Output)
-        Groq-->>Provider: JSON { aiScore, aiFeedback }
+    Candidate->>API: POST /api/v1/theory/session/:id/answer
+    API->>PG: Verify ownership and reserve answer slot
+    alt Session full or no longer active
+        PG-->>API: Reservation rejected
+        API-->>Candidate: HTTP 409 session cannot accept answer
+    else Slot reserved
+        API->>Mastra: Generate score and feedback
+        Mastra->>Router: Evaluate answer
+        alt NVIDIA fails and Groq is configured
+            Router->>Router: Retry with Groq
+        end
+        Router-->>Mastra: Structured score and feedback
+        Mastra-->>API: Evaluation result
+        API->>PG: Save answer
+        PG-->>API: Saved answer
+        API-->>Candidate: HTTP 200 score and feedback
     end
-    Provider-->>Mastra: Evaluation Result
-
-    Worker->>PG: Insert TheoryAnswer & Update TheorySession
-    SPA->>API: Poll GET /api/v1/theory/jobs/:jobId
-    API->>PG: Fetch Scored TheoryAnswer
-    PG-->>API: Scored Answer
-    API-->>SPA: HTTP 200 OK { aiScore, aiFeedback }
 </pre>
                 <!-- END VIEW-SEQ-THEORY -->
             </div>

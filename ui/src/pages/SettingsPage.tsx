@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { AppHeader, LoadingScreen } from '@/components/layout';
+import { AppHeader, LoadingScreen, QueryErrorState } from '@/components/layout';
 import { RawSettingsCard, SettingsFormCard, UserModelCard } from '@/components/settings';
 import { ROUTES, type ISettingsFormValues, type ISettingsSaveStatus } from '@/core';
 import {
@@ -20,8 +20,38 @@ export const SettingsPage = () => {
   const [draft, setDraft] = useState<ISettingsFormValues | null>(null);
   const [status, setStatus] = useState<ISettingsSaveStatus | null>(null);
 
-  if (!isLoaded || userQuery.isLoading || settingsQuery.isLoading) {
+  if (!isLoaded || userQuery.isPending || settingsQuery.isPending) {
     return <LoadingScreen label="Loading settings..." />;
+  }
+
+  if (userQuery.isError || settingsQuery.isError) {
+    const failedResource = userQuery.isError ? 'profile' : 'settings';
+    const errorMessage =
+      userQuery.error?.message ?? settingsQuery.error?.message ?? 'Request failed';
+
+    return (
+      <main className="min-h-screen bg-[#09090b] px-6 py-16 text-white">
+        <div className="mx-auto max-w-2xl">
+          <QueryErrorState
+            title={`Couldn’t load your ${failedResource}`}
+            description="Check your connection and try again. If the problem continues, share the technical detail with your support team."
+            onRetry={() => {
+              if (userQuery.isError) void userQuery.refetch();
+              if (settingsQuery.isError) void settingsQuery.refetch();
+            }}
+            isRetrying={userQuery.isFetching || settingsQuery.isFetching}
+          />
+          <details className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 text-left">
+            <summary className="cursor-pointer text-xs font-medium text-zinc-500">
+              Technical detail
+            </summary>
+            <pre className="mt-3 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-zinc-500">
+              {errorMessage}
+            </pre>
+          </details>
+        </div>
+      </main>
+    );
   }
 
   const values = draft ?? getSettingsFormValues(settingsQuery.data);
@@ -50,7 +80,7 @@ export const SettingsPage = () => {
 
       <main className="max-w-4xl mx-auto px-6 py-10">
         <h1 className="text-2xl font-bold mb-2">Settings</h1>
-        <p className="text-zinc-400 mb-8">Test both User and UserSettings models</p>
+        <p className="text-zinc-400 mb-8">Manage your profile and practice preferences.</p>
 
         <UserModelCard user={userQuery.data} />
         <SettingsFormCard

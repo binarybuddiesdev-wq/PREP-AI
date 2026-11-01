@@ -18,6 +18,8 @@ export default defineConfig({
         'src/main.ts',
         'src/**/*.module.ts',
         'src/**/*.types.ts',
+        'src/**/*.d.ts',
+        'src/generated/**/*',
         'src/types/**/*',
         'src/common/index.ts',
         'src/prisma/index.ts',

@@ -39,9 +39,9 @@ If pnpm stops with `ERR_PNPM_IGNORED_BUILDS` (it names `@clerk/shared`), that is
 
 ### Frontend
 
-Routing is React Router with `SignedIn`/`SignedOut` (Clerk) gating `ProtectedRoute`/`PublicRoute` wrappers in `app/RouteGuards.tsx`. Server state goes through TanStack Query; client/global UI state through Redux Toolkit (`data/store`). All API calls go through `useApiClient()` (`service/api/`), a `ky` instance that auto-attaches the Clerk session token as a Bearer header and is prefixed with `${VITE_API_BASE_URL}/api/v1` — don't call `fetch`/`ky` directly from components. UI components follow Shadcn UI conventions (`components.json`, `components/ui/`) with Tailwind v4.
+Routing is React Router with `SignedIn`/`SignedOut` (Clerk) gating `ProtectedRoute`/`PublicRoute` wrappers in `app/RouteGuards.tsx`. Server state goes through TanStack Query; shared client state goes through Redux Toolkit (`data/store`), while component-only state stays local. All API calls go through `useApiClient()` (`service/api/`), a `ky` instance that auto-attaches the Clerk session token as a Bearer header and is prefixed with `${VITE_API_BASE_URL}/api/v1` — don't call `fetch`/`ky` directly from components. UI components follow Shadcn UI conventions (`components.json`, `components/ui/`) with Tailwind v4.
 
-`ui/src` follows the layers in ADR-0009: `core` (types, constants, routes, env), `utils` (pure helpers), `service` (HTTP client, Clerk adapter; no business logic), `data` (Redux store), `logic` (Reader/Command hooks over TanStack Query), `components` (props in, events out; shadcn primitives under `components/ui/`), `pages` (route shells, named exports) and `app` (providers, routes, guards). Lower layers never import from higher ones. Each layer folder exposes an `index.ts` barrel.
+`ui/src` follows the layers in ADR-0009: `core` (types, constants, routes, env), `utils` (pure helpers), `service` (HTTP client, Clerk adapter; no business logic), `data` (Redux Toolkit client state), `logic` (Reader/Command hooks over TanStack Query), `components` (props in, events out; shadcn primitives under `components/ui/`), `pages` (route shells, named exports) and `app` (providers, routes, guards). Lower layers never import from higher ones. Each layer folder exposes an `index.ts` barrel.
 
 ### Path aliases
 
@@ -53,4 +53,4 @@ Routing is React Router with `SignedIn`/`SignedOut` (Clerk) gating `ProtectedRou
 
 ## Known gaps in the frontend
 
-`ui/` has no tests yet, so each change owes its own (`frontend-testing`). The ESLint layer-boundary rules from ADR-0009 are not enabled yet. Reviews flag only what a diff adds.
+UI tests live beside the code as `*.test.ts(x)`; add or update tests for changed behavior. ESLint enforces the import boundaries for `core`, `utils`, `service`, `data`, `logic`, `components`, `pages`, and `app`; keep the rules aligned with ADR-0009 and `docs/architecture/frontend-refactor.md`. Reviews flag only what a diff adds.

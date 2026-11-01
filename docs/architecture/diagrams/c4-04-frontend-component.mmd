@@ -1,113 +1,86 @@
-%% C4 Level 3 — Component Diagram (Frontend ui/)
-%% Layer model inside the React 19 SPA.
-%% See ADR-0008 and docs/architecture/frontend-refactor.md for the rationale.
-%% The single most important rule: pages/ is the only layer that imports
-%% from data/ and logic/. components/ is purely presentational.
+%% C4 Level 3 — Frontend component and layer diagram.
+%% Layer rules are defined in ADR-0009 and frontend-refactor.md.
 
 flowchart TB
-    Browser["🌐 User Browser"]
+    Browser["User Browser"]
 
-    subgraph CompositionRoot ["Composition Root (ui/src/)"]
-        Main["main.tsx<br/>Vite entry"]
-        App["App.tsx<br/>Router + Clerk + Query gates"]
-        Providers["Providers<br/>ClerkProvider · QueryClientProvider · ReduxProvider"]
-        Main --> App
-        App --> Providers
+    subgraph AppLayer["app — composition root"]
+        App["App / AppErrorBoundary"]
+        Providers["AppProviders<br/>Clerk · Redux · Query · Router"]
+        Routes["AppRoutes / RouteGuards"]
+        App --> Providers --> Routes
     end
 
-    subgraph ShellPages ["Pages (UI Shell — composition only)"]
-        Dash["DashboardPage.tsx"]
-        Settings["SettingsPage.tsx"]
-        SignIn["SignInPage.tsx"]
-        SignUp["SignUpPage.tsx"]
+    subgraph PagesLayer["pages — route shells"]
+        Dashboard["DashboardPage"]
+        Settings["SettingsPage"]
+        SignIn["SignInPage"]
+        SignUp["SignUpPage"]
     end
 
-    subgraph LogicLayer ["Logic (useXxxReader / useXxxCommand)"]
-        useUserReader["useUserReader()<br/>useQuery → GET /users/me"]
-        useSettingsReader["useSettingsReader()<br/>useQuery → GET /users/settings"]
-        useUpdateSettingsCmd["useUpdateSettingsCommand()<br/>useMutation → PATCH /users/settings"]
-        useSetupCmd["useSetupCompleteCommand()<br/>useMutation → PATCH /users/setup-complete"]
+    subgraph LogicLayer["logic — readers and commands"]
+        UserReader["useUserReader / useSettingsReader"]
+        UpdateCommand["useUpdateSettingsCommand"]
+        AuthHooks["useSessionReader / useSignOutCommand"]
+        QueryClient["queryClient.ts"]
     end
 
-    subgraph DataLayer ["Data (HTTP, DTOs, query keys, RTK)"]
-        ApiClient["api-client.ts<br/>ky + Bearer + getApiClient()"]
-        UserApi["user.api.ts<br/>getMe, getSettings, updateSettings, setupComplete"]
-        UserKeys["user.keys.ts<br/>userQueryKeys.me(), .settings()"]
-        UserTypes["user.types.ts<br/>IUser, IUpdateSettingsBody"]
-        Envelope["envelope.ts<br/>IApiEnvelope&lt;T&gt;"]
-        Store["store/<br/>RTK (client UI state only)"]
+    subgraph ServiceLayer["service — external I/O adapters"]
+        ApiClient["apiClient.ts<br/>ky + Clerk bearer token"]
+        UserApi["user.api.ts<br/>getMe / getSettings / updateSettings"]
+        ClerkAdapter["auth/<br/>Clerk provider, hooks, widgets"]
         ApiClient --> UserApi
-        UserApi --> Envelope
-        UserApi --> UserKeys
-        UserApi --> UserTypes
     end
 
-    subgraph UtilsLayer ["Utils (pure helpers, no React)"]
-        Cn["cn.ts"]
-        Formatters["formatDate.ts · formatNumber.ts"]
-        Validators["validators.ts"]
+    subgraph DataLayer["data — shared client-owned Redux state"]
+        Store["store / rootReducer"]
     end
 
-    subgraph CoreLayer ["Core (constants, routes, env, branded types)"]
-        Env["env.ts"]
-        Routes["routes.ts"]
-        QueryPrefix["query-prefix.ts"]
+    subgraph ComponentsLayer["components — presentational UI"]
+        Layout["layout / auth / form"]
+        DashboardComponents["dashboard"]
+        SettingsComponents["settings"]
     end
 
-    subgraph ComponentsLayer ["Components (presentational only)"]
-        UICard["ui/Card.tsx · Button.tsx · Input.tsx"]
-        UserCard["user/UserCard.tsx<br/>(props only — no data imports)"]
-        SettingsForm["settings/SettingsForm.tsx<br/>(props only — no data imports)"]
+    subgraph UtilsLayer["utils — pure helpers"]
+        Cn["cn"]
+        FormatDate["formatDate"]
     end
 
-    Browser -->|HTTPS| Main
-
-    %% Pages are the only layer that imports from data/ and logic/
-    Dash -->|imports hook| useUserReader
-    Settings -->|imports hook| useSettingsReader
-    Settings -->|imports hook| useUpdateSettingsCmd
-    Dash -->|imports component| UserCard
-    Settings -->|imports component| SettingsForm
-    Dash -.->|imports component| UICard
-    Settings -.->|imports component| UICard
-
-    %% Logic is the only layer that calls useQuery/useMutation/getApiClient
-    useUserReader -->|useQuery| ApiClient
-    useSettingsReader -->|useQuery| ApiClient
-    useUpdateSettingsCmd -->|useMutation| ApiClient
-    useSetupCmd -->|useMutation| ApiClient
-    useUserReader -.->|query key| UserKeys
-    useSettingsReader -.->|query key| UserKeys
-    useUpdateSettingsCmd -.->|query key| UserKeys
-
-    %% Logic imports from data, data imports from core/utils
-    LogicLayer -.->|type-only imports| DataLayer
-    LogicLayer -->|query prefix| CoreLayer
-    DataLayer -->|envelope, types| CoreLayer
-    DataLayer -->|cn, formatters| UtilsLayer
-
-    %% Pages may import utils + core (constants, route names)
-    ShellPages -->|route names, env| CoreLayer
-    ShellPages -->|cn| UtilsLayer
-
-    %% External: API
-    subgraph ExternalAPI ["External: NestJS API"]
-        REST["REST /api/v1/*<br/>Clerk Bearer JWT"]
+    subgraph CoreLayer["core — types, constants and configuration"]
+        RoutesCore["routes"]
+        UserTypes["user types and settings options"]
+        ApiTypes["API types and environment"]
     end
-    ApiClient -->|HTTPS + Bearer| REST
 
-    classDef shellStyle fill:#312e81,stroke:#818cf8,stroke-width:3px,color:#fff;
-    classDef logicStyle fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#fff;
-    classDef dataStyle fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#fff;
-    classDef utilStyle fill:#0f172a,stroke:#64748b,stroke-width:1px,color:#fff;
-    classDef coreStyle fill:#0f172a,stroke:#94a3b8,stroke-width:1px,color:#fff;
-    classDef compStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
-    classDef extStyle fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff;
+    Browser --> App
+    Routes --> Dashboard
+    Routes --> Settings
+    Routes --> SignIn
+    Routes --> SignUp
+    Dashboard --> UserReader
+    Dashboard --> AuthHooks
+    Settings --> UserReader
+    Settings --> UpdateCommand
+    SignIn --> ClerkAdapter
+    SignUp --> ClerkAdapter
+    UserReader --> ApiClient
+    UpdateCommand --> ApiClient
+    AuthHooks --> ClerkAdapter
+    LogicLayer --> Store
+    PagesLayer --> ComponentsLayer
+    LogicLayer --> CoreLayer
+    ServiceLayer --> CoreLayer
+    DataLayer --> CoreLayer
+    ComponentsLayer --> CoreLayer
+    ComponentsLayer --> UtilsLayer
+    PagesLayer --> CoreLayer
 
-    class Main,App,Providers,Dash,Settings,SignIn,SignUp shellStyle;
-    class useUserReader,useSettingsReader,useUpdateSettingsCmd,useSetupCmd logicStyle;
-    class ApiClient,UserApi,UserKeys,UserTypes,Envelope,Store dataStyle;
-    class Cn,Formatters,Validators utilStyle;
-    class Env,Routes,QueryPrefix coreStyle;
-    class UICard,UserCard,SettingsForm compStyle;
-    class REST extStyle;
+    classDef appStyle fill:#312e81,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef pageStyle fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#fff;
+    classDef layerStyle fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#fff;
+    classDef componentStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    class App,Providers,Routes appStyle;
+    class Dashboard,Settings,SignIn,SignUp pageStyle;
+    class UserReader,UpdateCommand,AuthHooks,QueryClient,ApiClient,UserApi,ClerkAdapter,Store layerStyle;
+    class Layout,DashboardComponents,SettingsComponents componentStyle;

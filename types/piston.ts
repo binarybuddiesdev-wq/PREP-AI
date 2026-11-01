@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- this file is the interactive Piston CLI. */
 import { spawnSync } from 'child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

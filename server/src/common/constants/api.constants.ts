@@ -139,6 +139,9 @@ export const THEORY_SESSION_ALREADY_COMPLETED = 'Session already completed';
 export const THEORY_NOT_SESSION_OWNER = 'Not session owner';
 export const THEORY_DAILY_LIMIT_REACHED = 'Daily session limit reached';
 export const THEORY_QUESTIONS_LIMIT_EXCEEDED = 'Questions limit exceeded for your plan';
+export const THEORY_TOPIC_ID_REQUIRED = 'topicId is required for topic mode';
+export const THEORY_MODE_NOT_SUPPORTED = 'PDF study mode is not supported yet';
+export const THEORY_DATABASE_UNAVAILABLE = 'Theory database is temporarily unavailable';
 
 export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({
   schema: {

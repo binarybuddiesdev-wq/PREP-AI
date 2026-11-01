@@ -16,7 +16,7 @@ All endpoints require Bearer token authentication (Clerk).
 
 ### How Limits Are Enforced
 
-- **Session start**: Check daily session count. If limit reached → return 403.
+- **Session start**: Redis atomically reserves a daily session slot. If the limit is reached, return 403. If Redis is unavailable, fail closed with 503.
 - **Questions per session**: Frontend sends `totalQuestions` (role-based). Backend validates it doesn't exceed the user's limit.
 - **Role is read from MongoDB User record** at request time via `ClerkAuthGuard`.
 
@@ -41,12 +41,12 @@ Create a new theory practice session.
 
 ### Request Body
 
-| Field            | Type   | Required | Description                                        |
-| ---------------- | ------ | -------- | -------------------------------------------------- |
-| `topicId`        | string | no       | MongoDB Topic ID. Required for "topic" mode.       |
-| `mode`           | string | yes      | `"topic"` \| `"weak"` \| `"pdf"`                   |
-| `difficulty`     | string | yes      | `"Junior"` \| `"Mid"` \| `"Senior"`                |
-| `totalQuestions` | number | yes      | Number of questions. Max: 10 (free), 30 (premium). |
+| Field            | Type   | Required    | Description                                        |
+| ---------------- | ------ | ----------- | -------------------------------------------------- |
+| `topicId`        | string | conditional | Required for `topic` mode; max 64 characters.      |
+| `mode`           | string | yes         | `"topic"` \| `"weak"`                              |
+| `difficulty`     | string | yes         | `"Junior"` \| `"Mid"` \| `"Senior"`                |
+| `totalQuestions` | number | yes         | Number of questions. Max: 10 (free), 30 (premium). |
 
 ```json
 {
@@ -87,6 +87,7 @@ Create a new theory practice session.
 | 400    | Validation failed (missing required fields)         |
 | 400    | Topic not found (when topicId provided but invalid) |
 | 403    | Daily session limit reached (free users: 3/day)     |
+| 503    | Session quota service unavailable                   |
 
 ---
 
@@ -153,12 +154,12 @@ Submit a user's answer for a question. AI evaluates and returns score + feedback
 
 ### Request Body
 
-| Field          | Type   | Required | Description                                           |
-| -------------- | ------ | -------- | ----------------------------------------------------- |
-| `questionId`   | string | no       | MongoDB Question ID. Null for AI-generated questions. |
-| `questionText` | string | yes      | The question text (stored for history)                |
-| `userAnswer`   | string | yes      | User's text answer                                    |
-| `timeTaken`    | number | no       | Time taken in seconds                                 |
+| Field          | Type   | Required | Description                                                              |
+| -------------- | ------ | -------- | ------------------------------------------------------------------------ |
+| `questionId`   | string | no       | MongoDB Question ID. Null for AI-generated questions; max 64 characters. |
+| `questionText` | string | yes      | The question text (stored for history); max 2,000 characters             |
+| `userAnswer`   | string | yes      | User's text answer; max 8,000 characters                                 |
+| `timeTaken`    | number | no       | Time taken in seconds                                                    |
 
 ```json
 {
@@ -191,12 +192,12 @@ Submit a user's answer for a question. AI evaluates and returns score + feedback
 
 ### Errors
 
-| Status | Message                   |
-| ------ | ------------------------- |
-| 400    | Validation failed         |
-| 404    | Session not found         |
-| 403    | Not session owner         |
-| 409    | Session already completed |
+| Status | Message                                             |
+| ------ | --------------------------------------------------- |
+| 400    | Validation failed                                   |
+| 404    | Session not found                                   |
+| 403    | Not session owner                                   |
+| 409    | Session already completed or question limit reached |
 
 ---
 
@@ -239,11 +240,11 @@ Mark session as completed and compute final average score.
 
 ### Errors
 
-| Status | Message                   |
-| ------ | ------------------------- |
-| 404    | Session not found         |
-| 403    | Not session owner         |
-| 409    | Session already completed |
+| Status | Message                                                    |
+| ------ | ---------------------------------------------------------- |
+| 404    | Session not found                                          |
+| 403    | Not session owner                                          |
+| 409    | Session already completed or an answer is still processing |
 
 ---
 

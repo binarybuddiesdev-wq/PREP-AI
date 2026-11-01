@@ -3,7 +3,6 @@ import { TopicService } from './topic.service.js';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TOPIC_ALREADY_EXISTS, TOPIC_NOT_FOUND } from '@/common/index.js';
 
 describe('TopicService', () => {
   let service: TopicService;
@@ -237,7 +236,7 @@ describe('TopicService', () => {
       prisma.topic.findUnique.mockResolvedValue(mockTopic);
       prisma.topic.update.mockResolvedValue({ ...mockTopic, name: 'React.js', category: 'coding' });
 
-      const result = await service.updateTopic('topic_001', {
+      await service.updateTopic('topic_001', {
         name: 'React.js',
         category: 'coding',
       });
@@ -252,7 +251,7 @@ describe('TopicService', () => {
       prisma.topic.findUnique.mockResolvedValue(mockTopic);
       prisma.topic.update.mockResolvedValue({ ...mockTopic, icon: null });
 
-      const result = await service.updateTopic('topic_001', { icon: null });
+      await service.updateTopic('topic_001', { icon: null });
 
       expect(prisma.topic.update).toHaveBeenCalledWith({
         where: { id: 'topic_001' },

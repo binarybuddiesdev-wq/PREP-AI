@@ -18,10 +18,18 @@ const layerRule = (layer, allowed, extraForbidden = []) => ({
       'error',
       {
         patterns: [
-          ...LAYERS.filter((other) => other !== layer && !allowed.includes(other)).map((other) => ({
-            group: [`@/${other}`, `@/${other}/*`],
-            message: `${layer}/ cannot import from ${other}/. See docs/architecture/frontend-refactor.md §1.`,
-          })),
+          ...LAYERS.filter((other) => other !== layer && !allowed.includes(other)).flatMap(
+            (other) => [
+              {
+                group: [`@/${other}`, `@/${other}/*`],
+                message: `${layer}/ cannot import from ${other}/. See docs/architecture/frontend-refactor.md §1.`,
+              },
+              {
+                regex: `^(?:\\.\\./)+(?:${other})(?:/|$)`,
+                message: `${layer}/ cannot use relative imports to bypass the ${other}/ layer boundary.`,
+              },
+            ]
+          ),
           ...extraForbidden,
         ],
       },

@@ -27,12 +27,12 @@ All under `docs/`. Every change goes through a PR.
 
 ### C4 — system context, containers, components
 
-| Level | File                                                                  | What it shows                                                                                                                               |
-| ----- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| L1    | [c4-01-context.mmd](diagrams/c4-01-context.mmd)                       | PrepAI, the users, and external systems (Clerk, NVIDIA NIM, Cloudinary, Resend, Razorpay)                                                   |
-| L2    | [c4-02-container.mmd](diagrams/c4-02-container.mmd)                   | Process boundaries: SPA, API, Mongo, Postgres, Redis, Piston, Mastra                                                                        |
-| L3    | [c4-03-component.mmd](diagrams/c4-03-component.mmd)                   | NestJS modules, guards, interceptors, infrastructure services                                                                               |
-| L3    | [c4-04-frontend-component.mmd](diagrams/c4-04-frontend-component.mmd) | Frontend (ui/) 7-layer N-Tier model — pages is the only layer that imports from data/ and logic/. Enforced by the `architect-review` skill. |
+| Level | File                                                                  | What it shows                                                                                                                        |
+| ----- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| L1    | [c4-01-context.mmd](diagrams/c4-01-context.mmd)                       | PrepAI, the users, and external systems (Clerk, NVIDIA NIM, Cloudinary, Resend, Razorpay)                                            |
+| L2    | [c4-02-container.mmd](diagrams/c4-02-container.mmd)                   | Process boundaries: SPA, API, Mongo, Postgres, Redis, Piston, Mastra                                                                 |
+| L3    | [c4-03-component.mmd](diagrams/c4-03-component.mmd)                   | NestJS modules, guards, interceptors, infrastructure services                                                                        |
+| L3    | [c4-04-frontend-component.mmd](diagrams/c4-04-frontend-component.mmd) | Frontend (ui/) layer model — `logic` may use `data`; pages compose logic and components. Enforced by ESLint and architecture review. |
 
 ### Sequence flows
 
@@ -91,7 +91,7 @@ See [../adr/](../adr/) for the full index. Highlights:
 ## Related docs
 
 - [architecture.md](architecture.md) — **Master Software Architecture & System Design Blueprint** (Hexagonal modular monolith, dual Prisma ORM, Mastra AI failover routing, Piston execution sandbox, N-Tier CQRS layer boundaries, testing gates).
-- [frontend-refactor.md](frontend-refactor.md) — **Frontend N-Tier Refactor Plan & Playbook** (Granular 7-layer migration plan, Reader/Command hook patterns, file inventory).
+- [frontend-refactor.md](frontend-refactor.md) — **Frontend N-Tier Architecture** (implemented layers, Reader/Command hook patterns, file inventory).
 - [TODO.md](TODO.md) — **explicit list of architecture docs that are NOT YET
   WRITTEN**. Read this before assuming the system design is complete.
 - [../observability.md](../observability.md) — logging, metrics, tracing,

@@ -1,8 +1,6 @@
-import { CacheModule } from '@nestjs/cache-manager';
 import { LoggerModule } from 'nestjs-pino';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { redisStore } from 'cache-manager-ioredis-yet';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -17,6 +15,7 @@ import { UserModule } from './modules/user/user.module.js';
 import { TopicModule } from './modules/topic/topic.module.js';
 import { QuestionModule } from './modules/question/question.module.js';
 import { TheoryModule } from './modules/theory/theory.module.js';
+import { RedisModule } from './common/redis/redis.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,17 +29,7 @@ const __dirname = dirname(__filename);
       envFilePath: join(__dirname, '..', '..', '.env'),
     }),
     LoggerModule.forRoot(loggerConfig),
-    CacheModule.registerAsync({
-      isGlobal: true,
-      inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
-        store: await redisStore({
-          host: config.get<string>('REDIS_HOST'),
-          port: config.get<number>('REDIS_PORT'),
-        }),
-        ttl: 300_000,
-      }),
-    }),
+    RedisModule,
     PrismaModule,
     HealthModule,
     TechExpertModule,

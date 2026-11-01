@@ -1,16 +1,17 @@
 import { Prisma } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
 
-import { ERROR_MESSAGES } from '@/common/index.js';
 import { ClerkUserDataDto } from './dto/index.js';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
     @InjectPinoLogger(UserService.name) private readonly logger: PinoLogger
   ) {}
 
@@ -62,7 +63,12 @@ export class UserService {
 
     this.logger.info({ clerkUserId }, 'User not found in DB, fetching from Clerk');
 
-    const secretKey = process.env['CLERK_SECRET_KEY'];
+    const secretKey = this.config.get<string>('CLERK_SECRET_KEY');
+    if (!secretKey) {
+      throw new ServiceUnavailableException(
+        'User synchronization is not configured on this server'
+      );
+    }
     const client = createClerkClient({ secretKey });
     const clerkUser = await client.users.getUser(clerkUserId);
 

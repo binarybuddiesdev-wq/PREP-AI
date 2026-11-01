@@ -6,7 +6,12 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  InternalServerErrorException,
+  Req,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Webhook } from 'svix';
 import { UserService } from './user.service.js';
@@ -16,6 +21,7 @@ import { ClerkWebhookEventDto } from './dto/index.js';
 export class WebhookController {
   constructor(
     private readonly userService: UserService,
+    private readonly config: ConfigService,
     @InjectPinoLogger(WebhookController.name) private readonly logger: PinoLogger
   ) {}
 
@@ -25,12 +31,13 @@ export class WebhookController {
     @Body() body: ClerkWebhookEventDto,
     @Headers('svix-id') svixId: string,
     @Headers('svix-timestamp') svixTimestamp: string,
-    @Headers('svix-signature') svixSignature: string
+    @Headers('svix-signature') svixSignature: string,
+    @Req() request: RawBodyRequest<FastifyRequest>
   ) {
-    const secret = process.env['CLERK_WEBHOOK_SECRET'];
+    const secret = this.config.get<string>('CLERK_WEBHOOK_SECRET');
     if (!secret) {
       this.logger.error('CLERK_WEBHOOK_SECRET not configured');
-      throw new BadRequestException('Webhook secret not configured');
+      throw new InternalServerErrorException('Webhook processing is not configured on this server');
     }
 
     if (!svixId || !svixTimestamp || !svixSignature) {
@@ -38,10 +45,14 @@ export class WebhookController {
       throw new BadRequestException('Missing webhook headers');
     }
 
+    if (!request.rawBody) {
+      throw new InternalServerErrorException('Raw webhook body unavailable');
+    }
+
     const wh = new Webhook(secret);
 
     try {
-      wh.verify(JSON.stringify(body), {
+      wh.verify(request.rawBody, {
         'svix-id': svixId,
         'svix-timestamp': svixTimestamp,
         'svix-signature': svixSignature,

@@ -1,20 +1,33 @@
-import { IsString, IsNotEmpty, IsIn, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsIn,
+  IsNumber,
+  Min,
+  Max,
+  ValidateIf,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+const MAX_TOPIC_ID_LENGTH = 64;
 
 export class StartSessionDto {
   @ApiPropertyOptional({
     example: '507f1f77bcf86cd799439011',
     description: 'MongoDB Topic ID. Required for topic mode.',
   })
-  @IsOptional()
+  @ValidateIf((dto: StartSessionDto) => dto.mode === 'topic')
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(MAX_TOPIC_ID_LENGTH)
   topicId?: string;
 
-  @ApiProperty({ enum: ['topic', 'weak', 'pdf'], example: 'topic' })
+  @ApiProperty({ enum: ['topic', 'weak'], example: 'topic' })
   @IsNotEmpty()
   @IsString()
-  @IsIn(['topic', 'weak', 'pdf'])
-  mode!: string;
+  @IsIn(['topic', 'weak'])
+  mode!: 'topic' | 'weak';
 
   @ApiProperty({ enum: ['Junior', 'Mid', 'Senior'], example: 'Mid' })
   @IsNotEmpty()

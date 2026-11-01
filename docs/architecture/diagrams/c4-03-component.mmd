@@ -1,51 +1,70 @@
-%% C4 Level 3 — Component Diagram (NestJS Backend)
-%% Module breakdown of the NestJS API process.
+%% C4 Level 3 — Components currently implemented in the NestJS API.
+%% Planned workers and feature modules are documented in TODO.md.
 
 flowchart TB
-    subgraph Pipeline ["Global NestJS HTTP Pipeline"]
-        Cors["Fastify CORS / Helmet"] --> AuthGuard["ClerkAuthGuard"]
-        AuthGuard --> RolesGuard["RolesGuard"]
-        RolesGuard --> ThrottlePipe["Redis RateLimiter Pipe"]
-        ThrottlePipe --> Controller["NestJS Controllers"]
-        Controller --> TransformInt["TransformInterceptor"]
-        TransformInt --> ExFilter["HttpExceptionFilter"]
+    Client["React SPA / API clients"]
+
+    subgraph Api["NestJS + Fastify API"]
+        Plugins["CORS · Helmet · in-process rate limit · multipart"]
+        Guards["Controller guards: Clerk auth + roles"]
+        Validation["Global DTO validation"]
+        Controllers["HTTP controllers"]
+        Services["Feature services"]
+        Envelope["Transform interceptor"]
+        Errors["Global exception filter"]
+
+        Plugins --> Guards --> Validation --> Controllers --> Services
+        Controllers --> Envelope
+        Envelope --> Errors
     end
 
-    subgraph FeatureModules ["Feature Modules"]
-        Controller --> UserMod["UserModule / WebhookController"]
-        Controller --> TopicMod["TopicModule"]
-        Controller --> QuestionMod["QuestionModule"]
-        Controller --> TheoryMod["TheoryModule"]
-        Controller --> CodingMod["CodingModule"]
-        Controller --> PdfMod["PdfRagModule"]
+    subgraph Features["Implemented feature modules"]
+        User["User + Clerk webhook"]
+        Topic["Topic"]
+        Question["Question bank"]
+        Theory["Theory sessions + answers"]
+        TechExpert["Tech expert answers"]
+        Health["Liveness + readiness"]
     end
 
-    subgraph Infrastructure ["Infrastructure Services"]
-        UserMod --> PrismaMongo["PrismaService Mongo"]
-        TopicMod --> PrismaMongo
-        QuestionMod --> PrismaMongo
+    Services --> User
+    Services --> Topic
+    Services --> Question
+    Services --> Theory
+    Services --> TechExpert
+    Controllers --> Health
 
-        TheoryMod --> PrismaPG["PrismaPostgresqlService Postgres"]
-        CodingMod --> PrismaPG
-        PdfMod --> PrismaPG
-
-        TheoryMod --> RedisSvc["Redis Cache & Quota Service"]
-        CodingMod --> RedisSvc
-
-        TheoryMod --> QueueSvc["BullMQ Job Queue Service"]
-        CodingMod --> QueueSvc
+    subgraph Stores["Infrastructure"]
+        Mongo["MongoDB · users/settings/topics/questions"]
+        Postgres["PostgreSQL · theory sessions/answers; coding schema exists without API"]
+        Redis["RedisService · atomic daily theory quota + readiness ping"]
     end
 
-    subgraph ExternalExecution ["External Execution Engine"]
-        QueueSvc -->|HTTP REST| PistonEngine["Piston Sandbox"]
-        QueueSvc -->|SDK Prompts| ProviderRouter["LLM Provider Router<br/>(getModel() in providers.ts)"]
-        ProviderRouter -->|HTTPS| NVIDIA["NVIDIA NIM API<br/>(primary)"]
-        ProviderRouter -.->|Failover on error| Groq["Groq API<br/>(fallback)"]
+    User --> Mongo
+    Topic --> Mongo
+    Question --> Mongo
+    Theory --> Mongo
+    Theory --> Postgres
+    Theory --> Redis
+    Health --> Mongo
+    Health --> Postgres
+    Health --> Redis
+
+    subgraph Ai["Synchronous AI calls"]
+        Mastra["Mastra agents"]
+        Router["NVIDIA primary · Groq fallback"]
     end
 
-    classDef pipeStyle fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#fff;
-    classDef modStyle fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
-    classDef infraStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
-    class Cors,AuthGuard,RolesGuard,ThrottlePipe,Controller,TransformInt,ExFilter pipeStyle;
-    class UserMod,TopicMod,QuestionMod,TheoryMod,CodingMod,PdfMod modStyle;
-    class PrismaMongo,PrismaPG,RedisSvc,QueueSvc,ProviderRouter infraStyle;
+    Theory --> Mastra
+    TechExpert --> Mastra
+    Mastra --> Router
+
+    Client --> Plugins
+    Router -->|HTTPS| Providers["NVIDIA NIM / Groq"]
+
+    classDef pipeline fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#fff;
+    classDef feature fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef infra fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    class Plugins,Guards,Validation,Controllers,Envelope,Errors pipeline;
+    class User,Topic,Question,Theory,TechExpert,Health feature;
+    class Mongo,Postgres,Redis,Mastra,Router,Providers infra;
