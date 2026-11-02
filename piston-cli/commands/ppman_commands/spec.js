@@ -1,6 +1,6 @@
 const chalk = require('chalk');
 const fs = require('fs/promises');
-const minimatch = require('minimatch');
+const { minimatch } = require('minimatch');
 const semver = require('semver');
 
 exports.command = ['spec <specfile>'];
