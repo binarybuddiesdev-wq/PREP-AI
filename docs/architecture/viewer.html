@@ -513,7 +513,7 @@ sequenceDiagram
         end
         Router-->>Mastra: Structured score and feedback
         Mastra-->>Worker: Evaluation result
-        Worker->>PG: Persist completed score and feedback
+        Worker->>PG: Persist score, feedback, provider, model and prompt version
         Candidate->>API: GET session/:id/answers/:answerId
         API->>PG: Verify owner and read persisted answer state
         PG-->>API: queued/running/completed/failed result

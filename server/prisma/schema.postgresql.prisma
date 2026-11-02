@@ -35,20 +35,23 @@ model TheorySession {
 }
 
 model TheoryAnswer {
-  id             String             @id @default(uuid())
-  sessionId      String
-  questionId     String? // null for AI-generated questions (Weak Areas / PDF Study)
-  questionText   String
-  userAnswer     String
-  aiScore        Float?
-  aiFeedback     String?
-  status         TheoryAnswerStatus @default(completed)
-  failureMessage String?
-  timeTaken      Int? // seconds
-  startedAt      DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @default(now()) @updatedAt
+  id                      String             @id @default(uuid())
+  sessionId               String
+  questionId              String? // null for AI-generated questions (Weak Areas / PDF Study)
+  questionText            String
+  userAnswer              String
+  aiScore                 Float?
+  aiFeedback              String?
+  evaluationProvider      String?
+  evaluationModel         String?
+  evaluationPromptVersion String?
+  status                  TheoryAnswerStatus @default(completed)
+  failureMessage          String?
+  timeTaken               Int? // seconds
+  startedAt               DateTime?
+  completedAt             DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @default(now()) @updatedAt
 
   session TheorySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

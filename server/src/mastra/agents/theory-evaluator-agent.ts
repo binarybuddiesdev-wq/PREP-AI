@@ -1,6 +1,9 @@
 import { Agent } from '@mastra/core/agent';
 import { getModel } from '../providers.js';
 
+/** Bump whenever the evaluator agent instructions or request prompt changes. */
+export const THEORY_EVALUATOR_PROMPT_VERSION = 'theory-evaluator-v1';
+
 export const theoryEvaluatorAgent = new Agent({
   id: 'theoryEvaluatorAgent',
   name: 'Theory Answer Evaluator',

@@ -44,6 +44,8 @@ Mastra offers agents, tools, processors/guardrails, workflows, memory, durable a
 
 For theory evaluation, use the registered `theoryEvaluatorAgent` through `mastra.getAgent()`, the existing `chatWithFailover()`/`getModel()` provider router, and validated structured output. Keep each answer stateless; do not attach conversation memory or tools. BullMQ owns retries and dispatch, and the answer row in PostgreSQL owns queued/running/completed/failed state and the client polling result. Mastra workflows or durable agents would duplicate lifecycle machinery for this single model call.
 
+Theory evaluation stores the successful provider, configured model name, and `THEORY_EVALUATOR_PROMPT_VERSION` with its score and feedback. Bump that version whenever the evaluator agent instructions or the request prompt changes; keep it stable for behavior-preserving code changes. The persisted metadata supports later offline comparisons and does not replace a reviewed eval dataset or Mastra scorer setup.
+
 The current Mastra singleton has no storage, memory, workflow, vector, scorer, or observability configuration. Do not assume those features persist data just because the package supports them. In particular, Mastra storage is a separate adapter and is not automatically backed by PrepAI's Prisma PostgreSQL client.
 
 - **Relative imports end in `.js`**, as everywhere on the server.

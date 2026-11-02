@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { afterEach } from 'vitest';
 import { NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaPostgresqlService } from '@/prisma/prisma.service.js';
+import { THEORY_EVALUATOR_PROMPT_VERSION } from '../../mastra/agents/theory-evaluator-agent.js';
 import { TheoryEvaluationService } from './theory-evaluation.service.js';
 
 const mockGenerate = vi.fn();
@@ -48,10 +49,51 @@ describe('TheoryEvaluationService', () => {
         status: 'completed',
         aiScore: 8,
         aiFeedback: 'Clear answer.',
+        evaluationProvider: 'nvidia',
+        evaluationModel: 'meta/llama-3.1-8b-instruct',
+        evaluationPromptVersion: THEORY_EVALUATOR_PROMPT_VERSION,
         completedAt: expect.any(Date),
       },
     });
     vi.unstubAllEnvs();
+  });
+
+  it('persists the provider and model that succeeded after failover', async () => {
+    const postgres = {
+      client_: {
+        theoryAnswer: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'answer_001',
+            status: 'queued',
+            questionText: 'Question?',
+            userAnswer: 'Answer.',
+          }),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+      },
+    };
+    vi.stubEnv('NVIDIA_API_KEY', 'test-nvidia-key');
+    vi.stubEnv('NVIDIA_MODEL', 'test/nvidia-model');
+    vi.stubEnv('GROQ_API_KEY', 'test-groq-key');
+    vi.stubEnv('GROQ_MODEL', 'test/groq-model');
+    mockGenerate
+      .mockRejectedValueOnce(new Error('NVIDIA unavailable'))
+      .mockResolvedValueOnce({ object: { score: 8, feedback: 'Good.' }, text: '{}' });
+    const service = new TheoryEvaluationService(
+      postgres as unknown as PrismaPostgresqlService,
+      { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as never
+    );
+
+    await service.evaluate('answer_001');
+
+    expect(postgres.client_.theoryAnswer.updateMany).toHaveBeenLastCalledWith({
+      where: { id: 'answer_001', status: 'running' },
+      data: expect.objectContaining({
+        evaluationProvider: 'groq',
+        evaluationModel: 'test/groq-model',
+        evaluationPromptVersion: THEORY_EVALUATOR_PROMPT_VERSION,
+      }),
+    });
   });
 
   it('does not call the model again when the answer is already completed', async () => {

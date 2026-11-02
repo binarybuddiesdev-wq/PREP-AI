@@ -33,7 +33,7 @@ A queue submission failure marks the execution failed and returns HTTP 503. Afte
 
 Each coding execution UUID is its idempotency key and the BullMQ job ID is derived from its hash. A theory answer UUID is a stable UUID derived from the session ID and request `Idempotency-Key`; that answer UUID is also the BullMQ job identity. BullMQ retries and PostgreSQL redispatch reuse the same job. The theory worker conditionally transitions the answer row and only writes the result while it remains `running`. A replay returns the persisted answer without reserving another slot. The keys are endpoint-specific; a shared cross-endpoint idempotency policy is still open work.
 
-Theory evaluation uses the registered `theoryEvaluatorAgent` with structured Zod output and the existing NVIDIA/Groq provider router. It is a single stateless model call, so BullMQ owns background delivery/retry and Mastra owns agent/model execution; Mastra workflows, durable agents, and memory are not configured for this use case. Code review, PDF ingestion, email, and payment reconciliation remain planned consumers.
+Theory evaluation uses the registered `theoryEvaluatorAgent` with structured Zod output and the existing NVIDIA/Groq provider router. Each successful result stores the provider that succeeded after failover, configured model name, and evaluator prompt version alongside score and feedback. It is a single stateless model call, so BullMQ owns background delivery/retry and Mastra owns agent/model execution; Mastra workflows, durable agents, and memory are not configured for this use case. Code review, PDF ingestion, email, and payment reconciliation remain planned consumers.
 
 ## References
 

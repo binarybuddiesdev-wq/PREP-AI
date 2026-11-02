@@ -186,6 +186,9 @@ Persist a user's answer and queue AI evaluation. The response returns immediatel
     "userAnswer": "useEffect runs after the browser paints the screen, while useLayoutEffect runs synchronously before the browser repaints...",
     "aiScore": null,
     "aiFeedback": null,
+    "evaluationProvider": null,
+    "evaluationModel": null,
+    "evaluationPromptVersion": null,
     "status": "queued",
     "failureMessage": null,
     "startedAt": null,
@@ -231,6 +234,9 @@ Fetch the persisted answer and evaluation lifecycle. Poll while `status` is `que
     "userAnswer": "useEffect runs after the browser paints...",
     "aiScore": 8.5,
     "aiFeedback": "Good answer. Consider adding examples.",
+    "evaluationProvider": "nvidia",
+    "evaluationModel": "meta/llama-3.1-8b-instruct",
+    "evaluationPromptVersion": "theory-evaluator-v1",
     "status": "completed",
     "failureMessage": null,
     "timeTaken": 120,
@@ -242,7 +248,7 @@ Fetch the persisted answer and evaluation lifecycle. Poll while `status` is `que
 }
 ```
 
-The answer endpoint also returns `status`, nullable score/feedback, and timestamps. A terminal `failed` evaluation has no fabricated score and explains that no score was assigned. Only completed scores contribute to the session average; failed answers remain part of the session's submitted question count.
+The answer endpoint also returns `status`, nullable score/feedback/provenance, and timestamps. The provider, configured model, and evaluator prompt version identify which evaluation produced a successful result; legacy and unfinished answers return null provenance. A terminal `failed` evaluation has no fabricated score and explains that no score was assigned. Only completed scores contribute to the session average; failed answers remain part of the session's submitted question count.
 
 ### Errors
 
