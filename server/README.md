@@ -83,4 +83,4 @@ For host development, `pnpm start:dev` runs the BullMQ worker in-process by defa
 
 ### Other planned modules
 
-The coding/Piston API and its queued execution flow are implemented. AI code review, PDF ingestion and RAG, payments, email notifications, and a general study chatbot are not implemented in `server/src/modules/` yet. Their designs and status are tracked in [the architecture backlog](../docs/architecture/TODO.md). Do not implement local login/logout endpoints; authentication remains with Clerk.
+The coding/Piston API and its queued execution flow are implemented. AI code review, PDF ingestion and RAG, payments, email notifications, and a general study chatbot are not implemented in `server/src/modules/` yet. See the [backend implementation tracker](../docs/backend-status.md) for current completed and pending work, and [the architecture backlog](../docs/architecture/TODO.md) for design gaps. Do not implement local login/logout endpoints; authentication remains with Clerk.

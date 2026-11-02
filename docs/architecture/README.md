@@ -90,6 +90,7 @@ See [../adr/](../adr/) for the full index. Highlights:
 
 ## Related docs
 
+- [../backend-status.md](../backend-status.md) — current backend implementation tracker: completed capabilities, pending work, priorities, and links to detailed docs.
 - [architecture.md](architecture.md) — **Master Software Architecture & System Design Blueprint** (Hexagonal modular monolith, dual Prisma ORM, Mastra AI failover routing, Piston execution sandbox, N-Tier CQRS layer boundaries, testing gates).
 - [frontend-refactor.md](frontend-refactor.md) — **Frontend N-Tier Architecture** (implemented layers, Reader/Command hook patterns, file inventory).
 - [background-jobs.md](background-jobs.md) — BullMQ queue policies, current Piston worker flow, run modes, retries, and retention.
