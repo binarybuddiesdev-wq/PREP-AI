@@ -35,9 +35,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     if (status >= 500) {
+      const cause = exception instanceof Error ? exception.cause : undefined;
       const errorMessage =
         exception instanceof Error
-          ? `${exception.message}\n${exception.stack}`
+          ? `${exception.message}\n${exception.stack}${cause instanceof Error ? `\nCause: ${cause.message}` : ''}`
           : JSON.stringify(exception);
       this.logger.error(
         `HTTP ${status} Error: ${errorMessage}`,

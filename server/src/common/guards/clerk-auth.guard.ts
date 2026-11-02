@@ -9,7 +9,10 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator.js';
+import { USER_DATABASE_UNAVAILABLE } from '@/common/constants/api.constants.js';
 import { PrismaService } from '@/prisma/prisma.service.js';
+
+const USER_LOOKUP_TIMEOUT_MS = 4_000;
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
@@ -54,9 +57,28 @@ export class ClerkAuthGuard implements CanActivate {
     }
 
     const clerkUserId = payload.sub;
-    const user = await this.prisma.user.findUnique({
-      where: { clerkUserId },
-    });
+    let lookupTimeout: ReturnType<typeof setTimeout> | undefined;
+    const userLookup = this.prisma.user.findUnique({ where: { clerkUserId } });
+    const user = await Promise.race([
+      userLookup,
+      new Promise<never>((_, reject) => {
+        lookupTimeout = setTimeout(
+          () => reject(new UserLookupTimeoutError()),
+          USER_LOOKUP_TIMEOUT_MS
+        );
+      }),
+    ])
+      .catch((error: unknown) => {
+        if (error instanceof UserLookupTimeoutError || isMongoServerUnavailable(error)) {
+          throw new ServiceUnavailableException(USER_DATABASE_UNAVAILABLE, {
+            cause: error,
+          });
+        }
+        throw error;
+      })
+      .finally(() => {
+        if (lookupTimeout) clearTimeout(lookupTimeout);
+      });
 
     request.user = {
       id: clerkUserId,
@@ -66,3 +88,22 @@ export class ClerkAuthGuard implements CanActivate {
     return true;
   }
 }
+
+class UserLookupTimeoutError extends Error {
+  constructor() {
+    super(`User profile lookup exceeded ${USER_LOOKUP_TIMEOUT_MS}ms`);
+    this.name = 'UserLookupTimeoutError';
+  }
+}
+
+const isMongoServerUnavailable = (error: unknown): boolean => {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return false;
+
+  const databaseError = error as { code?: unknown; meta?: { message?: unknown } };
+  if (databaseError.code === 'P1001' || databaseError.code === 'P1002') return true;
+  return (
+    databaseError.code === 'P2010' &&
+    typeof databaseError.meta?.message === 'string' &&
+    /server selection timeout|no available servers/i.test(databaseError.meta.message)
+  );
+};

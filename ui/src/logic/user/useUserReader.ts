@@ -13,5 +13,8 @@ export const useUserReader = (): UseQueryResult<IUser, Error> => {
     queryKey: userKeys.me(),
     queryFn: async () => (await getMe(api)).data,
     enabled: isLoaded && isSignedIn,
+    // An unavailable user database cannot recover from an immediate retry. Surface its 503
+    // so the user can retry after restoring the connection.
+    retry: false,
   });
 };

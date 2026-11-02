@@ -1,7 +1,7 @@
 import { DashboardActions, InfoCard, WelcomeHeading } from '@/components/dashboard';
 import { AppHeader, LoadingScreen, QueryErrorState } from '@/components/layout';
 import { ROUTES } from '@/core';
-import { useSessionReader, useSignOutCommand, useUserReader } from '@/logic';
+import { getHttpStatus, useSessionReader, useSignOutCommand, useUserReader } from '@/logic';
 import { UserMenu } from '@/service/auth';
 import { formatDate } from '@/utils';
 
@@ -10,6 +10,7 @@ export const DashboardPage = () => {
   const signOut = useSignOutCommand();
   // Fetching the profile is what syncs the Clerk user into the backend on first sign-in.
   const userQuery = useUserReader();
+  const profileErrorStatus = userQuery.error ? getHttpStatus(userQuery.error) : undefined;
 
   if (!isLoaded || userQuery.isPending) {
     return <LoadingScreen label="Loading your dashboard..." />;
@@ -28,7 +29,20 @@ export const DashboardPage = () => {
         {userQuery.isError ? (
           <QueryErrorState
             title="Couldn’t load your profile"
-            description="Your dashboard is available, but profile details could not be loaded. Check your connection and try again."
+            description={
+              profileErrorStatus === 503
+                ? userQuery.error.message
+                : 'Your dashboard is available, but profile details could not be loaded. Check the API connection and try again.'
+            }
+            details={
+              userQuery.error
+                ? profileErrorStatus
+                  ? profileErrorStatus === 503
+                    ? `HTTP ${profileErrorStatus}`
+                    : `HTTP ${profileErrorStatus}: ${userQuery.error.message}`
+                  : `Network error: ${userQuery.error.message}`
+                : undefined
+            }
             onRetry={() => void userQuery.refetch()}
             isRetrying={userQuery.isFetching}
           />

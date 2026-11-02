@@ -34,6 +34,18 @@ Fetch the authenticated user's profile. Creates user via lazy sync if not found.
 }
 ```
 
+### Response (503 Service Unavailable — user database cannot be reached)
+
+```json
+{
+  "success": false,
+  "message": "The API cannot reach the user database. Check the database connection and try again.",
+  "statusCode": 503,
+  "path": "/api/v1/users/me",
+  "timestamp": "2026-11-02T00:00:00.000Z"
+}
+```
+
 ---
 
 ## 2. Get User Settings

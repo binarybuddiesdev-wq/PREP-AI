@@ -15,7 +15,7 @@ const bodies: string[] = [];
 const setup = (getToken: () => Promise<string | null>, response: Response) => {
   const fetchImplementation = vi.fn(async (request: Request) => {
     bodies.push(await request.clone().text());
-    return response;
+    return response.clone();
   });
   const api = createApiClient({
     baseUrl: 'http://api.test',
@@ -59,6 +59,20 @@ describe('createApiClient', () => {
 
     expect(error).toBeInstanceOf(HTTPError);
     expect(getHttpStatus(error)).toBe(404);
+  });
+
+  it('uses the server message for non-2xx responses', async () => {
+    const { api } = setup(
+      async () => 'tok',
+      jsonResponse({ message: 'The profile database is unavailable.' }, 503)
+    );
+
+    const error = await getMe(api).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(HTTPError);
+    expect((error as HTTPError).data).toEqual({ message: 'The profile database is unavailable.' });
+    expect((error as Error).message).toBe('The profile database is unavailable.');
+    expect(getHttpStatus(error)).toBe(503);
   });
 });
 

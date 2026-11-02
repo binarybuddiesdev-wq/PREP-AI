@@ -13,11 +13,13 @@ describe('QueryErrorState', () => {
       <QueryErrorState
         title="Couldn’t load your settings"
         description="Check your connection and try again."
+        details="HTTP 503: Service temporarily unavailable."
         onRetry={onRetry}
       />
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Couldn’t load your settings');
+    expect(screen.getByText('HTTP 503: Service temporarily unavailable.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });

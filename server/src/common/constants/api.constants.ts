@@ -108,6 +108,8 @@ export const UPDATE_SETTINGS_SUCCESS = 'Settings updated successfully';
 export const GET_SETTINGS_SUCCESS = 'Settings fetched successfully';
 export const SETUP_COMPLETE_SUCCESS = 'Setup marked as complete';
 export const GET_USER_SUCCESS = 'User fetched successfully';
+export const USER_DATABASE_UNAVAILABLE =
+  'The API cannot reach the user database. Check the database connection and try again.';
 
 // Topic success messages
 export const GET_TOPICS_SUCCESS = 'Topics fetched successfully';

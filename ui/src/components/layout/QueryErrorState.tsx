@@ -3,7 +3,7 @@ import { AlertTriangle, RotateCw } from 'lucide-react';
 import type { IQueryErrorStateProps } from './QueryErrorState.types';
 
 export const QueryErrorState = (props: IQueryErrorStateProps) => {
-  const { title, description, onRetry, isRetrying = false } = props;
+  const { title, description, details, onRetry, isRetrying = false } = props;
 
   return (
     <section
@@ -15,6 +15,7 @@ export const QueryErrorState = (props: IQueryErrorStateProps) => {
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-zinc-100">{title}</h2>
           <p className="mt-1 text-sm leading-6 text-zinc-400">{description}</p>
+          {details ? <p className="mt-2 text-xs leading-5 text-zinc-500">{details}</p> : null}
           <button
             type="button"
             onClick={onRetry}
