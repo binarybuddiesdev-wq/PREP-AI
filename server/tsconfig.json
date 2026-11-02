@@ -24,5 +24,11 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.config.e2e.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "prisma/seed-coding-local.ts",
+    "vitest.config.ts",
+    "vitest.config.e2e.ts"
+  ]
 }

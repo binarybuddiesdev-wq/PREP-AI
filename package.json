@@ -34,8 +34,8 @@
     "seed:questions-only": "pnpm --filter server exec tsx --env-file=../.env ../scripts/seed/seed.ts --questions-only",
     "podman:up": "podman-compose up -d mongo postgres redis",
     "podman:down": "podman-compose stop mongo postgres redis",
-    "podman:full": "podman-compose --profile full up mongo postgres redis server ui",
-    "podman:full:down": "podman-compose --profile full stop ui server mongo postgres redis",
+    "podman:full": "podman-compose --profile full up mongo postgres redis server worker ui",
+    "podman:full:down": "podman-compose --profile full stop ui worker server mongo postgres redis",
     "podman:full:remove": "podman-compose --profile full down",
     "prepare": "husky"
   },

@@ -51,14 +51,14 @@
 
 ### API (NestJS)
 
-| Endpoint class                               | p50   | p95   | p99   | Notes               |
-| -------------------------------------------- | ----- | ----- | ----- | ------------------- |
-| Auth (`/me`, `/settings`)                    | 50ms  | 150ms | 300ms | Cached              |
-| Read (`GET /topics`, `GET /coding/problems`) | 80ms  | 250ms | 500ms | DB + cache          |
-| Write (non-AI, `PATCH /settings`)            | 100ms | 300ms | 600ms |                     |
-| Coding — Run (Piston sync)                   | 200ms | 800ms | 1.5s  | Piston round-trip   |
-| Theory — Start session                       | 150ms | 400ms | 800ms | Quota INCR + DB     |
-| AI endpoints (eval, review)                  | 1.5s  | 5s    | 10s   | Async; client polls |
+| Endpoint class                               | p50   | p95   | p99   | Notes                                            |
+| -------------------------------------------- | ----- | ----- | ----- | ------------------------------------------------ |
+| Auth (`/me`, `/settings`)                    | 50ms  | 150ms | 300ms | Cached                                           |
+| Read (`GET /topics`, `GET /coding/problems`) | 80ms  | 250ms | 500ms | DB + cache                                       |
+| Write (non-AI, `PATCH /settings`)            | 100ms | 300ms | 600ms |                                                  |
+| Coding — Run (queued Piston execution)       | 200ms | 5s    | 30s   | Queue wait plus Piston round-trip; 503 after 30s |
+| Theory — Start session                       | 150ms | 400ms | 800ms | Quota INCR + DB                                  |
+| AI endpoints (eval, review)                  | 1.5s  | 5s    | 10s   | Async; client polls                              |
 
 ### Frontend (React)
 
@@ -82,12 +82,12 @@
 
 ## 4. Throughput SLOs
 
-| Metric                     | Target                                            | Notes                                |
-| -------------------------- | ------------------------------------------------- | ------------------------------------ |
-| API requests / second      | 100 rps sustained, 500 rps burst                  | Per replica                          |
-| AI eval jobs / minute      | 60 (BullMQ `concurrency=5`, ~12s each)            | Throttled by NVIDIA NIM rate limit   |
-| Concurrent code executions | 5 (Piston worker pool)                            | Beyond this, requests queue with 503 |
-| Email send rate            | 100/day (Resend free tier), scale to 50k/day paid | Per Resend account                   |
+| Metric                     | Target                                            | Notes                                                |
+| -------------------------- | ------------------------------------------------- | ---------------------------------------------------- |
+| API requests / second      | 100 rps sustained, 500 rps burst                  | Per replica                                          |
+| AI eval jobs / minute      | 60 (BullMQ `concurrency=5`, ~12s each)            | Throttled by NVIDIA NIM rate limit                   |
+| Concurrent code executions | 5 (BullMQ Piston worker concurrency)              | Requests wait for results up to 30s, then return 503 |
+| Email send rate            | 100/day (Resend free tier), scale to 50k/day paid | Per Resend account                                   |
 
 ---
 

@@ -111,6 +111,8 @@ export const HEALTH_DEGRADED = 'Service is degraded';
 export const HEALTH_MONGO_DOWN = 'MongoDB unreachable';
 export const HEALTH_POSTGRES_DOWN = 'PostgreSQL unreachable';
 export const HEALTH_REDIS_DOWN = 'Redis unreachable';
+export const CODING_QUEUE_UNAVAILABLE =
+  'Code execution is temporarily unavailable. Please try again.';
 
 // User success messages
 export const GET_ME_SUCCESS = 'User profile fetched successfully';

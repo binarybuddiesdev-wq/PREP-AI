@@ -7,9 +7,12 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { RedisService } from '@/common/redis/redis.service.js';
+import { JobQueueService } from '@/common/jobs/job-queue.service.js';
+import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 import { getCodingLimits } from '@/common/utils/role-limits.js';
 import {
   CODING_DAILY_LIMIT_REACHED,
@@ -19,7 +22,8 @@ import {
   CODING_SESSION_NOT_FOUND,
   CODING_SUBMISSION_IN_PROGRESS,
 } from '@/common/constants/api.constants.js';
-import { PistonClient } from './piston.client.js';
+import type { ICodingExecutionJobData } from './coding-execution.worker.js';
+import type { ICodingExecutionResult } from './piston.client.js';
 import type {
   Prisma,
   PrismaClient as PostgresPrismaClient,
@@ -40,7 +44,7 @@ export class CodingService {
     private readonly prisma: PrismaService,
     private readonly postgres: PrismaPostgresqlService,
     private readonly redis: RedisService,
-    private readonly piston: PistonClient,
+    private readonly jobs: JobQueueService,
     private readonly config: ConfigService,
     @InjectPinoLogger(CodingService.name) private readonly logger: PinoLogger
   ) {}
@@ -107,7 +111,7 @@ export class CodingService {
     const { problem, session } = await this.loadSessionProblem(sessionId, userId, dto.problemId);
     this.assertInProgress(session);
     await this.reserveExecutionCapacity(userId);
-    return this.piston.execute(dto.code, dto.language, problem.examples);
+    return this.executeCode(dto, problem.examples);
   }
 
   async submitSolution(sessionId: string, userId: string, dto: ExecuteCodingDto) {
@@ -148,7 +152,7 @@ export class CodingService {
     let answer: Awaited<ReturnType<Prisma.TransactionClient['codingAnswer']['create']>>;
     let submissionStatus: 'accepted' | 'wrong_answer' | 'error';
     try {
-      const result = await this.piston.execute(dto.code, dto.language, problem.examples);
+      const result = await this.executeCode(dto, problem.examples);
       submissionStatus = result.status;
       const previousAccepted =
         result.status === 'accepted'
@@ -285,6 +289,20 @@ export class CodingService {
     if (session.status !== 'in_progress') {
       throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
     }
+  }
+
+  private executeCode(dto: ExecuteCodingDto, examples: unknown): Promise<ICodingExecutionResult> {
+    const jobData: ICodingExecutionJobData = {
+      idempotencyKey: randomUUID(),
+      code: dto.code,
+      language: dto.language,
+      examples,
+    };
+    return this.jobs.enqueue<ICodingExecutionJobData, ICodingExecutionResult>(
+      JOB_QUEUE_NAMES.CODING_EXECUTION,
+      jobData,
+      'execute'
+    );
   }
 
   private async reserveExecutionCapacity(userId: string) {

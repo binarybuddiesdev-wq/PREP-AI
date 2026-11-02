@@ -440,7 +440,7 @@ To run the backend and frontend in Podman as well, stop any host-run backend or 
 pnpm podman:full
 ```
 
-This starts MongoDB, PostgreSQL, Redis, the NestJS backend and the Vite frontend in the foreground, streaming their logs in the terminal. Keep that terminal open to monitor startup and runtime errors; press `Ctrl+C` to stop the attached stack. The backend installs from `server/pnpm-lock.yaml`; the UI waits for the backend health check before installing from `ui/pnpm-lock.yaml`, which avoids competing install workloads on the Podman machine. Dependencies and generated Prisma clients persist in named Podman volumes. Open the UI at `http://localhost:5173`.
+This starts MongoDB, PostgreSQL, Redis, the NestJS API, a separate BullMQ worker, and the Vite frontend in the foreground, streaming their logs in the terminal. Keep that terminal open to monitor startup and runtime errors; press `Ctrl+C` to stop the attached stack. The API installs from `server/pnpm-lock.yaml`; the worker starts after the API is healthy and shares the API's dependency and generated-client volumes. The UI waits for the API health check before installing from `ui/pnpm-lock.yaml`, which avoids competing install workloads on the Podman machine. Open the UI at `http://localhost:5173`.
 
 Stop the full stack while preserving database data and dependency volumes with:
 

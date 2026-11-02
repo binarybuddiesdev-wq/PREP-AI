@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CodingController } from './coding.controller.js';
 import { CodingService } from './coding.service.js';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+import type { ExecuteCodingDto } from './dto/coding.dto.js';
 
 class MockAuthGuard implements CanActivate {
   canActivate(_context: ExecutionContext): boolean {
@@ -79,7 +80,7 @@ describe('CodingController', () => {
       problemId: 'problem_001',
       language: 'javascript',
       code: 'function solution() {}',
-    };
+    } satisfies ExecuteCodingDto;
 
     const run = await controller.runCode('session_001', dto, 'user_001');
     const submit = await controller.submitSolution('session_001', dto, 'user_001');

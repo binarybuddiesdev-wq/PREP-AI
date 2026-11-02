@@ -170,6 +170,27 @@ describe('TheoryService', () => {
     service = module.get<TheoryService>(TheoryService);
   });
 
+  it.each([
+    ['getSessionQuestions', () => service.getSessionQuestions('session_001', 'user_001', {})],
+    [
+      'submitAnswer',
+      () =>
+        service.submitAnswer('session_001', 'user_001', {
+          questionText: 'Question',
+          userAnswer: 'Answer',
+        }),
+    ],
+    ['completeSession', () => service.completeSession('session_001', 'user_001')],
+    ['getSessionDetail', () => service.getSessionDetail('session_001', 'user_001')],
+    ['getSessionHistory', () => service.getSessionHistory('user_001', {})],
+    ['getWeakAreas', () => service.getWeakAreas('user_001')],
+    ['getScoreTrend', () => service.getScoreTrend('user_001', {})],
+  ])('returns 503 when PostgreSQL is unavailable for %s', async (_method, invoke) => {
+    Object.defineProperty(postgres, 'client_', { configurable: true, value: undefined });
+
+    await expect(invoke()).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+
   describe('startSession', () => {
     const dto: StartSessionDto = {
       topicId: 'topic_001',
@@ -339,6 +360,44 @@ describe('TheoryService', () => {
       expect(postgres.client_.theorySession.count).not.toHaveBeenCalled();
       expect(postgres.client_.theorySession.create).not.toHaveBeenCalled();
     });
+
+    it('releases the quota when PostgreSQL session creation fails', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      config.get.mockImplementation((key: string) => {
+        const values: Record<string, number> = {
+          THEORY_DAILY_SESSIONS_FREE: 3,
+          THEORY_QUESTIONS_PER_SESSION_FREE: 10,
+        };
+        return values[key];
+      });
+      prisma.topic.findUnique.mockResolvedValue(mockTopic);
+      const databaseError = new Error('PostgreSQL unavailable');
+      postgres.client_.theorySession.create.mockRejectedValueOnce(databaseError);
+
+      await expect(service.startSession(dto, 'user_001')).rejects.toBe(databaseError);
+      expect(redis.releaseQuota).toHaveBeenCalledOnce();
+    });
+
+    it('logs quota cleanup failures without hiding the session creation error', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      config.get.mockImplementation((key: string) => {
+        const values: Record<string, number> = {
+          THEORY_DAILY_SESSIONS_FREE: 3,
+          THEORY_QUESTIONS_PER_SESSION_FREE: 10,
+        };
+        return values[key];
+      });
+      prisma.topic.findUnique.mockResolvedValue(mockTopic);
+      const databaseError = new Error('PostgreSQL unavailable');
+      postgres.client_.theorySession.create.mockRejectedValueOnce(databaseError);
+      redis.releaseQuota.mockRejectedValueOnce('Redis unavailable');
+
+      await expect(service.startSession(dto, 'user_001')).rejects.toBe(databaseError);
+      expect(mockPinoLogger.warn).toHaveBeenCalledWith(
+        { error: 'Redis unavailable' },
+        'Could not release reserved theory session quota'
+      );
+    });
   });
 
   describe('getSessionQuestions', () => {
@@ -421,6 +480,56 @@ describe('TheoryService', () => {
         BadRequestException
       );
       expect(prisma.question.findMany).not.toHaveBeenCalled();
+    });
+
+    it('requires the topic reference on a topic session', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValue({
+        ...mockSession,
+        topicId: null,
+      });
+
+      await expect(service.getSessionQuestions('session_001', 'user_001', dto)).rejects.toThrow(
+        BadRequestException
+      );
+      expect(prisma.question.findMany).not.toHaveBeenCalled();
+    });
+
+    it('uses weak topics when prior weak scores are available', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValue({
+        ...mockSession,
+        mode: 'weak',
+        topicId: null,
+      });
+      postgres.client_.theorySession.findMany.mockResolvedValue([
+        { topicId: 'topic_001', avgScore: 5 },
+      ]);
+      prisma.question.findMany.mockResolvedValue(mockQuestions);
+
+      await service.getSessionQuestions('session_001', 'user_001', dto);
+
+      expect(prisma.question.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { topicId: { in: ['topic_001'] }, difficulty: 'Mid' } })
+      );
+    });
+
+    it('continues without a topic filter if the client disappears while loading weak topics', async () => {
+      const client = postgres.client_;
+      client.theorySession.findFirst.mockResolvedValue({
+        ...mockSession,
+        mode: 'weak',
+        topicId: null,
+      });
+      Object.defineProperty(postgres, 'client_', {
+        configurable: true,
+        get: vi.fn().mockReturnValueOnce(client).mockReturnValueOnce(undefined),
+      });
+      prisma.question.findMany.mockResolvedValue(mockQuestions);
+
+      await service.getSessionQuestions('session_001', 'user_001', dto);
+
+      expect(prisma.question.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { difficulty: 'Mid' } })
+      );
     });
   });
 
@@ -514,6 +623,16 @@ describe('TheoryService', () => {
       );
     });
 
+    it('rejects an answer when it cannot reserve a question slot', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValueOnce(mockSession);
+      postgres.client_.theorySession.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.submitAnswer('session_001', 'user_001', dto)).rejects.toBeInstanceOf(
+        ConflictException
+      );
+      expect(mockGenerate).not.toHaveBeenCalled();
+    });
+
     it('should return ServiceUnavailableException and release the reserved slot when evaluation fails', async () => {
       vi.stubEnv('LLM_PROVIDER', 'nvidia');
       vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
@@ -547,6 +666,56 @@ describe('TheoryService', () => {
         data: { questionsAnswered: { decrement: 1 } },
       });
       expect(postgres.client_.theoryAnswer.create).not.toHaveBeenCalled();
+    });
+
+    it('treats a missing structured result as evaluation failure', async () => {
+      vi.stubEnv('LLM_PROVIDER', 'nvidia');
+      vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+      postgres.client_.theorySession.findFirst.mockResolvedValue(mockSession);
+      mockGenerate.mockResolvedValue({ object: null, text: '{}' });
+
+      await expect(service.submitAnswer('session_001', 'user_001', dto)).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
+      expect(postgres.client_.theorySession.updateMany).toHaveBeenLastCalledWith({
+        where: { id: 'session_001', userId: 'user_001', questionsAnswered: { gt: 0 } },
+        data: { questionsAnswered: { decrement: 1 } },
+      });
+    });
+
+    it('stores null for optional answer fields when they are omitted', async () => {
+      vi.stubEnv('LLM_PROVIDER', 'nvidia');
+      vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+      postgres.client_.theorySession.findFirst.mockResolvedValue(mockSession);
+      mockGenerate.mockResolvedValue({
+        object: { score: 8, feedback: 'Good answer.' },
+        text: '{}',
+      });
+      postgres.client_.theoryAnswer.create.mockResolvedValue(mockAnswer);
+
+      await service.submitAnswer('session_001', 'user_001', {
+        questionText: 'What is React?',
+        userAnswer: 'A UI library',
+      });
+
+      expect(postgres.client_.theoryAnswer.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ questionId: null, timeTaken: null }),
+      });
+    });
+
+    it('releases the answer slot when provider errors are not Error instances', async () => {
+      vi.stubEnv('LLM_PROVIDER', 'nvidia');
+      vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+      postgres.client_.theorySession.findFirst.mockResolvedValue(mockSession);
+      mockGenerate.mockRejectedValue('provider unavailable');
+
+      await expect(service.submitAnswer('session_001', 'user_001', dto)).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
+      expect(mockPinoLogger.warn).toHaveBeenCalledWith(
+        { error: 'All LLM providers failed. nvidia: provider unavailable' },
+        'AI evaluation failed'
+      );
     });
 
     it('should reject submissions at the session question count before AI evaluation', async () => {
@@ -668,6 +837,16 @@ describe('TheoryService', () => {
         where: { id: 'session_001', userId: 'user_001' },
       });
     });
+
+    it('returns 404 if the completed session cannot be reloaded', async () => {
+      postgres.client_.theorySession.findFirst
+        .mockResolvedValueOnce({ ...mockSession, answers: [] })
+        .mockResolvedValueOnce(null);
+
+      await expect(service.completeSession('session_001', 'user_001')).rejects.toBeInstanceOf(
+        NotFoundException
+      );
+    });
   });
 
   describe('getSessionDetail', () => {
@@ -787,6 +966,33 @@ describe('TheoryService', () => {
       expect(result).toHaveLength(2);
       expect(result[0].avgScore).toBe(3);
       expect(result[1].avgScore).toBe(5);
+    });
+
+    it('ignores sessions without a topic and names deleted topics safely', async () => {
+      const sessions = [
+        { ...mockSession, topicId: null, avgScore: 2 },
+        { ...mockSession, topicId: 'deleted-topic', avgScore: 4 },
+      ];
+      postgres.client_.theorySession.findMany.mockResolvedValue(sessions);
+      prisma.topic.findUnique.mockResolvedValue(null);
+
+      await expect(service.getWeakAreas('user_001')).resolves.toMatchObject([
+        { topicId: 'deleted-topic', topicName: 'Unknown Topic', avgScore: 4 },
+      ]);
+    });
+
+    it('tracks the latest practice time when scores belong to the same topic', async () => {
+      const earlier = new Date('2026-07-25T10:00:00Z');
+      const later = new Date('2026-07-26T10:00:00Z');
+      postgres.client_.theorySession.findMany.mockResolvedValue([
+        { ...mockSession, startedAt: earlier, avgScore: 4 },
+        { ...mockSession, id: 'session_002', startedAt: later, avgScore: 6 },
+      ]);
+      prisma.topic.findUnique.mockResolvedValue(mockTopic);
+
+      await expect(service.getWeakAreas('user_001')).resolves.toMatchObject([
+        { lastPracticed: later, avgScore: 5 },
+      ]);
     });
   });
 

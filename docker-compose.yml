@@ -11,11 +11,12 @@
 #
 # Usage:
 #   pnpm podman:up                # start Mongo, Postgres, Redis
-#   pnpm podman:full              # start all five services and stream logs
+#   pnpm podman:full              # start all six services and stream logs
 #   pnpm podman:down              # stop databases; preserve volumes
 #   pnpm podman:full:down         # stop all services; preserve volumes
 #   pnpm podman:full:remove       # remove stack containers/network; preserve volumes
 #   podman-compose --profile full logs -f server  # tail app logs
+#   podman-compose --profile full logs -f worker  # tail worker logs
 #
 # Database data, app dependencies and generated Prisma clients are stored in
 # named volumes. Piston is intentionally NOT in this file; see
@@ -130,6 +131,7 @@ services:
       NODE_ENV: development
       PORT: '3000'
       HOST: '0.0.0.0'
+      JOBS_WORKER_ENABLED: 'false'
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     ports:
       - '${SERVER_HOST_PORT:-3000}:3000'
@@ -163,6 +165,37 @@ services:
       timeout: 5s
       retries: 12
       start_period: 60s
+
+  # ── Worker — BullMQ consumers, separate from the API in the full profile ─
+  worker:
+    image: node:22-alpine
+    container_name: prepai-worker
+    profiles: ['full']
+    working_dir: /app/server
+    command: ['sh', '-c', 'corepack enable && exec pnpm start:worker']
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin&replicaSet=rs0
+      POSTGRESQL_URL: postgresql://postgres:postgres@postgres:5432/prepai
+      PISTON_URL: http://host.containers.internal:2000
+      PISTON_EXECUTION_ENABLED: 'true'
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      NODE_ENV: development
+      JOBS_WORKER_ENABLED: 'true'
+    restart: unless-stopped
+    volumes:
+      - ./server:/app/server
+      - server_node_modules:/app/server/node_modules
+      - server_generated:/app/server/src/generated
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./scripts:/app/scripts
+      - ./types:/app/types
+      - ./.env:/app/.env
+    depends_on:
+      server:
+        condition: service_healthy
 
   # ── UI — Vite dev server ────────────────────────────────────────
   ui:

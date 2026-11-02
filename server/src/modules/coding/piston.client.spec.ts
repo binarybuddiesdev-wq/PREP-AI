@@ -117,6 +117,56 @@ describe('PistonClient', () => {
     );
   });
 
+  it.each([
+    ['missing run output', { run: undefined }, 'Code did not produce a valid result'],
+    [
+      'nonzero exit code',
+      { run: { code: 1, signal: null, stderr: 'runtime error' } },
+      'runtime error',
+    ],
+    ['terminated run', { run: { code: 0, signal: 'SIGTERM', output: 'terminated' } }, 'terminated'],
+    [
+      'failed compilation',
+      { compile: { code: 1, signal: null, stderr: 'compile error' } },
+      'compile error',
+    ],
+    [
+      'terminated compilation',
+      { compile: { code: 0, signal: 'SIGTERM', output: 'compile terminated' } },
+      'compile terminated',
+    ],
+  ])('reports %s as an execution error', async (_name, stages, output) => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(stages),
+    });
+
+    await expect(
+      client.execute('function solution() {}', 'javascript', [examples[0]])
+    ).resolves.toMatchObject({ status: 'error', testCases: [{ passed: false, got: output }] });
+  });
+
+  it('finds the last structured result after non-JSON stdout lines', async () => {
+    fetchMock.mockResolvedValueOnce(pistonSuccess('debug output\n__PREPAI_RESULT__[0,1]\n'));
+
+    await expect(
+      client.execute('function solution() { return [0, 1]; }', 'javascript', [examples[0]])
+    ).resolves.toMatchObject({ status: 'accepted', testCasesPassed: 1 });
+  });
+
+  it.each([null, 'invalid response'])('rejects a non-object Piston response: %s', async (body) => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(body),
+    });
+
+    await expect(
+      client.execute('function solution() {}', 'javascript', [examples[0]])
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+
   it('reports compilation or runtime failure without marking the case accepted', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
@@ -154,7 +204,7 @@ describe('PistonClient', () => {
     const result = await client.execute('function solution() { return 1; }', 'javascript', [
       examples[0],
     ]);
-    expect(result.testCases[0].got.length).toBeLessThanOrEqual(16_384);
+    expect(String(result.testCases[0].got).length).toBeLessThanOrEqual(16_384);
   });
 
   it('maps Piston HTTP, timeout, and malformed JSON failures to ServiceUnavailableException', async () => {

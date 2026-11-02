@@ -86,7 +86,7 @@ Services inject a scoped logger via `@InjectPinoLogger(XService.name)` (nestjs-p
 
 ### Infrastructure dependencies
 
-AI/LLM calls go through Mastra agents (`server/src/mastra/`) calling NVIDIA NIM (`meta/llama-3.3-nemotron-super-49b-v1.5` per `server/README.md`, `.env.example` defaults to `llama-3.1-8b-instruct` — check `NVIDIA_MODEL` before assuming which). Redis (via `cache-manager-ioredis-yet`) is a global `CacheModule`. Cloudinary (PDFs), Resend (email), and Razorpay (payments) are referenced in docs/README but not yet implemented in `server/src/modules/` — check before assuming an integration exists.
+AI/LLM calls go through Mastra agents (`server/src/mastra/`) calling NVIDIA NIM (`meta/llama-3.3-nemotron-super-49b-v1.5` per `server/README.md`, `.env.example` defaults to `llama-3.1-8b-instruct` — check `NVIDIA_MODEL` before assuming which). Redis is used directly for quota reservations and as BullMQ's job transport. Coding execution is queued to the Piston worker; other integrations such as Cloudinary (PDFs), Resend (email), and Razorpay (payments) remain unimplemented in `server/src/modules/` — check before assuming an integration exists.
 
 ## Known gaps in the backend
 

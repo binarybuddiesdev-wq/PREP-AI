@@ -8,6 +8,7 @@ const redisMocks = vi.hoisted(() => ({
     eval: vi.fn(),
     on: vi.fn(),
     disconnect: vi.fn(),
+    ping: vi.fn(),
   },
   constructor: vi.fn(),
 }));
@@ -20,6 +21,11 @@ vi.mock('ioredis', () => ({
 
 describe('RedisService unique quota reservations', () => {
   let service: RedisService;
+  let logger: {
+    info: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+  };
   const quotaKey = 'coding-solved:user_001:2026-11-02';
   const itemKey = 'coding-problem:user_001:problem_001';
   const limit = 5;
@@ -29,11 +35,12 @@ describe('RedisService unique quota reservations', () => {
     redisMocks.client.eval.mockReset();
     redisMocks.client.on.mockReset();
     redisMocks.client.disconnect.mockReset();
+    redisMocks.client.ping.mockReset();
 
     const config = {
       get: vi.fn((key: string) => (key === 'REDIS_HOST' ? '127.0.0.1' : 6379)),
     };
-    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisService,
@@ -43,6 +50,65 @@ describe('RedisService unique quota reservations', () => {
     }).compile();
 
     service = module.get<RedisService>(RedisService);
+  });
+
+  it.each([
+    [[1, 2], { allowed: true, count: 2 }],
+    [[0, 5], { allowed: false, count: 5 }],
+  ])('maps quota reservation result %j', async (result, expected) => {
+    redisMocks.client.eval.mockResolvedValueOnce(result);
+
+    await expect(service.reserveQuota(quotaKey, limit, ttlSeconds)).resolves.toEqual(expected);
+
+    expect(redisMocks.client.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call('INCR', KEYS[1])"),
+      1,
+      quotaKey,
+      String(limit),
+      String(ttlSeconds)
+    );
+  });
+
+  it('rejects a malformed quota reservation result', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([1]);
+
+    await expect(service.reserveQuota(quotaKey, limit, ttlSeconds)).rejects.toThrow(
+      'Redis returned an invalid quota reservation result'
+    );
+  });
+
+  it('releases quota, pings Redis, and disconnects on shutdown', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce(1);
+    redisMocks.client.ping.mockResolvedValueOnce('PONG');
+
+    await service.releaseQuota(quotaKey);
+    await expect(service.ping()).resolves.toBe('PONG');
+    service.onModuleDestroy();
+
+    expect(redisMocks.client.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call('DECR', KEYS[1])"),
+      1,
+      quotaKey
+    );
+    expect(redisMocks.client.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it('logs only the first Redis error until the client becomes ready again', () => {
+    const onError = redisMocks.client.on.mock.calls.find(([event]) => event === 'error')?.[1] as (
+      error: Error
+    ) => void;
+    const onReady = redisMocks.client.on.mock.calls.find(
+      ([event]) => event === 'ready'
+    )?.[1] as () => void;
+
+    onError(new Error('first failure'));
+    onError(new Error('repeated failure'));
+    expect(logger.warn).toHaveBeenCalledOnce();
+    expect(logger.warn).toHaveBeenCalledWith({ error: 'first failure' }, 'Redis is unavailable');
+
+    onReady();
+    onError(new Error('failure after recovery'));
+    expect(logger.warn).toHaveBeenCalledTimes(2);
   });
 
   it.each([

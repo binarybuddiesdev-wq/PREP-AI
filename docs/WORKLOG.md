@@ -6,6 +6,15 @@ Human- and AI-readable log of what was done, newest day first. Read this before 
 
 ---
 
+## 2026-11-02 — BullMQ coding execution worker
+
+- Added BullMQ 5.81.5 pinned exactly and a shared queue service with Redis producer/event connections, deterministic hashed job IDs, exponential retries, seven-day retention, result timeout handling, and graceful shutdown.
+- Moved existing coding run and submit execution through the `coding-execution` queue while preserving the API routes, synchronous response contract, Piston validation, and submission quota/persistence flow.
+- Added an in-process worker for host development and a separate worker process in the full Podman profile; the API container is producer-only in that profile.
+- Documented queue behavior, configuration, Podman operations, and follow-up queue work; added ADR-0010 and aligned the service catalog and coding API contract.
+- Verification: server build passed; all 241 server tests passed; repository lint passed with one existing `any` warning in `coding.service.spec.ts`; changed-file formatting, agent-doc checks, and Podman Compose configuration passed. A live queue smoke test executed one JavaScript addition successfully and removed its job.
+- Open verification issues: the server-wide coverage run remains below its configured 90% thresholds (86.5% lines; uncovered areas include existing filters, guards, DTOs, Prisma, theory, and the new worker bootstrap). The server TypeScript check still reports the known `prisma/seed-coding-local.ts` `rootDir` mismatch. No Prisma schema changed.
+
 ## 2026-11-02 — Podman local database setup
 
 - Installed the `podman-compose` CLI and started the existing Podman WSL machine.

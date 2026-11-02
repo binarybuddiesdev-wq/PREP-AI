@@ -55,6 +55,7 @@ The API prefix is `/api/v1`, except for the unprefixed health probes. Successful
 - **Topics and questions:** authenticated reads with admin-only create/update/delete operations.
 - **Theory:** session creation, question retrieval, answer submission, completion, history, weak-area analysis, and score trends. Access to another user's session returns 404. Question retrieval does not include the reference answer. If evaluation is unavailable, answer submission returns 503 and does not save a default score.
 - **Coding:** problem listing/detail, session start, bounded Piston run/submit, owned session detail/completion, and paginated history. AI review and stats remain deferred. See the [coding API contract](../routes/coding-api-spec.md).
+- **Background jobs:** Piston execution runs through BullMQ with bounded concurrency, retries, and retained failures. Host development starts the worker with the API; the full Podman profile runs a separate worker container. See [Background Jobs](../docs/architecture/background-jobs.md).
 
 See the [route index](../routes.md) and the detailed [user](../routes/user-api-spec.md), [topic](../routes/topics-api-spec.md), [question](../routes/questions-api-spec.md), [webhook](../routes/webhooks-api-spec.md), and [theory](../routes/theory-api-spec.md) specifications.
 
@@ -76,8 +77,10 @@ pnpm seed:coding:local
 
 The seed is idempotent by slug and refuses any PostgreSQL hostname except `localhost`, `127.0.0.1`, or `::1`. Do not target shared or production data. The schema adds `CodingSession.problemIds String[] @default([])`.
 
-Set `PISTON_URL=http://127.0.0.1:2000` for a host-run backend. The full Podman backend uses `PISTON_URL=http://host.containers.internal:2000`, since Piston runs on the host. Execution is on by default in development; production execution is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly set after reviewing the Piston isolation setup. The current local Piston launcher uses a privileged container and must not be exposed publicly as-is.
+Set `PISTON_URL=http://127.0.0.1:2000` for a host-run backend. The full Podman backend and worker use `PISTON_URL=http://host.containers.internal:2000`, since Piston runs on the host. Execution is on by default in development; production execution is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly set after reviewing the Piston isolation setup. The current local Piston launcher uses a privileged container and must not be exposed publicly as-is.
+
+For host development, `pnpm start:dev` runs the BullMQ worker in-process by default. For a producer-only API, set `JOBS_WORKER_ENABLED=false`; start a separate worker with `pnpm start:worker` and `JOBS_WORKER_ENABLED=true`. The full Podman profile configures these values automatically.
 
 ### Other planned modules
 
-The coding/Piston API, PDF ingestion and RAG, payments, email notifications, and a general study chatbot are not implemented in `server/src/modules/` yet. Their current designs are tracked in [the architecture backlog](../docs/architecture/TODO.md). Do not implement local login/logout endpoints; authentication remains with Clerk.
+The coding/Piston API and its queued execution flow are implemented. AI code review, PDF ingestion and RAG, payments, email notifications, and a general study chatbot are not implemented in `server/src/modules/` yet. Their designs and status are tracked in [the architecture backlog](../docs/architecture/TODO.md). Do not implement local login/logout endpoints; authentication remains with Clerk.

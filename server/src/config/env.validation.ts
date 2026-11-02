@@ -13,6 +13,11 @@ export const envSchema = z
       .transform((value) => value === 'true'),
     REDIS_HOST: z.string().optional().default('localhost'),
     REDIS_PORT: z.coerce.number().optional().default(6379),
+    JOBS_WORKER_ENABLED: z
+      .enum(['true', 'false'])
+      .optional()
+      .default('true')
+      .transform((value) => value === 'true'),
     CORS_ORIGIN: z.string().optional().default('*'),
     CLERK_SECRET_KEY: z.string().optional(),
     GEMINI_API_KEY: z.string().optional(),

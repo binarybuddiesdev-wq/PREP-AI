@@ -3,9 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import { ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CodingService } from './coding.service.js';
-import { PistonClient } from './piston.client.js';
 import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { RedisService } from '@/common/redis/redis.service.js';
+import { JobQueueService } from '@/common/jobs/job-queue.service.js';
+import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
+import type { CodingSessionHistoryDto, ExecuteCodingDto } from './dto/coding.dto.js';
+
+type TMockPrismaModel = Record<string, ReturnType<typeof vi.fn>>;
+type TMockPostgresClient = {
+  codingQuestion: TMockPrismaModel;
+  codingSession: TMockPrismaModel;
+  codingAnswer: TMockPrismaModel;
+  $transaction: ReturnType<typeof vi.fn>;
+};
 
 describe('CodingService', () => {
   let service: CodingService;
@@ -16,7 +26,7 @@ describe('CodingService', () => {
     reserveUniqueQuota: ReturnType<typeof vi.fn>;
     finalizeUniqueQuota: ReturnType<typeof vi.fn>;
   };
-  let piston: { execute: ReturnType<typeof vi.fn> };
+  let jobs: { enqueue: ReturnType<typeof vi.fn> };
   let config: { get: ReturnType<typeof vi.fn> };
   let logger: {
     info: ReturnType<typeof vi.fn>;
@@ -113,7 +123,7 @@ describe('CodingService', () => {
       reserveUniqueQuota: vi.fn().mockResolvedValue({ status: 'reserved', count: 1 }),
       finalizeUniqueQuota: vi.fn().mockResolvedValue(undefined),
     };
-    piston = { execute: vi.fn().mockResolvedValue(acceptedRun) };
+    jobs = { enqueue: vi.fn().mockResolvedValue(acceptedRun) };
     config = {
       get: vi.fn((key: string) => {
         const values: Record<string, number> = {
@@ -131,7 +141,7 @@ describe('CodingService', () => {
         { provide: PrismaService, useValue: mongo },
         { provide: PrismaPostgresqlService, useValue: postgres },
         { provide: RedisService, useValue: redis },
-        { provide: PistonClient, useValue: piston },
+        { provide: JobQueueService, useValue: jobs },
         { provide: ConfigService, useValue: config },
         { provide: 'PinoLogger:CodingService', useValue: logger },
       ],
@@ -140,7 +150,7 @@ describe('CodingService', () => {
     service = module.get<CodingService>(CodingService);
   });
 
-  const pg = () => postgres.client_ as Record<string, any>;
+  const pg = () => postgres.client_ as unknown as TMockPostgresClient;
 
   describe('problem bank', () => {
     it('lists problems using only requested filters and does not expose test internals', async () => {
@@ -165,8 +175,22 @@ describe('CodingService', () => {
       await expect(service.getProblem('missing')).rejects.toBeInstanceOf(NotFoundException);
     });
 
+    it('maps database failures while loading a problem to 503', async () => {
+      pg().codingQuestion.findFirst.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+
+      await expect(service.getProblem('two-sum')).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
+    });
+
     it('returns 503 when PostgreSQL is unavailable', async () => {
       (postgres as { client_: unknown }).client_ = undefined;
+      await expect(service.listProblems({})).rejects.toBeInstanceOf(ServiceUnavailableException);
+    });
+
+    it('maps PostgreSQL query errors to 503', async () => {
+      pg().codingQuestion.findMany.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+
       await expect(service.listProblems({})).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
@@ -201,11 +225,28 @@ describe('CodingService', () => {
       });
     });
 
+    it('returns 404 when there are no coding problems to start with', async () => {
+      pg().codingQuestion.findMany.mockResolvedValueOnce([]);
+
+      await expect(service.startSession({}, userId)).rejects.toThrow(
+        'No coding problems are available'
+      );
+      expect(pg().codingSession.create).not.toHaveBeenCalled();
+    });
+
     it('fails with 503 when PostgreSQL is unavailable', async () => {
       (postgres as { client_: unknown }).client_ = undefined;
       await expect(service.startSession({}, userId)).rejects.toBeInstanceOf(
         ServiceUnavailableException
       );
+    });
+
+    it('maps selected-problem query errors to 503', async () => {
+      pg().codingQuestion.findMany.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+
+      await expect(
+        service.startSession({ problemIds: [problemId] }, userId)
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });
 
@@ -214,7 +255,7 @@ describe('CodingService', () => {
       problemId,
       language: 'javascript',
       code: 'function solution() { return [0, 1]; }',
-    };
+    } satisfies ExecuteCodingDto;
 
     it('runs assigned problem code for the session owner without saving an answer or consuming solve quota', async () => {
       await expect(service.runCode(sessionId, userId, dto)).resolves.toEqual(acceptedRun);
@@ -224,7 +265,16 @@ describe('CodingService', () => {
       expect(pg().codingSession.findFirst).toHaveBeenCalledWith({
         where: { id: sessionId, userId },
       });
-      expect(piston.execute).toHaveBeenCalledWith(dto.code, dto.language, examples);
+      expect(jobs.enqueue).toHaveBeenCalledWith(
+        JOB_QUEUE_NAMES.CODING_EXECUTION,
+        expect.objectContaining({
+          idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/),
+          code: dto.code,
+          language: dto.language,
+          examples,
+        }),
+        'execute'
+      );
       expect(pg().codingAnswer.create).not.toHaveBeenCalled();
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
     });
@@ -234,7 +284,7 @@ describe('CodingService', () => {
       await expect(service.runCode(sessionId, 'other_user', dto)).rejects.toBeInstanceOf(
         NotFoundException
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('returns 404 if the problem is not assigned to the session', async () => {
@@ -245,7 +295,7 @@ describe('CodingService', () => {
       await expect(service.runCode(sessionId, userId, dto)).rejects.toBeInstanceOf(
         NotFoundException
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('rejects a completed session before calling Piston', async () => {
@@ -253,7 +303,7 @@ describe('CodingService', () => {
       await expect(service.runCode(sessionId, userId, dto)).rejects.toBeInstanceOf(
         ConflictException
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('rejects execution over the per-user rate limit before calling Piston', async () => {
@@ -262,7 +312,7 @@ describe('CodingService', () => {
       await expect(service.runCode(sessionId, userId, dto)).rejects.toThrow(
         'Code execution rate limit exceeded'
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('fails closed with 503 when Redis cannot reserve execution capacity', async () => {
@@ -271,7 +321,7 @@ describe('CodingService', () => {
       await expect(service.runCode(sessionId, userId, dto)).rejects.toThrow(
         'Code execution rate limiter is temporarily unavailable'
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
   });
 
@@ -280,7 +330,7 @@ describe('CodingService', () => {
       problemId,
       language: 'javascript',
       code: 'function solution() { return [0, 1]; }',
-    };
+    } satisfies ExecuteCodingDto;
 
     it('persists an accepted answer and commits the reserved unique solve slot', async () => {
       await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(answer);
@@ -305,7 +355,7 @@ describe('CodingService', () => {
       ['wrong_answer', 'release'],
       ['error', 'release'],
     ])('saves a %s result and releases its reserved solve slot', async (status, outcome) => {
-      piston.execute.mockResolvedValueOnce({ ...acceptedRun, status });
+      jobs.enqueue.mockResolvedValueOnce({ ...acceptedRun, status });
       await service.submitSolution(sessionId, userId, dto);
 
       expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
@@ -324,7 +374,7 @@ describe('CodingService', () => {
       await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
         ConflictException
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
       expect(pg().codingAnswer.create).not.toHaveBeenCalled();
     });
 
@@ -334,7 +384,7 @@ describe('CodingService', () => {
       await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
         'Code execution rate limit exceeded'
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
     });
 
@@ -343,18 +393,37 @@ describe('CodingService', () => {
       await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
         ConflictException
       );
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the authenticated user record is missing', async () => {
+      mongo.user.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+        'User not found'
+      );
+      expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('returns 503 when the solve quota service is unavailable', async () => {
+      redis.reserveUniqueQuota.mockRejectedValueOnce(new Error('Redis unavailable'));
+
+      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('saves a previously solved problem without reserving another daily solve slot', async () => {
       redis.reserveUniqueQuota.mockResolvedValueOnce({ status: 'already_solved', count: 1 });
       await service.submitSolution(sessionId, userId, dto);
-      expect(piston.execute).toHaveBeenCalledOnce();
+      expect(jobs.enqueue).toHaveBeenCalledOnce();
       expect(redis.finalizeUniqueQuota).not.toHaveBeenCalled();
     });
 
     it('releases the slot when Piston fails', async () => {
-      piston.execute.mockRejectedValueOnce(new ServiceUnavailableException());
+      jobs.enqueue.mockRejectedValueOnce(new ServiceUnavailableException());
       await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
         ServiceUnavailableException
       );
@@ -365,6 +434,19 @@ describe('CodingService', () => {
         expect.any(Number)
       );
       expect(pg().codingAnswer.create).not.toHaveBeenCalled();
+    });
+
+    it('preserves the execution error and logs a failed reservation release', async () => {
+      jobs.enqueue.mockRejectedValueOnce(new ServiceUnavailableException('worker unavailable'));
+      redis.finalizeUniqueQuota.mockRejectedValueOnce(new Error('Redis unavailable'));
+
+      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+        'worker unavailable'
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: expect.any(Error) },
+        'Failed to release a coding solve reservation'
+      );
     });
 
     it('releases the slot when answer persistence fails', async () => {
@@ -380,13 +462,37 @@ describe('CodingService', () => {
       );
     });
 
+    it('returns a stored answer when the best-effort quota finalization fails', async () => {
+      redis.finalizeUniqueQuota.mockRejectedValueOnce(new Error('Redis unavailable'));
+
+      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(answer);
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: expect.any(Error) },
+        'Failed to finalize a coding solve reservation'
+      );
+    });
+
+    it('releases the reservation when the session completes during execution', async () => {
+      pg().codingSession.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
+        ConflictException
+      );
+      expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        'release',
+        expect.any(Number)
+      );
+    });
+
     it('returns 404 for a session not owned by the caller', async () => {
       pg().codingSession.findFirst.mockResolvedValueOnce(null);
       await expect(service.submitSolution(sessionId, 'other_user', dto)).rejects.toBeInstanceOf(
         NotFoundException
       );
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('returns 404 for a problem outside the session', async () => {
@@ -398,7 +504,16 @@ describe('CodingService', () => {
         NotFoundException
       );
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
-      expect(piston.execute).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when an assigned coding problem no longer exists', async () => {
+      pg().codingQuestion.findFirst.mockResolvedValueOnce(null);
+
+      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+        'Coding problem not found'
+      );
+      expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
     });
   });
 
@@ -413,6 +528,14 @@ describe('CodingService', () => {
         where: { id: sessionId, userId },
         include: { answers: { orderBy: { createdAt: 'asc' } } },
       });
+    });
+
+    it('maps database errors while loading session detail to 503', async () => {
+      pg().codingSession.findFirst.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+
+      await expect(service.getSessionDetail(sessionId, userId)).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
     });
 
     it('returns 404 when the requested session belongs to another user', async () => {
@@ -463,6 +586,28 @@ describe('CodingService', () => {
         expect.objectContaining({ where: { userId }, skip: 10, take: 10 })
       );
       expect(pg().codingSession.count).toHaveBeenCalledWith({ where: { userId } });
+    });
+
+    it('maps history query failures to 503', async () => {
+      pg().codingSession.count.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+
+      await expect(
+        service.getSessionHistory(userId, { page: 1, limit: 20 })
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    });
+
+    it('uses default pagination when values are omitted', async () => {
+      await expect(
+        service.getSessionHistory(userId, {} as CodingSessionHistoryDto)
+      ).resolves.toEqual({
+        sessions: [session],
+        total: 1,
+        page: 1,
+        limit: 20,
+      });
+      expect(pg().codingSession.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId }, skip: 0, take: 20 })
+      );
     });
   });
 });

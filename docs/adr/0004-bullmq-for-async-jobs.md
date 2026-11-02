@@ -18,7 +18,7 @@ handler:
 Options:
 
 1. **In-process `setImmediate` / Promises** — fastest to ship, no infra
-2. **BullMQ on Redis** — Redis-backed queue, retries, dead-letter, UI
+2. **BullMQ on Redis** — Redis-backed queue, retries, retained failures, optional UI
 3. **Cloud Tasks / SQS** — managed, serverless, no Redis
 4. **Temporal** — workflow engine, overkill for now
 
@@ -29,22 +29,24 @@ same Node process in dev, a separate process in prod.
 
 Queue topology:
 
-- `theory-eval-queue` — concurrency 5, priority interactive, 3 retries
-- `code-review-queue` — concurrency 3, priority interactive, 3 retries
-- `pdf-ingest-queue` — concurrency 2, priority background, 5 retries
-- `email-queue` — concurrency 10, priority background, 5 retries
+- `coding-execution-queue` — concurrency 5, 3 attempts; implemented for Piston execution
+- `theory-eval-queue` — concurrency 5, priority interactive, 3 attempts
+- `code-review-queue` — concurrency 3, priority interactive, 3 attempts
+- `pdf-ingest-queue` — concurrency 2, priority background, 5 attempts
+- `email-queue` — concurrency 10, priority background, 5 attempts
 - `payment-reconcile-queue` — concurrency 1, scheduled via cron
 
-All jobs carry an `idempotencyKey`. The worker checks Postgres for prior
-completion before running.
+All jobs carry an `idempotencyKey`. A processor that writes application data
+must check durable prior completion before repeating that write. Current
+implementation details are in [background-jobs.md](../architecture/background-jobs.md).
 
 ## Consequences
 
 **Easier:**
 
-- Request handlers return 202 with `jobId`; UI polls or uses SSE
+- Async request handlers can return 202 with `jobId`; clients can poll or use SSE
 - Built-in retry with exponential backoff
-- Built-in dead-letter queue (failed jobs surface in Bull-Board)
+- Failed jobs can be retained and inspected; a dead-letter queue and Bull-Board are not configured
 - Standard pattern; well-documented; UI for ops (Bull-Board)
 - Same Redis already installed for cache and quota
 

@@ -11,6 +11,7 @@ node_modules/
 dist/
 build/
 .next/
+server/src/generated/
 
 # Test output
 test-results/

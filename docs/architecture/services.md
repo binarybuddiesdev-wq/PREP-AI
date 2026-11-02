@@ -29,20 +29,20 @@ Each service has:
 
 ### `api` — NestJS Fastify Backend
 
-| Field                        | Value                                                          |
-| ---------------------------- | -------------------------------------------------------------- |
-| **Owner**                    | uday                                                           |
-| **On-call**                  | uday                                                           |
-| **Repo path**                | `server/`                                                      |
-| **Runtime**                  | Node.js 22, NestJS 11, Fastify                                 |
-| **Process model**            | Single process in dev; horizontal scale (2-4 replicas) in prod |
-| **SLO — availability**       | 99.5% (free tier), 99.9% (premium)                             |
-| **SLO — latency p95**        | < 300ms (non-AI), < 5s (AI)                                    |
-| **SLO — error rate**         | < 0.5% 5xx over 1h                                             |
-| **Implemented dependencies** | MongoDB, PostgreSQL, Redis, Clerk, NVIDIA NIM, Groq            |
-| **Planned integrations**     | Piston API integration, Cloudinary, Resend, Razorpay           |
-| **Runbook**                  | [docs/runbooks/api.md](../runbooks/api.md) _(TODO)_            |
-| **Last incident**            | —                                                              |
+| Field                        | Value                                                                                                |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Owner**                    | uday                                                                                                 |
+| **On-call**                  | uday                                                                                                 |
+| **Repo path**                | `server/`                                                                                            |
+| **Runtime**                  | Node.js 22, NestJS 11, Fastify                                                                       |
+| **Process model**            | API producer and in-process worker in host dev; separate worker in full Podman; API replicas in prod |
+| **SLO — availability**       | 99.5% (free tier), 99.9% (premium)                                                                   |
+| **SLO — latency p95**        | < 300ms (non-AI), < 5s (AI)                                                                          |
+| **SLO — error rate**         | < 0.5% 5xx over 1h                                                                                   |
+| **Implemented dependencies** | MongoDB, PostgreSQL, Redis, Clerk, NVIDIA NIM, Groq                                                  |
+| **Planned integrations**     | Cloudinary, Resend, Razorpay                                                                         |
+| **Runbook**                  | [docs/runbooks/api.md](../runbooks/api.md) _(TODO)_                                                  |
+| **Last incident**            | —                                                                                                    |
 
 ---
 
@@ -76,16 +76,17 @@ Each service has:
 
 ---
 
-### `worker` — Planned, not implemented
+### `worker` — BullMQ job worker
 
-| Field               | Value                                                         |
-| ------------------- | ------------------------------------------------------------- |
-| **Owner**           | uday                                                          |
-| **Status**          | No BullMQ package, queue module, or worker process exists yet |
-| **Planned queues**  | Theory evaluation, code review, PDF ingestion, email          |
-| **Planned runtime** | Same process in development; separate process in production   |
-| **Dependencies**    | Redis, NVIDIA NIM/Groq, Piston, PostgreSQL, Resend            |
-| **Runbook**         | To be written when the worker is implemented                  |
+| Field                 | Value                                                                        |
+| --------------------- | ---------------------------------------------------------------------------- |
+| **Owner**             | uday                                                                         |
+| **Status**            | Coding execution queue and Piston consumer implemented                       |
+| **Implemented queue** | `coding-execution` (concurrency 5, 3 attempts, 7-day retention)              |
+| **Planned queues**    | Theory evaluation, code review, PDF ingestion, email, payments               |
+| **Runtime**           | In-process with host API by default; separate Podman process in full profile |
+| **Dependencies**      | Redis, Piston                                                                |
+| **Runbook**           | [Background jobs](background-jobs.md)                                        |
 
 ---
 
@@ -105,17 +106,16 @@ Each service has:
 
 ### `postgres` — PostgreSQL (Theory sessions and answers)
 
-| Field                  | Value                                                                        |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| **Owner**              | uday                                                                         |
-| **Hosting (prod)**     | Neon / Supabase / RDS                                                        |
-| **Implemented models** | `TheorySession`, `TheoryAnswer`                                              |
-| **Schema-only models** | `CodingSession`, `CodingQuestion`, `CodingAnswer` (no coding API module yet) |
-| **Extensions**         | None declared by the current Prisma schema                                   |
-| **SLO — availability** | 99.9%                                                                        |
-| **Backup**             | Daily `pg_dump` to S3 + WAL archiving, 7-day PITR                            |
-| **Runbook**            | [docs/runbooks/postgres.md](../runbooks/postgres.md) _(TODO)_                |
-| **Last incident**      | —                                                                            |
+| Field                  | Value                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------- |
+| **Owner**              | uday                                                                               |
+| **Hosting (prod)**     | Neon / Supabase / RDS                                                              |
+| **Implemented models** | `TheorySession`, `TheoryAnswer`, `CodingSession`, `CodingQuestion`, `CodingAnswer` |
+| **Extensions**         | None declared by the current Prisma schema                                         |
+| **SLO — availability** | 99.9%                                                                              |
+| **Backup**             | Daily `pg_dump` to S3 + WAL archiving, 7-day PITR                                  |
+| **Runbook**            | [docs/runbooks/postgres.md](../runbooks/postgres.md) _(TODO)_                      |
+| **Last incident**      | —                                                                                  |
 
 ---
 
@@ -125,8 +125,8 @@ Each service has:
 | -------------------- | ----------------------------------------------------------------------------------------- |
 | **Owner**            | uday                                                                                      |
 | **Hosting (prod)**   | Upstash / ElastiCache                                                                     |
-| **Used for**         | Atomic daily theory-session quota reservations and readiness pings                        |
-| **Not used for yet** | API response caching, BullMQ queues, or Fastify rate-limit storage                        |
+| **Used for**         | Theory quotas, coding execution BullMQ queue, and readiness pings                         |
+| **Not used for yet** | API response caching or Fastify rate-limit storage                                        |
 | **Failure behavior** | Theory session creation returns 503 if Redis is unavailable; health reports Redis as down |
 | **Runbook**          | To be written                                                                             |
 
@@ -142,7 +142,7 @@ Each service has:
 | **Cloudinary**           | Planned PDF storage                   | No Cloudinary integration or PDF module exists yet.                                                                      |
 | **Resend**               | Planned email delivery                | No email module or queue exists yet.                                                                                     |
 | **Razorpay**             | Planned payments                      | No payment API or webhook module exists yet.                                                                             |
-| **Podman / Piston**      | Local code execution                  | Piston runs locally; the PrepAI server has no coding API module yet.                                                     |
+| **Podman / Piston**      | Local code execution                  | Coding API sends bounded execution jobs through BullMQ to the Piston worker.                                             |
 
 ---
 
