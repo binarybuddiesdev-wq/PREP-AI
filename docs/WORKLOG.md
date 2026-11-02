@@ -6,6 +6,20 @@ Human- and AI-readable log of what was done, newest day first. Read this before 
 
 ---
 
+## 2026-11-02 — Podman local database setup
+
+- Installed the `podman-compose` CLI and started the existing Podman WSL machine.
+- Published PostgreSQL and Redis on their standard host ports `5432` and `6379`; host-installed services using those ports must be stopped before starting the containers.
+- Added `podman:up` / `podman:down` scripts to start and stop only MongoDB, PostgreSQL and Redis; stopping preserves named volumes.
+- Updated `.env.example` and README setup instructions for default host-run backend connection values without changing `.env` secrets.
+- Repaired the optional app containers to install independently from the server and UI lockfiles, with persistent Podman volumes for dependencies and Prisma output.
+- Added `podman:full`, `podman:full:down`, and `podman:full:remove` commands for the complete five-service stack. The full start command stays attached and streams service logs; stop/remove preserve named volumes.
+- Added a backend health check so the UI waits before installing, and made both app processes stop cleanly.
+- Verified the full profile on temporary ports `3001` / `5174`: API health and UI returned HTTP 200. Stopped those two app containers afterward; the database containers remain running.
+- Added `docs/development-containers.md` as the full setup guide for prerequisites, `.env` values, both run modes, service networking, ports, logs, persistent data, and troubleshooting; linked it from README and root AI instructions.
+- Diagnosed the authenticated profile HTTP 500: Prisma user creation failed because MongoDB was standalone. Enabled a single-node `rs0` replica set using a separate persistent Mongo config volume, preserved the existing Mongo data volume, and verified it elected a writable primary.
+- Redacted authorization, cookie, and API-key headers in Pino request logs; a dummy-token probe confirmed the token is not written to logs.
+
 ## 2026-10-22
 
 ### Summary

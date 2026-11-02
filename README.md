@@ -408,11 +408,49 @@ All under [`docs/`](docs/). Edit diagrams in `.mmd` files (rendered natively by 
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - pnpm 9+
 - **Podman Desktop** — Download from https://podman-desktop.io (required for Piston)
 - **Podman CLI** — Installed automatically with Podman Desktop
-- **podman-compose** — Install via: `pip install podman-compose` (optional, for docker-compose files)
+- **podman-compose** — Install via `uv tool install podman-compose` or `pip install podman-compose` (for local containers)
+
+For the complete Podman setup—including Windows/WSL prerequisites, `.env` setup, host-run and container-run modes, ports, logs, and troubleshooting—see [Local Development Containers](docs/development-containers.md).
+
+### Local Database Services
+
+Start the MongoDB, PostgreSQL and Redis containers with Podman:
+
+```bash
+pnpm podman:up
+```
+
+The stack publishes MongoDB on `localhost:27017`, PostgreSQL on `localhost:5432` and Redis on `localhost:6379`. Stop host-installed PostgreSQL and Redis services that occupy those ports before starting the Podman stack. Data persists in named Podman volumes. Stop the services without deleting their data with:
+
+```bash
+pnpm podman:down
+```
+
+The backend and UI remain host-run; the optional Compose `full` profile is not started by these commands. For the host-run backend, set `POSTGRESQL_URL=postgresql://postgres:postgres@localhost:5432/prepai` and `REDIS_HOST=localhost`, `REDIS_PORT=6379` in `.env`.
+
+### Full Podman Development Stack
+
+To run the backend and frontend in Podman as well, stop any host-run backend or frontend that is using ports `3000` or `5173`, then run:
+
+```bash
+pnpm podman:full
+```
+
+This starts MongoDB, PostgreSQL, Redis, the NestJS backend and the Vite frontend in the foreground, streaming their logs in the terminal. Keep that terminal open to monitor startup and runtime errors; press `Ctrl+C` to stop the attached stack. The backend installs from `server/pnpm-lock.yaml`; the UI waits for the backend health check before installing from `ui/pnpm-lock.yaml`, which avoids competing install workloads on the Podman machine. Dependencies and generated Prisma clients persist in named Podman volumes. Open the UI at `http://localhost:5173`.
+
+Stop the full stack while preserving database data and dependency volumes with:
+
+```bash
+pnpm podman:full:down
+```
+
+To remove the full stack's containers and network while keeping named volumes and database data, run `pnpm podman:full:remove`.
+
+Use either the host-run app servers or the full Podman profile at a time; both use the same default app ports. The backend and UI remain optional when running only the database containers.
 
 ### Piston Code Execution Engine
 

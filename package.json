@@ -32,8 +32,11 @@
     "seed": "pnpm --filter server exec tsx --env-file=../.env ../scripts/seed/seed.ts",
     "seed:topics-only": "pnpm --filter server exec tsx --env-file=../.env ../scripts/seed/seed.ts --topics-only",
     "seed:questions-only": "pnpm --filter server exec tsx --env-file=../.env ../scripts/seed/seed.ts --questions-only",
-    "docker:up": "podman-compose up -d",
-    "docker:down": "podman-compose down -v",
+    "podman:up": "podman-compose up -d mongo postgres redis",
+    "podman:down": "podman-compose stop mongo postgres redis",
+    "podman:full": "podman-compose --profile full up mongo postgres redis server ui",
+    "podman:full:down": "podman-compose --profile full stop ui server mongo postgres redis",
+    "podman:full:remove": "podman-compose --profile full down",
     "prepare": "husky"
   },
   "lint-staged": {

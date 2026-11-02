@@ -1,5 +1,9 @@
 # Project Rules and Customizations
 
+## Local Development Containers
+
+For the MongoDB, PostgreSQL, Redis, backend, and UI development containers, read [`docs/development-containers.md`](../docs/development-containers.md) before operating or changing the stack. Use Podman via `podman-compose` and the root `pnpm podman:*` scripts. The documented stop commands preserve volumes; do not remove them unless explicitly asked to reset local data.
+
 ## Piston Code Execution Engine Setup (Podman & WSL2)
 
 When setting up or troubleshooting the Piston code execution engine in this workspace under Windows / WSL2 with rootless Podman:

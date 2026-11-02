@@ -6,16 +6,19 @@
 #   - CI runners need a reproducible environment.
 #   - You are pairing with a teammate and want to mirror their setup.
 #
-# It does NOT replace Podman / Docker for Piston — that one stays on the
-# host because it needs the WSL2 cgroup fix from piston-entrypoint.sh.
+# Piston is managed separately with Podman because it needs the WSL2 cgroup
+# fix from piston-entrypoint.sh; see `docs/PISTON_WSL_SETUP_GUIDE.md`.
 #
 # Usage:
-#   podman-compose up -d           # start Mongo, Postgres, Redis
-#   podman-compose down -v         # stop and wipe volumes (full reset)
-#   podman-compose logs -f mongo   # tail logs for a service
+#   pnpm podman:up                # start Mongo, Postgres, Redis
+#   pnpm podman:full              # start all five services and stream logs
+#   pnpm podman:down              # stop databases; preserve volumes
+#   pnpm podman:full:down         # stop all services; preserve volumes
+#   pnpm podman:full:remove       # remove stack containers/network; preserve volumes
+#   podman-compose --profile full logs -f server  # tail app logs
 #
-# All data is stored in named volumes — destroy them with `down -v` if you
-# want a clean slate. Piston is intentionally NOT in this file; see
+# Database data, app dependencies and generated Prisma clients are stored in
+# named volumes. Piston is intentionally NOT in this file; see
 # `docs/PISTON_WSL_SETUP_GUIDE.md`.
 
 name: prepai-dev
@@ -26,6 +29,22 @@ services:
     image: mongo:7
     container_name: prepai-mongo
     restart: unless-stopped
+    # Authenticated MongoDB replica sets require an internal key file. Keep it
+    # in its own named volume so Windows bind-mount permissions are irrelevant.
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        key_file=/data/configdb/keyfile
+        if [ ! -s "$$key_file" ]; then
+          openssl rand -base64 756 > "$$key_file"
+        fi
+        chown mongodb:mongodb "$$key_file"
+        chmod 400 "$$key_file"
+        exec /usr/local/bin/docker-entrypoint.sh "$$@"
+      - --
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all', '--keyFile', '/data/configdb/keyfile']
     ports:
       - '27017:27017'
     environment:
@@ -34,12 +53,19 @@ services:
       MONGO_INITDB_DATABASE: prepai
     volumes:
       - mongo_data:/data/db
+      - mongo_config:/data/configdb
     healthcheck:
-      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      test:
+        - CMD-SHELL
+        - >
+          mongosh --quiet --username prepai --password prepai --authenticationDatabase admin
+          --eval 'try { if (db.hello().isWritablePrimary) quit(0); } catch (error) {}
+          try { rs.status(); } catch (error) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "mongo:27017" }] }); }
+          quit(1);'
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 10
+      start_period: 30s
 
   # ── PostgreSQL — sessions, answers, vectors, audit (ADR-0001, ADR-0003) ─
   postgres:
@@ -85,40 +111,36 @@ services:
     image: node:22-alpine
     container_name: prepai-server
     profiles: ['full']
-    working_dir: /app
+    working_dir: /app/server
     command:
       [
         'sh',
         '-c',
-        'corepack enable && pnpm install --frozen-lockfile && pnpm --filter server prisma:generate && pnpm --filter server start:dev',
+        'corepack enable && pnpm install --frozen-lockfile && pnpm prisma:generate && exec node --import @swc-node/register/esm-register --env-file=../.env --watch src/main.ts',
       ]
     env_file:
       - .env
     environment:
-      DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin
+      DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin&replicaSet=rs0
       POSTGRESQL_URL: postgresql://postgres:postgres@postgres:5432/prepai
       REDIS_HOST: redis
       REDIS_PORT: '6379'
       NODE_ENV: development
       PORT: '3000'
       HOST: '0.0.0.0'
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     ports:
-      - '3000:3000'
+      - '${SERVER_HOST_PORT:-3000}:3000'
     volumes:
-      # Workspace root files (required for `pnpm install --frozen-lockfile`
-      # and the pnpm workspace resolution that picks up `server/`).
-      - ./package.json:/app/package.json
-      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml
-      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
-      - ./tsconfig.json:/app/tsconfig.json
-      - ./eslint.config.js:/app/eslint.config.js
-      # Source code.
+      # Install from this package's own lockfile; dependencies stay in Podman.
       - ./server:/app/server
+      - server_node_modules:/app/server/node_modules
+      - server_generated:/app/server/src/generated
+      # Shared config and runtime files used by the server package.
+      - ./tsconfig.json:/app/tsconfig.json
       - ./scripts:/app/scripts
       - ./types:/app/types
-      # The `.env` is mounted last so container-side defaults in
-      # `environment:` above win for `DATABASE_URL`/`POSTGRESQL_URL`
-      # unless the user has overridden them in `.env`.
+      # start:dev loads ../.env relative to /app/server.
       - ./.env:/app/.env
     depends_on:
       mongo:
@@ -127,39 +149,56 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   # ── UI — Vite dev server ────────────────────────────────────────
   ui:
     image: node:22-alpine
     container_name: prepai-ui
     profiles: ['full']
-    working_dir: /app
+    working_dir: /app/ui
     command:
       [
         'sh',
         '-c',
-        'corepack enable && pnpm install --frozen-lockfile && cd ui && pnpm dev --host 0.0.0.0',
+        'corepack enable && pnpm install --frozen-lockfile && exec ./node_modules/.bin/vite --host 0.0.0.0',
       ]
     env_file:
       - .env
     environment:
-      VITE_API_BASE_URL: http://localhost:3000
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     ports:
-      - '5173:5173'
+      - '${UI_HOST_PORT:-5173}:5173'
     volumes:
-      - ./package.json:/app/package.json
-      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml
-      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
-      - ./tsconfig.json:/app/tsconfig.json
-      - ./eslint.config.js:/app/eslint.config.js
       - ./ui:/app/ui
+      - ui_node_modules:/app/ui/node_modules
     depends_on:
-      - server
+      server:
+        condition: service_healthy
 
 volumes:
   mongo_data:
     driver: local
+  mongo_config:
+    driver: local
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  server_node_modules:
+    driver: local
+  server_generated:
+    driver: local
+  ui_node_modules:
     driver: local
