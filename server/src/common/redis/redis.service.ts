@@ -30,7 +30,7 @@ local current = tonumber(redis.call('GET', KEYS[1]) or '0')
 if itemStatus == 'solved' then
   return {2, current}
 end
-if itemStatus == 'reserved' then
+if itemStatus == 'reserved' or (itemStatus and string.sub(itemStatus, 1, 9) == 'reserved:') then
   return {3, current}
 end
 local limit = tonumber(ARGV[1])
@@ -41,12 +41,12 @@ local count = redis.call('INCR', KEYS[1])
 if count == 1 then
   redis.call('EXPIRE', KEYS[1], tonumber(ARGV[2]))
 end
-redis.call('SET', KEYS[2], 'reserved', 'EX', tonumber(ARGV[2]))
+redis.call('SET', KEYS[2], 'reserved:' .. ARGV[3], 'EX', tonumber(ARGV[2]))
 return {1, count}
 `;
 
 const FINALIZE_UNIQUE_QUOTA_SCRIPT = `
-if redis.call('GET', KEYS[2]) ~= 'reserved' then
+if redis.call('GET', KEYS[2]) ~= 'reserved:' .. ARGV[3] then
   return 0
 end
 if ARGV[1] == 'solved' then
@@ -115,7 +115,8 @@ export class RedisService implements OnModuleDestroy {
     quotaKey: string,
     itemKey: string,
     limit: number,
-    ttlSeconds: number
+    ttlSeconds: number,
+    reservationToken: string
   ): Promise<TUniqueQuotaReservation> {
     const result: unknown = await this.client.eval(
       RESERVE_UNIQUE_QUOTA_SCRIPT,
@@ -123,7 +124,8 @@ export class RedisService implements OnModuleDestroy {
       quotaKey,
       itemKey,
       String(limit),
-      String(ttlSeconds)
+      String(ttlSeconds),
+      reservationToken
     );
     if (!Array.isArray(result) || result.length !== 2) {
       throw new Error('invalid unique quota reservation result');
@@ -149,7 +151,8 @@ export class RedisService implements OnModuleDestroy {
     quotaKey: string,
     itemKey: string,
     outcome: 'solved' | 'release',
-    ttlSeconds: number
+    ttlSeconds: number,
+    reservationToken: string
   ): Promise<void> {
     await this.client.eval(
       FINALIZE_UNIQUE_QUOTA_SCRIPT,
@@ -157,7 +160,8 @@ export class RedisService implements OnModuleDestroy {
       quotaKey,
       itemKey,
       outcome,
-      String(ttlSeconds)
+      String(ttlSeconds),
+      reservationToken
     );
   }
 

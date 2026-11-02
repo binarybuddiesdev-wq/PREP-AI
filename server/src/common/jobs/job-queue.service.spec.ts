@@ -8,18 +8,18 @@ import { JOB_QUEUE_NAMES } from './job-queue.constants.js';
 const bullMocks = vi.hoisted(() => ({
   add: vi.fn(),
   queueClose: vi.fn(),
-  eventsClose: vi.fn(),
-  waitUntilFinished: vi.fn(),
   queueOn: vi.fn(),
-  eventsOn: vi.fn(),
+  getJobs: vi.fn(),
 }));
 
 vi.mock('bullmq', () => ({
   Queue: vi.fn(function QueueMock() {
-    return { add: bullMocks.add, close: bullMocks.queueClose, on: bullMocks.queueOn };
-  }),
-  QueueEvents: vi.fn(function QueueEventsMock() {
-    return { close: bullMocks.eventsClose, on: bullMocks.eventsOn };
+    return {
+      add: bullMocks.add,
+      close: bullMocks.queueClose,
+      on: bullMocks.queueOn,
+      getJobs: bullMocks.getJobs,
+    };
   }),
 }));
 
@@ -37,21 +37,10 @@ describe('JobQueueService', () => {
     language: 'javascript' as const,
     examples: [{ input: [], output: 1 }],
   };
-  const acceptedResult = {
-    status: 'accepted' as const,
-    testCasesPassed: 1,
-    testCasesTotal: 1,
-    testCases: [{ input: [], expected: 1, got: 1, passed: true }],
-    runtime: null,
-    memoryUsage: null,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    bullMocks.add.mockResolvedValue({ waitUntilFinished: bullMocks.waitUntilFinished });
-    bullMocks.waitUntilFinished.mockResolvedValue(acceptedResult);
+    bullMocks.add.mockResolvedValue({ id: 'queue-job-id' });
     bullMocks.queueClose.mockResolvedValue(undefined);
-    bullMocks.eventsClose.mockResolvedValue(undefined);
     config = {
       get: vi.fn((key: string, fallback?: unknown) =>
         key === 'REDIS_HOST' ? 'redis.local' : key === 'REDIS_PORT' ? 6379 : fallback
@@ -61,10 +50,10 @@ describe('JobQueueService', () => {
     service = new JobQueueService(config as unknown as ConfigService, logger as never);
   });
 
-  it('queues code with retry, exponential backoff, retention, and a Redis-safe idempotent job ID', async () => {
+  it('queues code and immediately returns its queue job ID with retry, backoff, and retention', async () => {
     await expect(
       service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute')
-    ).resolves.toEqual(acceptedResult);
+    ).resolves.toEqual('queue-job-id');
 
     expect(Queue).toHaveBeenCalledWith(
       JOB_QUEUE_NAMES.CODING_EXECUTION,
@@ -81,7 +70,7 @@ describe('JobQueueService', () => {
     expect(bullMocks.add).toHaveBeenCalledWith('execute', executionData, {
       jobId: 'a8c0f40f9449f2b7be3547fb5a3ca710dd537068e52cd653776b7fed3b99b173',
     });
-    expect(bullMocks.waitUntilFinished).toHaveBeenCalledWith(expect.any(Object), 30_000);
+    expect(bullMocks.add).toHaveBeenCalledOnce();
   });
 
   it('maps Redis enqueue failures to a 503 without leaking the source code', async () => {
@@ -96,41 +85,47 @@ describe('JobQueueService', () => {
     );
   });
 
-  it('logs producer and QueueEvents connection failures', () => {
+  it('returns the deterministic job ID when BullMQ does not include an ID', async () => {
+    bullMocks.add.mockResolvedValueOnce({});
+
+    await expect(
+      service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute')
+    ).resolves.toBe('a8c0f40f9449f2b7be3547fb5a3ca710dd537068e52cd653776b7fed3b99b173');
+  });
+
+  it('exposes retained failed jobs for durable execution reconciliation', async () => {
+    const failedJobs = [{ id: 'failed-job' }];
+    bullMocks.getJobs.mockResolvedValueOnce(failedJobs);
+
+    await expect(service.getFailedJobs(JOB_QUEUE_NAMES.CODING_EXECUTION, 25)).resolves.toBe(
+      failedJobs
+    );
+    expect(bullMocks.getJobs).toHaveBeenCalledWith(['failed'], 0, 24);
+  });
+
+  it('logs producer connection failures', () => {
     const queueErrorHandler = bullMocks.queueOn.mock.calls[0][1] as (error: Error) => void;
-    const eventsErrorHandler = bullMocks.eventsOn.mock.calls[0][1] as (error: Error) => void;
     const error = new Error('Redis disconnected');
 
     queueErrorHandler(error);
-    eventsErrorHandler(error);
 
     expect(logger.error).toHaveBeenCalledWith(
       { queueName: JOB_QUEUE_NAMES.THEORY_EVALUATION, err: error },
       'Background job queue connection failed'
     );
-    expect(logger.error).toHaveBeenCalledWith(
-      { queueName: JOB_QUEUE_NAMES.THEORY_EVALUATION, err: error },
-      'Background job event connection failed'
-    );
   });
 
-  it('maps worker failure and timeout to a 503', async () => {
-    bullMocks.waitUntilFinished.mockRejectedValueOnce(new Error('worker failed'));
-    await expect(
-      service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute')
-    ).rejects.toBeInstanceOf(ServiceUnavailableException);
-
-    bullMocks.waitUntilFinished.mockRejectedValueOnce(new Error('timeout'));
+  it('maps queue submission failures to a 503', async () => {
+    bullMocks.add.mockRejectedValueOnce(new Error('Redis unavailable'));
     await expect(
       service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute')
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
-  it('closes the producer and result-event connections during shutdown', async () => {
+  it('closes producer connections during shutdown', async () => {
     await service.onModuleDestroy();
 
     expect(bullMocks.queueClose).toHaveBeenCalledTimes(Object.keys(JOB_QUEUE_NAMES).length);
-    expect(bullMocks.eventsClose).toHaveBeenCalledTimes(Object.keys(JOB_QUEUE_NAMES).length);
   });
 
   it('closes every connection and reports a shutdown failure', async () => {
@@ -139,7 +134,6 @@ describe('JobQueueService', () => {
     await expect(service.onModuleDestroy()).rejects.toBeInstanceOf(AggregateError);
 
     expect(bullMocks.queueClose).toHaveBeenCalledTimes(Object.keys(JOB_QUEUE_NAMES).length);
-    expect(bullMocks.eventsClose).toHaveBeenCalledTimes(Object.keys(JOB_QUEUE_NAMES).length);
     expect(logger.error).toHaveBeenCalledOnce();
   });
 });

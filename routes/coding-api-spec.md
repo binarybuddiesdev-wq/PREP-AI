@@ -16,7 +16,8 @@ All endpoints require Bearer token authentication (Clerk).
 - Run never saves an answer or consumes the daily solved quota. Submit saves accepted, wrong-answer, and runtime-error results. Only an accepted first solve reserves a daily solve count; a failed submission releases its reservation. A daily limit or same-problem submission already in progress returns 409.
 - The per-day unique-solve quota is tracked atomically in Redis and expires at UTC midnight. Redis is the quota authority for the current MVP; flushing Redis resets that day's quota accounting.
 - PostgreSQL or Piston unavailability returns 503. Successful response envelope is `{ "message": "...", "data": ... }` (the global success field is added by the response interceptor).
-- Run and submit execution is dispatched through the BullMQ `coding-execution` queue and awaited for up to 30 seconds, preserving the existing synchronous route and response shape. Queue unavailability, exhausted worker retries, or a result timeout returns 503; submission quota reservations are released on failed execution.
+- Run and submit create a durable PostgreSQL execution record, enqueue Piston work, and return `202 Accepted` with an execution ID. Poll `GET /coding/session/:sessionId/executions/:executionId` for its status and result.
+- Execution statuses are `queued`, `running`, `completed`, and `failed`. The result and submit answer are committed once, even if BullMQ retries the job. Terminal failure releases a reserved daily solve slot.
 - `PISTON_URL` defaults to `http://127.0.0.1:2000` on the host. The full Podman server uses `http://host.containers.internal:2000` to reach the host Piston service.
 - Code execution is enabled in development by default. In production it is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly configured. Review the Piston isolation model before enabling production execution; the current local launcher uses a privileged container.
 - A local-only Two Sum seed is available as `pnpm --filter server seed:coding:local`; it refuses non-loopback PostgreSQL hosts. Apply/validate schema as described in `server/README.md` before running it.
@@ -214,43 +215,31 @@ Run submitted code against problem examples for testing. Does not count toward d
 }
 ```
 
-### Response (200 OK)
+### Response (202 Accepted)
 
 ```json
 {
   "success": true,
-  "message": "Code executed successfully",
+  "message": "Code execution queued successfully",
   "data": {
-    "status": "accepted",
-    "testCasesPassed": 2,
-    "testCasesTotal": 2,
-    "testCases": [
-      {
-        "input": "nums = [2,7,11,15], target = 9",
-        "expected": "[0,1]",
-        "got": "[0,1]",
-        "passed": true
-      },
-      {
-        "input": "nums = [3,2,4], target = 6",
-        "expected": "[1,2]",
-        "got": "[1,2]",
-        "passed": true
-      }
-    ],
-    "runtime": 45,
-    "memoryUsage": 12
+    "id": "execution-uuid",
+    "sessionId": "session-uuid",
+    "operation": "run",
+    "status": "queued",
+    "createdAt": "2026-11-02T10:32:00.000Z"
   }
 }
 ```
 
 ### Errors
 
-| Status | Message           |
-| ------ | ----------------- |
-| 404    | Session not found |
-| 403    | Not session owner |
-| 404    | Problem not found |
+| Status | Message                                    |
+| ------ | ------------------------------------------ |
+| 404    | Session not found                          |
+| 404    | Session is not visible to the current user |
+| 404    | Problem not found                          |
+| 429    | Code execution rate limit exceeded         |
+| 503    | Execution queue is unavailable             |
 
 ---
 
@@ -284,36 +273,70 @@ Submit a solution for evaluation. This counts toward the daily solved limit. If 
 }
 ```
 
-### Response (201 Created)
+### Response (202 Accepted)
 
 ```json
 {
   "success": true,
-  "message": "Solution submitted successfully",
+  "message": "Solution submission queued successfully",
   "data": {
-    "id": "answer-uuid",
+    "id": "execution-uuid",
     "sessionId": "session-uuid",
-    "problemId": "uuid-1",
-    "language": "javascript",
-    "code": "function twoSum(nums, target) { ... }",
-    "status": "accepted",
-    "testCasesPassed": 2,
-    "testCasesTotal": 2,
-    "runtime": 45,
-    "memoryUsage": 12,
-    "createdAt": "2026-07-25T10:32:00.000Z"
+    "operation": "submit",
+    "status": "queued",
+    "createdAt": "2026-11-02T10:32:00.000Z"
   }
 }
 ```
 
 ### Errors
 
-| Status | Message                    |
-| ------ | -------------------------- |
-| 400    | Validation failed          |
-| 404    | Session not found          |
-| 403    | Not session owner          |
-| 403    | Daily solved limit reached |
+| Status | Message                                              |
+| ------ | ---------------------------------------------------- |
+| 400    | Validation failed                                    |
+| 404    | Session not found                                    |
+| 404    | Session is not visible to the current user           |
+| 409    | Daily solved-problem limit reached                   |
+| 409    | A submission for this problem is already in progress |
+| 429    | Code execution rate limit exceeded                   |
+| 503    | Execution queue is unavailable                       |
+
+### Check execution status and retrieve its result
+
+Read the durable state after queueing. Continue polling while the status is
+`queued` or `running`. A completed run includes `result`; a completed submission
+includes both `result` and the persisted `answer`. A terminal infrastructure
+failure has status `failed` and a safe `failureMessage`.
+
+**Method:** `GET`
+**Route:** `/coding/session/:sessionId/executions/:executionId`
+**Auth:** Bearer Token (session owner)
+
+### Response (200 OK, queued example)
+
+```json
+{
+  "success": true,
+  "message": "Code execution fetched successfully",
+  "data": {
+    "id": "execution-uuid",
+    "sessionId": "session-uuid",
+    "problemId": "uuid-1",
+    "operation": "submit",
+    "language": "javascript",
+    "status": "running",
+    "result": null,
+    "failureMessage": null,
+    "createdAt": "2026-11-02T10:32:00.000Z",
+    "startedAt": "2026-11-02T10:32:01.000Z",
+    "completedAt": null,
+    "answer": null
+  }
+}
+```
+
+The execution lookup is scoped by execution ID, session ID, and authenticated
+user ID. A missing or foreign execution returns 404.
 
 ---
 
@@ -552,15 +575,16 @@ Get the user's daily coding stats and streak.
 
 ## Summary
 
-| #   | Method | Route                                 | Description                                 |
-| --- | ------ | ------------------------------------- | ------------------------------------------- |
-| 1   | `GET`  | `/coding/problems`                    | List problems with optional filters         |
-| 2   | `GET`  | `/coding/problems/:id`                | Get problem detail with templates           |
-| 3   | `POST` | `/coding/session/start`               | Start a coding session                      |
-| 4   | `POST` | `/coding/session/:sessionId/run`      | Run code against examples (test)            |
-| 5   | `POST` | `/coding/session/:sessionId/submit`   | Submit solution (counts toward daily limit) |
-| 6   | `POST` | `/coding/session/:sessionId/review`   | Request AI code review                      |
-| 7   | `GET`  | `/coding/session/:sessionId`          | Get session detail with answers             |
-| 8   | `POST` | `/coding/session/:sessionId/complete` | Complete a session                          |
-| 9   | `GET`  | `/coding/sessions`                    | Get session history (paginated)             |
-| 10  | `GET`  | `/coding/stats`                       | Get daily coding stats and streak           |
+| #   | Method | Route                                                | Description                                 |
+| --- | ------ | ---------------------------------------------------- | ------------------------------------------- |
+| 1   | `GET`  | `/coding/problems`                                   | List problems with optional filters         |
+| 2   | `GET`  | `/coding/problems/:id`                               | Get problem detail with templates           |
+| 3   | `POST` | `/coding/session/start`                              | Start a coding session                      |
+| 4   | `POST` | `/coding/session/:sessionId/run`                     | Run code against examples (test)            |
+| 5   | `POST` | `/coding/session/:sessionId/submit`                  | Submit solution (counts toward daily limit) |
+| 6   | `GET`  | `/coding/session/:sessionId/executions/:executionId` | Get execution status/result                 |
+| 7   | `POST` | `/coding/session/:sessionId/review`                  | Request AI code review                      |
+| 8   | `GET`  | `/coding/session/:sessionId`                         | Get session detail with answers             |
+| 9   | `POST` | `/coding/session/:sessionId/complete`                | Complete a session                          |
+| 10  | `GET`  | `/coding/sessions`                                   | Get session history (paginated)             |
+| 11  | `GET`  | `/coding/stats`                                      | Get daily coding stats and streak           |

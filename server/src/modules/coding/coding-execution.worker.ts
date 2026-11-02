@@ -1,25 +1,26 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConflictException, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { Job, Worker } from 'bullmq';
+import { Job, UnrecoverableError, Worker } from 'bullmq';
+import { CODING_SESSION_COMPLETED_ERROR } from '@/common/constants/api.constants.js';
+import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES, JOB_QUEUE_POLICIES } from '@/common/jobs/job-queue.constants.js';
+import { RedisService } from '@/common/redis/redis.service.js';
 import { PistonClient } from './piston.client.js';
-import type { ICodingExecutionResult, TCodingLanguage } from './piston.client.js';
-
-export interface ICodingExecutionJobData {
-  idempotencyKey: string;
-  code: string;
-  language: TCodingLanguage;
-  examples: unknown;
-}
+import { CodingExecutionService } from './coding-execution.service.js';
+import type { ICodingExecutionJobData, TCodingExecutionResult } from './coding-execution.types.js';
 
 @Injectable()
 export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
-  private worker?: Worker<ICodingExecutionJobData, ICodingExecutionResult>;
+  private worker?: Worker<ICodingExecutionJobData, TCodingExecutionResult>;
+  private failedJobReconciliation?: NodeJS.Timeout;
 
   constructor(
     private readonly config: ConfigService,
     private readonly piston: PistonClient,
+    private readonly executions: CodingExecutionService,
+    private readonly jobs: JobQueueService,
+    private readonly redis: RedisService,
     @InjectPinoLogger(CodingExecutionWorker.name) private readonly logger: PinoLogger
   ) {}
 
@@ -32,7 +33,7 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
       maxRetriesPerRequest: null,
     };
     const queueName = JOB_QUEUE_NAMES.CODING_EXECUTION;
-    this.worker = new Worker<ICodingExecutionJobData, ICodingExecutionResult>(
+    this.worker = new Worker<ICodingExecutionJobData, TCodingExecutionResult>(
       queueName,
       (job) => this.processJob(job),
       {
@@ -43,9 +44,17 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
     );
     this.worker.on('failed', this.handleFailedJob);
     this.worker.on('error', this.handleWorkerError);
+    await this.reconcileFailedJobs();
+    await this.dispatchQueuedExecutions();
+    this.failedJobReconciliation = setInterval(() => {
+      void this.reconcileFailedJobs();
+      void this.dispatchQueuedExecutions();
+    }, 30_000);
+    this.failedJobReconciliation.unref();
   }
 
   async onModuleDestroy(): Promise<void> {
+    if (this.failedJobReconciliation) clearInterval(this.failedJobReconciliation);
     if (!this.worker) return;
     try {
       await this.worker.close();
@@ -55,21 +64,115 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private processJob(job: Job<ICodingExecutionJobData>): Promise<ICodingExecutionResult> {
-    return this.piston.execute(job.data.code, job.data.language, job.data.examples);
+  private async processJob(job: Job<ICodingExecutionJobData>): Promise<TCodingExecutionResult> {
+    const persistedResult = await this.executions.markRunning(job.data.executionId);
+    let result: TCodingExecutionResult;
+    try {
+      result =
+        persistedResult ??
+        (await this.executions.complete(
+          job.data,
+          await this.piston.execute(job.data.code, job.data.language, job.data.examples)
+        ));
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+      await this.executions.markFailed(job.data.executionId, CODING_SESSION_COMPLETED_ERROR);
+      await this.finalizeSolveQuota(job.data, 'release');
+      throw new UnrecoverableError(CODING_SESSION_COMPLETED_ERROR);
+    }
+    await this.finalizeSolveQuota(job.data, result.status === 'accepted' ? 'solved' : 'release');
+    return result;
   }
 
-  private readonly handleFailedJob = (
+  private readonly handleFailedJob = async (
     job: Job<ICodingExecutionJobData> | undefined,
     error: Error
-  ): void => {
+  ): Promise<void> => {
     this.logger.error(
       { jobId: job?.id, attemptsMade: job?.attemptsMade, err: error },
       'Coding execution job failed'
     );
+    if (
+      !job ||
+      (job.attemptsMade < (job.opts.attempts ?? 1) && !(error instanceof UnrecoverableError))
+    ) {
+      return;
+    }
+
+    try {
+      await this.executions.markFailed(job.data.executionId);
+    } catch (persistenceError) {
+      this.logger.error(
+        { executionId: job.data.executionId, err: persistenceError },
+        'Failed to persist terminal coding execution failure'
+      );
+    }
+    await this.finalizeSolveQuota(job.data, 'release');
   };
 
   private readonly handleWorkerError = (error: Error): void => {
     this.logger.error({ err: error }, 'Coding execution worker encountered an error');
   };
+
+  private async reconcileFailedJobs(): Promise<void> {
+    try {
+      const failedJobs = await this.jobs.getFailedJobs<ICodingExecutionJobData>(
+        JOB_QUEUE_NAMES.CODING_EXECUTION,
+        100
+      );
+      for (const job of failedJobs) {
+        try {
+          await this.executions.markFailed(job.data.executionId);
+          await this.finalizeSolveQuota(job.data, 'release');
+          await job.remove();
+        } catch (error) {
+          this.logger.warn(
+            { executionId: job.data.executionId, jobId: job.id, err: error },
+            'Failed to reconcile a terminal coding execution; it will be retried'
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Failed to read terminal coding jobs for reconciliation');
+    }
+  }
+
+  private async dispatchQueuedExecutions(): Promise<void> {
+    try {
+      const queuedExecutions = await this.executions.findQueuedForDispatch(100);
+      for (const jobData of queuedExecutions) {
+        try {
+          await this.jobs.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, jobData, 'execute');
+        } catch (error) {
+          this.logger.warn(
+            { executionId: jobData.executionId, err: error },
+            'Failed to dispatch a queued coding execution; it will be retried'
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Failed to read queued coding executions for dispatch');
+    }
+  }
+
+  private async finalizeSolveQuota(
+    jobData: ICodingExecutionJobData,
+    outcome: 'solved' | 'release'
+  ) {
+    if (!jobData.quotaReservation) return;
+    try {
+      await this.redis.finalizeUniqueQuota(
+        jobData.quotaReservation.quotaKey,
+        jobData.quotaReservation.itemKey,
+        outcome,
+        jobData.quotaReservation.ttlSeconds,
+        jobData.quotaReservation.reservationToken
+      );
+    } catch (error) {
+      this.logger.warn(
+        { executionId: jobData.executionId, err: error },
+        'Coding solve quota finalization failed; the reservation will expire automatically'
+      );
+    }
+  }
 }

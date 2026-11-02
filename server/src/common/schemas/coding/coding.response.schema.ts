@@ -1,12 +1,13 @@
 import {
-  CODING_CODE_EXECUTED,
+  CODING_EXECUTION_QUEUED,
+  CODING_EXECUTION_FETCHED,
   CODING_PROBLEM_FETCHED,
   CODING_PROBLEMS_FETCHED,
   CODING_SESSION_COMPLETED,
   CODING_SESSION_FETCHED,
   CODING_SESSION_STARTED,
   CODING_SESSIONS_FETCHED,
-  CODING_SOLUTION_SUBMITTED,
+  CODING_SUBMISSION_QUEUED,
   successResponseSchema,
 } from '@/common/constants/api.constants.js';
 
@@ -94,6 +95,7 @@ const codingAnswerSchema = {
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
+    executionId: { type: 'string', format: 'uuid', nullable: true },
     sessionId: { type: 'string', format: 'uuid', nullable: true },
     userId: { type: 'string' },
     problemId: { type: 'string', format: 'uuid' },
@@ -113,6 +115,35 @@ const codingSessionDetailSchema = {
   properties: {
     ...codingSessionSchema.properties,
     answers: { type: 'array', items: codingAnswerSchema },
+  },
+};
+
+const codingExecutionSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    sessionId: { type: 'string', format: 'uuid' },
+    problemId: { type: 'string', format: 'uuid' },
+    operation: { type: 'string', enum: ['run', 'submit'] },
+    language: { type: 'string', enum: ['javascript', 'typescript', 'python'] },
+    status: { type: 'string', enum: ['queued', 'running', 'completed', 'failed'] },
+    result: { ...codingRunSchema, nullable: true },
+    failureMessage: { type: 'string', nullable: true },
+    createdAt: { type: 'string', format: 'date-time' },
+    startedAt: { type: 'string', format: 'date-time', nullable: true },
+    completedAt: { type: 'string', format: 'date-time', nullable: true },
+    answer: { ...codingAnswerSchema, nullable: true },
+  },
+};
+
+const codingExecutionAcceptedSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    sessionId: { type: 'string', format: 'uuid' },
+    operation: { type: 'string', enum: ['run', 'submit'] },
+    status: { type: 'string', enum: ['queued', 'running', 'completed', 'failed'] },
+    createdAt: { type: 'string', format: 'date-time' },
   },
 };
 
@@ -142,14 +173,19 @@ export const CodingSessionStartedResponse = {
   ...successResponseSchema(codingSessionSchema, CODING_SESSION_STARTED),
 };
 export const CodingRunResponse = {
-  status: 200,
-  description: CODING_CODE_EXECUTED,
-  ...successResponseSchema(codingRunSchema, CODING_CODE_EXECUTED),
+  status: 202,
+  description: CODING_EXECUTION_QUEUED,
+  ...successResponseSchema(codingExecutionAcceptedSchema, CODING_EXECUTION_QUEUED),
 };
 export const CodingSubmitResponse = {
-  status: 201,
-  description: CODING_SOLUTION_SUBMITTED,
-  ...successResponseSchema(codingAnswerSchema, CODING_SOLUTION_SUBMITTED),
+  status: 202,
+  description: CODING_SUBMISSION_QUEUED,
+  ...successResponseSchema(codingExecutionAcceptedSchema, CODING_SUBMISSION_QUEUED),
+};
+export const CodingExecutionResponse = {
+  status: 200,
+  description: CODING_EXECUTION_FETCHED,
+  ...successResponseSchema(codingExecutionSchema, CODING_EXECUTION_FETCHED),
 };
 export const CodingSessionDetailResponse = {
   status: 200,

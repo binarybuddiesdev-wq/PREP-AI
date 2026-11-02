@@ -18,8 +18,12 @@ describe('CodingController', () => {
 
   const problem = { id: 'problem_001', slug: 'two-sum' };
   const session = { id: 'session_001', userId: 'user_001', status: 'in_progress' };
-  const runResult = { status: 'accepted', testCasesPassed: 1, testCasesTotal: 1 };
-  const answer = { id: 'answer_001', sessionId: 'session_001', status: 'accepted' };
+  const execution = {
+    id: 'execution_001',
+    sessionId: 'session_001',
+    operation: 'run',
+    status: 'queued',
+  };
   const history = { sessions: [session], total: 1, page: 1, limit: 20 };
 
   beforeEach(async () => {
@@ -29,6 +33,7 @@ describe('CodingController', () => {
       startSession: vi.fn(),
       runCode: vi.fn(),
       submitSolution: vi.fn(),
+      getExecution: vi.fn(),
       getSessionDetail: vi.fn(),
       completeSession: vi.fn(),
       getSessionHistory: vi.fn(),
@@ -74,8 +79,8 @@ describe('CodingController', () => {
   });
 
   it('passes session and authenticated user IDs to run and submit', async () => {
-    codingService.runCode.mockResolvedValue(runResult);
-    codingService.submitSolution.mockResolvedValue(answer);
+    codingService.runCode.mockResolvedValue(execution);
+    codingService.submitSolution.mockResolvedValue({ ...execution, operation: 'submit' });
     const dto = {
       problemId: 'problem_001',
       language: 'javascript',
@@ -85,10 +90,26 @@ describe('CodingController', () => {
     const run = await controller.runCode('session_001', dto, 'user_001');
     const submit = await controller.submitSolution('session_001', dto, 'user_001');
 
-    expect(run).toEqual({ message: expect.any(String), data: runResult });
-    expect(submit).toEqual({ message: expect.any(String), data: answer });
+    expect(run).toEqual({ message: expect.any(String), data: execution });
+    expect(submit).toEqual({
+      message: expect.any(String),
+      data: { ...execution, operation: 'submit' },
+    });
     expect(codingService.runCode).toHaveBeenCalledWith('session_001', 'user_001', dto);
     expect(codingService.submitSolution).toHaveBeenCalledWith('session_001', 'user_001', dto);
+  });
+
+  it('looks up an execution using its session, execution, and authenticated user IDs', async () => {
+    codingService.getExecution.mockResolvedValue(execution);
+
+    await expect(
+      controller.getExecution('session_001', 'execution_001', 'user_001')
+    ).resolves.toEqual({ message: expect.any(String), data: execution });
+    expect(codingService.getExecution).toHaveBeenCalledWith(
+      'session_001',
+      'execution_001',
+      'user_001'
+    );
   });
 
   it('passes authenticated identity through all session read/write operations', async () => {

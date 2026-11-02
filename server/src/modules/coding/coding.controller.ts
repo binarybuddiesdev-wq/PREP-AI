@@ -1,5 +1,15 @@
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CodingService } from './coding.service.js';
 import {
   CodingSessionHistoryDto,
@@ -13,14 +23,15 @@ import {
   ApiTags as ApiTagsEnum,
 } from '@/common/constants/api.constants.js';
 import {
-  CODING_CODE_EXECUTED,
+  CODING_EXECUTION_FETCHED,
+  CODING_EXECUTION_QUEUED,
   CODING_PROBLEM_FETCHED,
   CODING_PROBLEMS_FETCHED,
   CODING_SESSION_COMPLETED,
   CODING_SESSION_FETCHED,
   CODING_SESSION_STARTED,
   CODING_SESSIONS_FETCHED,
-  CODING_SOLUTION_SUBMITTED,
+  CODING_SUBMISSION_QUEUED,
 } from '@/common/constants/api.constants.js';
 import { ClerkAuthGuard, CurrentUser, RolesGuard } from '@/common/index.js';
 import {
@@ -29,6 +40,7 @@ import {
   CodingRunResponse,
   CodingSessionCompletedResponse,
   CodingSessionDetailResponse,
+  CodingExecutionResponse,
   CodingSessionHistoryResponse,
   CodingSessionStartedResponse,
   CodingSubmitResponse,
@@ -75,7 +87,7 @@ export class CodingController {
 
   @ApiBearerAuth()
   @Post('session/:sessionId/run')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: ApiOperationEnum.CODING_RUN_CODE })
   @ApiResponse(CodingRunResponse)
   async runCode(
@@ -84,14 +96,14 @@ export class CodingController {
     @CurrentUser('id') userId: string
   ) {
     return {
-      message: CODING_CODE_EXECUTED,
+      message: CODING_EXECUTION_QUEUED,
       data: await this.codingService.runCode(sessionId, userId, dto),
     };
   }
 
   @ApiBearerAuth()
   @Post('session/:sessionId/submit')
-  @HttpCode(201)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: ApiOperationEnum.CODING_SUBMIT })
   @ApiResponse(CodingSubmitResponse)
   async submitSolution(
@@ -100,8 +112,24 @@ export class CodingController {
     @CurrentUser('id') userId: string
   ) {
     return {
-      message: CODING_SOLUTION_SUBMITTED,
+      message: CODING_SUBMISSION_QUEUED,
       data: await this.codingService.submitSolution(sessionId, userId, dto),
+    };
+  }
+
+  @ApiBearerAuth()
+  @Get('session/:sessionId/executions/:executionId')
+  @HttpCode(200)
+  @ApiOperation({ summary: ApiOperationEnum.CODING_GET_EXECUTION })
+  @ApiResponse(CodingExecutionResponse)
+  async getExecution(
+    @Param('sessionId') sessionId: string,
+    @Param('executionId') executionId: string,
+    @CurrentUser('id') userId: string
+  ) {
+    return {
+      message: CODING_EXECUTION_FETCHED,
+      data: await this.codingService.getExecution(sessionId, executionId, userId),
     };
   }
 

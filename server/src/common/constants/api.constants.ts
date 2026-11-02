@@ -65,6 +65,7 @@ export enum ApiOperation {
   CODING_START_SESSION = 'Start a coding session',
   CODING_RUN_CODE = 'Run code against public examples',
   CODING_SUBMIT = 'Submit a coding solution',
+  CODING_GET_EXECUTION = 'Get coding execution status and result',
   CODING_GET_SESSION = 'Get coding session details',
   CODING_COMPLETE_SESSION = 'Complete a coding session',
   CODING_GET_HISTORY = 'Get coding session history',
@@ -165,6 +166,9 @@ export const CODING_PROBLEM_FETCHED = 'Coding problem fetched successfully';
 export const CODING_SESSION_STARTED = 'Coding session started successfully';
 export const CODING_CODE_EXECUTED = 'Code execution completed';
 export const CODING_SOLUTION_SUBMITTED = 'Solution submitted successfully';
+export const CODING_EXECUTION_QUEUED = 'Code execution queued successfully';
+export const CODING_SUBMISSION_QUEUED = 'Solution submission queued successfully';
+export const CODING_EXECUTION_FETCHED = 'Code execution fetched successfully';
 export const CODING_SESSION_FETCHED = 'Coding session fetched successfully';
 export const CODING_SESSION_COMPLETED = 'Coding session completed successfully';
 export const CODING_SESSIONS_FETCHED = 'Coding sessions fetched successfully';
@@ -174,6 +178,7 @@ export const CODING_PROBLEM_NOT_ASSIGNED = 'Problem is not part of this coding s
 export const CODING_DAILY_LIMIT_REACHED = 'Daily solved-problem limit reached';
 export const CODING_SUBMISSION_IN_PROGRESS = 'A submission for this problem is already in progress';
 export const CODING_DATABASE_UNAVAILABLE = 'Coding database is temporarily unavailable';
+export const CODING_EXECUTION_FAILED = 'Code execution could not be completed. Please retry.';
 
 export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({
   schema: {

@@ -28,6 +28,7 @@ describe('RedisService unique quota reservations', () => {
   };
   const quotaKey = 'coding-solved:user_001:2026-11-02';
   const itemKey = 'coding-problem:user_001:problem_001';
+  const reservationToken = 'execution_001';
   const limit = 5;
   const ttlSeconds = 3_600;
 
@@ -119,9 +120,9 @@ describe('RedisService unique quota reservations', () => {
   ])('maps Lua reservation response %i into its explicit outcome', async (luaStatus, expected) => {
     redisMocks.client.eval.mockResolvedValueOnce([luaStatus, expected.count]);
 
-    await expect(service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds)).resolves.toEqual(
-      expected
-    );
+    await expect(
+      service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds, reservationToken)
+    ).resolves.toEqual(expected);
 
     const [script, keyCount, receivedQuotaKey, receivedItemKey, receivedLimit, receivedTtl] =
       redisMocks.client.eval.mock.calls[0];
@@ -134,12 +135,29 @@ describe('RedisService unique quota reservations', () => {
     expect(receivedTtl).toBe(String(ttlSeconds));
   });
 
+  it('stores reservation ownership so a retry cannot finalize a newer reservation', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([1, 2]);
+
+    await service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds, reservationToken);
+
+    const [reserveScript, , , , , , receivedToken] = redisMocks.client.eval.mock.calls[0];
+    expect(reserveScript).toContain("'reserved:' .. ARGV[3]");
+    expect(receivedToken).toBe(reservationToken);
+
+    redisMocks.client.eval.mockResolvedValueOnce(0);
+    await service.finalizeUniqueQuota(quotaKey, itemKey, 'release', ttlSeconds, 'older_execution');
+
+    const [finalizeScript, , , , , , receivedFinalizeToken] = redisMocks.client.eval.mock.calls[1];
+    expect(finalizeScript).toContain("'reserved:' .. ARGV[3]");
+    expect(receivedFinalizeToken).toBe('older_execution');
+  });
+
   it('rejects malformed Lua reservation results instead of granting a quota slot', async () => {
     redisMocks.client.eval.mockResolvedValueOnce([1]);
 
-    await expect(service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds)).rejects.toThrow(
-      'invalid unique quota reservation result'
-    );
+    await expect(
+      service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds, reservationToken)
+    ).rejects.toThrow('invalid unique quota reservation result');
   });
 
   it.each(['solved', 'release'] as const)(
@@ -148,17 +166,25 @@ describe('RedisService unique quota reservations', () => {
       redisMocks.client.eval.mockResolvedValueOnce(1);
 
       await expect(
-        service.finalizeUniqueQuota(quotaKey, itemKey, outcome, ttlSeconds)
+        service.finalizeUniqueQuota(quotaKey, itemKey, outcome, ttlSeconds, reservationToken)
       ).resolves.toBeUndefined();
 
-      const [script, keyCount, receivedQuotaKey, receivedItemKey, receivedOutcome, receivedTtl] =
-        redisMocks.client.eval.mock.calls[0];
-      expect(script).toContain("redis.call('GET', KEYS[2])");
+      const [
+        script,
+        keyCount,
+        receivedQuotaKey,
+        receivedItemKey,
+        receivedOutcome,
+        receivedTtl,
+        receivedToken,
+      ] = redisMocks.client.eval.mock.calls[0];
+      expect(script).toContain("'reserved:' .. ARGV[3]");
       expect(keyCount).toBe(2);
       expect(receivedQuotaKey).toBe(quotaKey);
       expect(receivedItemKey).toBe(itemKey);
       expect(receivedOutcome).toBe(outcome);
       expect(receivedTtl).toBe(String(ttlSeconds));
+      expect(receivedToken).toBe(reservationToken);
     }
   );
 });

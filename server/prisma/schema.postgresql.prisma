@@ -44,16 +44,17 @@ model TheoryAnswer {
 }
 
 model CodingSession {
-  id                String         @id @default(uuid())
+  id                String            @id @default(uuid())
   userId            String
-  problemIds        String[]       @default([])
-  problemsAttempted Int            @default(0)
-  problemsSolved    Int            @default(0)
-  status            String         @default("in_progress") // "in_progress" | "completed"
-  startedAt         DateTime       @default(now())
+  problemIds        String[]          @default([])
+  problemsAttempted Int               @default(0)
+  problemsSolved    Int               @default(0)
+  status            String            @default("in_progress") // "in_progress" | "completed"
+  startedAt         DateTime          @default(now())
   completedAt       DateTime?
-  createdAt         DateTime       @default(now())
+  createdAt         DateTime          @default(now())
   answers           CodingAnswer[]
+  executions        CodingExecution[]
 
   @@index([userId])
   @@index([userId, createdAt])
@@ -81,6 +82,7 @@ model CodingQuestion {
 
 model CodingAnswer {
   id              String   @id @default(uuid())
+  executionId     String?  @unique
   sessionId       String?
   userId          String
   problemId       String
@@ -94,11 +96,43 @@ model CodingAnswer {
   aiReviewJson    Json? // { timeComplexity, spaceComplexity, quality, suggestions }
   createdAt       DateTime @default(now())
 
-  session CodingSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  session   CodingSession?   @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  execution CodingExecution? @relation(fields: [executionId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, createdAt])
   @@index([userId, problemId])
   @@index([sessionId])
   @@index([sessionId, problemId, status])
+}
+
+model CodingExecution {
+  id             String    @id @default(uuid())
+  sessionId      String
+  userId         String
+  problemId      String
+  operation      String // "run" | "submit"
+  language       String
+  sourceCode               String
+  examples                 Json
+  queueJobId               String
+  quotaKey                 String?
+  quotaItemKey             String?
+  quotaTtlSeconds          Int?
+  quotaReservationToken    String?
+  status         String    @default("queued") // "queued" | "running" | "completed" | "failed"
+  result         Json?
+  failureMessage String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  startedAt      DateTime?
+  completedAt    DateTime?
+
+  session CodingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answer  CodingAnswer?
+
+  @@index([userId, createdAt])
+  @@index([sessionId, userId, createdAt])
+  @@index([status, createdAt])
+  @@index([queueJobId])
 }

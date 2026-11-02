@@ -51,6 +51,7 @@ export {
   CodingSessionStartedResponse,
   CodingRunResponse,
   CodingSubmitResponse,
+  CodingExecutionResponse,
   CodingSessionDetailResponse,
   CodingSessionCompletedResponse,
   CodingSessionHistoryResponse,

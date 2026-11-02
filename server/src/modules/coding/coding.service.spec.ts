@@ -14,6 +14,7 @@ type TMockPostgresClient = {
   codingQuestion: TMockPrismaModel;
   codingSession: TMockPrismaModel;
   codingAnswer: TMockPrismaModel;
+  codingExecution: TMockPrismaModel;
   $transaction: ReturnType<typeof vi.fn>;
 };
 
@@ -26,7 +27,7 @@ describe('CodingService', () => {
     reserveUniqueQuota: ReturnType<typeof vi.fn>;
     finalizeUniqueQuota: ReturnType<typeof vi.fn>;
   };
-  let jobs: { enqueue: ReturnType<typeof vi.fn> };
+  let jobs: { enqueue: ReturnType<typeof vi.fn>; getJobId: ReturnType<typeof vi.fn> };
   let config: { get: ReturnType<typeof vi.fn> };
   let logger: {
     info: ReturnType<typeof vi.fn>;
@@ -63,14 +64,6 @@ describe('CodingService', () => {
     completedAt: null,
     createdAt: new Date('2026-11-02T09:00:00Z'),
   };
-  const acceptedRun = {
-    status: 'accepted',
-    testCasesPassed: 1,
-    testCasesTotal: 1,
-    testCases: [{ input: [[2, 7], 9], expected: [0, 1], got: [0, 1], passed: true }],
-    runtime: null,
-    memoryUsage: null,
-  };
   const answer = {
     id: '44444444-4444-4444-8444-444444444444',
     sessionId,
@@ -83,6 +76,13 @@ describe('CodingService', () => {
     testCasesTotal: 1,
     runtime: null,
     memoryUsage: null,
+    createdAt: new Date('2026-11-02T09:10:00Z'),
+  };
+  const queuedExecution = {
+    id: '55555555-5555-4555-8555-555555555555',
+    sessionId,
+    operation: 'run',
+    status: 'queued',
     createdAt: new Date('2026-11-02T09:10:00Z'),
   };
 
@@ -102,8 +102,16 @@ describe('CodingService', () => {
       findMany: vi.fn().mockResolvedValue([answer]),
       count: vi.fn().mockResolvedValue(1),
     };
+    const codingExecution = {
+      create: vi.fn(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve({ ...queuedExecution, ...data })
+      ),
+      findFirst: vi.fn().mockResolvedValue(queuedExecution),
+      findUnique: vi.fn().mockResolvedValue(queuedExecution),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    };
     const transaction = vi.fn(async (callback: (tx: unknown) => unknown) =>
-      callback({ codingSession, codingAnswer })
+      callback({ codingSession, codingAnswer, codingExecution })
     );
     postgres = {
       client_: {
@@ -114,6 +122,7 @@ describe('CodingService', () => {
         },
         codingSession,
         codingAnswer,
+        codingExecution,
         $transaction: transaction,
       },
     };
@@ -123,7 +132,10 @@ describe('CodingService', () => {
       reserveUniqueQuota: vi.fn().mockResolvedValue({ status: 'reserved', count: 1 }),
       finalizeUniqueQuota: vi.fn().mockResolvedValue(undefined),
     };
-    jobs = { enqueue: vi.fn().mockResolvedValue(acceptedRun) };
+    jobs = {
+      enqueue: vi.fn().mockResolvedValue('queue-job-id'),
+      getJobId: vi.fn((queueName: string, id: string) => `${queueName}:${id}`),
+    };
     config = {
       get: vi.fn((key: string) => {
         const values: Record<string, number> = {
@@ -257,8 +269,42 @@ describe('CodingService', () => {
       code: 'function solution() { return [0, 1]; }',
     } satisfies ExecuteCodingDto;
 
-    it('runs assigned problem code for the session owner without saving an answer or consuming solve quota', async () => {
-      await expect(service.runCode(sessionId, userId, dto)).resolves.toEqual(acceptedRun);
+    it('persists the execution before enqueueing and returns its durable queued status', async () => {
+      jobs.enqueue.mockResolvedValueOnce('queue-job-id');
+
+      await expect(service.runCode(sessionId, userId, dto)).resolves.toEqual(
+        expect.objectContaining({ ...queuedExecution, id: expect.any(String) })
+      );
+
+      expect(pg().codingExecution.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          sessionId,
+          userId,
+          problemId,
+          operation: 'run',
+          language: dto.language,
+          status: 'queued',
+          sourceCode: dto.code,
+          examples,
+          queueJobId: expect.stringMatching(/^coding-execution-queue:[0-9a-f-]{36}$/),
+        }),
+      });
+      expect(jobs.enqueue).toHaveBeenCalledWith(
+        JOB_QUEUE_NAMES.CODING_EXECUTION,
+        expect.objectContaining({
+          executionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+          operation: 'run',
+          sessionId,
+          userId,
+        }),
+        'execute'
+      );
+    });
+
+    it('persists a queued run for the session owner without consuming solve quota', async () => {
+      await expect(service.runCode(sessionId, userId, dto)).resolves.toEqual(
+        expect.objectContaining({ ...queuedExecution, id: expect.any(String) })
+      );
 
       expect(redis.reserveQuota).toHaveBeenCalledWith(`coding-execution:${userId}`, 10, 60);
 
@@ -276,6 +322,7 @@ describe('CodingService', () => {
         'execute'
       );
       expect(pg().codingAnswer.create).not.toHaveBeenCalled();
+      expect(pg().codingExecution.create).toHaveBeenCalledOnce();
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
     });
 
@@ -332,41 +379,44 @@ describe('CodingService', () => {
       code: 'function solution() { return [0, 1]; }',
     } satisfies ExecuteCodingDto;
 
-    it('persists an accepted answer and commits the reserved unique solve slot', async () => {
-      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(answer);
+    it('persists a queued submission and passes the reserved solve slot to the worker', async () => {
+      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(
+        expect.objectContaining({ ...queuedExecution, id: expect.any(String), operation: 'submit' })
+      );
 
       expect(redis.reserveUniqueQuota).toHaveBeenCalledWith(
         expect.stringMatching(/^coding-solved:user_001:\d{4}-\d{2}-\d{2}$/),
         expect.stringMatching(/^coding-problem:user_001:/),
         5,
-        expect.any(Number)
+        expect.any(Number),
+        expect.any(String)
       );
       expect(redis.reserveQuota).toHaveBeenCalledWith(`coding-execution:${userId}`, 10, 60);
-      expect(pg().$transaction).toHaveBeenCalledOnce();
-      expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(String),
-        'solved',
-        expect.any(Number)
+      expect(pg().$transaction).not.toHaveBeenCalled();
+      expect(jobs.enqueue).toHaveBeenCalledWith(
+        JOB_QUEUE_NAMES.CODING_EXECUTION,
+        expect.objectContaining({
+          operation: 'submit',
+          quotaReservation: {
+            quotaKey: expect.stringMatching(/^coding-solved:user_001:/),
+            itemKey: `coding-problem:${userId}:${problemId}`,
+            ttlSeconds: expect.any(Number),
+            reservationToken: expect.any(String),
+          },
+        }),
+        'execute'
       );
+      expect(redis.finalizeUniqueQuota).not.toHaveBeenCalled();
     });
 
-    it.each([
-      ['wrong_answer', 'release'],
-      ['error', 'release'],
-    ])('saves a %s result and releases its reserved solve slot', async (status, outcome) => {
-      jobs.enqueue.mockResolvedValueOnce({ ...acceptedRun, status });
+    it('leaves completed outcome handling and answer creation to the worker', async () => {
       await service.submitSolution(sessionId, userId, dto);
 
-      expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(String),
-        outcome,
-        expect.any(Number)
-      );
-      expect(pg().codingAnswer.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status }) })
-      );
+      expect(redis.finalizeUniqueQuota).not.toHaveBeenCalled();
+      expect(pg().codingAnswer.create).not.toHaveBeenCalled();
+      expect(pg().codingExecution.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ status: 'queued', operation: 'submit' }),
+      });
     });
 
     it('does not call Piston when the solve limit is reached', async () => {
@@ -431,7 +481,8 @@ describe('CodingService', () => {
         expect.any(String),
         expect.any(String),
         'release',
-        expect.any(Number)
+        expect.any(Number),
+        expect.any(String)
       );
       expect(pg().codingAnswer.create).not.toHaveBeenCalled();
     });
@@ -449,41 +500,37 @@ describe('CodingService', () => {
       );
     });
 
-    it('releases the slot when answer persistence fails', async () => {
-      pg().$transaction.mockRejectedValueOnce(new Error('database write failed'));
+    it('releases the slot when durable execution creation fails', async () => {
+      pg().codingExecution.create.mockRejectedValueOnce(new Error('database write failed'));
       await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
-        'database write failed'
+        'Coding database is temporarily unavailable'
       );
       expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         'release',
-        expect.any(Number)
+        expect.any(Number),
+        expect.any(String)
       );
     });
 
-    it('returns a stored answer when the best-effort quota finalization fails', async () => {
-      redis.finalizeUniqueQuota.mockRejectedValueOnce(new Error('Redis unavailable'));
-
-      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(answer);
-      expect(logger.error).toHaveBeenCalledWith(
-        { err: expect.any(Error) },
-        'Failed to finalize a coding solve reservation'
+    it('allows resubmission for an already solved problem without reserving solve quota', async () => {
+      redis.reserveUniqueQuota.mockResolvedValueOnce({ status: 'already_solved', count: 1 });
+      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(
+        expect.objectContaining({ ...queuedExecution, id: expect.any(String), operation: 'submit' })
+      );
+      expect(jobs.enqueue).toHaveBeenCalledOnce();
+      expect(jobs.enqueue.mock.calls[0][1]).toEqual(
+        expect.objectContaining({ quotaReservation: null })
       );
     });
 
-    it('releases the reservation when the session completes during execution', async () => {
-      pg().codingSession.updateMany.mockResolvedValueOnce({ count: 0 });
-
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
-        ConflictException
+    it('leaves session completion race handling to the transactional worker', async () => {
+      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(
+        expect.objectContaining({ ...queuedExecution, id: expect.any(String), operation: 'submit' })
       );
-      expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(String),
-        'release',
-        expect.any(Number)
-      );
+      expect(pg().codingSession.updateMany).not.toHaveBeenCalled();
+      expect(pg().codingAnswer.create).not.toHaveBeenCalled();
     });
 
     it('returns 404 for a session not owned by the caller', async () => {
@@ -518,6 +565,27 @@ describe('CodingService', () => {
   });
 
   describe('session retrieval and lifecycle', () => {
+    it('gets an execution by session and authenticated user scope', async () => {
+      const detailedExecution = { ...queuedExecution, answer: null };
+      pg().codingExecution.findFirst.mockResolvedValueOnce(detailedExecution);
+
+      await expect(service.getExecution(sessionId, detailedExecution.id, userId)).resolves.toEqual(
+        detailedExecution
+      );
+      expect(pg().codingExecution.findFirst).toHaveBeenCalledWith({
+        where: { id: detailedExecution.id, sessionId, userId },
+        select: expect.objectContaining({ id: true, status: true, result: true, answer: true }),
+      });
+    });
+
+    it('returns 404 for a missing or foreign execution', async () => {
+      pg().codingExecution.findFirst.mockResolvedValueOnce(null);
+
+      await expect(
+        service.getExecution(sessionId, queuedExecution.id, 'other_user')
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
     it('gets a session with its answers scoped to the authenticated user', async () => {
       const sessionWithAnswers = { ...session, answers: [answer] };
       pg().codingSession.findFirst.mockResolvedValueOnce(sessionWithAnswers);

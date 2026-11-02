@@ -17,13 +17,13 @@ import { getCodingLimits } from '@/common/utils/role-limits.js';
 import {
   CODING_DAILY_LIMIT_REACHED,
   CODING_DATABASE_UNAVAILABLE,
+  CODING_EXECUTION_FAILED,
   CODING_PROBLEM_NOT_ASSIGNED,
   CODING_SESSION_COMPLETED_ERROR,
   CODING_SESSION_NOT_FOUND,
   CODING_SUBMISSION_IN_PROGRESS,
 } from '@/common/constants/api.constants.js';
-import type { ICodingExecutionJobData } from './coding-execution.worker.js';
-import type { ICodingExecutionResult } from './piston.client.js';
+import type { ICodingExecutionJobData } from './coding-execution.types.js';
 import type {
   Prisma,
   PrismaClient as PostgresPrismaClient,
@@ -111,7 +111,7 @@ export class CodingService {
     const { problem, session } = await this.loadSessionProblem(sessionId, userId, dto.problemId);
     this.assertInProgress(session);
     await this.reserveExecutionCapacity(userId);
-    return this.executeCode(dto, problem.examples);
+    return this.createExecution(sessionId, userId, dto, problem.examples, 'run', null);
   }
 
   async submitSolution(sessionId: string, userId: string, dto: ExecuteCodingDto) {
@@ -128,9 +128,16 @@ export class CodingService {
     const quotaKey = `coding-solved:${userId}:${this.utcDate()}`;
     const itemKey = `coding-problem:${userId}:${dto.problemId}`;
     const ttlSeconds = this.secondsUntilUtcMidnight();
+    const executionId = randomUUID();
     let reservation;
     try {
-      reservation = await this.redis.reserveUniqueQuota(quotaKey, itemKey, dailyLimit, ttlSeconds);
+      reservation = await this.redis.reserveUniqueQuota(
+        quotaKey,
+        itemKey,
+        dailyLimit,
+        ttlSeconds,
+        executionId
+      );
     } catch (error) {
       this.logger.error({ err: error }, 'Coding solve quota service unavailable');
       throw new ServiceUnavailableException(
@@ -148,64 +155,53 @@ export class CodingService {
       throw new ConflictException(CODING_SUBMISSION_IN_PROGRESS);
     }
 
-    const ownsReservation = reservation.status === 'reserved';
-    let answer: Awaited<ReturnType<Prisma.TransactionClient['codingAnswer']['create']>>;
-    let submissionStatus: 'accepted' | 'wrong_answer' | 'error';
+    const quotaReservation =
+      reservation.status === 'reserved'
+        ? { quotaKey, itemKey, ttlSeconds, reservationToken: executionId }
+        : null;
     try {
-      const result = await this.executeCode(dto, problem.examples);
-      submissionStatus = result.status;
-      const previousAccepted =
-        result.status === 'accepted'
-          ? await this.database().codingAnswer.findFirst({
-              where: { sessionId, problemId: dto.problemId, status: 'accepted' },
-              select: { id: true },
-            })
-          : null;
-
-      answer = await this.database().$transaction(async (tx: Prisma.TransactionClient) => {
-        const changed = await tx.codingSession.updateMany({
-          where: { id: sessionId, userId, status: 'in_progress' },
-          data: {
-            problemsAttempted: { increment: 1 },
-            ...(result.status === 'accepted' && !previousAccepted
-              ? { problemsSolved: { increment: 1 } }
-              : {}),
-          },
-        });
-        if (changed.count !== 1) throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
-        return tx.codingAnswer.create({
-          data: {
-            sessionId,
-            userId,
-            problemId: dto.problemId,
-            language: dto.language,
-            code: dto.code,
-            status: result.status,
-            testCasesPassed: result.testCasesPassed,
-            testCasesTotal: result.testCasesTotal,
-            runtime: result.runtime,
-            memoryUsage: result.memoryUsage,
-          },
-        });
-      });
+      return await this.createExecution(
+        sessionId,
+        userId,
+        dto,
+        problem.examples,
+        'submit',
+        quotaReservation,
+        executionId
+      );
     } catch (error) {
-      if (ownsReservation) await this.releaseReservation(quotaKey, itemKey, ttlSeconds);
+      if (quotaReservation) {
+        await this.releaseReservation(quotaKey, itemKey, ttlSeconds, executionId);
+      }
       throw error;
     }
+  }
 
-    if (ownsReservation) {
-      try {
-        await this.redis.finalizeUniqueQuota(
-          quotaKey,
-          itemKey,
-          submissionStatus === 'accepted' ? 'solved' : 'release',
-          ttlSeconds
-        );
-      } catch (error) {
-        this.logger.error({ err: error }, 'Failed to finalize a coding solve reservation');
-      }
+  async getExecution(sessionId: string, executionId: string, userId: string) {
+    try {
+      const execution = await this.database().codingExecution.findFirst({
+        where: { id: executionId, sessionId, userId },
+        select: {
+          id: true,
+          sessionId: true,
+          problemId: true,
+          operation: true,
+          language: true,
+          status: true,
+          result: true,
+          failureMessage: true,
+          createdAt: true,
+          startedAt: true,
+          completedAt: true,
+          answer: true,
+        },
+      });
+      if (!execution) throw new NotFoundException('Coding execution not found');
+      return execution;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw this.databaseError(error);
     }
-    return answer;
   }
 
   async getSessionDetail(sessionId: string, userId: string) {
@@ -291,18 +287,84 @@ export class CodingService {
     }
   }
 
-  private executeCode(dto: ExecuteCodingDto, examples: unknown): Promise<ICodingExecutionResult> {
+  private async createExecution(
+    sessionId: string,
+    userId: string,
+    dto: ExecuteCodingDto,
+    examples: unknown,
+    operation: 'run' | 'submit',
+    quotaReservation: {
+      quotaKey: string;
+      itemKey: string;
+      ttlSeconds: number;
+      reservationToken: string;
+    } | null,
+    executionId = randomUUID()
+  ) {
+    const queueJobId = this.jobs.getJobId(JOB_QUEUE_NAMES.CODING_EXECUTION, executionId);
+    let execution;
+    try {
+      execution = await this.database().codingExecution.create({
+        data: {
+          id: executionId,
+          sessionId,
+          userId,
+          problemId: dto.problemId,
+          operation,
+          language: dto.language,
+          status: 'queued',
+          sourceCode: dto.code,
+          examples: examples as Prisma.InputJsonValue,
+          queueJobId,
+          quotaKey: quotaReservation?.quotaKey ?? null,
+          quotaItemKey: quotaReservation?.itemKey ?? null,
+          quotaTtlSeconds: quotaReservation?.ttlSeconds ?? null,
+          quotaReservationToken: quotaReservation?.reservationToken ?? null,
+        },
+      });
+    } catch (error) {
+      throw this.databaseError(error);
+    }
+
     const jobData: ICodingExecutionJobData = {
-      idempotencyKey: randomUUID(),
+      idempotencyKey: executionId,
+      executionId,
+      sessionId,
+      userId,
+      problemId: dto.problemId,
+      operation,
       code: dto.code,
       language: dto.language,
       examples,
+      quotaReservation,
     };
-    return this.jobs.enqueue<ICodingExecutionJobData, ICodingExecutionResult>(
-      JOB_QUEUE_NAMES.CODING_EXECUTION,
-      jobData,
-      'execute'
-    );
+    try {
+      await this.jobs.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, jobData, 'execute');
+    } catch (error) {
+      try {
+        await this.database().codingExecution.updateMany({
+          where: { id: executionId, status: 'queued' },
+          data: {
+            status: 'failed',
+            failureMessage: CODING_EXECUTION_FAILED,
+            completedAt: new Date(),
+          },
+        });
+      } catch (persistenceError) {
+        this.logger.error(
+          { executionId, err: persistenceError },
+          'Failed to persist coding execution queue failure'
+        );
+      }
+      throw error;
+    }
+    return {
+      id: execution.id,
+      sessionId: execution.sessionId,
+      operation: execution.operation,
+      status: execution.status,
+      createdAt: execution.createdAt,
+    };
   }
 
   private async reserveExecutionCapacity(userId: string) {
@@ -337,9 +399,20 @@ export class CodingService {
     return new ServiceUnavailableException(CODING_DATABASE_UNAVAILABLE, { cause: error });
   }
 
-  private async releaseReservation(quotaKey: string, itemKey: string, ttlSeconds: number) {
+  private async releaseReservation(
+    quotaKey: string,
+    itemKey: string,
+    ttlSeconds: number,
+    reservationToken: string
+  ) {
     try {
-      await this.redis.finalizeUniqueQuota(quotaKey, itemKey, 'release', ttlSeconds);
+      await this.redis.finalizeUniqueQuota(
+        quotaKey,
+        itemKey,
+        'release',
+        ttlSeconds,
+        reservationToken
+      );
     } catch (error) {
       this.logger.error({ err: error }, 'Failed to release a coding solve reservation');
     }

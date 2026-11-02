@@ -6,7 +6,15 @@ Human- and AI-readable log of what was done, newest day first. Read this before 
 
 ---
 
-## 2026-11-02 — BullMQ coding execution worker
+## 2026-11-02 â€” Durable coding execution lifecycle
+
+- Persist coding run and submit lifecycle records in PostgreSQL before enqueueing and expose an authenticated execution status/result endpoint.
+- Return HTTP 202 from run and submit routes. The worker persists results and finalizes submission answers/session counters transactionally and idempotently across BullMQ retries.
+- Carry reserved daily solve quota through the job; finalize it after completion or release it after terminal failure.
+- Persist source/examples and deterministic queue IDs so the worker can rebuild queued jobs after a restart. Quota reservations now have execution ownership tokens, and retained failures are reconciled until database state is saved.
+- Updated the coding API contract, BullMQ architecture docs, and ADR-0010 to describe polling and recovery.
+
+## 2026-11-02 â€” BullMQ coding execution worker
 
 - Added BullMQ 5.81.5 pinned exactly and a shared queue service with Redis producer/event connections, deterministic hashed job IDs, exponential retries, seven-day retention, result timeout handling, and graceful shutdown.
 - Moved existing coding run and submit execution through the `coding-execution` queue while preserving the API routes, synchronous response contract, Piston validation, and submission quota/persistence flow.
@@ -15,7 +23,7 @@ Human- and AI-readable log of what was done, newest day first. Read this before 
 - Verification: server build passed; all 241 server tests passed; repository lint passed with one existing `any` warning in `coding.service.spec.ts`; changed-file formatting, agent-doc checks, and Podman Compose configuration passed. A live queue smoke test executed one JavaScript addition successfully and removed its job.
 - Open verification issues: the server-wide coverage run remains below its configured 90% thresholds (86.5% lines; uncovered areas include existing filters, guards, DTOs, Prisma, theory, and the new worker bootstrap). The server TypeScript check still reports the known `prisma/seed-coding-local.ts` `rootDir` mismatch. No Prisma schema changed.
 
-## 2026-11-02 — Podman local database setup
+## 2026-11-02 â€” Podman local database setup
 
 - Installed the `podman-compose` CLI and started the existing Podman WSL machine.
 - Published PostgreSQL and Redis on their standard host ports `5432` and `6379`; host-installed services using those ports must be stopped before starting the containers.

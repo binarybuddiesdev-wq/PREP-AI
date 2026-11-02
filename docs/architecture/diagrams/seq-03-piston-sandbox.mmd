@@ -3,31 +3,39 @@
 sequenceDiagram
     autonumber
     actor Candidate as User / Candidate
-    participant SPA as React 19 Frontend
-    participant API as NestJS Coding Controller
-    participant Redis as Redis Quota
-    participant Piston as Piston Container (127.0.0.1:2000)
-    participant Worker as BullMQ Async Worker
-    participant Mastra as Mastra Code Reviewer
+    participant SPA as React Frontend
+    participant API as NestJS Coding API
     participant PG as PostgreSQL
+    participant Redis as Redis and BullMQ
+    participant Worker as Coding Worker
+    participant Piston as Piston Sandbox
 
     Candidate->>SPA: Clicks "Run Code"
-    SPA->>API: POST /api/v1/coding/run
-    API->>Piston: POST /api/v2/execute
-    Note over Piston: Executes untrusted code in cgroup sandbox
-    Piston-->>API: HTTP 200 { run: { stdout, stderr } }
-    API-->>SPA: HTTP 200 OK { output }
+    SPA->>API: POST /coding/session/:sessionId/run
+    API->>PG: Insert CodingExecution(status: queued)
+    API->>Redis: Enqueue coding-execution job
+    API-->>SPA: HTTP 202 { executionId, status: queued }
+
+    Worker->>PG: Update execution(status: running)
+    Worker->>Piston: Execute code against examples
+    Note over Piston: Untrusted code runs in the bounded Piston sandbox
+    Piston-->>Worker: Test results and metrics
+    Worker->>PG: Persist result and mark execution completed
+
+    Candidate->>SPA: Poll execution status
+    SPA->>API: GET /coding/session/:sessionId/executions/:executionId
+    API->>PG: Read by executionId + sessionId + userId
+    PG-->>API: Persisted status and result
+    API-->>SPA: HTTP 200 { status, result }
 
     Candidate->>SPA: Clicks "Submit Solution"
-    SPA->>API: POST /api/v1/coding/session/:id/submit
-    API->>Redis: INCR quota:userId:YYYY-MM-DD:coding_submits
-    API->>Piston: POST /api/v2/execute (Hidden test cases)
-    Piston-->>API: Test Results (passed: 5/5)
+    SPA->>API: POST /coding/session/:sessionId/submit
+    API->>Redis: Reserve daily solve quota
+    API->>PG: Insert CodingExecution(operation: submit)
+    API->>Redis: Enqueue coding-execution job
+    API-->>SPA: HTTP 202 { executionId, status: queued }
+    Worker->>Piston: Execute submitted solution
+    Worker->>PG: Transactionally persist result, answer, and session counters
+    Worker->>Redis: Finalize or release solve quota
 
-    API->>Redis: Enqueue "code-review-queue"
-    API-->>SPA: HTTP 200 OK { status: "accepted" }
-
-    Worker->>Redis: Pop "code-review-queue"
-    Worker->>Mastra: Execute CodeReviewerAgent
-    Mastra-->>Worker: JSON { timeComplexity: "O(N)", spaceComplexity: "O(1)" }
-    Worker->>PG: Insert CodingAnswer
+    Note over Candidate,PG: AI code review remains deferred

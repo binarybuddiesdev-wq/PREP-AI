@@ -2,14 +2,13 @@ import { createHash } from 'node:crypto';
 import { Injectable, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import {
   JOB_QUEUE_BACKOFF_DELAY_MS,
   JOB_QUEUE_DEFAULT_NAME,
   JOB_QUEUE_NAMES,
   JOB_QUEUE_POLICIES,
   JOB_QUEUE_RETENTION_SECONDS,
-  JOB_QUEUE_RESULT_TIMEOUT_MS,
   TJobQueueName,
 } from './job-queue.constants.js';
 import { CODING_QUEUE_UNAVAILABLE } from '@/common/constants/api.constants.js';
@@ -17,7 +16,6 @@ import { CODING_QUEUE_UNAVAILABLE } from '@/common/constants/api.constants.js';
 @Injectable()
 export class JobQueueService implements OnModuleDestroy {
   private readonly queues = new Map<TJobQueueName, Queue>();
-  private readonly events = new Map<TJobQueueName, QueueEvents>();
 
   constructor(
     config: ConfigService,
@@ -36,46 +34,48 @@ export class JobQueueService implements OnModuleDestroy {
           removeOnFail: { age: JOB_QUEUE_RETENTION_SECONDS, count: 5000 },
         },
       });
-      const queueEvents = new QueueEvents(queueName, {
-        connection: { host, port, maxRetriesPerRequest: null },
-      });
-
       queue.on('error', (error: Error) => {
         this.logger.error({ queueName, err: error }, 'Background job queue connection failed');
       });
-      queueEvents.on('error', (error: Error) => {
-        this.logger.error({ queueName, err: error }, 'Background job event connection failed');
-      });
 
       this.queues.set(queueName, queue);
-      this.events.set(queueName, queueEvents);
     }
   }
 
-  async enqueue<TData extends { idempotencyKey: string }, TResult>(
+  async enqueue<TData extends { idempotencyKey: string }>(
     queueName: TJobQueueName,
     data: TData,
     jobName = JOB_QUEUE_DEFAULT_NAME
-  ): Promise<TResult> {
+  ): Promise<string> {
     const queue = this.queues.get(queueName);
-    const queueEvents = this.events.get(queueName);
-    if (!queue || !queueEvents) {
+    if (!queue) {
       throw new ServiceUnavailableException(CODING_QUEUE_UNAVAILABLE);
     }
 
     try {
       const job = await queue.add(jobName, data, {
-        jobId: this.createJobId(queueName, data.idempotencyKey),
+        jobId: this.getJobId(queueName, data.idempotencyKey),
       });
-      return (await job.waitUntilFinished(queueEvents, JOB_QUEUE_RESULT_TIMEOUT_MS)) as TResult;
+      return job.id ?? this.getJobId(queueName, data.idempotencyKey);
     } catch (error) {
       throw new ServiceUnavailableException(CODING_QUEUE_UNAVAILABLE, { cause: error });
     }
   }
 
+  async getFailedJobs<TData = unknown>(queueName: TJobQueueName, limit = 100) {
+    const queue = this.queues.get(queueName);
+    if (!queue) return [];
+    return (await queue.getJobs(['failed'], 0, Math.max(0, limit - 1))) as Job<TData>[];
+  }
+
+  getJobId(queueName: TJobQueueName, idempotencyKey: string): string {
+    return createHash('sha256').update(`${queueName}:${idempotencyKey}`).digest('hex');
+  }
+
   async onModuleDestroy(): Promise<void> {
-    const resources = [...this.queues.values(), ...this.events.values()];
-    const results = await Promise.allSettled(resources.map((resource) => resource.close()));
+    const results = await Promise.allSettled(
+      [...this.queues.values()].map((resource) => resource.close())
+    );
     const failures = results.filter(
       (result): result is PromiseRejectedResult => result.status === 'rejected'
     );
@@ -91,9 +91,5 @@ export class JobQueueService implements OnModuleDestroy {
       );
       throw error;
     }
-  }
-
-  private createJobId(queueName: TJobQueueName, idempotencyKey: string): string {
-    return createHash('sha256').update(`${queueName}:${idempotencyKey}`).digest('hex');
   }
 }
