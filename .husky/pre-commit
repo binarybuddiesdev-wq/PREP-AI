@@ -1,4 +1,3 @@
-#!/usr/bin/env sh
 # Pre-commit hook. Runs on `git commit`.
 #
 # - `set -e` is required: without it, a failing gate in the middle of a
@@ -11,8 +10,6 @@
 # - We do NOT run the full repo's lint/type-check here. That belongs
 #   in the `verify-implementation` skill's Mechanical Gate, which
 #   runs on every commit (via AI agents) and before merge.
-
-. "$(dirname -- "$0")/_/husky.sh"
 
 pnpm exec lint-staged
 
