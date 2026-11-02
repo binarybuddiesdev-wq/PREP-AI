@@ -166,6 +166,8 @@ export const THEORY_MODE_NOT_SUPPORTED = 'PDF study mode is not supported yet';
 export const THEORY_DATABASE_UNAVAILABLE = 'Theory database is temporarily unavailable';
 export const THEORY_EVALUATION_UNAVAILABLE =
   'Evaluation could not be completed. No score was assigned.';
+export const THEORY_AI_TOKEN_BUDGET_REACHED =
+  'Daily AI token budget reached. Try again tomorrow or upgrade your plan.';
 
 // Coding success / error messages
 export const CODING_PROBLEMS_FETCHED = 'Coding problems fetched successfully';

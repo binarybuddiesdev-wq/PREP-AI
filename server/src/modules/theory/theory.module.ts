@@ -4,10 +4,16 @@ import { TheoryController } from './theory.controller.js';
 import { JobQueueModule } from '@/common/jobs/job-queue.module.js';
 import { TheoryEvaluationService } from './theory-evaluation.service.js';
 import { TheoryEvaluationWorker } from './theory-evaluation.worker.js';
+import { TheoryAiTokenBudgetService } from './theory-ai-token-budget.service.js';
 
 @Module({
   imports: [JobQueueModule],
-  providers: [TheoryService, TheoryEvaluationService, TheoryEvaluationWorker],
+  providers: [
+    TheoryService,
+    TheoryEvaluationService,
+    TheoryEvaluationWorker,
+    TheoryAiTokenBudgetService,
+  ],
   controllers: [TheoryController],
 })
 export class TheoryModule {}

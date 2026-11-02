@@ -59,6 +59,17 @@ Postgres remains the system of record (the actual sessions/answers are
 written there). Redis is the atomic quota counter. Any future quota resource
 must document its Redis failure behavior before implementation.
 
+Theory AI evaluations also use weighted daily reservations. The worker reserves
+a conservative per-provider token allowance before calling a provider, bounded
+by the user's MongoDB role (`AI_DAILY_TOKENS_FREE`, default 400,000;
+`AI_DAILY_TOKENS_PREMIUM`, default 2,000,000). Successful calls settle the
+reservation to Mastra-reported usage; failed provider attempts retain their
+estimate because their exact usage is unavailable. The key is
+`quota:{userId}:{UTC date}:ai_tokens`; each attempt has a reservation subkey.
+Redis or role lookup failures prevent provider calls. An exhausted budget marks
+the answer failed with a user-readable message. These counters are not billing
+records and Redis loss resets the daily budget, as with other quotas.
+
 ## Consequences
 
 **Easier:**

@@ -66,7 +66,7 @@ One line each; the full rule with correct and wrong examples is in [`references/
 
 ## Provider calls and cost
 
-Every `agent.generate` is a billed, rate-limited external call that can take seconds and can fail. A new LLM-backed endpoint must (a) have a per-user quota (the daily-limit pattern in `theory`, ADR-0005), (b) bound its input, and (c) return something sensible when the provider is down (rule 5). Say in your report which of the three it relies on.
+Every `agent.generate` is a billed, rate-limited external call that can take seconds and can fail. Theory answer evaluation reserves a bounded daily per-user token allowance in Redis before each provider call; see ADR-0005 and `TheoryAiTokenBudgetService`. Other LLM-backed features must define an appropriate per-user quota, bound their input, and return something sensible when a provider is down (rule 5). Say in your report which protections are in place.
 
 ## Task → reference
 

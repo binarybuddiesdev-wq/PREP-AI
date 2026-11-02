@@ -28,6 +28,8 @@ export const envSchema = z
     GROQ_API_KEY: z.string().optional(),
     GROQ_BASE_URL: z.string().optional().default('https://api.groq.com/openai/v1'),
     GROQ_MODEL: z.string().optional().default('qwen/qwen3.8-27b'),
+    AI_DAILY_TOKENS_FREE: z.coerce.number().int().positive().optional().default(400_000),
+    AI_DAILY_TOKENS_PREMIUM: z.coerce.number().int().positive().optional().default(2_000_000),
     // Force a specific provider: undefined = auto-failover (NVIDIA first, Groq fallback),
     // 'nvidia' = NVIDIA only, 'groq' = Groq only.
     LLM_PROVIDER: z.enum(['nvidia', 'groq']).optional(),

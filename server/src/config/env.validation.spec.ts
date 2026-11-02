@@ -13,4 +13,18 @@ describe('background worker environment validation', () => {
 
     expect(result.JOBS_WORKER_ENABLED).toBe(false);
   });
+
+  it('provides configurable role-based daily AI token budgets', () => {
+    const defaults = envSchema.parse({ NODE_ENV: 'test' });
+    expect(defaults.AI_DAILY_TOKENS_FREE).toBe(400_000);
+    expect(defaults.AI_DAILY_TOKENS_PREMIUM).toBe(2_000_000);
+
+    const configured = envSchema.parse({
+      NODE_ENV: 'test',
+      AI_DAILY_TOKENS_FREE: '50',
+      AI_DAILY_TOKENS_PREMIUM: '500',
+    });
+    expect(configured.AI_DAILY_TOKENS_FREE).toBe(50);
+    expect(configured.AI_DAILY_TOKENS_PREMIUM).toBe(500);
+  });
 });

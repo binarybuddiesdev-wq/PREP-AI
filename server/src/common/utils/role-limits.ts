@@ -10,6 +10,13 @@ export interface CodingLimits {
   dailyReviews: number;
 }
 
+export function getAiTokenBudgetLimit(role: string, config: ConfigService): number {
+  const isPremium = role === 'PREMIUM' || role === 'ADMIN';
+  return isPremium
+    ? (config.get<number>('AI_DAILY_TOKENS_PREMIUM') ?? 2_000_000)
+    : (config.get<number>('AI_DAILY_TOKENS_FREE') ?? 400_000);
+}
+
 export function getTheoryLimits(role: string, config: ConfigService): RoleLimits {
   const isPremium = role === 'PREMIUM' || role === 'ADMIN';
 

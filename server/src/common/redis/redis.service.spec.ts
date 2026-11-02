@@ -78,6 +78,104 @@ describe('RedisService unique quota reservations', () => {
     );
   });
 
+  it('atomically reserves estimated tokens against a daily token cap', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([1, 12_000]);
+
+    await expect(
+      service.reserveTokenQuota(quotaKey, `${quotaKey}:attempt_1`, 2_000, 20_000, ttlSeconds)
+    ).resolves.toEqual({ allowed: true, count: 12_000 });
+    expect(redisMocks.client.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call('INCRBY', KEYS[1], requested)"),
+      2,
+      quotaKey,
+      `${quotaKey}:attempt_1`,
+      '2000',
+      '20000',
+      String(ttlSeconds)
+    );
+  });
+
+  it('denies token reservations that exceed the daily cap', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([0, 19_000]);
+    await expect(
+      service.reserveTokenQuota(quotaKey, `${quotaKey}:attempt_2`, 2_000, 20_000, ttlSeconds)
+    ).resolves.toEqual({ allowed: false, count: 19_000 });
+  });
+
+  it('settles a reservation to actual token usage only once', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([1, 10_640]);
+    await expect(
+      service.settleTokenQuota(quotaKey, `${quotaKey}:attempt_1`, 640, ttlSeconds)
+    ).resolves.toEqual({ settled: true, count: 10_640 });
+    expect(redisMocks.client.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call('INCRBY', KEYS[1], actual - reserved)"),
+      2,
+      quotaKey,
+      `${quotaKey}:attempt_1`,
+      '640',
+      String(ttlSeconds)
+    );
+  });
+
+  it('treats an already settled token reservation as idempotent', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([2, 10_640]);
+    await expect(
+      service.settleTokenQuota(quotaKey, `${quotaKey}:attempt_1`, 640, ttlSeconds)
+    ).resolves.toEqual({ settled: true, count: 10_640 });
+  });
+
+  it('rejects malformed token reservation and settlement responses', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([1]);
+    await expect(
+      service.reserveTokenQuota(quotaKey, `${quotaKey}:attempt_3`, 100, 1_000, ttlSeconds)
+    ).rejects.toThrow('invalid token quota reservation result');
+    redisMocks.client.eval.mockResolvedValueOnce('invalid');
+    await expect(
+      service.settleTokenQuota(quotaKey, `${quotaKey}:attempt_3`, 50, ttlSeconds)
+    ).rejects.toThrow('invalid token quota settlement result');
+  });
+
+  it.each([
+    [0, 100, 60],
+    [100, 0, 60],
+    [100, 100, 0],
+  ])('rejects invalid weighted reservation parameters %j', async (tokens, limit, ttl) => {
+    await expect(
+      service.reserveTokenQuota(quotaKey, `${quotaKey}:invalid`, tokens, limit, ttl)
+    ).rejects.toThrow('invalid token quota reservation parameters');
+  });
+
+  it('rejects out-of-range weighted reservation responses', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([3, 1]);
+    await expect(
+      service.reserveTokenQuota(quotaKey, `${quotaKey}:invalid`, 100, 1000, ttlSeconds)
+    ).rejects.toThrow('invalid token quota reservation result');
+    redisMocks.client.eval.mockResolvedValueOnce([1, -1]);
+    await expect(
+      service.reserveTokenQuota(quotaKey, `${quotaKey}:invalid`, 100, 1000, ttlSeconds)
+    ).rejects.toThrow('invalid token quota reservation result');
+  });
+
+  it('rejects out-of-range settlement responses', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([3, 1]);
+    await expect(
+      service.settleTokenQuota(quotaKey, `${quotaKey}:invalid`, 100, ttlSeconds)
+    ).rejects.toThrow('invalid token quota settlement result');
+    redisMocks.client.eval.mockResolvedValueOnce([1, -1]);
+    await expect(
+      service.settleTokenQuota(quotaKey, `${quotaKey}:invalid`, 100, ttlSeconds)
+    ).rejects.toThrow('invalid token quota settlement result');
+  });
+
+  it.each([
+    [-1, 60],
+    [0, 0],
+  ])('rejects invalid weighted settlement parameters %j', async (tokens, ttl) => {
+    await expect(
+      service.settleTokenQuota(quotaKey, `${quotaKey}:invalid`, tokens, ttl)
+    ).rejects.toThrow('invalid token quota settlement parameters');
+  });
+
   it('releases quota, pings Redis, and disconnects on shutdown', async () => {
     redisMocks.client.eval.mockResolvedValueOnce(1);
     redisMocks.client.ping.mockResolvedValueOnce('PONG');
@@ -155,6 +253,17 @@ describe('RedisService unique quota reservations', () => {
   it('rejects malformed Lua reservation results instead of granting a quota slot', async () => {
     redisMocks.client.eval.mockResolvedValueOnce([1]);
 
+    await expect(
+      service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds, reservationToken)
+    ).rejects.toThrow('invalid unique quota reservation result');
+  });
+
+  it('rejects unknown Lua reservation statuses and invalid counters', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce([99, 2]);
+    await expect(
+      service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds, reservationToken)
+    ).rejects.toThrow('invalid unique quota reservation result');
+    redisMocks.client.eval.mockResolvedValueOnce([1, Number.NaN]);
     await expect(
       service.reserveUniqueQuota(quotaKey, itemKey, limit, ttlSeconds, reservationToken)
     ).rejects.toThrow('invalid unique quota reservation result');

@@ -63,6 +63,47 @@ redis.call('DECR', KEYS[1])
 return 1
 `;
 
+const RESERVE_TOKEN_QUOTA_SCRIPT = `
+local reservation = redis.call('GET', KEYS[2])
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+if reservation then
+  return {2, current}
+end
+local requested = tonumber(ARGV[1])
+local limit = tonumber(ARGV[2])
+if requested <= 0 or current + requested > limit then
+  return {0, current}
+end
+local count = redis.call('INCRBY', KEYS[1], requested)
+if count == requested then
+  redis.call('EXPIRE', KEYS[1], tonumber(ARGV[3]))
+end
+redis.call('SET', KEYS[2], 'reserved:' .. requested, 'EX', tonumber(ARGV[3]))
+return {1, count}
+`;
+
+const SETTLE_TOKEN_QUOTA_SCRIPT = `
+local reservation = redis.call('GET', KEYS[2])
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+if not reservation then
+  return {0, current}
+end
+if string.sub(reservation, 1, 8) == 'settled:' then
+  return {2, current}
+end
+if string.sub(reservation, 1, 9) ~= 'reserved:' then
+  return {0, current}
+end
+local reserved = tonumber(string.sub(reservation, 10))
+local actual = tonumber(ARGV[1])
+if not reserved or not actual or actual < 0 then
+  return {-1, current}
+end
+local count = redis.call('INCRBY', KEYS[1], actual - reserved)
+redis.call('SET', KEYS[2], 'settled:' .. actual, 'EX', tonumber(ARGV[2]))
+return {1, count}
+`;
+
 export type TUniqueQuotaReservation = {
   status: 'reserved' | 'already_solved' | 'in_progress' | 'limit';
   count: number;
@@ -109,6 +150,76 @@ export class RedisService implements OnModuleDestroy {
 
   async releaseQuota(key: string): Promise<void> {
     await this.client.eval(RELEASE_QUOTA_SCRIPT, 1, key);
+  }
+
+  async reserveTokenQuota(
+    quotaKey: string,
+    reservationKey: string,
+    reservedTokens: number,
+    limit: number,
+    ttlSeconds: number
+  ): Promise<IQuotaReservation> {
+    if (
+      !Number.isSafeInteger(reservedTokens) ||
+      reservedTokens <= 0 ||
+      !Number.isSafeInteger(limit) ||
+      limit <= 0 ||
+      !Number.isSafeInteger(ttlSeconds) ||
+      ttlSeconds <= 0
+    ) {
+      throw new Error('invalid token quota reservation parameters');
+    }
+    const result: unknown = await this.client.eval(
+      RESERVE_TOKEN_QUOTA_SCRIPT,
+      2,
+      quotaKey,
+      reservationKey,
+      String(reservedTokens),
+      String(limit),
+      String(ttlSeconds)
+    );
+    if (!Array.isArray(result) || result.length !== 2) {
+      throw new Error('invalid token quota reservation result');
+    }
+    const status = Number(result[0]);
+    const count = Number(result[1]);
+    if (![0, 1, 2].includes(status) || !Number.isSafeInteger(count) || count < 0) {
+      throw new Error('invalid token quota reservation result');
+    }
+    return { allowed: status !== 0, count };
+  }
+
+  async settleTokenQuota(
+    quotaKey: string,
+    reservationKey: string,
+    actualTokens: number,
+    ttlSeconds: number
+  ): Promise<{ settled: boolean; count: number }> {
+    if (
+      !Number.isSafeInteger(actualTokens) ||
+      actualTokens < 0 ||
+      !Number.isSafeInteger(ttlSeconds) ||
+      ttlSeconds <= 0
+    ) {
+      throw new Error('invalid token quota settlement parameters');
+    }
+    const result: unknown = await this.client.eval(
+      SETTLE_TOKEN_QUOTA_SCRIPT,
+      2,
+      quotaKey,
+      reservationKey,
+      String(actualTokens),
+      String(ttlSeconds)
+    );
+    if (!Array.isArray(result) || result.length !== 2) {
+      throw new Error('invalid token quota settlement result');
+    }
+    const status = Number(result[0]);
+    const count = Number(result[1]);
+    if (![0, 1, 2].includes(status) || !Number.isSafeInteger(count) || count < 0) {
+      throw new Error('invalid token quota settlement result');
+    }
+    return { settled: status !== 0, count };
   }
 
   async reserveUniqueQuota(
