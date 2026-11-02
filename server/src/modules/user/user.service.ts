@@ -31,16 +31,23 @@ export class UserService {
       return existingUser;
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        clerkUserId: id,
-        email: email_addresses[0].email_address,
-        name: `${first_name ?? ''} ${last_name ?? ''}`.trim(),
-        avatarUrl: image_url,
-        role: 'USER',
-        isNewUser: true,
-      },
-    });
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          clerkUserId: id,
+          email: email_addresses[0].email_address,
+          name: `${first_name ?? ''} ${last_name ?? ''}`.trim(),
+          avatarUrl: image_url,
+          role: 'USER',
+          isNewUser: true,
+        },
+      });
+    } catch (error: unknown) {
+      const recovered = await this.findAfterCreateRace(error, id);
+      if (recovered) return recovered;
+      throw error;
+    }
 
     this.logger.info({ userId: user.id }, 'User registered successfully');
     return user;
@@ -50,6 +57,14 @@ export class UserService {
     return this.prisma.user.findUnique({
       where: { clerkUserId },
     });
+  }
+
+  private async findAfterCreateRace(error: unknown, clerkUserId: string) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+      return null;
+    }
+
+    return this.prisma.user.findUnique({ where: { clerkUserId } });
   }
 
   async findOrCreateUser(clerkUserId: string) {
@@ -81,16 +96,23 @@ export class UserService {
     const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ');
     const avatarUrl = (clerkUser as unknown as Record<string, string>).image_url ?? null;
 
-    const user = await this.prisma.user.create({
-      data: {
-        clerkUserId,
-        email: primaryEmail,
-        name,
-        avatarUrl,
-        role: 'USER',
-        isNewUser: true,
-      },
-    });
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          clerkUserId,
+          email: primaryEmail,
+          name,
+          avatarUrl,
+          role: 'USER',
+          isNewUser: true,
+        },
+      });
+    } catch (error: unknown) {
+      const recovered = await this.findAfterCreateRace(error, clerkUserId);
+      if (recovered) return recovered;
+      throw error;
+    }
 
     this.logger.info({ userId: user.id }, 'User created via lazy sync');
     return user;

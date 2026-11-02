@@ -15,6 +15,7 @@ import { UserModule } from './modules/user/user.module.js';
 import { TopicModule } from './modules/topic/topic.module.js';
 import { QuestionModule } from './modules/question/question.module.js';
 import { TheoryModule } from './modules/theory/theory.module.js';
+import { CodingModule } from './modules/coding/coding.module.js';
 import { RedisModule } from './common/redis/redis.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,6 +38,7 @@ const __dirname = dirname(__filename);
     TopicModule,
     QuestionModule,
     TheoryModule,
+    CodingModule,
   ],
   controllers: [],
   providers: [],

@@ -122,8 +122,7 @@ Fetch questions from the question bank for the current session.
       "id": "507f1f77bcf86cd799439022",
       "question": "What is the difference between useEffect and useLayoutEffect?",
       "topicId": "507f1f77bcf86cd799439011",
-      "difficulty": "Mid",
-      "referenceAnswer": "useEffect runs after paint, useLayoutEffect runs synchronously before paint..."
+      "difficulty": "Mid"
     }
   ]
 }
@@ -131,10 +130,9 @@ Fetch questions from the question bank for the current session.
 
 ### Errors
 
-| Status | Message           |
-| ------ | ----------------- |
-| 404    | Session not found |
-| 403    | Not session owner |
+| Status | Message                                      |
+| ------ | -------------------------------------------- |
+| 404    | Session not found or not available to caller |
 
 ---
 
@@ -192,12 +190,12 @@ Submit a user's answer for a question. AI evaluates and returns score + feedback
 
 ### Errors
 
-| Status | Message                                             |
-| ------ | --------------------------------------------------- |
-| 400    | Validation failed                                   |
-| 404    | Session not found                                   |
-| 403    | Not session owner                                   |
-| 409    | Session already completed or question limit reached |
+| Status | Message                                                            |
+| ------ | ------------------------------------------------------------------ |
+| 400    | Validation failed                                                  |
+| 404    | Session not found or not available to caller                       |
+| 409    | Session already completed or question limit reached                |
+| 503    | AI evaluation unavailable; answer was not saved and may be retried |
 
 ---
 
@@ -242,8 +240,7 @@ Mark session as completed and compute final average score.
 
 | Status | Message                                                    |
 | ------ | ---------------------------------------------------------- |
-| 404    | Session not found                                          |
-| 403    | Not session owner                                          |
+| 404    | Session not found or not available to caller               |
 | 409    | Session already completed or an answer is still processing |
 
 ---
@@ -299,10 +296,9 @@ Get a single session with all its answers.
 
 ### Errors
 
-| Status | Message           |
-| ------ | ----------------- |
-| 404    | Session not found |
-| 403    | Not session owner |
+| Status | Message                                      |
+| ------ | -------------------------------------------- |
+| 404    | Session not found or not available to caller |
 
 ---
 

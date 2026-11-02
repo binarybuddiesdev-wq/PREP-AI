@@ -5,6 +5,7 @@ export enum ApiTags {
   TOPICS = 'Topics',
   QUESTIONS = 'Questions',
   THEORY = 'Theory',
+  CODING = 'Coding',
   SESSIONS = 'Sessions',
   ANSWERS = 'Answers',
   ANALYTICS = 'Analytics',
@@ -18,6 +19,7 @@ export enum ApiRoutes {
   TOPICS = 'topics',
   QUESTIONS = 'questions',
   THEORY = 'theory',
+  CODING = 'coding',
   SESSIONS = 'sessions',
   ANSWERS = 'answers',
   ANALYTICS = 'analytics',
@@ -58,6 +60,14 @@ export enum ApiOperation {
   THEORY_GET_SESSIONS = 'Get theory session history',
   THEORY_GET_WEAK_AREAS = 'Get topics below 70% score',
   THEORY_GET_SCORE_TREND = 'Get score trend for dashboard chart',
+  CODING_LIST_PROBLEMS = 'List coding problems',
+  CODING_GET_PROBLEM = 'Get coding problem details',
+  CODING_START_SESSION = 'Start a coding session',
+  CODING_RUN_CODE = 'Run code against public examples',
+  CODING_SUBMIT = 'Submit a coding solution',
+  CODING_GET_SESSION = 'Get coding session details',
+  CODING_COMPLETE_SESSION = 'Complete a coding session',
+  CODING_GET_HISTORY = 'Get coding session history',
 }
 
 export const SUCCESS_MESSAGES = {
@@ -144,6 +154,24 @@ export const THEORY_QUESTIONS_LIMIT_EXCEEDED = 'Questions limit exceeded for you
 export const THEORY_TOPIC_ID_REQUIRED = 'topicId is required for topic mode';
 export const THEORY_MODE_NOT_SUPPORTED = 'PDF study mode is not supported yet';
 export const THEORY_DATABASE_UNAVAILABLE = 'Theory database is temporarily unavailable';
+export const THEORY_EVALUATION_UNAVAILABLE =
+  'Answer evaluation is temporarily unavailable. Please try again.';
+
+// Coding success / error messages
+export const CODING_PROBLEMS_FETCHED = 'Coding problems fetched successfully';
+export const CODING_PROBLEM_FETCHED = 'Coding problem fetched successfully';
+export const CODING_SESSION_STARTED = 'Coding session started successfully';
+export const CODING_CODE_EXECUTED = 'Code execution completed';
+export const CODING_SOLUTION_SUBMITTED = 'Solution submitted successfully';
+export const CODING_SESSION_FETCHED = 'Coding session fetched successfully';
+export const CODING_SESSION_COMPLETED = 'Coding session completed successfully';
+export const CODING_SESSIONS_FETCHED = 'Coding sessions fetched successfully';
+export const CODING_SESSION_NOT_FOUND = 'Coding session not found';
+export const CODING_SESSION_COMPLETED_ERROR = 'Coding session is already completed';
+export const CODING_PROBLEM_NOT_ASSIGNED = 'Problem is not part of this coding session';
+export const CODING_DAILY_LIMIT_REACHED = 'Daily solved-problem limit reached';
+export const CODING_SUBMISSION_IN_PROGRESS = 'A submission for this problem is already in progress';
+export const CODING_DATABASE_UNAVAILABLE = 'Coding database is temporarily unavailable';
 
 export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({
   schema: {

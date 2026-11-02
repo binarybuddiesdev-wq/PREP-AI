@@ -4,6 +4,22 @@ Base URL: `http://localhost:3000/api/v1/coding`
 
 All endpoints require Bearer token authentication (Clerk).
 
+> **Implementation status (2026-11-02):** The supported MVP routes are problem list/detail, session start, run, submit, session detail, completion, and session history as listed below. AI review and stats are deferred and are not implemented. This implementation status and the rules below supersede older examples in this draft where they conflict.
+
+### Implemented contract and execution rules
+
+- Problem examples are executable structured JSON values: `{ "input": [arg1, arg2], "output": value, "explanation": "optional" }`. The server calls the user's `solution(...args)` function in JavaScript, TypeScript, or Python.
+- Run and submit accept only `problemId`, `language`, and `code`. They execute only examples stored on that problem; runtime, version, filename, harness, arguments, limits, and Piston URL are server-owned.
+- Source code is capped at 32,000 characters, examples at 20, each Piston process has a 3-second runtime and 256 MiB memory cap, and the complete example batch has a 15-second request deadline. Returned output is capped at 16 KiB.
+- Each run/submit requires an owned in-progress session and a problem assigned to it. A session owned by someone else and a problem outside that session both return 404. Completed sessions return 409.
+- Run and submit share a per-user Redis fixed-window throttle of 10 execution requests per 60 seconds. Exceeding it returns 429. If Redis cannot reserve capacity, execution fails closed with 503.
+- Run never saves an answer or consumes the daily solved quota. Submit saves accepted, wrong-answer, and runtime-error results. Only an accepted first solve reserves a daily solve count; a failed submission releases its reservation. A daily limit or same-problem submission already in progress returns 409.
+- The per-day unique-solve quota is tracked atomically in Redis and expires at UTC midnight. Redis is the quota authority for the current MVP; flushing Redis resets that day's quota accounting.
+- PostgreSQL or Piston unavailability returns 503. Successful response envelope is `{ "message": "...", "data": ... }` (the global success field is added by the response interceptor).
+- `PISTON_URL` defaults to `http://127.0.0.1:2000` on the host. The full Podman server uses `http://host.containers.internal:2000` to reach the host Piston service.
+- Code execution is enabled in development by default. In production it is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly configured. Review the Piston isolation model before enabling production execution; the current local launcher uses a privileged container.
+- A local-only Two Sum seed is available as `pnpm --filter server seed:coding:local`; it refuses non-loopback PostgreSQL hosts. Apply/validate schema as described in `server/README.md` before running it.
+
 ---
 
 ## Role-Based Limits
@@ -300,7 +316,7 @@ Submit a solution for evaluation. This counts toward the daily solved limit. If 
 
 ---
 
-## 6. AI Code Review
+## 6. AI Code Review (Deferred; not implemented)
 
 Request an AI-powered code review. This counts toward the daily AI review limit.
 
@@ -505,7 +521,7 @@ Get all past coding sessions for the current user.
 
 ---
 
-## 10. Get Coding Stats
+## 10. Get Coding Stats (Deferred; not implemented)
 
 Get the user's daily coding stats and streak.
 

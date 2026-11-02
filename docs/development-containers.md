@@ -19,7 +19,7 @@ Read this before changing `docker-compose.yml`, starting the stack, or asking an
 
 PostgreSQL and Redis are published on their standard host ports, `5432` and `6379`. Stop any host-installed PostgreSQL or Redis services that occupy those ports before starting the Podman stack. MongoDB runs as a single-node replica set named `rs0`; Prisma requires this for MongoDB writes. The Compose health check initializes the replica set and waits for it to elect its primary. A separate `mongo_config` volume stores MongoDB's internal key file; the existing `mongo_data` volume continues to hold application data. Inside the Podman network, the backend uses service names and standard container ports: `mongo:27017`, `postgres:5432`, and `redis:6379`.
 
-Piston is a separate code-execution container managed by `pnpm piston:*`; it is not part of either Compose mode. Follow [the Piston WSL setup guide](PISTON_WSL_SETUP_GUIDE.md) for that service.
+Piston is a separate code-execution service managed by `pnpm piston:*`; it is not part of either Compose mode. Follow [the Piston WSL setup guide](PISTON_WSL_SETUP_GUIDE.md) for that service. A host-run backend uses `PISTON_URL=http://127.0.0.1:2000`; the full Podman server is configured to reach the host service at `http://host.containers.internal:2000`.
 
 ## Prerequisites
 
@@ -66,6 +66,7 @@ The backend connects to published host ports. Set these values in `.env`:
 ```dotenv
 DATABASE_URL=mongodb://prepai:prepai@localhost:27017/prepai?authSource=admin&replicaSet=rs0&directConnection=true
 POSTGRESQL_URL=postgresql://postgres:postgres@localhost:5432/prepai
+PISTON_URL=http://127.0.0.1:2000
 REDIS_HOST=localhost
 REDIS_PORT=6379
 CORS_ORIGIN=http://localhost:5173
@@ -82,6 +83,7 @@ DATABASE_URL=mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin&replica
 POSTGRESQL_URL=postgresql://postgres:postgres@postgres:5432/prepai
 REDIS_HOST=redis
 REDIS_PORT=6379
+PISTON_URL=http://host.containers.internal:2000
 ```
 
 Do not change these to `localhost` inside the server container: there, `localhost` means the server container itself. `directConnection=true` is used only for a host-run backend because the replica-set member is advertised by the Compose service name. The UI runs in a browser on the host, so its `VITE_API_BASE_URL` remains `http://localhost:3000` by default.

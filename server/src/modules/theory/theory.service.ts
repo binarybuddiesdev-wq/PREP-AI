@@ -24,11 +24,11 @@ import {
   THEORY_DAILY_LIMIT_REACHED,
   THEORY_QUESTIONS_LIMIT_EXCEEDED,
   THEORY_SESSION_NOT_FOUND,
-  THEORY_NOT_SESSION_OWNER,
   THEORY_SESSION_ALREADY_COMPLETED,
   THEORY_TOPIC_ID_REQUIRED,
   THEORY_MODE_NOT_SUPPORTED,
   THEORY_DATABASE_UNAVAILABLE,
+  THEORY_EVALUATION_UNAVAILABLE,
 } from '@/common/constants/api.constants.js';
 import { TOPIC_NOT_FOUND } from '@/common/schemas/topics/topics.response.schema.js';
 import { mastra } from '../../mastra/mastra.config.js';
@@ -147,9 +147,8 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findUnique({ where: { id: sessionId } });
+    const session = await pg.theorySession.findFirst({ where: { id: sessionId, userId } });
     if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-    if (session.userId !== userId) throw new ForbiddenException(THEORY_NOT_SESSION_OWNER);
 
     const limit = dto.limit ?? session.totalQuestions;
 
@@ -168,7 +167,6 @@ export class TheoryService {
           question: true,
           topicId: true,
           difficulty: true,
-          referenceAnswer: true,
         },
       });
     } else if (session.mode === 'weak') {
@@ -184,7 +182,6 @@ export class TheoryService {
           question: true,
           topicId: true,
           difficulty: true,
-          referenceAnswer: true,
         },
       });
     } else {
@@ -199,9 +196,8 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findUnique({ where: { id: sessionId } });
+    const session = await pg.theorySession.findFirst({ where: { id: sessionId, userId } });
     if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-    if (session.userId !== userId) throw new ForbiddenException(THEORY_NOT_SESSION_OWNER);
     if (session.status === 'completed')
       throw new ConflictException(THEORY_SESSION_ALREADY_COMPLETED);
     if (session.questionsAnswered >= session.totalQuestions) {
@@ -219,8 +215,8 @@ export class TheoryService {
     });
     if (slot.count === 0) throw new ConflictException(THEORY_QUESTIONS_LIMIT_EXCEEDED);
 
-    let aiScore = 5;
-    let aiFeedback = 'Answer recorded.';
+    let aiScore: number;
+    let aiFeedback: string;
 
     try {
       const agent = mastra.getAgent('theoryEvaluatorAgent');
@@ -240,11 +236,17 @@ export class TheoryService {
       );
 
       const result = (response.object as { score: number; feedback: string }) || fallback;
+      if (result.score === fallback.score && result.feedback === fallback.feedback) {
+        throw new ServiceUnavailableException(THEORY_EVALUATION_UNAVAILABLE);
+      }
       aiScore = result.score;
       aiFeedback = result.feedback;
     } catch (error: unknown) {
+      await this.releaseReservedAnswerSlot(sessionId, userId);
+      if (error instanceof ServiceUnavailableException) throw error;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.warn({ error: errorMessage }, 'AI evaluation failed, using default score');
+      this.logger.warn({ error: errorMessage }, 'AI evaluation failed');
+      throw new ServiceUnavailableException(THEORY_EVALUATION_UNAVAILABLE, { cause: error });
     }
 
     let answer: Awaited<ReturnType<typeof pg.theoryAnswer.create>>;
@@ -261,20 +263,7 @@ export class TheoryService {
         },
       });
     } catch (error: unknown) {
-      try {
-        await pg.theorySession.updateMany({
-          where: { id: sessionId, userId, questionsAnswered: { gt: 0 } },
-          data: { questionsAnswered: { decrement: 1 } },
-        });
-      } catch (releaseError: unknown) {
-        this.logger.error(
-          {
-            sessionId,
-            error: releaseError instanceof Error ? releaseError.message : String(releaseError),
-          },
-          'Could not release reserved answer slot'
-        );
-      }
+      await this.releaseReservedAnswerSlot(sessionId, userId);
       throw error;
     }
 
@@ -286,12 +275,11 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findUnique({
-      where: { id: sessionId },
+    const session = await pg.theorySession.findFirst({
+      where: { id: sessionId, userId },
       include: { answers: true },
     });
     if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-    if (session.userId !== userId) throw new ForbiddenException(THEORY_NOT_SESSION_OWNER);
     if (session.status === 'completed')
       throw new ConflictException(THEORY_SESSION_ALREADY_COMPLETED);
 
@@ -319,7 +307,7 @@ export class TheoryService {
       );
     }
 
-    const updated = await pg.theorySession.findUnique({ where: { id: sessionId } });
+    const updated = await pg.theorySession.findFirst({ where: { id: sessionId, userId } });
     if (!updated) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
 
     this.logger.info({ sessionId, avgScore: updated.avgScore }, 'Session completed');
@@ -330,12 +318,11 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findUnique({
-      where: { id: sessionId },
+    const session = await pg.theorySession.findFirst({
+      where: { id: sessionId, userId },
       include: { answers: true },
     });
     if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-    if (session.userId !== userId) throw new ForbiddenException(THEORY_NOT_SESSION_OWNER);
 
     return session;
   }
@@ -455,5 +442,28 @@ export class TheoryService {
       if (avg < 7) weakIds.push(topicId);
     }
     return weakIds;
+  }
+
+  private async releaseReservedAnswerSlot(sessionId: string, userId: string) {
+    const pg = this.postgres.client_;
+    if (!pg) {
+      this.logger.error(
+        { sessionId },
+        'Could not release reserved answer slot: database unavailable'
+      );
+      return;
+    }
+
+    try {
+      await pg.theorySession.updateMany({
+        where: { id: sessionId, userId, questionsAnswered: { gt: 0 } },
+        data: { questionsAnswered: { decrement: 1 } },
+      });
+    } catch (error: unknown) {
+      this.logger.error(
+        { sessionId, error: error instanceof Error ? error.message : String(error) },
+        'Could not release reserved answer slot'
+      );
+    }
   }
 }

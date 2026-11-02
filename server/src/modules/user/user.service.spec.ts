@@ -4,6 +4,12 @@ import { PrismaService } from '@/prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Prisma } from '@prisma/client';
+const mockGetClerkUser = vi.hoisted(() => vi.fn());
+
+vi.mock('@clerk/clerk-sdk-node', () => ({
+  createClerkClient: () => ({ users: { getUser: mockGetClerkUser } }),
+}));
 
 describe('UserService', () => {
   let service: UserService;
@@ -111,6 +117,43 @@ describe('UserService', () => {
       expect(prisma.user.create).not.toHaveBeenCalled();
     });
 
+    it('should return the matching user when create loses a P2002 race', async () => {
+      const winningUser = { ...mockUser, id: 'user_winner' };
+      prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(winningUser);
+      prisma.user.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'test',
+        })
+      );
+
+      await expect(service.createUser(mockClerkDto)).resolves.toEqual(winningUser);
+      expect(prisma.user.findUnique).toHaveBeenNthCalledWith(2, {
+        where: { clerkUserId: 'clerk_123' },
+      });
+    });
+
+    it('should rethrow a P2002 error when no matching user exists after the race', async () => {
+      const duplicateError = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockRejectedValue(duplicateError);
+
+      await expect(service.createUser(mockClerkDto)).rejects.toBe(duplicateError);
+      expect(prisma.user.findUnique).toHaveBeenCalledTimes(2);
+    });
+
+    it('should rethrow unrelated create errors without another lookup', async () => {
+      const databaseError = new Error('database unavailable');
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockRejectedValue(databaseError);
+
+      await expect(service.createUser(mockClerkDto)).rejects.toBe(databaseError);
+      expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
+    });
+
     it('should throw BadRequestException if no email addresses', async () => {
       const dtoNoEmail = { ...mockClerkDto, email_addresses: [] };
 
@@ -161,6 +204,66 @@ describe('UserService', () => {
       expect(prisma.user.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ email: 'primary@example.com' }),
       });
+    });
+  });
+
+  describe('findOrCreateUser', () => {
+    it('should return the matching user when lazy creation loses a P2002 race', async () => {
+      const winningUser = { ...mockUser, id: 'user_winner' };
+      mockGetClerkUser.mockResolvedValue({
+        id: 'clerk_123',
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+        primaryEmailAddressId: 'email_1',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+      prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(winningUser);
+      prisma.user.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('duplicate', {
+          code: 'P2002',
+          clientVersion: 'test',
+        })
+      );
+
+      await expect(service.findOrCreateUser('clerk_123')).resolves.toEqual(winningUser);
+      expect(prisma.user.findUnique).toHaveBeenNthCalledWith(2, {
+        where: { clerkUserId: 'clerk_123' },
+      });
+    });
+
+    it('should rethrow lazy creation errors when no matching Clerk user was created', async () => {
+      const duplicateError = new Prisma.PrismaClientKnownRequestError('duplicate', {
+        code: 'P2002',
+        clientVersion: 'test',
+      });
+      mockGetClerkUser.mockResolvedValue({
+        id: 'clerk_123',
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+        primaryEmailAddressId: 'email_1',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockRejectedValue(duplicateError);
+
+      await expect(service.findOrCreateUser('clerk_123')).rejects.toBe(duplicateError);
+      expect(prisma.user.findUnique).toHaveBeenCalledTimes(2);
+    });
+
+    it('should rethrow unrelated lazy creation errors without another lookup', async () => {
+      const databaseError = new Error('database unavailable');
+      mockGetClerkUser.mockResolvedValue({
+        id: 'clerk_123',
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+        primaryEmailAddressId: 'email_1',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockRejectedValue(databaseError);
+
+      await expect(service.findOrCreateUser('clerk_123')).rejects.toBe(databaseError);
+      expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
     });
   });
 

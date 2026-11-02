@@ -12,9 +12,9 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
 - **Language**: TypeScript (v6) in Strict mode.
 - **ORM & Databases**:
   - Prisma (v6)
-  - MongoDB (Users, Topics, Questions, Chats)
-  - PostgreSQL (Practice Sessions, Answers)
-- **AI Agent Orchestration**: Mastra (v1) with `@ai-sdk/openai` calling NVIDIA NIM `llama-3.3-nemotron-super-49b-v1.5`.
+  - MongoDB (Users, UserSettings, Topics, Questions)
+  - PostgreSQL (Theory and Coding sessions, questions, and answers)
+- **AI Agent Orchestration**: Mastra (v1) with `@ai-sdk/openai` and configurable NVIDIA NIM/Groq providers.
 - **Validation**: Zod (runtime validation) + class-validator/class-transformer.
 - **Security**: Fastify Helmet (CSP, secure headers), Fastify CORS, and Fastify Rate Limit.
 - **Authentication**: Clerk Node SDK.
@@ -25,7 +25,7 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
 
 ### Prerequisites
 
-- Node.js v18+
+- Node.js v20+
 - pnpm v9+
 
 ### Installation & Run
@@ -42,96 +42,42 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
 
 ---
 
-## API Routes Specification
+## API Routes
 
-All endpoint paths are prefixed with `/api/v1`.
+The API prefix is `/api/v1`, except for the unprefixed health probes. Successful responses use `{ success, message, data }`; errors use `{ success: false, message, statusCode, path, timestamp }`. Swagger is available at `http://localhost:3000/docs` in development.
 
-### 1. Health Checks
+### Implemented modules
 
-#### `GET /api/v1/health`
+- **Health:** `GET /health` is a simple process response; `GET /healthz` reports liveness; `GET /readyz` checks MongoDB, PostgreSQL, and Redis.
+- **Tech expert:** `POST /api/v1/tech-expert` asks the public technology assistant.
+- **Users:** `GET /api/v1/users/me`, settings read/update, setup completion, and an admin-only user lookup. Clerk login/logout is handled by Clerk; this API has no local login or logout endpoints.
+- **Clerk webhook:** `POST /api/v1/webhooks/clerk` synchronizes user create/update/delete events. Profile and settings requests can also lazily synchronize a missing local user from Clerk.
+- **Topics and questions:** authenticated reads with admin-only create/update/delete operations.
+- **Theory:** session creation, question retrieval, answer submission, completion, history, weak-area analysis, and score trends. Access to another user's session returns 404. Question retrieval does not include the reference answer. If evaluation is unavailable, answer submission returns 503 and does not save a default score.
+- **Coding:** problem listing/detail, session start, bounded Piston run/submit, owned session detail/completion, and paginated history. AI review and stats remain deferred. See the [coding API contract](../routes/coding-api-spec.md).
 
-Checks backend and database connectivity.
+See the [route index](../routes.md) and the detailed [user](../routes/user-api-spec.md), [topic](../routes/topics-api-spec.md), [question](../routes/questions-api-spec.md), [webhook](../routes/webhooks-api-spec.md), and [theory](../routes/theory-api-spec.md) specifications.
 
-- **Authentication**: None (Public)
-- **Response (200 OK)**:
-  ```json
-  {
-    "status": "ok"
-  }
-  ```
+### Coding backend setup
 
-### 2. Tech Expert Assistant (AI)
+The coding module uses the PostgreSQL schema in `prisma/schema.postgresql.prisma` and the self-hosted Piston API v2. Validate and generate the client after schema changes:
 
-#### `POST /api/v1/tech-expert`
+```bash
+pnpm prisma:validate:postgresql
+pnpm prisma:generate
+```
 
-Submits a technology query to the AI Tech Expert agent.
+For a local development database, apply the additive schema change and seed one Two Sum problem:
 
-- **Authentication**: None (Public in dev)
-- **Request Body** (`application/json`):
-  - `question` (string, required): The question to ask.
-  ```json
-  {
-    "question": "Explain the difference between REST and GraphQL APIs."
-  }
-  ```
-- **Response (200 OK)**:
-  ```json
-  {
-    "data": {
-      "answer": {
-        "topic": "REST vs GraphQL",
-        "summary": "REST and GraphQL are two API standards. REST uses resource-based URLs and standard HTTP verbs, while GraphQL provides a single endpoint for dynamic client queries.",
-        "keyPoints": [
-          "REST uses multiple resource-specific endpoints.",
-          "GraphQL fetches exact requested fields in a single query.",
-          "REST relies on HTTP caching; GraphQL requires custom query caching."
-        ],
-        "examples": ["GET /api/v1/users/1", "query { user(id: 1) { name email } }"],
-        "relatedTopics": ["OpenAPI", "Apollo Client", "gRPC"]
-      },
-      "rawResponse": "..."
-    },
-    "error": null,
-    "meta": {}
-  }
-  ```
-- **Validation Error (400 Bad Request)**:
-  ```json
-  {
-    "statusCode": 400,
-    "message": "Validation failed",
-    "error": "Bad Request",
-    "meta": {
-      "errors": {
-        "question": {
-          "_errors": ["Question must not be empty"]
-        }
-      }
-    }
-  }
-  ```
+```bash
+pnpm prisma:push:postgresql
+pnpm seed:coding:local
+```
 
----
+The seed is idempotent by slug and refuses any PostgreSQL hostname except `localhost`, `127.0.0.1`, or `::1`. Do not target shared or production data. The schema adds `CodingSession.problemIds String[] @default([])`.
 
-## Implemented Modules
+Set `PISTON_URL=http://127.0.0.1:2000` for a host-run backend. The full Podman backend uses `PISTON_URL=http://host.containers.internal:2000`, since Piston runs on the host. Execution is on by default in development; production execution is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly set after reviewing the Piston isolation setup. The current local Piston launcher uses a privileged container and must not be exposed publicly as-is.
 
-### Theory Practice Sessions (`/api/v1/theory`)
+### Other planned modules
 
-Full theory practice module with 8 endpoints — session management, AI-evaluated answers, weak area detection, and score trends. See `routes.md` for the complete route table.
-
----
-
-## Planned API Specifications (Future Modules)
-
-- **`POST /api/v1/auth/login`**: Authenticate and return credentials.
-- **`POST /api/v1/auth/logout`**: Terminate session.
-- **`GET /api/v1/users/me`**: Get authenticated user profile.
-- **`PATCH /api/v1/users/me`**: Update user profile preferences/metadata.
-- **`GET /api/v1/topics`**: Retrieve list of topics.
-- **`POST /api/v1/questions/generate`**: Generate a new question using AI based on a topic.
-- **`GET /api/v1/analytics`**: Retrieve performance metrics, history trends, and strength charts.
-- **`POST /api/v1/chatbot`**: Talk to the general AI study chatbot.
-- **`POST /api/v1/payments/create-order`**: Create a Razorpay order for premium upgrade.
-- **`POST /api/v1/payments/verify`**: Verify Razorpay payment and update user role.
-- **`GET /api/v1/payments/history`**: Get user's payment history.
-- **`POST /api/v1/payments/webhook`**: Handle Razorpay webhook events (refund, subscription).
+The coding/Piston API, PDF ingestion and RAG, payments, email notifications, and a general study chatbot are not implemented in `server/src/modules/` yet. Their current designs are tracked in [the architecture backlog](../docs/architecture/TODO.md). Do not implement local login/logout endpoints; authentication remains with Clerk.

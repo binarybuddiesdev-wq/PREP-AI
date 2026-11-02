@@ -44,3 +44,14 @@ export {
   GetWeakAreasResponse,
   GetScoreTrendResponse,
 } from './theory/theory.response.schema.js';
+
+export {
+  CodingProblemsResponse,
+  CodingProblemResponse,
+  CodingSessionStartedResponse,
+  CodingRunResponse,
+  CodingSubmitResponse,
+  CodingSessionDetailResponse,
+  CodingSessionCompletedResponse,
+  CodingSessionHistoryResponse,
+} from './coding/coding.response.schema.js';

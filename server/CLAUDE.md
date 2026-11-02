@@ -60,11 +60,13 @@ The quality gate (lint, format check, build, spec type-check, tests, coverage) i
 
 Each feature lives under `server/src/modules/<name>/` as `<name>.controller.ts`, `<name>.service.ts`, `<name>.module.ts`, `dto/` (with a barrel `dto/index.ts`), and co-located `<name>.controller.spec.ts` / `<name>.service.spec.ts`. Look at `modules/topic/` as the reference implementation for new CRUD modules — it's the most complete/current example (see `routes/questions-api-spec.md` and `routes.md` at repo root for the intended shape of newer modules).
 
+The Coding module uses the PostgreSQL Prisma client for its question/session/answer records, plus Redis for atomic daily solve reservations and Piston for bounded execution. Keep session queries scoped by both `id` and Clerk `userId`; examples are structured JSON arrays and user code implements `solution(...args)`. AI review and stats remain deferred. Set the host Piston URL to `http://127.0.0.1:2000`; the full Podman server reaches host Piston at `http://host.containers.internal:2000`. Production execution requires the explicit `PISTON_EXECUTION_ENABLED=true` opt-in.
+
 ### Auth
 
 `ClerkAuthGuard` + `RolesGuard` are applied together via `@UseGuards(ClerkAuthGuard, RolesGuard)` at the controller level. `ClerkAuthGuard` verifies the Bearer token via Clerk's SDK, looks up the corresponding Mongo `User` by `clerkUserId`, and attaches `{ id, email, role }` to `request.user` (falls back to Clerk payload email/role if no local user exists yet). Routes are opted out of auth with `@Public()` (checked via reflector metadata, `IS_PUBLIC_KEY`). `RolesGuard` reads `@Roles(...)` metadata and 403s if `request.user.role` isn't included — it's a no-op if no roles are declared on the handler.
 
-Clerk webhooks (`modules/user/webhook.controller.ts`, `POST /webhooks/clerk`) keep the local Mongo `User` in sync on `user.created`/`user.updated`/`user.deleted`, verified via `svix` signature checking against `CLERK_WEBHOOK_SECRET`. This is the only place local users get created — there's no local registration endpoint.
+Clerk webhooks (`modules/user/webhook.controller.ts`, `POST /webhooks/clerk`) keep the local Mongo `User` in sync on `user.created`/`user.updated`/`user.deleted`, verified via `svix` signature checking against `CLERK_WEBHOOK_SECRET`. The user profile and settings flows can also lazily create a local user when a webhook has not arrived yet — there's no local registration endpoint.
 
 ### Response shape & validation
 

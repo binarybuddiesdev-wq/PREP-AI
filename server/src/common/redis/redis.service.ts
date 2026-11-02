@@ -24,6 +24,50 @@ end
 return redis.call('DECR', KEYS[1])
 `;
 
+const RESERVE_UNIQUE_QUOTA_SCRIPT = `
+local itemStatus = redis.call('GET', KEYS[2])
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+if itemStatus == 'solved' then
+  return {2, current}
+end
+if itemStatus == 'reserved' then
+  return {3, current}
+end
+local limit = tonumber(ARGV[1])
+if current >= limit then
+  return {0, current}
+end
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+  redis.call('EXPIRE', KEYS[1], tonumber(ARGV[2]))
+end
+redis.call('SET', KEYS[2], 'reserved', 'EX', tonumber(ARGV[2]))
+return {1, count}
+`;
+
+const FINALIZE_UNIQUE_QUOTA_SCRIPT = `
+if redis.call('GET', KEYS[2]) ~= 'reserved' then
+  return 0
+end
+if ARGV[1] == 'solved' then
+  redis.call('SET', KEYS[2], 'solved', 'EX', tonumber(ARGV[2]))
+  return 1
+end
+redis.call('DEL', KEYS[2])
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+if current <= 1 then
+  redis.call('DEL', KEYS[1])
+  return 1
+end
+redis.call('DECR', KEYS[1])
+return 1
+`;
+
+export type TUniqueQuotaReservation = {
+  status: 'reserved' | 'already_solved' | 'in_progress' | 'limit';
+  count: number;
+};
+
 export interface IQuotaReservation {
   allowed: boolean;
   count: number;
@@ -65,6 +109,56 @@ export class RedisService implements OnModuleDestroy {
 
   async releaseQuota(key: string): Promise<void> {
     await this.client.eval(RELEASE_QUOTA_SCRIPT, 1, key);
+  }
+
+  async reserveUniqueQuota(
+    quotaKey: string,
+    itemKey: string,
+    limit: number,
+    ttlSeconds: number
+  ): Promise<TUniqueQuotaReservation> {
+    const result: unknown = await this.client.eval(
+      RESERVE_UNIQUE_QUOTA_SCRIPT,
+      2,
+      quotaKey,
+      itemKey,
+      String(limit),
+      String(ttlSeconds)
+    );
+    if (!Array.isArray(result) || result.length !== 2) {
+      throw new Error('invalid unique quota reservation result');
+    }
+
+    const status = Number(result[0]);
+    const count = Number(result[1]);
+    const statuses: Record<number, TUniqueQuotaReservation['status']> = {
+      0: 'limit',
+      1: 'reserved',
+      2: 'already_solved',
+      3: 'in_progress',
+    };
+    const mappedStatus = statuses[status];
+    if (!mappedStatus || !Number.isFinite(count)) {
+      throw new Error('invalid unique quota reservation result');
+    }
+
+    return { status: mappedStatus, count };
+  }
+
+  async finalizeUniqueQuota(
+    quotaKey: string,
+    itemKey: string,
+    outcome: 'solved' | 'release',
+    ttlSeconds: number
+  ): Promise<void> {
+    await this.client.eval(
+      FINALIZE_UNIQUE_QUOTA_SCRIPT,
+      2,
+      quotaKey,
+      itemKey,
+      outcome,
+      String(ttlSeconds)
+    );
   }
 
   ping(): Promise<string> {

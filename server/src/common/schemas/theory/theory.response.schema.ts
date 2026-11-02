@@ -9,7 +9,17 @@ import {
   THEORY_WEAK_AREAS_FETCHED,
   THEORY_SCORE_TREND_FETCHED,
 } from '@/common/constants/api.constants.js';
-import { questionListDataSchema } from '../questions/questions.response.schema.js';
+import {
+  questionDataSchema,
+  questionListDataSchema,
+} from '../questions/questions.response.schema.js';
+
+const { referenceAnswer: _referenceAnswer, ...theoryQuestionProperties } =
+  questionDataSchema.properties;
+const theoryQuestionListDataSchema = {
+  ...questionListDataSchema,
+  items: { ...questionDataSchema, properties: theoryQuestionProperties },
+};
 
 // --- Data Schemas ---
 
@@ -92,7 +102,7 @@ export const StartSessionResponse = {
 export const GetSessionQuestionsResponse = {
   status: 200,
   description: THEORY_QUESTIONS_FETCHED,
-  ...successResponseSchema(questionListDataSchema, THEORY_QUESTIONS_FETCHED),
+  ...successResponseSchema(theoryQuestionListDataSchema, THEORY_QUESTIONS_FETCHED),
 };
 
 export const SubmitAnswerResponse = {

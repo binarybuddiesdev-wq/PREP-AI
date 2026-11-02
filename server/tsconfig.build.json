@@ -4,6 +4,7 @@
     "node_modules",
     "test",
     "dist",
+    "prisma/seed-coding-local.ts",
     "**/*spec.ts",
     "vitest.config.ts",
     "vitest.config.e2e.ts"

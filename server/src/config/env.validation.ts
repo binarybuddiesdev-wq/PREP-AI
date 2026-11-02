@@ -6,6 +6,11 @@ export const envSchema = z
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     DATABASE_URL: z.string().optional(),
     POSTGRESQL_URL: z.string().optional(),
+    PISTON_URL: z.string().url().optional().default('http://127.0.0.1:2000'),
+    PISTON_EXECUTION_ENABLED: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) => value === 'true'),
     REDIS_HOST: z.string().optional().default('localhost'),
     REDIS_PORT: z.coerce.number().optional().default(6379),
     CORS_ORIGIN: z.string().optional().default('*'),
