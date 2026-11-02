@@ -24,6 +24,7 @@ export default defineConfig({
         'src/common/index.ts',
         'src/prisma/index.ts',
         'src/config/**/*',
+        'src/mastra/evals/run-theory-evaluation.ts',
       ],
       thresholds: { lines: 90, statements: 90, functions: 90, branches: 90 },
     },

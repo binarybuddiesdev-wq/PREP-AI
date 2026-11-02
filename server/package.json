@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "eval:theory": "tsx src/mastra/evals/run-theory-evaluation.ts",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "prisma:generate": "prisma generate --schema=prisma/schema.prisma && prisma generate --schema=prisma/schema.postgresql.prisma",
     "prisma:push:mongodb": "prisma db push --schema=prisma/schema.prisma",

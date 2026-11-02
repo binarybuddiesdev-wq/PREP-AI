@@ -53,3 +53,4 @@ yarn-error.log*
 .mimocode*
 .remember/
 .claude/settings.local.json
+server/evaluation-results/

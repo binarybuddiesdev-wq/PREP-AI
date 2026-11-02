@@ -21,6 +21,7 @@
     "build:viewer": "pnpm --filter server exec tsx ../scripts/build-architecture-viewer.ts",
     "build:viewer:check": "pnpm --filter server exec tsx ../scripts/build-architecture-viewer.ts --check",
     "check:agent-docs": "node scripts/check-agent-docs.js",
+    "eval:theory": "pnpm --filter server eval:theory",
     "gate": "node scripts/gate.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

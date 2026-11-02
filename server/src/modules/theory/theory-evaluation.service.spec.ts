@@ -55,6 +55,12 @@ describe('TheoryEvaluationService', () => {
         completedAt: expect.any(Date),
       },
     });
+    expect(mockGenerate).toHaveBeenCalledWith(
+      expect.stringContaining('Evaluate the technical interview answer'),
+      expect.objectContaining({
+        instructions: expect.stringContaining('You are an expert technical interviewer'),
+      })
+    );
     vi.unstubAllEnvs();
   });
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { chatWithFailover, pickProvider } from './providers.js';
+import { chatWithFailover, getModel, pickProvider } from './providers.js';
 
 describe('chatWithFailover', () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -45,6 +45,12 @@ describe('chatWithFailover', () => {
     vi.stubEnv('GROQ_API_KEY', 'groq-test-key');
 
     expect(pickProvider()).toBe('groq');
+  });
+
+  it('supports an explicit model override for controlled experiments', () => {
+    expect(getModel('groq', 'openai/custom-baseline-model').modelId).toBe(
+      'openai/custom-baseline-model'
+    );
   });
 
   it('reports a failed provider when the provider throws a non-Error value', async () => {

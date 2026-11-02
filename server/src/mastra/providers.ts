@@ -78,7 +78,8 @@ export function pickProvider(): ProviderName {
  *   const model = getModel();  // auto-picks NVIDIA or Groq
  */
 export function getModel(
-  name: ProviderName = pickProvider()
+  name: ProviderName = pickProvider(),
+  modelName?: string
 ): ReturnType<ReturnType<typeof createOpenAI>['chat']> {
   const provider = createOpenAI({
     apiKey: name === 'nvidia' ? process.env.NVIDIA_API_KEY || '' : process.env.GROQ_API_KEY || '',
@@ -87,7 +88,7 @@ export function getModel(
         ? (process.env.NVIDIA_BASE_URL ?? 'https://integrate.api.nvidia.com/v1')
         : (process.env.GROQ_BASE_URL ?? 'https://api.groq.com/openai/v1'),
   });
-  return provider.chat(defaultModel[name]());
+  return provider.chat(modelName ?? defaultModel[name]());
 }
 
 /**

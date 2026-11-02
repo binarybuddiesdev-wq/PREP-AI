@@ -1,0 +1,466 @@
+{
+  "datasetVersion": 1,
+  "name": "theory-evaluator-curated-v1",
+  "description": "Synthetic, hand-labeled technical interview answers for offline theory-evaluator comparisons.",
+  "cases": [
+    {
+      "id": "react-effects-strong",
+      "topic": "React",
+      "question": "When would you use useEffect instead of useLayoutEffect?",
+      "answer": "useEffect runs after paint and is right for subscriptions or network synchronization. useLayoutEffect runs synchronously after DOM mutations but before paint, so I reserve it for layout reads or writes that must not visibly flicker.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["flicker", "layout"],
+      "rationale": "Correct timing distinction and a concrete use case for each hook."
+    },
+    {
+      "id": "react-effects-good",
+      "topic": "React",
+      "question": "When would you use useEffect instead of useLayoutEffect?",
+      "answer": "useEffect runs after rendering and should be the default for side effects. useLayoutEffect runs earlier and can be used when the screen needs to be measured.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["paint", "blocking"],
+      "rationale": "Mostly correct; it omits the paint boundary and performance trade-off."
+    },
+    {
+      "id": "react-effects-partial",
+      "topic": "React",
+      "question": "When would you use useEffect instead of useLayoutEffect?",
+      "answer": "They both run after a component renders. useLayoutEffect is mostly for layout and useEffect is for other work.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["paint", "timing"],
+      "rationale": "Names broad use cases but misses the important before-paint versus after-paint behavior."
+    },
+    {
+      "id": "react-effects-wrong",
+      "topic": "React",
+      "question": "When would you use useEffect instead of useLayoutEffect?",
+      "answer": "useEffect runs before the browser updates the DOM, while useLayoutEffect waits until after the page is painted.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["reversed", "paint"],
+      "rationale": "The central timing relationship is reversed."
+    },
+    {
+      "id": "react-effects-offtopic",
+      "topic": "React",
+      "question": "When would you use useEffect instead of useLayoutEffect?",
+      "answer": "React is a library for building user interfaces with reusable components.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["timing", "example"],
+      "rationale": "Does not answer the comparison or describe either hook."
+    },
+
+    {
+      "id": "event-loop-strong",
+      "topic": "JavaScript",
+      "question": "Explain the event loop and the order of promise callbacks and timers.",
+      "answer": "JavaScript runs the current call stack to completion, then drains the microtask queue (including promise reactions) before selecting the next task such as a timer callback. A zero-delay timer is therefore not an immediate callback.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["microtask", "timer"],
+      "rationale": "Accurately distinguishes the call stack, microtasks, and timer tasks."
+    },
+    {
+      "id": "event-loop-good",
+      "topic": "JavaScript",
+      "question": "Explain the event loop and the order of promise callbacks and timers.",
+      "answer": "The event loop lets JavaScript handle asynchronous work without blocking. Promise callbacks generally run before setTimeout callbacks, even when the timeout is zero.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["microtask", "call stack"],
+      "rationale": "Correct ordering, but lacks the current-task and microtask-drain explanation."
+    },
+    {
+      "id": "event-loop-partial",
+      "topic": "JavaScript",
+      "question": "Explain the event loop and the order of promise callbacks and timers.",
+      "answer": "The event loop checks for events and runs callbacks. Promises and timers both happen later, depending on which finishes first.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["queue", "promise"],
+      "rationale": "Recognizes deferred callbacks but misses the deterministic queue ordering."
+    },
+    {
+      "id": "event-loop-wrong",
+      "topic": "JavaScript",
+      "question": "Explain the event loop and the order of promise callbacks and timers.",
+      "answer": "A setTimeout callback with zero delay runs before a resolved promise because timers have the highest priority.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["promise", "microtask"],
+      "rationale": "Incorrectly prioritizes timers over promise microtasks."
+    },
+    {
+      "id": "event-loop-offtopic",
+      "topic": "JavaScript",
+      "question": "Explain the event loop and the order of promise callbacks and timers.",
+      "answer": "JavaScript has arrays, objects, functions, and many useful language features.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["queue", "ordering"],
+      "rationale": "Does not describe asynchronous callback scheduling."
+    },
+
+    {
+      "id": "typescript-generics-strong",
+      "topic": "TypeScript",
+      "question": "What problem do generics solve in TypeScript?",
+      "answer": "Generics let a function or type preserve relationships between input and output types without hard-coding one concrete type. For example, identity<T>(value: T): T accepts many types while callers retain the exact type they passed.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["constraint", "example"],
+      "rationale": "Explains reusable type relationships and gives a clear example."
+    },
+    {
+      "id": "typescript-generics-good",
+      "topic": "TypeScript",
+      "question": "What problem do generics solve in TypeScript?",
+      "answer": "Generics make functions reusable with different types and help avoid using any. A function can accept a type parameter and return that same type.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["example", "relationship"],
+      "rationale": "Correct but lacks a concrete example and fuller explanation of preserved relationships."
+    },
+    {
+      "id": "typescript-generics-partial",
+      "topic": "TypeScript",
+      "question": "What problem do generics solve in TypeScript?",
+      "answer": "A generic is a placeholder type, often written as T, that can be used in a function.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["reusable", "type safety"],
+      "rationale": "Defines syntax but not the practical benefit."
+    },
+    {
+      "id": "typescript-generics-wrong",
+      "topic": "TypeScript",
+      "question": "What problem do generics solve in TypeScript?",
+      "answer": "Generics are runtime values that automatically convert one type into another when the application runs.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["compile", "type"],
+      "rationale": "Confuses compile-time type parameters with runtime conversion."
+    },
+    {
+      "id": "typescript-generics-offtopic",
+      "topic": "TypeScript",
+      "question": "What problem do generics solve in TypeScript?",
+      "answer": "TypeScript adds static typing to JavaScript and can compile to JavaScript.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["generic", "example"],
+      "rationale": "Describes TypeScript generally but not generics."
+    },
+
+    {
+      "id": "node-event-loop-strong",
+      "topic": "Node.js",
+      "question": "How can CPU-heavy work affect a Node.js server?",
+      "answer": "CPU-heavy synchronous work occupies the event-loop thread, delaying unrelated requests and callbacks. I would move substantial CPU work to worker threads or another process and keep the main event loop responsive.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["worker", "event loop"],
+      "rationale": "Correctly explains contention and gives suitable isolation options."
+    },
+    {
+      "id": "node-event-loop-good",
+      "topic": "Node.js",
+      "question": "How can CPU-heavy work affect a Node.js server?",
+      "answer": "Node handles many requests on one event loop, so expensive computation can slow down other requests. A worker thread can help with that work.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["synchronous", "isolate"],
+      "rationale": "Correct but could explain synchronous blocking and operational costs of offloading."
+    },
+    {
+      "id": "node-event-loop-partial",
+      "topic": "Node.js",
+      "question": "How can CPU-heavy work affect a Node.js server?",
+      "answer": "CPU work uses resources and might make the server less responsive. Scaling the server can improve performance.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["event loop", "worker"],
+      "rationale": "Recognizes responsiveness impact but misses Node's single event-loop bottleneck and targeted isolation."
+    },
+    {
+      "id": "node-event-loop-wrong",
+      "topic": "Node.js",
+      "question": "How can CPU-heavy work affect a Node.js server?",
+      "answer": "Node automatically runs every JavaScript callback on a separate CPU core, so CPU-heavy code cannot block requests.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["blocking", "worker thread"],
+      "rationale": "Incorrectly claims JavaScript callbacks are automatically parallelized across cores."
+    },
+    {
+      "id": "node-event-loop-offtopic",
+      "topic": "Node.js",
+      "question": "How can CPU-heavy work affect a Node.js server?",
+      "answer": "Node.js is built on the V8 JavaScript engine and is popular for web servers.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["CPU", "event loop"],
+      "rationale": "Does not explain the effect of CPU-heavy work."
+    },
+
+    {
+      "id": "rest-idempotency-strong",
+      "topic": "HTTP APIs",
+      "question": "What does idempotency mean for an HTTP operation?",
+      "answer": "An operation is idempotent when repeating the same request has the same intended effect as applying it once. PUT is defined as idempotent; POST is not inherently idempotent, though an API can use an idempotency key to make retries safe.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["retry", "key"],
+      "rationale": "Defines repeat effects accurately and distinguishes method semantics from application-level keys."
+    },
+    {
+      "id": "rest-idempotency-good",
+      "topic": "HTTP APIs",
+      "question": "What does idempotency mean for an HTTP operation?",
+      "answer": "Idempotent requests can be retried without changing the final result after the first successful request. PUT is usually idempotent, while POST often creates a new resource.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["same effect", "key"],
+      "rationale": "Good practical description but does not explain API-level idempotency keys or exact semantics."
+    },
+    {
+      "id": "rest-idempotency-partial",
+      "topic": "HTTP APIs",
+      "question": "What does idempotency mean for an HTTP operation?",
+      "answer": "It means an API request can be repeated and the server handles it safely.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["effect", "PUT"],
+      "rationale": "Captures safe repetition but lacks the same-effect definition and examples."
+    },
+    {
+      "id": "rest-idempotency-wrong",
+      "topic": "HTTP APIs",
+      "question": "What does idempotency mean for an HTTP operation?",
+      "answer": "Idempotency means every retry returns a different response so the client knows it was processed again.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["same effect", "retry"],
+      "rationale": "Defines the opposite behavior."
+    },
+    {
+      "id": "rest-idempotency-offtopic",
+      "topic": "HTTP APIs",
+      "question": "What does idempotency mean for an HTTP operation?",
+      "answer": "HTTP is a protocol used by browsers and servers to exchange requests and responses.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["repeat", "effect"],
+      "rationale": "Describes HTTP but not idempotency."
+    },
+
+    {
+      "id": "sql-isolation-strong",
+      "topic": "Databases",
+      "question": "Why use a database transaction?",
+      "answer": "A transaction groups changes into a unit that commits atomically or rolls back, preventing partial updates. Isolation controls how concurrent transactions observe each other's work, with stronger levels trading concurrency for fewer anomalies.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["rollback", "isolation"],
+      "rationale": "Explains atomicity and isolation while acknowledging concurrency trade-offs."
+    },
+    {
+      "id": "sql-isolation-good",
+      "topic": "Databases",
+      "question": "Why use a database transaction?",
+      "answer": "Transactions let several database changes succeed together or fail together. They are useful when updating related records so the database does not keep only part of the change.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["concurrent", "isolation"],
+      "rationale": "Accurately covers atomicity but omits isolation and concurrency."
+    },
+    {
+      "id": "sql-isolation-partial",
+      "topic": "Databases",
+      "question": "Why use a database transaction?",
+      "answer": "A transaction is a set of queries sent to the database at once, often to make the code cleaner.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["atomic", "rollback"],
+      "rationale": "Identifies grouping but not its correctness guarantees."
+    },
+    {
+      "id": "sql-isolation-wrong",
+      "topic": "Databases",
+      "question": "Why use a database transaction?",
+      "answer": "A transaction guarantees that every query is permanently saved immediately, even if later queries fail.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["rollback", "atomic"],
+      "rationale": "Misstates rollback and atomic commit behavior."
+    },
+    {
+      "id": "sql-isolation-offtopic",
+      "topic": "Databases",
+      "question": "Why use a database transaction?",
+      "answer": "SQL is a language for querying relational databases with commands such as SELECT.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["atomic", "rollback"],
+      "rationale": "Does not explain transactions."
+    },
+
+    {
+      "id": "cache-invalidation-strong",
+      "topic": "Caching",
+      "question": "What makes cache invalidation difficult?",
+      "answer": "The cache is a second copy of data, so writes can leave it stale unless the application has a clear invalidation or refresh rule. TTLs bound staleness but do not guarantee immediate consistency; write-through or event-driven invalidation have different complexity and failure modes.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["TTL", "consistency"],
+      "rationale": "Explains stale copies and compares common invalidation strategies and guarantees."
+    },
+    {
+      "id": "cache-invalidation-good",
+      "topic": "Caching",
+      "question": "What makes cache invalidation difficult?",
+      "answer": "Cached values can become outdated after the original data changes. Applications need a way to expire or refresh them, such as a TTL or clearing the key on writes.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["failure", "consistency"],
+      "rationale": "Correctly identifies stale data and two approaches but not their trade-offs."
+    },
+    {
+      "id": "cache-invalidation-partial",
+      "topic": "Caching",
+      "question": "What makes cache invalidation difficult?",
+      "answer": "A cache needs to be cleared sometimes because it stores data temporarily.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["stale", "invalidation"],
+      "rationale": "Recognizes cleanup but does not discuss correctness or invalidation timing."
+    },
+    {
+      "id": "cache-invalidation-wrong",
+      "topic": "Caching",
+      "question": "What makes cache invalidation difficult?",
+      "answer": "A cache always stays synchronized with the database automatically, so invalidation is not needed.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["stale", "write"],
+      "rationale": "Incorrectly assumes automatic synchronization."
+    },
+    {
+      "id": "cache-invalidation-offtopic",
+      "topic": "Caching",
+      "question": "What makes cache invalidation difficult?",
+      "answer": "A cache can improve performance by returning frequently used data faster.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["stale", "invalidation"],
+      "rationale": "Describes a benefit but not the challenge asked about."
+    },
+
+    {
+      "id": "queue-atleastonce-strong",
+      "topic": "Distributed Systems",
+      "question": "Why should queue consumers be idempotent?",
+      "answer": "Most queues can redeliver a job after a timeout, worker crash, or lost acknowledgement, so one logical job may execute more than once. Consumers should persist a stable job identity and make side effects conditional or deduplicated.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["redelivery", "deduplicate"],
+      "rationale": "Connects at-least-once delivery to concrete duplicate-side-effect protection."
+    },
+    {
+      "id": "queue-atleastonce-good",
+      "topic": "Distributed Systems",
+      "question": "Why should queue consumers be idempotent?",
+      "answer": "A queue may retry a message if the worker fails. Idempotent processing prevents the retry from creating duplicate results or charging twice.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["identity", "acknowledgement"],
+      "rationale": "Good examples, but does not explain delivery semantics or deduplication mechanisms."
+    },
+    {
+      "id": "queue-atleastonce-partial",
+      "topic": "Distributed Systems",
+      "question": "Why should queue consumers be idempotent?",
+      "answer": "Idempotency helps jobs run safely when they get retried.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["duplicate", "retry"],
+      "rationale": "States the benefit but gives no failure reason or implementation."
+    },
+    {
+      "id": "queue-atleastonce-wrong",
+      "topic": "Distributed Systems",
+      "question": "Why should queue consumers be idempotent?",
+      "answer": "A queue guarantees every job is delivered exactly once, so consumers never need duplicate protection.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["retry", "duplicate"],
+      "rationale": "Assumes exactly-once delivery and ignores retries and lost acknowledgements."
+    },
+    {
+      "id": "queue-atleastonce-offtopic",
+      "topic": "Distributed Systems",
+      "question": "Why should queue consumers be idempotent?",
+      "answer": "A message queue separates producers from consumers and can buffer work.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["duplicate", "retry"],
+      "rationale": "Describes queues generally, not consumer idempotency."
+    },
+
+    {
+      "id": "authn-authz-strong",
+      "topic": "Security",
+      "question": "How do authentication and authorization differ?",
+      "answer": "Authentication establishes who the caller is, while authorization checks what that identity is allowed to do. A valid login does not imply access to every resource; authorization must be enforced for each requested action and owned record.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["resource", "permission"],
+      "rationale": "Accurately distinguishes identity from permissions and applies it to object access."
+    },
+    {
+      "id": "authn-authz-good",
+      "topic": "Security",
+      "question": "How do authentication and authorization differ?",
+      "answer": "Authentication verifies a user, for example with a password or token. Authorization decides whether that user has permission to use a feature.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["resource", "access"],
+      "rationale": "Correct definitions but misses resource-level checks and the fact that login is not blanket access."
+    },
+    {
+      "id": "authn-authz-partial",
+      "topic": "Security",
+      "question": "How do authentication and authorization differ?",
+      "answer": "Authentication and authorization are both security checks that happen when someone logs in.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["identity", "permission"],
+      "rationale": "Recognizes related concepts but does not distinguish their purposes."
+    },
+    {
+      "id": "authn-authz-wrong",
+      "topic": "Security",
+      "question": "How do authentication and authorization differ?",
+      "answer": "Authorization confirms a password is correct, and authentication decides whether a user is an administrator.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["identity", "permission"],
+      "rationale": "Swaps the definitions."
+    },
+    {
+      "id": "authn-authz-offtopic",
+      "topic": "Security",
+      "question": "How do authentication and authorization differ?",
+      "answer": "Encryption protects data by transforming it so it cannot be read without a key.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["identity", "permission"],
+      "rationale": "Discusses another security concept."
+    },
+
+    {
+      "id": "observability-strong",
+      "topic": "Operations",
+      "question": "How do logs, metrics, and traces help debug a distributed service?",
+      "answer": "Logs capture detailed events, metrics summarize behavior over time, and traces connect spans across a request's services. A shared trace or request ID ties them together so an operator can move from an error-rate spike to the affected request path and its events.",
+      "scoreRange": [9, 10],
+      "feedbackConcepts": ["correlation", "request"],
+      "rationale": "Defines all three signals and explains cross-signal correlation."
+    },
+    {
+      "id": "observability-good",
+      "topic": "Operations",
+      "question": "How do logs, metrics, and traces help debug a distributed service?",
+      "answer": "Logs show individual events, metrics show numeric trends, and traces show how a request moves through services. Together they help locate a problem.",
+      "scoreRange": [7, 8],
+      "feedbackConcepts": ["correlation", "latency"],
+      "rationale": "Correct concise distinctions but lacks examples of correlation or diagnosing latency."
+    },
+    {
+      "id": "observability-partial",
+      "topic": "Operations",
+      "question": "How do logs, metrics, and traces help debug a distributed service?",
+      "answer": "They collect information about the application and can be viewed in a dashboard when something goes wrong.",
+      "scoreRange": [4, 6],
+      "feedbackConcepts": ["logs", "trace"],
+      "rationale": "Understands the general purpose but does not distinguish the signal types."
+    },
+    {
+      "id": "observability-wrong",
+      "topic": "Operations",
+      "question": "How do logs, metrics, and traces help debug a distributed service?",
+      "answer": "Metrics store every detailed request event, logs measure averages, and traces are dashboards for server health.",
+      "scoreRange": [1, 3],
+      "feedbackConcepts": ["distinction", "request"],
+      "rationale": "Confuses the purpose of each signal."
+    },
+    {
+      "id": "observability-offtopic",
+      "topic": "Operations",
+      "question": "How do logs, metrics, and traces help debug a distributed service?",
+      "answer": "A distributed service runs parts of an application on multiple machines.",
+      "scoreRange": [0, 1],
+      "feedbackConcepts": ["logs", "metrics"],
+      "rationale": "Defines distributed systems without answering the observability question."
+    }
+  ]
+}
