@@ -8,6 +8,13 @@ datasource db {
   url      = env("POSTGRESQL_URL")
 }
 
+enum TheoryAnswerStatus {
+  queued
+  running
+  completed
+  failed
+}
+
 model TheorySession {
   id                String         @id @default(uuid())
   userId            String
@@ -28,19 +35,25 @@ model TheorySession {
 }
 
 model TheoryAnswer {
-  id           String   @id @default(uuid())
-  sessionId    String
-  questionId   String? // null for AI-generated questions (Weak Areas / PDF Study)
-  questionText String
-  userAnswer   String
-  aiScore      Float
-  aiFeedback   String
-  timeTaken    Int? // seconds
-  createdAt    DateTime @default(now())
+  id             String             @id @default(uuid())
+  sessionId      String
+  questionId     String? // null for AI-generated questions (Weak Areas / PDF Study)
+  questionText   String
+  userAnswer     String
+  aiScore        Float?
+  aiFeedback     String?
+  status         TheoryAnswerStatus @default(completed)
+  failureMessage String?
+  timeTaken      Int? // seconds
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
 
   session TheorySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
+  @@index([status, createdAt])
 }
 
 model CodingSession {
@@ -107,26 +120,26 @@ model CodingAnswer {
 }
 
 model CodingExecution {
-  id             String    @id @default(uuid())
-  sessionId      String
-  userId         String
-  problemId      String
-  operation      String // "run" | "submit"
-  language       String
-  sourceCode               String
-  examples                 Json
-  queueJobId               String
-  quotaKey                 String?
-  quotaItemKey             String?
-  quotaTtlSeconds          Int?
-  quotaReservationToken    String?
-  status         String    @default("queued") // "queued" | "running" | "completed" | "failed"
-  result         Json?
-  failureMessage String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  startedAt      DateTime?
-  completedAt    DateTime?
+  id                    String    @id @default(uuid())
+  sessionId             String
+  userId                String
+  problemId             String
+  operation             String // "run" | "submit"
+  language              String
+  sourceCode            String
+  examples              Json
+  queueJobId            String
+  quotaKey              String?
+  quotaItemKey          String?
+  quotaTtlSeconds       Int?
+  quotaReservationToken String?
+  status                String    @default("queued") // "queued" | "running" | "completed" | "failed"
+  result                Json?
+  failureMessage        String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  startedAt             DateTime?
+  completedAt           DateTime?
 
   session CodingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   answer  CodingAnswer?

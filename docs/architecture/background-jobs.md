@@ -6,18 +6,20 @@ BullMQ stores jobs in the existing Redis service. The API and worker share the s
 
 Coding run and submit requests first create a `CodingExecution` row in PostgreSQL, then enqueue Piston work on `coding-execution-queue` and return HTTP 202 with the execution ID. Clients read current state and result from the session-scoped execution lookup. The worker marks the row running, executes through `PistonClient`, and persists completion and submission side effects transactionally.
 
-| Queue                     | Concurrency | Attempts | Current consumer      |
-| ------------------------- | ----------: | -------: | --------------------- |
-| `coding-execution-queue`  |           5 |        3 | Piston code execution |
-| `theory-eval-queue`       |           5 |        3 | Planned               |
-| `code-review-queue`       |           3 |        3 | Planned               |
-| `pdf-ingest-queue`        |           2 |        5 | Planned               |
-| `email-queue`             |          10 |        5 | Planned               |
-| `payment-reconcile-queue` |           1 |        3 | Planned               |
+| Queue                     | Concurrency | Attempts | Current consumer        |
+| ------------------------- | ----------: | -------: | ----------------------- |
+| `coding-execution-queue`  |           5 |        3 | Piston code execution   |
+| `theory-eval-queue`       |           5 |        3 | Mastra theory evaluator |
+| `code-review-queue`       |           3 |        3 | Planned                 |
+| `pdf-ingest-queue`        |           2 |        5 | Planned                 |
+| `email-queue`             |          10 |        5 | Planned                 |
+| `payment-reconcile-queue` |           1 |        3 | Planned                 |
 
 All jobs use exponential backoff starting at one second. Completed jobs are retained for up to seven days or 1,000 jobs; failed jobs are retained for up to seven days or 5,000 jobs. Worker failure logs include the queue job ID and attempt count, never the source code or job payload. Inspect retained failures using BullMQ tooling or a Redis-aware operator workflow; a dashboard is not configured yet.
 
-The coding route returns as soon as the job is queued. PostgreSQL stores the source, test examples, deterministic queue job ID, and quota reservation metadata with the execution. If the API stops after persisting a queued execution but before enqueueing it, the worker rebuilds the BullMQ payload from PostgreSQL and dispatches it. BullMQ retries stalled active jobs after a worker restart. Clients can poll the status; source code is never returned by this endpoint or written to logs.
+Coding and theory routes return as soon as their job is queued. PostgreSQL is the source of truth for both lifecycles. Coding stores its source, test examples, deterministic queue job ID, and quota reservation metadata with the execution. Theory stores the answer text, nullable evaluation fields, and lifecycle state on the answer row. The theory submission reserves its session question slot and creates the queued answer in one PostgreSQL transaction. Its answer UUID is derived from the session ID and `Idempotency-Key`; replay returns the original answer and does not consume another slot.
+
+If Redis is unavailable or the API stops after persisting a queued row but before enqueueing it, the route still returns the persisted queued answer. The worker scans PostgreSQL on startup and every 30 seconds, reconstructs the deterministic BullMQ payload, and dispatches queued rows. BullMQ retries stalled active jobs after a worker restart. Clients poll `GET /api/v1/theory/session/:sessionId/answers/:answerId` for `queued`, `running`, `completed`, or `failed`. A failed terminal evaluation stores no score; its safe message is returned in `failureMessage`. LLM calls are at-least-once: a stalled/retried job can repeat a model request, while conditional PostgreSQL state updates prevent overwriting a completed result. Logs contain job/answer IDs and attempt information, never answer text.
 
 A queue submission failure marks the execution failed and returns HTTP 503. After an unrecoverable stall or final retry, the worker persists failure and releases its owned solve reservation. If PostgreSQL is unavailable during that write, the failed BullMQ job remains retained and a worker reconciliation loop retries the database update; it removes the retained job only after persistence succeeds.
 
@@ -29,9 +31,9 @@ A queue submission failure marks the execution failed and returns HTTP 503. Afte
 
 ## Idempotency and follow-up flows
 
-Each execution UUID is its idempotency key and the BullMQ job ID is derived from its hash. BullMQ retries and PostgreSQL outbox redispatch reuse the same job. The worker conditionally transitions the PostgreSQL row and commits submit answer creation and session counters in the same transaction. A retry that finds the completed row returns its persisted result without duplicating the answer or counters. Solve quota reservations carry an execution-specific token, so an old retry cannot release a newer submission's slot. If Redis is unavailable, the reservation expires at UTC midnight.
+Each coding execution UUID is its idempotency key and the BullMQ job ID is derived from its hash. A theory answer UUID is a stable UUID derived from the session ID and request `Idempotency-Key`; that answer UUID is also the BullMQ job identity. BullMQ retries and PostgreSQL redispatch reuse the same job. The theory worker conditionally transitions the answer row and only writes the result while it remains `running`. A replay returns the persisted answer without reserving another slot. The keys are endpoint-specific; a shared cross-endpoint idempotency policy is still open work.
 
-Theory evaluation remains synchronous. Moving it to a durable worker requires a persisted evaluation lifecycle, request idempotency, result retrieval, and a client polling contract. Code review, PDF ingestion, email, and payment reconciliation remain planned consumers.
+Theory evaluation uses the registered `theoryEvaluatorAgent` with structured Zod output and the existing NVIDIA/Groq provider router. It is a single stateless model call, so BullMQ owns background delivery/retry and Mastra owns agent/model execution; Mastra workflows, durable agents, and memory are not configured for this use case. Code review, PDF ingestion, email, and payment reconciliation remain planned consumers.
 
 ## References
 

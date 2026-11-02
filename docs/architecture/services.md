@@ -78,15 +78,15 @@ Each service has:
 
 ### `worker` — BullMQ job worker
 
-| Field                 | Value                                                                        |
-| --------------------- | ---------------------------------------------------------------------------- |
-| **Owner**             | uday                                                                         |
-| **Status**            | Coding execution queue and Piston consumer implemented                       |
-| **Implemented queue** | `coding-execution` (concurrency 5, 3 attempts, 7-day retention)              |
-| **Planned queues**    | Theory evaluation, code review, PDF ingestion, email, payments               |
-| **Runtime**           | In-process with host API by default; separate Podman process in full profile |
-| **Dependencies**      | Redis, Piston                                                                |
-| **Runbook**           | [Background jobs](background-jobs.md)                                        |
+| Field                  | Value                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| **Owner**              | uday                                                                              |
+| **Status**             | Coding execution and theory evaluation consumers implemented                      |
+| **Implemented queues** | `coding-execution` and `theory-eval` (concurrency 5, 3 attempts, 7-day retention) |
+| **Planned queues**     | Code review, PDF ingestion, email, payments                                       |
+| **Runtime**            | In-process with host API by default; separate Podman process in full profile      |
+| **Dependencies**       | Redis, Piston                                                                     |
+| **Runbook**            | [Background jobs](background-jobs.md)                                             |
 
 ---
 
@@ -125,7 +125,7 @@ Each service has:
 | -------------------- | ----------------------------------------------------------------------------------------- |
 | **Owner**            | uday                                                                                      |
 | **Hosting (prod)**   | Upstash / ElastiCache                                                                     |
-| **Used for**         | Theory quotas, coding execution BullMQ queue, and readiness pings                         |
+| **Used for**         | Theory quotas, coding/theory BullMQ queues, and readiness pings                           |
 | **Not used for yet** | API response caching or Fastify rate-limit storage                                        |
 | **Failure behavior** | Theory session creation returns 503 if Redis is unavailable; health reports Redis as down |
 | **Runbook**          | To be written                                                                             |

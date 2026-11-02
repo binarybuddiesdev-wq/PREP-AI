@@ -38,6 +38,7 @@ export {
   StartSessionResponse,
   GetSessionQuestionsResponse,
   SubmitAnswerResponse,
+  GetTheoryAnswerEvaluationResponse,
   CompleteSessionResponse,
   GetSessionDetailResponse,
   GetSessionHistoryResponse,

@@ -466,8 +466,7 @@ sequenceDiagram
 
             <div id="view-seq-theory" class="diagram-view">
                 <!-- BEGIN VIEW-SEQ-THEORY -->
-                <pre class="mermaid" data-src="diagrams/seq-02-theory-ai-scoring.mmd">%% Current synchronous theory-session flow.
-%% Background evaluation with BullMQ remains planned (ADR-0004, TODO.md).
+                <pre class="mermaid" data-src="diagrams/seq-02-theory-ai-scoring.mmd">%% Theory-session flow with durable asynchronous answer evaluation.
 
 sequenceDiagram
     autonumber
@@ -477,6 +476,8 @@ sequenceDiagram
     participant Redis as Redis quota counter
     participant Mongo as MongoDB question bank
     participant PG as PostgreSQL sessions and answers
+    participant Queue as BullMQ theory-eval queue
+    participant Worker as Theory evaluation worker
     participant Mastra as Theory evaluator agent
     participant Router as NVIDIA primary / Groq fallback
 
@@ -495,21 +496,28 @@ sequenceDiagram
     end
 
     Candidate->>API: POST /api/v1/theory/session/:id/answer
-    API->>PG: Verify ownership and reserve answer slot
+    API->>PG: Verify session ownership
+    API->>PG: Transactionally reserve slot and persist queued answer
     alt Session full or no longer active
         PG-->>API: Reservation rejected
         API-->>Candidate: HTTP 409 session cannot accept answer
     else Slot reserved
-        API->>Mastra: Generate score and feedback
+        PG-->>API: Queued answer ID
+        API->>Queue: Enqueue deterministic evaluation job
+        API-->>Candidate: HTTP 202 queued answer and ID
+        Worker->>PG: Mark answer running and load answer data
+        Worker->>Mastra: Generate structured score and feedback
         Mastra->>Router: Evaluate answer
         alt NVIDIA fails and Groq is configured
             Router->>Router: Retry with Groq
         end
         Router-->>Mastra: Structured score and feedback
-        Mastra-->>API: Evaluation result
-        API->>PG: Save answer
-        PG-->>API: Saved answer
-        API-->>Candidate: HTTP 200 score and feedback
+        Mastra-->>Worker: Evaluation result
+        Worker->>PG: Persist completed score and feedback
+        Candidate->>API: GET session/:id/answers/:answerId
+        API->>PG: Verify owner and read persisted answer state
+        PG-->>API: queued/running/completed/failed result
+        API-->>Candidate: HTTP 200 evaluation status
     end
 </pre>
                 <!-- END VIEW-SEQ-THEORY -->

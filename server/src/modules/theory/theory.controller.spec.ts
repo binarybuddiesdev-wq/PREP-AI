@@ -8,7 +8,8 @@ import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
 import {
   THEORY_SESSION_STARTED,
   THEORY_QUESTIONS_FETCHED,
-  THEORY_ANSWER_SUBMITTED,
+  THEORY_ANSWER_QUEUED,
+  THEORY_ANSWER_EVALUATION_FETCHED,
   THEORY_SESSION_COMPLETED,
   THEORY_SESSION_FETCHED,
   THEORY_SESSIONS_FETCHED,
@@ -28,6 +29,7 @@ describe('TheoryController', () => {
     startSession: ReturnType<typeof vi.fn>;
     getSessionQuestions: ReturnType<typeof vi.fn>;
     submitAnswer: ReturnType<typeof vi.fn>;
+    getAnswerEvaluation: ReturnType<typeof vi.fn>;
     completeSession: ReturnType<typeof vi.fn>;
     getSessionDetail: ReturnType<typeof vi.fn>;
     getSessionHistory: ReturnType<typeof vi.fn>;
@@ -96,6 +98,7 @@ describe('TheoryController', () => {
       startSession: vi.fn(),
       getSessionQuestions: vi.fn(),
       submitAnswer: vi.fn(),
+      getAnswerEvaluation: vi.fn(),
       completeSession: vi.fn(),
       getSessionDetail: vi.fn(),
       getSessionHistory: vi.fn(),
@@ -170,8 +173,9 @@ describe('TheoryController', () => {
   });
 
   describe('submitAnswer', () => {
-    it('should submit answer and return success', async () => {
-      theoryService.submitAnswer.mockResolvedValue(mockAnswer);
+    it('queues an answer with its idempotency key and returns the answer status', async () => {
+      const queuedAnswer = { ...mockAnswer, status: 'queued', aiScore: null, aiFeedback: null };
+      theoryService.submitAnswer.mockResolvedValue(queuedAnswer);
 
       const dto = {
         questionId: 'q_001',
@@ -180,10 +184,30 @@ describe('TheoryController', () => {
         timeTaken: 120,
       };
 
-      const result = await controller.submitAnswer('session_001', dto, 'user_001');
+      const result = await controller.submitAnswer('session_001', dto, 'user_001', 'request_001');
 
-      expect(result).toEqual({ message: THEORY_ANSWER_SUBMITTED, data: mockAnswer });
-      expect(theoryService.submitAnswer).toHaveBeenCalledWith('session_001', 'user_001', dto);
+      expect(result).toEqual({ message: THEORY_ANSWER_QUEUED, data: queuedAnswer });
+      expect(theoryService.submitAnswer).toHaveBeenCalledWith(
+        'session_001',
+        'user_001',
+        dto,
+        'request_001'
+      );
+    });
+  });
+
+  describe('getAnswerEvaluation', () => {
+    it('returns the persisted evaluation state', async () => {
+      theoryService.getAnswerEvaluation.mockResolvedValue(mockAnswer);
+
+      const result = await controller.getAnswerEvaluation('session_001', 'answer_001', 'user_001');
+
+      expect(result).toEqual({ message: THEORY_ANSWER_EVALUATION_FETCHED, data: mockAnswer });
+      expect(theoryService.getAnswerEvaluation).toHaveBeenCalledWith(
+        'session_001',
+        'answer_001',
+        'user_001'
+      );
     });
   });
 

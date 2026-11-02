@@ -57,8 +57,8 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'cd server && pnpm dev',
-      url: 'http://localhost:3000',
+      command: 'cd server && pnpm start:dev',
+      url: 'http://localhost:3000/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },

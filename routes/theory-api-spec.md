@@ -138,11 +138,15 @@ Fetch questions from the question bank for the current session.
 
 ## 3. Submit Answer
 
-Submit a user's answer for a question. AI evaluates and returns score + feedback.
+Persist a user's answer and queue AI evaluation. The response returns immediately with an answer ID; poll the answer resource for evaluation state and result.
 
 **Method:** `POST`  
 **Route:** `/theory/session/:sessionId/answer`  
 **Auth:** Bearer Token (session owner)
+
+**Success:** `202 Accepted`
+
+**Required header:** `Idempotency-Key` (1–128 characters). Reuse the same key when retrying a request whose response was lost. The key is unique within the session; replay returns the original answer without consuming another question slot. A replay with a different body still returns the original answer.
 
 ### Path Parameters
 
@@ -168,38 +172,88 @@ Submit a user's answer for a question. AI evaluates and returns score + feedback
 }
 ```
 
-### Response (201 Created)
+### Response (202 Accepted)
 
 ```json
 {
   "success": true,
-  "message": "Answer submitted successfully",
+  "message": "Answer evaluation queued successfully",
   "data": {
     "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
     "sessionId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "questionId": "507f1f77bcf86cd799439022",
     "questionText": "What is the difference between useEffect and useLayoutEffect?",
     "userAnswer": "useEffect runs after the browser paints the screen, while useLayoutEffect runs synchronously before the browser repaints...",
-    "aiScore": 8.5,
-    "aiFeedback": "Good answer. You correctly identified the timing difference. Consider adding examples of when to use each.",
+    "aiScore": null,
+    "aiFeedback": null,
+    "status": "queued",
+    "failureMessage": null,
+    "startedAt": null,
+    "completedAt": null,
     "timeTaken": 120,
-    "createdAt": "2026-07-25T10:32:00.000Z"
+    "createdAt": "2026-07-25T10:32:00.000Z",
+    "updatedAt": "2026-07-25T10:32:00.000Z"
   }
 }
 ```
 
 ### Errors
 
-| Status | Message                                                            |
-| ------ | ------------------------------------------------------------------ |
-| 400    | Validation failed                                                  |
-| 404    | Session not found or not available to caller                       |
-| 409    | Session already completed or question limit reached                |
-| 503    | AI evaluation unavailable; answer was not saved and may be retried |
+| Status | Message                                                  |
+| ------ | -------------------------------------------------------- |
+| 400    | Validation failed or Idempotency-Key is missing/too long |
+| 404    | Session not found or not available to caller             |
+| 409    | Session already completed or question limit reached      |
+| 503    | Theory PostgreSQL database unavailable                   |
+
+Queue/Redis unavailability does not discard the accepted answer. The row remains `queued` in PostgreSQL and the worker redispatches it after recovery.
 
 ---
 
-## 4. Complete Session
+## 4. Get Answer Evaluation
+
+Fetch the persisted answer and evaluation lifecycle. Poll while `status` is `queued` or `running`; stop on `completed` or `failed`.
+
+**Method:** `GET`
+**Route:** `/theory/session/:sessionId/answers/:answerId`
+**Auth:** Bearer Token (session owner)
+**Success:** `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Answer evaluation fetched successfully",
+  "data": {
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "sessionId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "questionId": "507f1f77bcf86cd799439022",
+    "questionText": "What is the difference between useEffect and useLayoutEffect?",
+    "userAnswer": "useEffect runs after the browser paints...",
+    "aiScore": 8.5,
+    "aiFeedback": "Good answer. Consider adding examples.",
+    "status": "completed",
+    "failureMessage": null,
+    "timeTaken": 120,
+    "createdAt": "2026-07-25T10:32:00.000Z",
+    "startedAt": "2026-07-25T10:32:01.000Z",
+    "completedAt": "2026-07-25T10:32:04.000Z",
+    "updatedAt": "2026-07-25T10:32:04.000Z"
+  }
+}
+```
+
+The answer endpoint also returns `status`, nullable score/feedback, and timestamps. A terminal `failed` evaluation has no fabricated score and explains that no score was assigned. Only completed scores contribute to the session average; failed answers remain part of the session's submitted question count.
+
+### Errors
+
+| Status | Message                                |
+| ------ | -------------------------------------- |
+| 404    | Session or answer not found for caller |
+| 503    | Theory PostgreSQL database unavailable |
+
+---
+
+## 5. Complete Session
 
 Mark session as completed and compute final average score.
 
@@ -238,14 +292,14 @@ Mark session as completed and compute final average score.
 
 ### Errors
 
-| Status | Message                                                    |
-| ------ | ---------------------------------------------------------- |
-| 404    | Session not found or not available to caller               |
-| 409    | Session already completed or an answer is still processing |
+| Status | Message                                                         |
+| ------ | --------------------------------------------------------------- |
+| 404    | Session not found or not available to caller                    |
+| 409    | Session already completed or an answer is still being evaluated |
 
 ---
 
-## 5. Get Session Detail
+## 6. Get Session Detail
 
 Get a single session with all its answers.
 
@@ -302,7 +356,7 @@ Get a single session with all its answers.
 
 ---
 
-## 6. Get Session History
+## 7. Get Session History
 
 Get all past sessions for the current user.
 
@@ -354,7 +408,7 @@ Get all past sessions for the current user.
 
 ---
 
-## 7. Get Weak Areas
+## 8. Get Weak Areas
 
 Get topics where the user scores below 70%.
 
@@ -389,7 +443,7 @@ Get topics where the user scores below 70%.
 
 ---
 
-## 8. Get Score Trend
+## 9. Get Score Trend
 
 Get the user's last N session scores for the dashboard chart.
 
@@ -425,13 +479,14 @@ Get the user's last N session scores for the dashboard chart.
 
 ## Summary
 
-| #   | Method | Route                                  | Description                     |
-| --- | ------ | -------------------------------------- | ------------------------------- |
-| 1   | `POST` | `/theory/session/start`                | Start a new practice session    |
-| 2   | `GET`  | `/theory/session/:sessionId/questions` | Get questions for session       |
-| 3   | `POST` | `/theory/session/:sessionId/answer`    | Submit answer (AI evaluates)    |
-| 4   | `POST` | `/theory/session/:sessionId/complete`  | Complete session                |
-| 5   | `GET`  | `/theory/session/:sessionId`           | Get session detail with answers |
-| 6   | `GET`  | `/theory/sessions`                     | Get session history (paginated) |
-| 7   | `GET`  | `/theory/weak-areas`                   | Get topics below 70% score      |
-| 8   | `GET`  | `/theory/score-trend`                  | Get score trend for chart       |
+| #   | Method | Route                                          | Description                     |
+| --- | ------ | ---------------------------------------------- | ------------------------------- |
+| 1   | `POST` | `/theory/session/start`                        | Start a new practice session    |
+| 2   | `GET`  | `/theory/session/:sessionId/questions`         | Get questions for session       |
+| 3   | `POST` | `/theory/session/:sessionId/answer`            | Queue answer evaluation         |
+| 4   | `GET`  | `/theory/session/:sessionId/answers/:answerId` | Get answer evaluation status    |
+| 5   | `POST` | `/theory/session/:sessionId/complete`          | Complete session                |
+| 6   | `GET`  | `/theory/session/:sessionId`                   | Get session detail with answers |
+| 7   | `GET`  | `/theory/sessions`                             | Get session history (paginated) |
+| 8   | `GET`  | `/theory/weak-areas`                           | Get topics below 70% score      |
+| 9   | `GET`  | `/theory/score-trend`                          | Get score trend for chart       |

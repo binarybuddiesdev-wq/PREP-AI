@@ -2,7 +2,8 @@ import {
   successResponseSchema,
   THEORY_SESSION_STARTED,
   THEORY_QUESTIONS_FETCHED,
-  THEORY_ANSWER_SUBMITTED,
+  THEORY_ANSWER_QUEUED,
+  THEORY_ANSWER_EVALUATION_FETCHED,
   THEORY_SESSION_COMPLETED,
   THEORY_SESSION_FETCHED,
   THEORY_SESSIONS_FETCHED,
@@ -49,10 +50,15 @@ export const theoryAnswerDataSchema = {
     questionId: { type: 'string', nullable: true },
     questionText: { type: 'string' },
     userAnswer: { type: 'string' },
-    aiScore: { type: 'number' },
-    aiFeedback: { type: 'string' },
+    aiScore: { type: 'number', nullable: true },
+    aiFeedback: { type: 'string', nullable: true },
+    status: { type: 'string', enum: ['queued', 'running', 'completed', 'failed'] },
+    failureMessage: { type: 'string', nullable: true },
+    startedAt: { type: 'string', format: 'date-time', nullable: true },
+    completedAt: { type: 'string', format: 'date-time', nullable: true },
     timeTaken: { type: 'number', nullable: true },
     createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
   },
 };
 
@@ -106,9 +112,15 @@ export const GetSessionQuestionsResponse = {
 };
 
 export const SubmitAnswerResponse = {
-  status: 201,
-  description: THEORY_ANSWER_SUBMITTED,
-  ...successResponseSchema(theoryAnswerDataSchema, THEORY_ANSWER_SUBMITTED),
+  status: 202,
+  description: THEORY_ANSWER_QUEUED,
+  ...successResponseSchema(theoryAnswerDataSchema, THEORY_ANSWER_QUEUED),
+};
+
+export const GetTheoryAnswerEvaluationResponse = {
+  status: 200,
+  description: THEORY_ANSWER_EVALUATION_FETCHED,
+  ...successResponseSchema(theoryAnswerDataSchema, THEORY_ANSWER_EVALUATION_FETCHED),
 };
 
 export const CompleteSessionResponse = {

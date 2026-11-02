@@ -1,5 +1,16 @@
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 
 import { TheoryService } from './theory.service.js';
 import {
@@ -19,7 +30,9 @@ import {
   GetSessionQuestionsResponse,
   THEORY_QUESTIONS_FETCHED,
   SubmitAnswerResponse,
-  THEORY_ANSWER_SUBMITTED,
+  THEORY_ANSWER_QUEUED,
+  THEORY_ANSWER_EVALUATION_FETCHED,
+  GetTheoryAnswerEvaluationResponse,
   CompleteSessionResponse,
   THEORY_SESSION_COMPLETED,
   GetSessionDetailResponse,
@@ -66,16 +79,36 @@ export class TheoryController {
 
   @ApiBearerAuth()
   @Post('session/:sessionId/answer')
-  @HttpCode(201)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: ApiOperationEnum.THEORY_SUBMIT_ANSWER })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @ApiResponse(SubmitAnswerResponse)
   async submitAnswer(
     @Param('sessionId') sessionId: string,
     @Body() dto: SubmitAnswerDto,
+    @CurrentUser('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string
+  ) {
+    const data = await this.theoryService.submitAnswer(sessionId, userId, dto, idempotencyKey);
+    return { message: THEORY_ANSWER_QUEUED, data };
+  }
+
+  @ApiBearerAuth()
+  @Get('session/:sessionId/answers/:answerId')
+  @HttpCode(200)
+  @ApiOperation({ summary: ApiOperationEnum.THEORY_GET_ANSWER_EVALUATION })
+  @ApiResponse(GetTheoryAnswerEvaluationResponse)
+  async getAnswerEvaluation(
+    @Param('sessionId') sessionId: string,
+    @Param('answerId') answerId: string,
     @CurrentUser('id') userId: string
   ) {
-    const data = await this.theoryService.submitAnswer(sessionId, userId, dto);
-    return { message: THEORY_ANSWER_SUBMITTED, data };
+    const data = await this.theoryService.getAnswerEvaluation(sessionId, answerId, userId);
+    return { message: THEORY_ANSWER_EVALUATION_FETCHED, data };
   }
 
   @ApiBearerAuth()

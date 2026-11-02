@@ -18,10 +18,34 @@ A plain controller or service with no LLM call is not this skill.
 
 ## At a glance
 
-- **SDK:** `@mastra/core`; providers via `@ai-sdk/openai` (NVIDIA NIM and Groq are both OpenAI-compatible); schemas in Zod v4.
+- **Pinned SDK:** `@mastra/core` `1.81.0`; providers via `@ai-sdk/openai` (NVIDIA NIM and Groq are both OpenAI-compatible); schemas in Zod v4.
 - **Files:** `server/src/mastra/mastra.config.ts` (the singleton and agents map), `providers.ts` (router), `agents/*.ts` (one agent per file).
 - **Agents today:** `theory-evaluator-agent`, `tech-expert-agent`. They are deliberately minimal: `id`, `name`, `instructions`, `model`. No tools, no middleware.
 - **Providers:** NVIDIA primary, Groq fallback (ADR-0007). `LLM_PROVIDER` forces one; otherwise whichever API key is present.
+
+Mastra 1.81.0's bundled reference is `node_modules/@mastra/core/dist/docs/SKILL.md`. Check that version's reference and type definitions before using an API from the live docs; Mastra evolves quickly and examples on the website may target a newer release.
+
+## Choose the right Mastra feature
+
+Mastra offers agents, tools, processors/guardrails, workflows, memory, durable agents, background tasks, scorers/datasets/experiments, observability, storage, vectors/RAG, and integrations such as MCP. Use the smallest feature that fits the job. Mastra does not replace PrepAI's API, database, authentication, or BullMQ architecture.
+
+| Need                                                                                   | PrepAI choice                                             | Use when                                                                                                                                     |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| One model call with instructions and typed output                                      | Registered Mastra `Agent` + `generate()` and a Zod schema | Current theory evaluation and other bounded one-shot generation                                                                              |
+| A repeatable sequence with branching, parallel steps, or typed hand-offs               | Mastra workflow                                           | The AI operation has multiple meaningful stages; keep the API's persisted business state in PostgreSQL                                       |
+| A queued job that must survive API/worker restarts and expose status to PrepAI clients | Existing BullMQ + PostgreSQL lifecycle                    | Current coding execution and theory evaluation. PostgreSQL is the source of truth; BullMQ performs delivery/retry                            |
+| A long agent turn that must resume after a client disconnect or process restart        | Mastra durable agent/background task                      | Only after configuring and operating a shared persistent Mastra storage/runtime; do not layer it over BullMQ without a clear ownership split |
+| Conversation continuity across turns                                                   | Mastra Memory                                             | Only when a feature is conversational; choose stable, user-scoped resource/thread IDs and isolate tenants                                    |
+| Controlled app actions or external capabilities                                        | Mastra tools; MCP for a remote tool server                | Only when the agent needs the capability. Keep authorization and final side-effect checks in server services                                 |
+| Regression measurement for prompts/models                                              | Mastra scorers, datasets, and experiments                 | Offline/CI comparison against reviewed examples. This is separate from the runtime score the theory evaluator gives a learner                |
+| Production traces, latency, token/cost usage, and feedback                             | Mastra observability + a configured exporter/store        | When the team has selected retention, access, and privacy policy; do not send user answers to logs by default                                |
+| Retrieval from indexed documents                                                       | Mastra vector/RAG interfaces plus the chosen vector store | When a feature needs source-backed context; keep document ownership filters in the retrieval query                                           |
+| Input/output normalization, injection detection, PII handling, or moderation           | Mastra processors/guardrails                              | Evaluate model-backed processor cost, false positives, failure policy, and whether redaction changes the feature's meaning before enabling   |
+
+For theory evaluation, use the registered `theoryEvaluatorAgent` through `mastra.getAgent()`, the existing `chatWithFailover()`/`getModel()` provider router, and validated structured output. Keep each answer stateless; do not attach conversation memory or tools. BullMQ owns retries and dispatch, and the answer row in PostgreSQL owns queued/running/completed/failed state and the client polling result. Mastra workflows or durable agents would duplicate lifecycle machinery for this single model call.
+
+The current Mastra singleton has no storage, memory, workflow, vector, scorer, or observability configuration. Do not assume those features persist data just because the package supports them. In particular, Mastra storage is a separate adapter and is not automatically backed by PrepAI's Prisma PostgreSQL client.
+
 - **Relative imports end in `.js`**, as everywhere on the server.
 
 ## Non-negotiable rules

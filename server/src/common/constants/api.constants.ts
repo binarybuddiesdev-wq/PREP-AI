@@ -55,6 +55,7 @@ export enum ApiOperation {
   THEORY_START_SESSION = 'Start a theory practice session',
   THEORY_GET_QUESTIONS = 'Get questions for a theory session',
   THEORY_SUBMIT_ANSWER = 'Submit answer for AI evaluation',
+  THEORY_GET_ANSWER_EVALUATION = 'Get theory answer evaluation status and result',
   THEORY_COMPLETE_SESSION = 'Complete a theory session',
   THEORY_GET_SESSION = 'Get theory session detail with answers',
   THEORY_GET_SESSIONS = 'Get theory session history',
@@ -142,6 +143,12 @@ export const DELETE_QUESTION_SUCCESS = 'Question deleted successfully';
 export const THEORY_SESSION_STARTED = 'Session started successfully';
 export const THEORY_QUESTIONS_FETCHED = 'Questions fetched successfully';
 export const THEORY_ANSWER_SUBMITTED = 'Answer submitted successfully';
+export const THEORY_ANSWER_QUEUED = 'Answer evaluation queued successfully';
+export const THEORY_ANSWER_EVALUATION_FETCHED = 'Answer evaluation fetched successfully';
+export const THEORY_GET_ANSWER_EVALUATION = 'Get theory answer evaluation status and result';
+export const THEORY_IDEMPOTENCY_KEY_REQUIRED = 'A valid Idempotency-Key header is required';
+export const THEORY_ANSWER_EVALUATION_IN_PROGRESS =
+  'Cannot complete the session while an answer is still being evaluated';
 export const THEORY_SESSION_COMPLETED = 'Session completed successfully';
 export const THEORY_SESSION_FETCHED = 'Session fetched successfully';
 export const THEORY_SESSIONS_FETCHED = 'Sessions fetched successfully';
@@ -158,7 +165,7 @@ export const THEORY_TOPIC_ID_REQUIRED = 'topicId is required for topic mode';
 export const THEORY_MODE_NOT_SUPPORTED = 'PDF study mode is not supported yet';
 export const THEORY_DATABASE_UNAVAILABLE = 'Theory database is temporarily unavailable';
 export const THEORY_EVALUATION_UNAVAILABLE =
-  'Answer evaluation is temporarily unavailable. Please try again.';
+  'Evaluation could not be completed. No score was assigned.';
 
 // Coding success / error messages
 export const CODING_PROBLEMS_FETCHED = 'Coding problems fetched successfully';
