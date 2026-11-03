@@ -3,6 +3,7 @@ import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { registerFastifyPlugins, registerGlobalMiddleware, setupSwagger } from './index.js';
 import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { registerMetricsHooks } from './metrics-hooks.js';
+import { registerRequestIdHook } from './request-id.js';
 
 export const configureApp = async (app: NestFastifyApplication) => {
   const nodeEnv = process.env.NODE_ENV ?? 'development';
@@ -16,6 +17,7 @@ export const configureApp = async (app: NestFastifyApplication) => {
   // Register Fastify plugins (Cors, Helmet, Rate Limiting, Multipart parsing)
   await registerFastifyPlugins(app);
 
+  registerRequestIdHook(app.getHttpAdapter().getInstance());
   const metrics = app.get(MetricsService);
   registerMetricsHooks(app.getHttpAdapter().getInstance(), metrics);
 

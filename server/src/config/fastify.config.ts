@@ -22,6 +22,7 @@ export const registerFastifyPlugins = async (app: NestFastifyApplication) => {
   await app.register(fastifyCors, {
     origin: nodeEnv === 'production' ? (process.env.CORS_ORIGIN?.split(',') ?? []) : '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    exposedHeaders: ['X-Request-Id'],
   });
 
   // Rate Limiting (Stricter controls on auth endpoints)

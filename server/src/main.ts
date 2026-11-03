@@ -2,13 +2,19 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { IncomingMessage } from 'node:http';
+import type { Http2ServerRequest } from 'node:http2';
 import { AppModule } from './app.module.js';
 import { configureApp } from './config/configure-app.js';
+import { assignRequestId } from './config/request-id.js';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ bodyLimit: 10 * 1024 * 1024 }),
+    new FastifyAdapter({
+      bodyLimit: 10 * 1024 * 1024,
+      genReqId: (request: IncomingMessage | Http2ServerRequest) => assignRequestId(request),
+    }),
     { bufferLogs: true, rawBody: true }
   );
 

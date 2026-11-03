@@ -1,5 +1,17 @@
 # Worklog
 
+## 2026-11-03 - HTTP request correlation IDs
+
+- Fastify now accepts a canonical UUID v4 from `X-Request-Id` or generates a
+  replacement before Pino logs the request. Responses echo the same ID, and
+  CORS exposes it to browser clients.
+- Updated the observability guide, architecture checklist, and API request-ID
+  design. Queue payload propagation and distributed tracing remain future work.
+- Verification: full server gate passed (768 tests, 90.12% branch coverage),
+  real Mongo isolation passed (28 tests), architecture viewer check passed, and
+  `git diff --check` passed. Review confirmed the raw request ID is reused by
+  Pino's HTTP middleware; no merge-blocking issues remain.
+
 ## 2026-11-03 - Topic cache metrics
 
 - Added the Prometheus `topic_cache_requests_total` counter to the existing

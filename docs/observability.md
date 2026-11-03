@@ -79,22 +79,24 @@ Clerk webhook → Svix verify → POST /webhooks/clerk
   → UserModule → PrismaService.$connect → MongoDB
 ```
 
-| Field                | Source                                      |
-| -------------------- | ------------------------------------------- |
-| `traceId` / `spanId` | OTEL middleware (planned)                   |
-| `userId`             | `ClerkAuthGuard` attaches to `request.user` |
-| `sessionId`          | `TheorySession.id`                          |
-| `correlationId`      | `X-Request-Id` header (generated if absent) |
+| Field                | Source                                          |
+| -------------------- | ----------------------------------------------- |
+| `traceId` / `spanId` | OTEL middleware (planned)                       |
+| `userId`             | `ClerkAuthGuard` attaches to `request.user`     |
+| `sessionId`          | `TheorySession.id`                              |
+| `correlationId`      | `X-Request-Id` UUID v4 (validated or generated) |
 
-Until OTEL is wired, the pino `reqId` is the best cross-service identifier
-and MUST be propagated through any job queue payload.
+Until OTEL and queue propagation are wired, the pino `reqId` ties together the
+HTTP request log and response header. Propagating it through job payloads
+remains open.
 
 ## Correlation IDs
 
-The HTTP middleware (planned — `common/middleware/correlation-id.middleware.ts`)
-generates a UUID when `X-Request-Id` is missing, attaches it to
-`request.id`, and includes it on every pino log line. BullMQ jobs should
-echo it back when retrying.
+Fastify uses the `X-Request-Id` header as `request.id` when it is a single
+lowercase canonical UUID v4; otherwise it generates one. The same ID is set on
+the raw request for `nestjs-pino`, and an `onRequest` hook echoes it in the
+response. CORS exposes the response header to browser clients. BullMQ job
+propagation remains open.
 
 ```
 GET /api/v1/theory/sessions/abc  -> reqId=8d2f…
@@ -151,6 +153,9 @@ P1 incidents are reserved for full outages — see
 ## Local development
 
 - Logs: tail `pnpm dev` in `server/`. Pino-pretty prints colourised lines.
+- Request IDs: send a UUID v4 in `X-Request-Id` to correlate the request log
+  with the response. Invalid or missing values are replaced with a generated
+  UUID v4.
 - Metrics: set `METRICS_BEARER_TOKEN` to a random value of at least 32
   characters, restart the API, then scrape `/metrics` with
   `Authorization: Bearer <token>`. Without the token, `/metrics` returns 404.
