@@ -16,25 +16,30 @@ import { ClerkAuthGuard } from './clerk-auth.guard.js';
 describe('ClerkAuthGuard', () => {
   let guard: ClerkAuthGuard;
   let findUnique: ReturnType<typeof vi.fn>;
+  const metrics = { recordClerkAuthFailure: vi.fn() };
   const config = { get: vi.fn(() => 'sk_test_secret') };
 
-  const createContext = (): ExecutionContext =>
+  const createContext = (
+    headers: Record<string, unknown> = { authorization: 'Bearer valid-token' }
+  ): ExecutionContext =>
     ({
       getHandler: vi.fn(),
       getClass: vi.fn(),
       switchToHttp: () => ({
-        getRequest: () => ({ headers: { authorization: 'Bearer valid-token' } }),
+        getRequest: () => ({ headers }),
       }),
     }) as unknown as ExecutionContext;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    metrics.recordClerkAuthFailure.mockReset();
     verifyTokenMock.mockResolvedValue({ sub: 'user_123' });
     findUnique = vi.fn().mockResolvedValue({ email: 'user@example.com', role: 'USER' });
     guard = new ClerkAuthGuard(
       { getAllAndOverride: () => false } as unknown as Reflector,
       { user: { findUnique } } as never,
-      config as never
+      config as never,
+      metrics as never
     );
   });
 
@@ -84,5 +89,18 @@ describe('ClerkAuthGuard', () => {
 
     await expect(guard.canActivate(createContext())).rejects.toBeInstanceOf(UnauthorizedException);
     expect(findUnique).not.toHaveBeenCalled();
+    expect(metrics.recordClerkAuthFailure).toHaveBeenCalledWith('invalid_token');
+  });
+
+  it('counts missing and malformed authorization headers with bounded reasons', async () => {
+    await expect(guard.canActivate(createContext({}))).rejects.toBeInstanceOf(
+      UnauthorizedException
+    );
+    await expect(
+      guard.canActivate(createContext({ authorization: 'Basic secret-token' }))
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(metrics.recordClerkAuthFailure).toHaveBeenNthCalledWith(1, 'missing_header');
+    expect(metrics.recordClerkAuthFailure).toHaveBeenNthCalledWith(2, 'invalid_header');
   });
 });

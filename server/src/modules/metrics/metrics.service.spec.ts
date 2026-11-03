@@ -173,4 +173,21 @@ describe('MetricsService', () => {
     expect(output).toContain('webhook_signature_failures_total{provider="clerk"} 1');
     expect(output).not.toContain('provider="unknown"');
   });
+
+  it('counts only bounded Clerk authentication failure reasons', async () => {
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getMemoryStats: vi.fn().mockResolvedValue({ usedMemoryBytes: 0, maxMemoryBytes: 0 }),
+    } as never);
+
+    metrics.recordClerkAuthFailure('missing_header');
+    metrics.recordClerkAuthFailure('invalid_token');
+    metrics.recordClerkAuthFailure('raw-token');
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE clerk_auth_failures_total counter');
+    expect(output).toContain('clerk_auth_failures_total{reason="missing_header"} 1');
+    expect(output).toContain('clerk_auth_failures_total{reason="invalid_token"} 1');
+    expect(output).not.toContain('raw-token');
+  });
 });

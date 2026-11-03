@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - Clerk authentication failure metrics
+
+- Added process-local `clerk_auth_failures_total` for missing authorization headers, malformed bearer headers, and rejected Clerk tokens. Reason labels come from a fixed allowlist; credentials and token contents are never recorded.
+- Updated the observability guide and backend tracker. Public routes and infrastructure/configuration failures do not increment this counter.
+- Verification: focused metrics and auth-guard tests passed (16 tests); `pnpm gate -- --stack server --level full` passed (787 tests, 90.35% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed.
+
 ## 2026-11-03 - Clerk webhook signature metrics
 
 - Added process-local `webhook_signature_failures_total` with the fixed `provider="clerk"` label. It counts missing Svix headers and failed signature verification; webhook configuration and downstream processing failures do not affect it.

@@ -7,9 +7,10 @@ import { EmailReminderScheduler } from './email-reminder.scheduler.js';
 import { EmailWorker } from './email.worker.js';
 import { NotificationsController } from './notifications.controller.js';
 import { NotificationsService } from './notifications.service.js';
+import { MetricsModule } from '../metrics/metrics.module.js';
 
 @Module({
-  imports: [PrismaModule, JobQueueModule],
+  imports: [PrismaModule, JobQueueModule, MetricsModule],
   controllers: [NotificationsController],
   providers: [
     {

@@ -17,6 +17,11 @@ export interface IHttpMetricLabels {
 export class MetricsService {
   private readonly validProviderNames = new Set(['nvidia', 'groq']);
   private readonly validWebhookProviders = new Set(['clerk']);
+  private readonly validClerkAuthFailureReasons = new Set([
+    'missing_header',
+    'invalid_header',
+    'invalid_token',
+  ]);
   private readonly buckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
   private readonly inFlight = new Map<string, number>();
   private readonly durations = new Map<
@@ -25,6 +30,7 @@ export class MetricsService {
   >();
   private readonly topicCacheRequests = new Map<string, number>();
   private readonly webhookSignatureFailures = new Map<string, number>();
+  private readonly clerkAuthFailures = new Map<string, number>();
 
   constructor(
     private readonly redis: RedisService,
@@ -123,6 +129,11 @@ export class MetricsService {
         .map(
           ([provider, count]) => `webhook_signature_failures_total{provider="${provider}"} ${count}`
         ),
+      '# HELP clerk_auth_failures_total Rejected Clerk authentication attempts by reason.',
+      '# TYPE clerk_auth_failures_total counter',
+      ...[...this.clerkAuthFailures.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([reason, count]) => `clerk_auth_failures_total{reason="${reason}"} ${count}`),
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -162,6 +173,11 @@ export class MetricsService {
       provider,
       (this.webhookSignatureFailures.get(provider) ?? 0) + 1
     );
+  }
+
+  recordClerkAuthFailure(reason: string): void {
+    if (!this.validClerkAuthFailureReasons.has(reason)) return;
+    this.clerkAuthFailures.set(reason, (this.clerkAuthFailures.get(reason) ?? 0) + 1);
   }
 
   private providerFailoverKey(from: string, to: string): string {

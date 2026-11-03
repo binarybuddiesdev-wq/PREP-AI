@@ -11,6 +11,7 @@ import { createClerkClient } from '@clerk/clerk-sdk-node';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator.js';
 import { USER_DATABASE_UNAVAILABLE } from '@/common/constants/api.constants.js';
 import { PrismaService } from '@/prisma/prisma.service.js';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 
 const USER_LOOKUP_TIMEOUT_MS = 4_000;
 
@@ -19,7 +20,8 @@ export class ClerkAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService
+    private readonly config: ConfigService,
+    private readonly metrics: MetricsService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -35,11 +37,13 @@ export class ClerkAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const authorization = request.headers.authorization;
     if (!authorization) {
+      this.metrics.recordClerkAuthFailure('missing_header');
       throw new UnauthorizedException('Missing authorization header');
     }
 
     const [type, token] = authorization.split(' ');
     if (type !== 'Bearer' || !token) {
+      this.metrics.recordClerkAuthFailure('invalid_header');
       throw new UnauthorizedException('Invalid authorization header format');
     }
 
@@ -53,6 +57,7 @@ export class ClerkAuthGuard implements CanActivate {
     try {
       payload = await client.verifyToken(token);
     } catch {
+      this.metrics.recordClerkAuthFailure('invalid_token');
       throw new UnauthorizedException('Invalid session token');
     }
 

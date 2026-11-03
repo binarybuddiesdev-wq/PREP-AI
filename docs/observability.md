@@ -46,8 +46,9 @@ Endpoints to expose:
 Current and planned metric families (Prometheus names):
 
 The HTTP histogram, in-flight gauge, provider failover counter, topic-cache
-hit/miss counter, BullMQ queue-count gauge, Redis used/max-memory gauges, and
-webhook signature failure counter are emitted now. The HTTP histogram also
+hit/miss counter, BullMQ queue-count gauge, Redis used/max-memory gauges,
+webhook signature failure counter, and Clerk authentication failure counter
+are emitted now. The HTTP histogram also
 exposes a count by method, route, and status, which can be used to graph request
 rate and error rate. The remaining rows are future instrumentation.
 
@@ -180,6 +181,8 @@ P1 incidents are reserved for full outages — see
   Redis-backed provider and memory samples are omitted for failed reads.
   `webhook_signature_failures_total` counts Clerk requests with missing Svix
   headers or failed signature verification and uses the fixed `clerk` label.
+  `clerk_auth_failures_total` uses the bounded reasons `missing_header`,
+  `invalid_header`, and `invalid_token`; credential values are never labels.
 - Traces: not exposed in dev yet.
 
 ## Open questions
