@@ -53,6 +53,12 @@ All endpoints require Bearer token authentication (Clerk).
 | ------ | ------------------------------------------- |
 | 409    | Topic with this name or slug already exists |
 
+### Retry behavior
+
+`POST /topics` accepts an optional `Idempotency-Key` header (1–128 visible ASCII characters). When supplied, the key is scoped to the authenticated admin and topic creation. Retrying with the same key and body returns the original `201` response; reusing the key with a different body returns `409`. The topic and replay record are committed in one MongoDB transaction. Requests without the header retain the existing behavior.
+
+Replay records expire after 24 hours and are cleaned hourly. Apply the MongoDB schema before using keyed creates against an existing database with `pnpm --filter server prisma:push:mongodb`.
+
 ---
 
 ## 2. Get All Topics

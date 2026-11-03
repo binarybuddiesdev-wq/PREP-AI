@@ -13,8 +13,8 @@ Each module has its own detailed spec file in the `routes/` directory:
 | **Health**        | [`routes/health-api-spec.md`](routes/health-api-spec.md)               | Health check endpoint                                                    |
 | **User**          | [`routes/user-api-spec.md`](routes/user-api-spec.md)                   | User profile, settings, setup                                            |
 | **Webhooks**      | [`routes/webhooks-api-spec.md`](routes/webhooks-api-spec.md)           | Clerk webhook event handling                                             |
-| **Topics**        | [`routes/topics-api-spec.md`](routes/topics-api-spec.md)               | Topic CRUD                                                               |
-| **Questions**     | [`routes/questions-api-spec.md`](routes/questions-api-spec.md)         | Question CRUD (MongoDB)                                                  |
+| **Topics**        | [`routes/topics-api-spec.md`](routes/topics-api-spec.md)               | Topic CRUD; admin creation supports optional `Idempotency-Key` replay    |
+| **Questions**     | [`routes/questions-api-spec.md`](routes/questions-api-spec.md)         | Question CRUD; admin creation supports optional `Idempotency-Key` replay |
 | **Theory**        | [`routes/theory-api-spec.md`](routes/theory-api-spec.md)               | Theory practice sessions, answers, AI scoring, weak areas                |
 | **Coding**        | [`routes/coding-api-spec.md`](routes/coding-api-spec.md)               | Coding problems, sessions, code execution, AI review, daily stats        |
 | **Notifications** | [`routes/notifications-api-spec.md`](routes/notifications-api-spec.md) | In-app inbox, daily reminders, preferences, and unsubscribe              |

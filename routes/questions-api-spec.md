@@ -44,6 +44,14 @@
 
 **Success Response:** `{ message: CREATE_QUESTION_SUCCESS, data: Question }`
 
+### Retry behavior
+
+`POST /questions` accepts an optional `Idempotency-Key` header (1–128 visible ASCII characters). When supplied, the key is scoped to the authenticated admin and question creation. Retrying with the same key and body returns the original `201` response; reusing the key with a different body returns `409`. The question and replay record are committed in one MongoDB transaction. Requests without the header retain the existing behavior.
+
+Replay records expire after 24 hours and are cleaned hourly. Apply the MongoDB schema before using keyed creates against an existing database with `pnpm --filter server prisma:push:mongodb`.
+
+The existing duplicate-question check is not protected against simultaneous creates using different idempotency keys; enforcing that case requires a separate uniqueness migration.
+
 ---
 
 ### 2. GET /questions — Get Questions by Topic and Difficulty

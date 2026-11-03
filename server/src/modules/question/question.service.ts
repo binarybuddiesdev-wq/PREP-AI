@@ -1,4 +1,6 @@
 import { PrismaService } from '@/prisma/prisma.service.js';
+import type { Prisma } from '@prisma/client';
+import { executeMongoIdempotently } from '@/common/idempotency/index.js';
 import {
   ConflictException,
   Injectable,
@@ -19,6 +21,8 @@ import {
   QUESTION_NOT_FOUND,
 } from '@/common/index.js';
 
+type TCreateIdempotency = { actorId: string; key: string };
+
 @Injectable()
 export class QuestionService {
   constructor(
@@ -26,29 +30,29 @@ export class QuestionService {
     @InjectPinoLogger(QuestionService.name) private readonly logger: PinoLogger
   ) {}
 
-  async createQuestion(dto: CreateQuestionDto) {
+  async createQuestion(dto: CreateQuestionDto, idempotency?: TCreateIdempotency) {
     const { difficulty, question, topicId, referenceAnswer } = dto;
+    const create = async (client: Pick<Prisma.TransactionClient, 'question'>) => {
+      const existingQuestion = await client.question.findFirst({
+        where: { question, topicId, difficulty },
+      });
+      if (existingQuestion) throw new ConflictException(QUESTION_ALREADY_EXISTS);
 
-    const existingQuestion = await this.prisma.question.findFirst({
-      where: {
-        question,
-        topicId,
-        difficulty,
-      },
-    });
-
-    if (existingQuestion) {
-      throw new ConflictException(QUESTION_ALREADY_EXISTS);
-    }
-
-    const newQuestion = await this.prisma.question.create({
-      data: {
-        question,
-        topicId,
-        difficulty,
-        referenceAnswer: referenceAnswer ?? null,
-      },
-    });
+      return client.question.create({
+        data: { question, topicId, difficulty, referenceAnswer: referenceAnswer ?? null },
+      });
+    };
+    const newQuestion = idempotency
+      ? await executeMongoIdempotently(
+          this.prisma,
+          {
+            ...idempotency,
+            scope: 'question-create',
+            payload: { question, topicId, difficulty, referenceAnswer: referenceAnswer ?? null },
+          },
+          create
+        )
+      : await create(this.prisma);
 
     this.logger.info({ questionId: newQuestion.id }, QUESTION_CREATED_LOG);
     return newQuestion;

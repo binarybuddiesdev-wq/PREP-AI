@@ -25,6 +25,11 @@ describe('TopicService', () => {
     question: {
       count: ReturnType<typeof vi.fn>;
     };
+    idempotencyOperation: {
+      findUnique: ReturnType<typeof vi.fn>;
+      create: ReturnType<typeof vi.fn>;
+    };
+    $transaction: ReturnType<typeof vi.fn>;
   };
   let mockPinoLogger: {
     info: ReturnType<typeof vi.fn>;
@@ -44,6 +49,26 @@ describe('TopicService', () => {
   };
 
   beforeEach(async () => {
+    const idempotencyRecords = new Map<
+      string,
+      { operationId: string; requestFingerprint: string; response: unknown; expiresAt: Date }
+    >();
+    const idempotencyOperation = {
+      findUnique: vi.fn(async ({ where }: { where: { operationId: string } }) =>
+        idempotencyRecords.get(where.operationId)
+      ),
+      create: vi.fn(
+        async ({
+          data,
+        }: {
+          data: typeof idempotencyRecords extends Map<string, infer T> ? T : never;
+        }) => {
+          if (idempotencyRecords.has(data.operationId)) throw { code: 'P2002' };
+          idempotencyRecords.set(data.operationId, data);
+          return data;
+        }
+      ),
+    };
     redis = {
       getCacheValue: vi.fn().mockResolvedValue(null),
       setCacheValue: vi.fn().mockResolvedValue(undefined),
@@ -61,6 +86,10 @@ describe('TopicService', () => {
       question: {
         count: vi.fn(),
       },
+      idempotencyOperation,
+      $transaction: vi.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
+        operation({ idempotencyOperation, topic: prisma.topic })
+      ),
     };
 
     mockPinoLogger = {
@@ -84,6 +113,58 @@ describe('TopicService', () => {
   });
 
   describe('createTopic', () => {
+    it('replays a keyed creation without creating a second topic', async () => {
+      prisma.topic.findFirst.mockResolvedValue(null);
+      prisma.topic.create.mockResolvedValue(mockTopic);
+      const idempotency = { actorId: 'clerk-admin-1', key: 'topic-create-1' };
+      const dto = { name: 'React', slug: 'react', category: 'practice', icon: 'âš›ï¸' };
+
+      const first = await service.createTopic(dto, idempotency);
+      const replay = await service.createTopic(dto, idempotency);
+
+      expect(replay).toEqual(first);
+      expect(prisma.topic.create).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a keyed creation replay when the payload changes', async () => {
+      prisma.topic.findFirst.mockResolvedValue(null);
+      prisma.topic.create.mockResolvedValue(mockTopic);
+      const idempotency = { actorId: 'clerk-admin-1', key: 'topic-create-2' };
+
+      await service.createTopic(
+        { name: 'React', slug: 'react', category: 'practice', icon: 'âš›ï¸' },
+        idempotency
+      );
+
+      await expect(
+        service.createTopic(
+          { name: 'Vue', slug: 'vue', category: 'practice', icon: 'ðŸ–¼ï¸' },
+          idempotency
+        )
+      ).rejects.toThrow('Idempotency-Key was already used with a different request');
+      expect(prisma.topic.create).toHaveBeenCalledOnce();
+    });
+
+    it('stores an omitted optional icon as null for a keyed topic creation', async () => {
+      prisma.topic.findFirst.mockResolvedValue(null);
+      prisma.topic.create.mockResolvedValue({ ...mockTopic, icon: null });
+
+      const result = await service.createTopic(
+        { name: 'TypeScript', slug: 'typescript', category: 'practice' },
+        { actorId: 'clerk-admin-1', key: 'topic-create-no-icon' }
+      );
+
+      expect(result.icon).toBeNull();
+      expect(prisma.topic.create).toHaveBeenCalledWith({
+        data: {
+          name: 'TypeScript',
+          slug: 'typescript',
+          category: 'practice',
+          icon: null,
+        },
+      });
+    });
+
     it('should create a new topic successfully', async () => {
       prisma.topic.findFirst.mockResolvedValue(null);
       prisma.topic.create.mockResolvedValue(mockTopic);

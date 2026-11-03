@@ -8,6 +8,8 @@ import {
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { RedisService } from '@/common/redis/redis.service.js';
 import { MetricsService } from '@/modules/metrics/metrics.service.js';
+import type { Prisma } from '@prisma/client';
+import { executeMongoIdempotently } from '@/common/idempotency/index.js';
 import { CreateTopicDto, GetTopicsDto, UpdateTopicDto } from './dto/index.js';
 import {
   TOPIC_ALREADY_EXISTS,
@@ -19,6 +21,7 @@ import {
 const TOPIC_CACHE_PREFIX = 'prepai:cache:topics:v1';
 const TOPIC_CACHE_TTL_SECONDS = 60;
 const TOPIC_CATEGORIES = ['practice', 'coding'] as const;
+type TCreateIdempotency = { actorId: string; key: string };
 
 function isTopicCacheEntry(value: unknown): boolean {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -43,27 +46,35 @@ export class TopicService {
     @InjectPinoLogger(TopicService.name) private readonly logger: PinoLogger
   ) {}
 
-  async createTopic(dto: CreateTopicDto) {
+  async createTopic(dto: CreateTopicDto, idempotency?: TCreateIdempotency) {
     const { name, category, slug, icon } = dto;
+    const create = async (client: Pick<Prisma.TransactionClient, 'topic'>) => {
+      const existingTopic = await client.topic.findFirst({
+        where: { OR: [{ name }, { slug }] },
+      });
+      if (existingTopic) throw new ConflictException(TOPIC_ALREADY_EXISTS);
 
-    const existingTopic = await this.prisma.topic.findFirst({
-      where: {
-        OR: [{ name }, { slug }],
-      },
-    });
+      try {
+        return await client.topic.create({
+          data: { name, slug, category, icon: icon ?? null },
+        });
+      } catch (error) {
+        if (isUniqueConstraintError(error)) throw new ConflictException(TOPIC_ALREADY_EXISTS);
+        throw error;
+      }
+    };
+    const topic = idempotency
+      ? await executeMongoIdempotently(
+          this.prisma,
+          {
+            ...idempotency,
+            scope: 'topic-create',
+            payload: { name, slug, category, icon: icon ?? null },
+          },
+          create
+        )
+      : await create(this.prisma);
 
-    if (existingTopic) {
-      throw new ConflictException(TOPIC_ALREADY_EXISTS);
-    }
-
-    const topic = await this.prisma.topic.create({
-      data: {
-        name,
-        slug,
-        category,
-        icon: icon ?? null,
-      },
-    });
     await this.invalidateTopicCache(topic.slug);
     this.logger.info({ topic }, 'topic created successfully');
     return topic;
@@ -218,4 +229,8 @@ export class TopicService {
   private topicDetailCacheKey(slug: string): string {
     return `${TOPIC_CACHE_PREFIX}:slug:${slug}`;
   }
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 }

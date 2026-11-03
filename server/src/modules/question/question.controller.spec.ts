@@ -84,6 +84,22 @@ describe('QuestionController', () => {
   });
 
   describe('createQuestion', () => {
+    it('passes the authenticated actor and optional idempotency key to the service', async () => {
+      const dto = {
+        question: 'What is JSX?',
+        topicId: 'topic_001',
+        difficulty: 'Junior',
+      };
+      service.createQuestion.mockResolvedValue(mockQuestion);
+
+      await controller.createQuestion(dto, 'clerk-admin-1', 'request-1');
+
+      expect(service.createQuestion).toHaveBeenCalledWith(dto, {
+        actorId: 'clerk-admin-1',
+        key: 'request-1',
+      });
+    });
+
     it('should create question and return formatted response', async () => {
       const dto = {
         question: 'What is JSX?',
@@ -93,7 +109,7 @@ describe('QuestionController', () => {
       };
       service.createQuestion.mockResolvedValue(mockQuestion);
 
-      const result = await controller.createQuestion(dto);
+      const result = await controller.createQuestion(dto, 'clerk-admin-1');
 
       expect(service.createQuestion).toHaveBeenCalledWith(dto);
       expect(result).toEqual({

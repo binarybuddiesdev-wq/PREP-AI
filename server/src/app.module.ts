@@ -23,6 +23,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { StudyChatModule } from './modules/study-chat/study-chat.module.js';
 import { TracingModule } from './telemetry/tracing.module.js';
+import { MongoIdempotencyCleanupScheduler } from './common/idempotency/mongo-idempotency-cleanup.scheduler.js';
+import { PrismaService } from './prisma/prisma.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -53,7 +55,13 @@ const __dirname = dirname(__filename);
     TracingModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: MongoIdempotencyCleanupScheduler,
+      useFactory: (prisma: PrismaService) => new MongoIdempotencyCleanupScheduler(prisma),
+      inject: [PrismaService],
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

@@ -86,6 +86,17 @@ enqueueing duplicate work.
   transcript operation marker recovers turns committed before a process stops.
   Operation snapshots are deleted with the conversation or user.
 
+## Supplemental admin creates
+
+`POST /topics` and `POST /questions` accept an optional idempotency key. When
+provided, an authenticated admin's key is scoped to its create operation and
+the request fingerprint plus response snapshot are stored in MongoDB in the
+same transaction as the resource. Matching retries replay the original
+response for 24 hours; a changed payload returns 409. Expired snapshots are
+cleaned hourly. Requests without a key retain the original create behavior.
+Concurrent same-content question creates using different keys still need a
+database uniqueness constraint. See the [admin create design](2026-11-03-admin-create-idempotency-design.md).
+
 ## Verification
 
 Unit/service/controller tests cover validation, stable fingerprints, matching

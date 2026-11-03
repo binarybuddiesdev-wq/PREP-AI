@@ -116,6 +116,17 @@ pnpm dev
 
 Open `http://localhost:5173`. Stop only the database containers with `pnpm podman:down`; their named data volumes are preserved.
 
+When a backend change adds or modifies MongoDB models or indexes, apply the
+schema to the existing local database before using the affected feature:
+
+```powershell
+pnpm --filter server prisma:push:mongodb
+```
+
+For example, keyed admin topic/question creation needs the `IdempotencyOperation`
+collection and its unique operation index. Schema changes do not reset the
+MongoDB data volume.
+
 ## Start all six services in Podman
 
 Use these commands from the repository root to manage the full stack:

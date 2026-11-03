@@ -1,9 +1,17 @@
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   Param,
   Patch,
@@ -18,6 +26,7 @@ import {
   ApiTags as ApiTagsEnum,
   ApiOperation as ApiOperationEnum,
   ApiRoutes,
+  CurrentUser,
   Roles,
   CreateQuestionResponse,
   GetAllQuestionsResponse,
@@ -43,10 +52,22 @@ export class QuestionController {
   @Post()
   @HttpCode(201)
   @Roles('ADMIN')
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: false,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @ApiOperation({ summary: ApiOperationEnum.QUESTION_CREATE })
   @ApiResponse(CreateQuestionResponse)
-  async createQuestion(@Body() dto: CreateQuestionDto) {
-    const data = await this.questionService.createQuestion(dto);
+  async createQuestion(
+    @Body() dto: CreateQuestionDto,
+    @CurrentUser('id') actorId: string,
+    @Headers('idempotency-key') key?: string
+  ) {
+    const data =
+      key !== undefined
+        ? await this.questionService.createQuestion(dto, { actorId, key })
+        : await this.questionService.createQuestion(dto);
     return { message: CREATE_QUESTION_SUCCESS, data };
   }
 

@@ -24,6 +24,11 @@ describe('QuestionService', () => {
     topic: {
       findUnique: ReturnType<typeof vi.fn>;
     };
+    idempotencyOperation: {
+      findUnique: ReturnType<typeof vi.fn>;
+      create: ReturnType<typeof vi.fn>;
+    };
+    $transaction: ReturnType<typeof vi.fn>;
   };
   let mockPinoLogger: {
     info: ReturnType<typeof vi.fn>;
@@ -52,6 +57,26 @@ describe('QuestionService', () => {
   };
 
   beforeEach(async () => {
+    const idempotencyRecords = new Map<
+      string,
+      { operationId: string; requestFingerprint: string; response: unknown; expiresAt: Date }
+    >();
+    const idempotencyOperation = {
+      findUnique: vi.fn(async ({ where }: { where: { operationId: string } }) =>
+        idempotencyRecords.get(where.operationId)
+      ),
+      create: vi.fn(
+        async ({
+          data,
+        }: {
+          data: typeof idempotencyRecords extends Map<string, infer T> ? T : never;
+        }) => {
+          if (idempotencyRecords.has(data.operationId)) throw { code: 'P2002' };
+          idempotencyRecords.set(data.operationId, data);
+          return data;
+        }
+      ),
+    };
     prisma = {
       question: {
         findFirst: vi.fn(),
@@ -64,6 +89,10 @@ describe('QuestionService', () => {
       topic: {
         findUnique: vi.fn(),
       },
+      idempotencyOperation,
+      $transaction: vi.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
+        operation({ idempotencyOperation, question: prisma.question })
+      ),
     };
 
     mockPinoLogger = {
@@ -84,6 +113,48 @@ describe('QuestionService', () => {
   });
 
   describe('createQuestion', () => {
+    it('replays a keyed creation without creating a second question', async () => {
+      const dto = {
+        question: 'What is JSX?',
+        topicId: 'topic_001',
+        difficulty: 'Junior',
+        referenceAnswer: 'A syntax extension for JavaScript.',
+      };
+      prisma.question.findFirst.mockResolvedValue(null);
+      prisma.question.create.mockResolvedValue(mockQuestion);
+      const idempotency = { actorId: 'clerk-admin-1', key: 'question-create-1' };
+
+      const first = await service.createQuestion(dto, idempotency);
+      const replay = await service.createQuestion(dto, idempotency);
+
+      expect(replay).toEqual(first);
+      expect(prisma.question.create).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a keyed creation replay when the payload changes', async () => {
+      prisma.question.findFirst.mockResolvedValue(null);
+      prisma.question.create.mockResolvedValue(mockQuestion);
+      const idempotency = { actorId: 'clerk-admin-1', key: 'question-create-2' };
+
+      await service.createQuestion(
+        {
+          question: 'What is JSX?',
+          topicId: 'topic_001',
+          difficulty: 'Junior',
+          referenceAnswer: 'A syntax extension for JavaScript.',
+        },
+        idempotency
+      );
+
+      await expect(
+        service.createQuestion(
+          { question: 'What is React?', topicId: 'topic_001', difficulty: 'Junior' },
+          idempotency
+        )
+      ).rejects.toThrow('Idempotency-Key was already used with a different request');
+      expect(prisma.question.create).toHaveBeenCalledOnce();
+    });
+
     it('should create question successfully', async () => {
       const dto = {
         question: 'What is JSX?',

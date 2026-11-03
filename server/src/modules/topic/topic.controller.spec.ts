@@ -83,15 +83,30 @@ describe('TopicController', () => {
   });
 
   describe('createTopic', () => {
+    it('passes the authenticated actor and optional idempotency key to the service', async () => {
+      const dto = { name: 'React', slug: 'react', category: 'practice' };
+      topicService.createTopic.mockResolvedValue(mockTopic);
+
+      await controller.createTopic(dto, 'clerk-admin-1', 'request-1');
+
+      expect(topicService.createTopic).toHaveBeenCalledWith(dto, {
+        actorId: 'clerk-admin-1',
+        key: 'request-1',
+      });
+    });
+
     it('should create a topic and return success', async () => {
       topicService.createTopic.mockResolvedValue(mockTopic);
 
-      const result = await controller.createTopic({
-        name: 'React',
-        slug: 'react',
-        category: 'practice',
-        icon: '⚛️',
-      });
+      const result = await controller.createTopic(
+        {
+          name: 'React',
+          slug: 'react',
+          category: 'practice',
+          icon: '⚛️',
+        },
+        'clerk-admin-1'
+      );
 
       expect(result).toEqual({ message: CREATE_TOPIC_SUCCESS, data: mockTopic });
       expect(topicService.createTopic).toHaveBeenCalledWith({
@@ -106,11 +121,14 @@ describe('TopicController', () => {
       topicService.createTopic.mockRejectedValue(new ConflictException());
 
       await expect(
-        controller.createTopic({
-          name: 'React',
-          slug: 'react',
-          category: 'practice',
-        })
+        controller.createTopic(
+          {
+            name: 'React',
+            slug: 'react',
+            category: 'practice',
+          },
+          'clerk-admin-1'
+        )
       ).rejects.toThrow(ConflictException);
     });
   });

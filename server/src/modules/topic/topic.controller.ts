@@ -1,9 +1,17 @@
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   Param,
   Patch,
@@ -18,6 +26,7 @@ import {
   ApiTags as ApiTagsEnum,
   ApiOperation as ApiOperationEnum,
   ApiRoutes,
+  CurrentUser,
   Roles,
   CreateTopicResponse,
   GetAllTopicsResponse,
@@ -43,10 +52,22 @@ export class TopicController {
   @Post()
   @HttpCode(201)
   @Roles('ADMIN')
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: false,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @ApiOperation({ summary: ApiOperationEnum.TOPIC_CREATE })
   @ApiResponse(CreateTopicResponse)
-  async createTopic(@Body() dto: CreateTopicDto) {
-    const data = await this.topicService.createTopic(dto);
+  async createTopic(
+    @Body() dto: CreateTopicDto,
+    @CurrentUser('id') actorId: string,
+    @Headers('idempotency-key') key?: string
+  ) {
+    const data =
+      key !== undefined
+        ? await this.topicService.createTopic(dto, { actorId, key })
+        : await this.topicService.createTopic(dto);
     return { message: CREATE_TOPIC_SUCCESS, data };
   }
 
