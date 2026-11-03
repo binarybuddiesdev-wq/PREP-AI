@@ -1,5 +1,25 @@
 # Worklog
 
+## 2026-11-03 — Asynchronous AI coding reviews
+
+- Added an authenticated endpoint to queue a review for a completed, owned
+  coding submission. It reserves the existing role-based daily review quota;
+  duplicate queued/running/completed requests replay state without another
+  reservation.
+- Added the Mastra coding-review agent with bounded prompt input and structured
+  output, provider/model/prompt provenance, durable review lifecycle fields,
+  retry handling, and startup/periodic queue recovery.
+- Queue payloads contain only the persisted execution ID. Worker permissions
+  update only review fields; a bounded security-definer function claims queued
+  answer IDs through a separate dispatch lease. Added restricted-role two-user
+  coverage and updated the API and architecture docs.
+- Verification: focused review tests passed (21); full server coverage suite
+  passed (650 tests, 90.23% branch coverage); Podman-backed database isolation
+  suite passed (24 tests); `pnpm gate -- --stack server --level full`,
+  `pnpm build:viewer:check`, and `git diff --check` passed. A fresh review found
+  no Critical or Important issues; the API contract documentation was corrected
+  from its findings.
+
 ## 2026-11-03 — AI provider failover metrics
 
 - Added the protected Prometheus counter `mastra_provider_failovers_total`.

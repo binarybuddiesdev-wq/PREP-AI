@@ -43,6 +43,7 @@ describe('CodingController', () => {
       runCode: vi.fn(),
       submitSolution: vi.fn(),
       getExecution: vi.fn(),
+      requestCodeReview: vi.fn(),
       getSessionDetail: vi.fn(),
       completeSession: vi.fn(),
       getSessionHistory: vi.fn(),
@@ -125,6 +126,20 @@ describe('CodingController', () => {
       controller.getExecution('session_001', 'execution_001', 'user_001')
     ).resolves.toEqual({ message: expect.any(String), data: execution });
     expect(codingService.getExecution).toHaveBeenCalledWith(
+      'session_001',
+      'execution_001',
+      'user_001'
+    );
+  });
+
+  it('requests a code review using the authenticated user ID', async () => {
+    const review = { id: 'answer_001', status: 'queued' };
+    codingService.requestCodeReview.mockResolvedValue(review);
+
+    await expect(
+      controller.requestCodeReview('session_001', 'execution_001', 'user_001')
+    ).resolves.toEqual({ message: expect.any(String), data: review });
+    expect(codingService.requestCodeReview).toHaveBeenCalledWith(
       'session_001',
       'execution_001',
       'user_001'

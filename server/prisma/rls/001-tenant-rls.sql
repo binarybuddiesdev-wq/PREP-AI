@@ -40,6 +40,8 @@ GRANT SELECT, UPDATE ON public."TheoryAnswer" TO prepai_worker;
 GRANT SELECT, UPDATE ON public."CodingSession" TO prepai_worker;
 GRANT SELECT, UPDATE ON public."CodingExecution" TO prepai_worker;
 GRANT SELECT, INSERT ON public."CodingAnswer" TO prepai_worker;
+GRANT UPDATE ("aiReviewStatus", "aiReviewJson", "aiReviewFailureMessage", "aiReviewProvider", "aiReviewModel", "aiReviewPromptVersion")
+  ON public."CodingAnswer" TO prepai_worker;
 GRANT UPDATE ("pdfGenerationStatus", "pdfGenerationError", "pdfQuestions")
   ON public."TheorySession" TO prepai_worker;
 GRANT UPDATE ("pdfDispatchClaimedAt")
@@ -55,6 +57,9 @@ GRANT UPDATE ("dispatchClaimedAt") ON
   public."TheoryAnswer",
   public."CodingExecution"
 TO prepai_rls_function_owner;
+GRANT SELECT ON public."CodingAnswer" TO prepai_rls_function_owner;
+GRANT UPDATE ("aiReviewDispatchClaimedAt")
+  ON public."CodingAnswer" TO prepai_rls_function_owner;
 
 CREATE OR REPLACE FUNCTION public.prepai_list_queued_theory_answer_ids(p_limit integer)
 RETURNS TABLE(answer_id text)
@@ -120,6 +125,32 @@ $$;
 ALTER FUNCTION public.prepai_list_queued_coding_execution_ids(integer) OWNER TO prepai_rls_function_owner;
 REVOKE ALL ON FUNCTION public.prepai_list_queued_coding_execution_ids(integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.prepai_list_queued_coding_execution_ids(integer) TO prepai_worker;
+
+CREATE OR REPLACE FUNCTION public.prepai_list_queued_coding_review_execution_ids(p_limit integer)
+RETURNS TABLE(execution_id text)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+  WITH candidates AS (
+    SELECT answer."executionId" AS id
+    FROM public."CodingAnswer" AS answer
+    WHERE answer."executionId" IS NOT NULL
+      AND answer."aiReviewStatus" = 'queued'
+      AND (answer."aiReviewDispatchClaimedAt" IS NULL OR answer."aiReviewDispatchClaimedAt" < now() - interval '30 seconds')
+    ORDER BY answer."createdAt" ASC
+    LIMIT LEAST(GREATEST(p_limit, 1), 100)
+    FOR UPDATE SKIP LOCKED
+  )
+  UPDATE public."CodingAnswer" AS answer
+  SET "aiReviewDispatchClaimedAt" = now()
+  FROM candidates
+  WHERE answer."executionId" = candidates.id
+  RETURNING answer."executionId"
+$$;
+ALTER FUNCTION public.prepai_list_queued_coding_review_execution_ids(integer) OWNER TO prepai_rls_function_owner;
+REVOKE ALL ON FUNCTION public.prepai_list_queued_coding_review_execution_ids(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.prepai_list_queued_coding_review_execution_ids(integer) TO prepai_worker;
 
 CREATE OR REPLACE FUNCTION public.prepai_get_coding_execution_owner(p_execution_id text)
 RETURNS TABLE(owner_id text, session_id text)

@@ -53,6 +53,7 @@ export {
   CodingRunResponse,
   CodingSubmitResponse,
   CodingExecutionResponse,
+  CodingReviewResponse,
   CodingSessionDetailResponse,
   CodingSessionCompletedResponse,
   CodingSessionHistoryResponse,

@@ -4,7 +4,7 @@ Base URL: `http://localhost:3000/api/v1/coding`
 
 All endpoints require Bearer token authentication (Clerk).
 
-> **Implementation status (2026-11-02):** The supported MVP routes are problem list/detail, session start, run, submit, session detail, completion, and session history as listed below. AI review and stats are deferred and are not implemented. This implementation status and the rules below supersede older examples in this draft where they conflict.
+> **Implementation status (2026-11-03):** Supported routes include problem list/detail, session start, run, submit, asynchronous AI review for completed submissions, session detail, completion, and session history as listed below. Coding stats remain deferred. This implementation status and the rules below supersede older examples in this draft where they conflict.
 
 ### Implemented contract and execution rules
 
@@ -345,61 +345,57 @@ user ID. A missing or foreign execution returns 404.
 
 ---
 
-## 6. AI Code Review (Deferred; not implemented)
+## 6. AI Code Review
 
-Request an AI-powered code review. This counts toward the daily AI review limit.
+Queue an AI-powered review for a completed submission. The request reserves the
+user's role-based daily review quota once, and the worker stores structured
+feedback on the answer. Repeating the request returns the existing review
+state without another quota reservation.
 
 **Method:** `POST`
-**Route:** `/coding/session/:sessionId/review`
+**Route:** `/coding/session/:sessionId/executions/:executionId/review`
 **Auth:** Bearer Token (session owner)
 
 ### Path Parameters
 
-| Param       | Type   | Description      |
-| ----------- | ------ | ---------------- |
-| `sessionId` | string | CodingSession ID |
+| Param         | Type   | Description                   |
+| ------------- | ------ | ----------------------------- |
+| `sessionId`   | string | CodingSession ID              |
+| `executionId` | string | Completed submit execution ID |
 
-### Request Body
+No request body is required. The server loads the problem and submitted source
+from the owner-scoped completed execution; clients cannot substitute review
+content.
 
-| Field       | Type   | Required | Description                   |
-| ----------- | ------ | -------- | ----------------------------- |
-| `answerId`  | string | yes      | The CodingAnswer ID to review |
-| `problemId` | string | yes      | Problem ID (for context)      |
-
-```json
-{
-  "answerId": "answer-uuid",
-  "problemId": "uuid-1"
-}
-```
-
-### Response (200 OK)
+### Response (202 Accepted)
 
 ```json
 {
   "success": true,
-  "message": "AI review generated successfully",
+  "message": "AI code review queued successfully",
   "data": {
-    "answerId": "answer-uuid",
-    "timeComplexity": "O(n)",
-    "timeComplexityDesc": "Linear time. Single pass through the array using a hash map for O(1) lookups.",
-    "spaceComplexity": "O(n)",
-    "spaceComplexityDesc": "Linear extra space for the hash map storing up to n elements.",
-    "quality": "Clean and efficient solution. Good use of hash map for O(1) lookups.",
-    "suggestions": "Consider adding input validation for edge cases like empty arrays."
+    "id": "answer-uuid",
+    "status": "queued",
+    "aiReviewJson": null,
+    "aiReviewFailureMessage": null
   }
 }
 ```
 
+Read the session detail or execution to observe the answer's `aiReviewStatus`:
+`not_requested`, `queued`, `running`, `completed`, or `failed`. Completed
+reviews contain a bounded structured object with `summary`, `timeComplexity`,
+`spaceComplexity`, `strengths`, and `improvements`. A terminal provider failure
+returns the safe code `review_unavailable` in `aiReviewFailureMessage`.
+
 ### Errors
 
-| Status | Message                    |
-| ------ | -------------------------- |
-| 400    | Validation failed          |
-| 404    | Session not found          |
-| 403    | Not session owner          |
-| 404    | Answer not found           |
-| 403    | Daily review limit reached |
+| Status | Message / condition                        |
+| ------ | ------------------------------------------ |
+| 404    | Session or execution missing or not owned  |
+| 409    | Execution is not a completed submission    |
+| 409    | Role-based daily review quota is exhausted |
+| 503    | Database or quota service unavailable      |
 
 ---
 
@@ -580,16 +576,16 @@ Get the user's daily coding stats and streak.
 
 ## Summary
 
-| #   | Method | Route                                                | Description                                 |
-| --- | ------ | ---------------------------------------------------- | ------------------------------------------- |
-| 1   | `GET`  | `/coding/problems`                                   | List problems with optional filters         |
-| 2   | `GET`  | `/coding/problems/:id`                               | Get problem detail with templates           |
-| 3   | `POST` | `/coding/session/start`                              | Start a coding session                      |
-| 4   | `POST` | `/coding/session/:sessionId/run`                     | Run code against examples (test)            |
-| 5   | `POST` | `/coding/session/:sessionId/submit`                  | Submit solution (counts toward daily limit) |
-| 6   | `GET`  | `/coding/session/:sessionId/executions/:executionId` | Get execution status/result                 |
-| 7   | `POST` | `/coding/session/:sessionId/review`                  | Request AI code review                      |
-| 8   | `GET`  | `/coding/session/:sessionId`                         | Get session detail with answers             |
-| 9   | `POST` | `/coding/session/:sessionId/complete`                | Complete a session                          |
-| 10  | `GET`  | `/coding/sessions`                                   | Get session history (paginated)             |
-| 11  | `GET`  | `/coding/stats`                                      | Get daily coding stats and streak           |
+| #   | Method | Route                                                       | Description                                     |
+| --- | ------ | ----------------------------------------------------------- | ----------------------------------------------- |
+| 1   | `GET`  | `/coding/problems`                                          | List problems with optional filters             |
+| 2   | `GET`  | `/coding/problems/:id`                                      | Get problem detail with templates               |
+| 3   | `POST` | `/coding/session/start`                                     | Start a coding session                          |
+| 4   | `POST` | `/coding/session/:sessionId/run`                            | Run code against examples (test)                |
+| 5   | `POST` | `/coding/session/:sessionId/submit`                         | Submit solution (counts toward daily limit)     |
+| 6   | `GET`  | `/coding/session/:sessionId/executions/:executionId`        | Get execution status/result                     |
+| 7   | `POST` | `/coding/session/:sessionId/executions/:executionId/review` | Queue AI code review for a completed submission |
+| 8   | `GET`  | `/coding/session/:sessionId`                                | Get session detail with answers                 |
+| 9   | `POST` | `/coding/session/:sessionId/complete`                       | Complete a session                              |
+| 10  | `GET`  | `/coding/sessions`                                          | Get session history (paginated)                 |
+| 11  | `GET`  | `/coding/stats`                                             | Get daily coding stats and streak               |

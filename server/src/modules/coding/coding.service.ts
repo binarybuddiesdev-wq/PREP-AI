@@ -20,6 +20,7 @@ import {
 } from '@/common/idempotency/index.js';
 import {
   CODING_DAILY_LIMIT_REACHED,
+  CODING_DAILY_REVIEW_LIMIT_REACHED,
   CODING_DATABASE_UNAVAILABLE,
   CODING_EXECUTION_FAILED,
   CODING_PROBLEM_NOT_ASSIGNED,
@@ -29,10 +30,8 @@ import {
   IDEMPOTENCY_KEY_REUSED,
 } from '@/common/constants/api.constants.js';
 import type { ICodingExecutionJobData } from './coding-execution.types.js';
-import type {
-  Prisma,
-  PrismaClient as PostgresPrismaClient,
-} from '../../generated/postgresql-client/index.js';
+import type { PrismaClient as PostgresPrismaClient } from '../../generated/postgresql-client/index.js';
+import { Prisma } from '../../generated/postgresql-client/index.js';
 import {
   CodingSessionHistoryDto,
   ExecuteCodingDto,
@@ -271,6 +270,140 @@ export class CodingService {
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw this.databaseError(error);
+    }
+  }
+
+  async requestCodeReview(sessionId: string, executionId: string, userId: string) {
+    const execution = await this.findReviewableExecution(sessionId, executionId, userId);
+    if (!execution) throw new NotFoundException('Coding execution not found');
+    if (execution.operation !== 'submit' || execution.status !== 'completed' || !execution.answer) {
+      throw new ConflictException('Only completed submissions can be reviewed');
+    }
+
+    const answer = execution.answer;
+    if (['queued', 'running', 'completed'].includes(answer.aiReviewStatus)) {
+      return this.toReviewResponse(answer);
+    }
+    if (!['not_requested', 'failed'].includes(answer.aiReviewStatus)) {
+      throw new ConflictException('Coding review is in an invalid state');
+    }
+
+    const roleUser = await this.prisma.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { role: true },
+    });
+    if (!roleUser) throw new NotFoundException('User not found');
+    const reviewLimit = getCodingLimits(roleUser.role, this.config).dailyReviews;
+    const quotaKey = `coding-reviews:${userId}:${this.utcDate()}`;
+    let reservation: { allowed: boolean };
+    try {
+      reservation = await this.redis.reserveQuota(
+        quotaKey,
+        reviewLimit,
+        this.secondsUntilUtcMidnight()
+      );
+    } catch (error) {
+      this.logger.error({ err: error }, 'Coding review quota service unavailable');
+      throw new ServiceUnavailableException(
+        'Coding review quota service is temporarily unavailable',
+        {
+          cause: error,
+        }
+      );
+    }
+    if (!reservation.allowed) throw new ConflictException(CODING_DAILY_REVIEW_LIMIT_REACHED);
+
+    let quotaReserved = true;
+    const releaseQuota = async () => {
+      if (!quotaReserved) return;
+      quotaReserved = false;
+      await this.releaseReviewQuota(quotaKey);
+    };
+    try {
+      const updated = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingAnswer.updateMany({
+          where: { id: answer.id, userId, aiReviewStatus: answer.aiReviewStatus },
+          data: {
+            aiReviewStatus: 'queued',
+            aiReviewFailureMessage: null,
+            aiReviewJson: Prisma.DbNull,
+            aiReviewProvider: null,
+            aiReviewModel: null,
+            aiReviewPromptVersion: null,
+          },
+        })
+      );
+      if (updated.count !== 1) {
+        await releaseQuota();
+        const winner = await this.findReviewableExecution(sessionId, executionId, userId);
+        if (winner?.answer) return this.toReviewResponse(winner.answer);
+        throw new ConflictException('Coding review state changed before it could be queued');
+      }
+      quotaReserved = false;
+
+      try {
+        await this.jobs.enqueue(
+          JOB_QUEUE_NAMES.CODING_REVIEW,
+          { idempotencyKey: executionId, executionId },
+          'review'
+        );
+      } catch (error) {
+        this.logger.warn(
+          { executionId, answerId: answer.id, err: error },
+          'Failed to dispatch a queued code review; it will be retried'
+        );
+      }
+      return this.toReviewResponse({
+        ...answer,
+        aiReviewStatus: 'queued',
+        aiReviewFailureMessage: null,
+        aiReviewJson: null,
+      });
+    } catch (error) {
+      await releaseQuota();
+      throw error;
+    }
+  }
+
+  private findReviewableExecution(sessionId: string, executionId: string, userId: string) {
+    return this.postgres.withTenantContext(userId, (transaction) =>
+      transaction.codingExecution.findFirst({
+        where: { id: executionId, sessionId, userId },
+        select: {
+          operation: true,
+          status: true,
+          answer: {
+            select: {
+              id: true,
+              aiReviewStatus: true,
+              aiReviewJson: true,
+              aiReviewFailureMessage: true,
+            },
+          },
+        },
+      })
+    );
+  }
+
+  private toReviewResponse(answer: {
+    id: string;
+    aiReviewStatus: string;
+    aiReviewJson: unknown;
+    aiReviewFailureMessage: string | null;
+  }) {
+    return {
+      id: answer.id,
+      status: answer.aiReviewStatus,
+      aiReviewJson: answer.aiReviewJson,
+      aiReviewFailureMessage: answer.aiReviewFailureMessage,
+    };
+  }
+
+  private async releaseReviewQuota(quotaKey: string): Promise<void> {
+    try {
+      await this.redis.releaseQuota(quotaKey);
+    } catch (error) {
+      this.logger.error({ err: error }, 'Failed to release a coding review quota reservation');
     }
   }
 

@@ -177,6 +177,57 @@ describe('PostgreSQL coding data isolation', () => {
     expect(thirdScan.map(({ executionId }) => executionId)).not.toContain(workerExecutionA.id);
   });
 
+  it('lists and claims queued code reviews through the restricted worker function', async () => {
+    const reviewExecutionA = await createWorkerExecution(workerSessionA.id, userA);
+    const reviewExecutionB = await createWorkerExecution(workerSessionB.id, userB);
+    for (const [execution, ownerId, sessionId] of [
+      [reviewExecutionA, userA, workerSessionA.id],
+      [reviewExecutionB, userB, workerSessionB.id],
+    ] as const) {
+      await withTestUserContext(database!, ownerId, async (transaction) => {
+        await transaction.codingExecution.update({
+          where: { id: execution.id },
+          data: { status: 'completed', result: { status: 'accepted' } },
+        });
+        await transaction.codingAnswer.create({
+          data: {
+            executionId: execution.id,
+            sessionId,
+            userId: ownerId,
+            problemId: problem.id,
+            language: 'javascript',
+            code: 'function solution() { return 1; }',
+            status: 'wrong_answer',
+            testCasesPassed: 1,
+            testCasesTotal: 1,
+            aiReviewStatus: 'queued',
+          },
+        });
+      });
+    }
+
+    const claimed = await database!.worker.$queryRaw<Array<{ execution_id: string }>>`
+      SELECT execution_id
+      FROM public.prepai_list_queued_coding_review_execution_ids(100)
+    `;
+    expect(claimed.map(({ execution_id }) => execution_id)).toEqual(
+      expect.arrayContaining([reviewExecutionA.id, reviewExecutionB.id])
+    );
+
+    const secondClaim = await database!.worker.$queryRaw<Array<{ execution_id: string }>>`
+      SELECT execution_id
+      FROM public.prepai_list_queued_coding_review_execution_ids(100)
+    `;
+    expect(secondClaim.map(({ execution_id }) => execution_id)).not.toContain(reviewExecutionA.id);
+    expect(secondClaim.map(({ execution_id }) => execution_id)).not.toContain(reviewExecutionB.id);
+
+    await expect(
+      database!.worker.codingAnswer.findMany({
+        where: { executionId: { in: [reviewExecutionA.id, reviewExecutionB.id] } },
+      })
+    ).resolves.toHaveLength(0);
+  });
+
   it('scopes execution reads by execution, session, and owner', async () => {
     await expect(service.getExecution(sessionA.id, executionA.id, userA)).resolves.toMatchObject({
       id: executionA.id,

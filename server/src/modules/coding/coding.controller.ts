@@ -26,6 +26,7 @@ import {
 import {
   CODING_EXECUTION_FETCHED,
   CODING_EXECUTION_QUEUED,
+  CODING_REVIEW_QUEUED,
   CODING_PROBLEM_FETCHED,
   CODING_PROBLEMS_FETCHED,
   CODING_SESSION_COMPLETED,
@@ -42,6 +43,7 @@ import {
   CodingSessionCompletedResponse,
   CodingSessionDetailResponse,
   CodingExecutionResponse,
+  CodingReviewResponse,
   CodingSessionHistoryResponse,
   CodingSessionStartedResponse,
   CodingSubmitResponse,
@@ -152,6 +154,22 @@ export class CodingController {
     return {
       message: CODING_EXECUTION_FETCHED,
       data: await this.codingService.getExecution(sessionId, executionId, userId),
+    };
+  }
+
+  @ApiBearerAuth()
+  @Post('session/:sessionId/executions/:executionId/review')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: ApiOperationEnum.CODING_REVIEW_SUBMISSION })
+  @ApiResponse(CodingReviewResponse)
+  async requestCodeReview(
+    @Param('sessionId') sessionId: string,
+    @Param('executionId') executionId: string,
+    @CurrentUser('id') userId: string
+  ) {
+    return {
+      message: CODING_REVIEW_QUEUED,
+      data: await this.codingService.requestCodeReview(sessionId, executionId, userId),
     };
   }
 

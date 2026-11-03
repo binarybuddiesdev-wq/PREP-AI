@@ -13,6 +13,7 @@ import { RedisService } from '@/common/redis/redis.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 import { createIdempotencyOperationId } from '@/common/idempotency/index.js';
+import { Prisma } from '../../generated/postgresql-client/index.js';
 import type { CodingSessionHistoryDto, ExecuteCodingDto } from './dto/coding.dto.js';
 
 type TMockPrismaModel = Record<string, ReturnType<typeof vi.fn>>;
@@ -33,6 +34,7 @@ describe('CodingService', () => {
   };
   let redis: {
     reserveQuota: ReturnType<typeof vi.fn>;
+    releaseQuota: ReturnType<typeof vi.fn>;
     reserveUniqueQuota: ReturnType<typeof vi.fn>;
     finalizeUniqueQuota: ReturnType<typeof vi.fn>;
   };
@@ -111,6 +113,7 @@ describe('CodingService', () => {
       create: vi.fn().mockResolvedValue(answer),
       findFirst: vi.fn().mockResolvedValue(null),
       findMany: vi.fn().mockResolvedValue([answer]),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       count: vi.fn().mockResolvedValue(1),
     };
     const codingExecution = {
@@ -143,6 +146,7 @@ describe('CodingService', () => {
 
     redis = {
       reserveQuota: vi.fn().mockResolvedValue({ allowed: true, count: 1 }),
+      releaseQuota: vi.fn().mockResolvedValue(undefined),
       reserveUniqueQuota: vi.fn().mockResolvedValue({ status: 'reserved', count: 1 }),
       finalizeUniqueQuota: vi.fn().mockResolvedValue(undefined),
     };
@@ -155,6 +159,8 @@ describe('CodingService', () => {
         const values: Record<string, number> = {
           CODING_DAILY_SOLVED_FREE: 5,
           CODING_DAILY_SOLVED_PREMIUM: 999,
+          CODING_DAILY_REVIEWS_FREE: 3,
+          CODING_DAILY_REVIEWS_PREMIUM: 999,
         };
         return values[key];
       }),
@@ -177,6 +183,163 @@ describe('CodingService', () => {
   });
 
   const pg = () => postgres.client_ as unknown as TMockPostgresClient;
+
+  describe('AI code review requests', () => {
+    const completedSubmission = (aiReviewStatus = 'not_requested') => ({
+      id: '55555555-5555-4555-8555-555555555555',
+      sessionId,
+      userId,
+      operation: 'submit',
+      status: 'completed',
+      answer: { ...answer, aiReviewStatus, aiReviewJson: null, aiReviewFailureMessage: null },
+    });
+
+    it('queues one owner-scoped review and reserves the free daily review quota', async () => {
+      pg().codingExecution.findFirst.mockResolvedValueOnce(completedSubmission());
+
+      await expect(
+        service.requestCodeReview(sessionId, '55555555-5555-4555-8555-555555555555', userId)
+      ).resolves.toEqual({
+        id: answer.id,
+        status: 'queued',
+        aiReviewJson: null,
+        aiReviewFailureMessage: null,
+      });
+
+      expect(pg().codingExecution.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: '55555555-5555-4555-8555-555555555555',
+            sessionId,
+            userId,
+          },
+        })
+      );
+      expect(redis.reserveQuota).toHaveBeenCalledWith(
+        `coding-reviews:${userId}:${new Date().toISOString().slice(0, 10)}`,
+        3,
+        expect.any(Number)
+      );
+      expect(pg().codingAnswer.updateMany).toHaveBeenCalledWith({
+        where: { id: answer.id, userId, aiReviewStatus: 'not_requested' },
+        data: {
+          aiReviewStatus: 'queued',
+          aiReviewFailureMessage: null,
+          aiReviewJson: Prisma.DbNull,
+          aiReviewProvider: null,
+          aiReviewModel: null,
+          aiReviewPromptVersion: null,
+        },
+      });
+      expect(jobs.enqueue).toHaveBeenCalledWith(
+        JOB_QUEUE_NAMES.CODING_REVIEW,
+        {
+          idempotencyKey: '55555555-5555-4555-8555-555555555555',
+          executionId: '55555555-5555-4555-8555-555555555555',
+        },
+        'review'
+      );
+    });
+
+    it.each(['queued', 'running', 'completed'])(
+      'replays an existing %s review without consuming quota or enqueueing',
+      async (status) => {
+        const existing = completedSubmission(status);
+        pg().codingExecution.findFirst.mockResolvedValueOnce(existing);
+
+        await expect(service.requestCodeReview(sessionId, existing.id, userId)).resolves.toEqual({
+          id: answer.id,
+          status,
+          aiReviewJson: null,
+          aiReviewFailureMessage: null,
+        });
+        expect(redis.reserveQuota).not.toHaveBeenCalled();
+        expect(jobs.enqueue).not.toHaveBeenCalled();
+      }
+    );
+
+    it('rejects reviews for missing, unowned, non-submit, or unfinished executions', async () => {
+      pg().codingExecution.findFirst.mockResolvedValueOnce(null);
+      await expect(service.requestCodeReview(sessionId, 'missing', userId)).rejects.toBeInstanceOf(
+        NotFoundException
+      );
+
+      pg().codingExecution.findFirst.mockResolvedValueOnce(null);
+      await expect(service.requestCodeReview(sessionId, 'foreign', userId)).rejects.toBeInstanceOf(
+        NotFoundException
+      );
+
+      pg().codingExecution.findFirst.mockResolvedValueOnce({
+        ...completedSubmission(),
+        operation: 'run',
+      });
+      await expect(service.requestCodeReview(sessionId, 'run', userId)).rejects.toBeInstanceOf(
+        ConflictException
+      );
+
+      pg().codingExecution.findFirst.mockResolvedValueOnce({
+        ...completedSubmission(),
+        status: 'running',
+      });
+      await expect(
+        service.requestCodeReview(sessionId, 'unfinished', userId)
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rejects a review when the role-based daily review quota is exhausted', async () => {
+      pg().codingExecution.findFirst.mockResolvedValueOnce(completedSubmission());
+      redis.reserveQuota.mockResolvedValueOnce({ allowed: false, count: 3 });
+
+      await expect(
+        service.requestCodeReview(sessionId, '55555555-5555-4555-8555-555555555555', userId)
+      ).rejects.toThrow('Daily AI code review limit reached');
+      expect(pg().codingAnswer.updateMany).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('releases the reserved review quota when another request wins the status update', async () => {
+      const execution = completedSubmission();
+      pg()
+        .codingExecution.findFirst.mockResolvedValueOnce(execution)
+        .mockResolvedValueOnce(completedSubmission('queued'));
+      pg().codingAnswer.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(
+        service.requestCodeReview(sessionId, execution.id, userId)
+      ).resolves.toMatchObject({ id: answer.id, status: 'queued' });
+      expect(redis.releaseQuota).toHaveBeenCalledWith(
+        `coding-reviews:${userId}:${new Date().toISOString().slice(0, 10)}`
+      );
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('does not release the review quota twice when the concurrent winner lookup fails', async () => {
+      const execution = completedSubmission();
+      pg()
+        .codingExecution.findFirst.mockResolvedValueOnce(execution)
+        .mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+      pg().codingAnswer.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.requestCodeReview(sessionId, execution.id, userId)).rejects.toThrow(
+        'PostgreSQL unavailable'
+      );
+      expect(redis.releaseQuota).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps a persisted queued review recoverable when Redis enqueue fails', async () => {
+      pg().codingExecution.findFirst.mockResolvedValueOnce(completedSubmission());
+      jobs.enqueue.mockRejectedValueOnce(new Error('queue unavailable'));
+
+      await expect(
+        service.requestCodeReview(sessionId, '55555555-5555-4555-8555-555555555555', userId)
+      ).resolves.toMatchObject({ id: answer.id, status: 'queued' });
+      expect(pg().codingAnswer.updateMany).toHaveBeenCalledOnce();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ answerId: answer.id }),
+        'Failed to dispatch a queued code review; it will be retried'
+      );
+    });
+  });
 
   describe('problem bank', () => {
     it('lists problems using only requested filters and does not expose test internals', async () => {

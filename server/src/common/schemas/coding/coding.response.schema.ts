@@ -1,6 +1,7 @@
 import {
   CODING_EXECUTION_QUEUED,
   CODING_EXECUTION_FETCHED,
+  CODING_REVIEW_QUEUED,
   CODING_PROBLEM_FETCHED,
   CODING_PROBLEMS_FETCHED,
   CODING_SESSION_COMPLETED,
@@ -88,6 +89,12 @@ const codingRunSchema = {
     testCases: { type: 'array', items: codingTestCaseSchema },
     runtime: { type: 'integer', nullable: true },
     memoryUsage: { type: 'integer', nullable: true },
+    aiReviewJson: { type: 'object', nullable: true },
+    aiReviewStatus: {
+      type: 'string',
+      enum: ['not_requested', 'queued', 'running', 'completed', 'failed'],
+    },
+    aiReviewFailureMessage: { type: 'string', nullable: true },
   },
 };
 
@@ -147,6 +154,16 @@ const codingExecutionAcceptedSchema = {
   },
 };
 
+const codingReviewSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    status: { type: 'string', enum: ['queued', 'running', 'completed', 'failed'] },
+    aiReviewJson: { type: 'object', nullable: true },
+    aiReviewFailureMessage: { type: 'string', nullable: true },
+  },
+};
+
 const codingHistorySchema = {
   type: 'object',
   properties: {
@@ -186,6 +203,11 @@ export const CodingExecutionResponse = {
   status: 200,
   description: CODING_EXECUTION_FETCHED,
   ...successResponseSchema(codingExecutionSchema, CODING_EXECUTION_FETCHED),
+};
+export const CodingReviewResponse = {
+  status: 202,
+  description: CODING_REVIEW_QUEUED,
+  ...successResponseSchema(codingReviewSchema, CODING_REVIEW_QUEUED),
 };
 export const CodingSessionDetailResponse = {
   status: 200,
