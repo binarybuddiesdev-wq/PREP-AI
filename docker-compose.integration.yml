@@ -1,0 +1,32 @@
+services:
+  mongo:
+    image: mongo:7.0
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
+    ports:
+      - '127.0.0.1:27018:27017'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --eval "try { rs.status().myState === 1 } catch (error) {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]});
+          false }" | grep -q true
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 3s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: prepai_data_isolation_test
+    ports:
+      - '127.0.0.1:5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d prepai_data_isolation_test']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 3s

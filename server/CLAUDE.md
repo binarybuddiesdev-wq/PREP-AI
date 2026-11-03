@@ -30,7 +30,7 @@ pnpm build                  # tsc + tsc-alias -> dist/
 pnpm test                   # vitest run (unit, src/**/*.spec.ts)
 pnpm test:watch
 pnpm test:coverage          # v8 coverage, 90% threshold on lines/statements/functions/branches
-pnpm test:e2e               # vitest run --config vitest.config.e2e.ts (test/e2e/**/*.e2e-spec.ts; no such files yet)
+pnpm test:e2e               # Vitest integration specs (requires isolated DB URLs)
 pnpm format                 # prettier --write src/**/*.ts — WRITES files; the quality gate uses `pnpm format:check` from the repo root
 ```
 
@@ -49,6 +49,10 @@ pnpm prisma:migrate:postgresql  # prisma migrate dev --schema=prisma/schema.post
 ```
 
 The quality gate (lint, format check, build, spec type-check, tests, coverage) is `server-verify-implementation`. Do not run it from memory.
+
+Run real MongoDB/PostgreSQL data-isolation tests from the repository root with
+`pnpm test:database:isolation`. This provisions disposable Podman databases and
+removes only its own containers. See [ADR-0011](../docs/adr/0011-isolated-database-integration-tests.md).
 
 ## Architecture
 

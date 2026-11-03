@@ -50,7 +50,14 @@ PrepAI's specs replace Prisma with hand-built objects. That makes them fast, and
 - a `Json` column round trip;
 - Mongo and Postgres semantics.
 
-There is no integration tier today. Until one exists (adding one needs an ADR, not a drive-by in a feature):
+Real database integration tests live under `test/e2e/` and are separate from
+the mocked unit suite. Run `pnpm test:e2e` only when `DATABASE_URL` and
+`POSTGRESQL_URL` target the dedicated integration databases. The supported,
+safe entry point is root `pnpm test:database:isolation`; it starts fresh,
+isolated Podman databases, applies the Prisma schemas and removes only that
+test project afterward. See [ADR-0011](../../../../docs/adr/0011-isolated-database-integration-tests.md).
+
+Until a test exercises a behavior against a real database:
 
 1. **Assert the arguments, not just the result.** Prove the service builds the scoped query: `expect(prisma.question.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ topicId }) }))`, and `findFirst` with `{ where: { id, userId } }` for owned data.
 2. **Write the cross-user case.** Stub the lookup to return `null` and assert `NotFoundException`; a happy-path-only spec does not test isolation.
@@ -58,7 +65,12 @@ There is no integration tier today. Until one exists (adding one needs an ADR, n
 
 ## E2E state
 
-`vitest.config.e2e.ts` exists and `pnpm test:e2e` is wired, but `server/test/e2e/` is empty, so the command exits non-zero with "No test files found" until the first file is added. The Playwright smoke specs live at the repo root in `e2e/` (see `server-verify-implementation` for how to run them and the dev-server caveat). Do not write a `test/e2e` file without agreeing the approach, because it needs a running app and a database.
+`vitest.config.e2e.ts` discovers `server/test/e2e/**/*.e2e-spec.ts`. The real
+database isolation spec runs services directly and does not need the API,
+Redis, Clerk, or Piston. Use the root isolated runner; direct `pnpm test:e2e`
+requires an already provisioned disposable database and the guarded test URLs.
+Playwright smoke specs live at the repo root in `e2e/` (see
+`server-verify-implementation` for how to run them and the dev-server caveat).
 
 ## Task → reference
 

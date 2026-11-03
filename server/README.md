@@ -40,6 +40,22 @@ AI-powered interview preparation backend built with NestJS and Fastify. It integ
    ```
    _Note: This runs Node natively with `--import @swc-node/register/esm-register` and `--env-file=../.env` to support TypeScript decorators and load environment keys early._
 
+### Database isolation integration tests
+
+Unit tests use mocked Prisma clients. To exercise the settings and theory/coding
+session ownership queries against real MongoDB and PostgreSQL, run this command
+from the repository root:
+
+```bash
+pnpm test:database:isolation
+```
+
+It requires Podman and `podman-compose`, uses disposable test containers on
+loopback ports 27018 and 5433 without named volumes, applies the current Prisma
+schemas, and tears down its uniquely named test project when finished. It does
+not use or modify the development database containers. See
+[ADR-0011](../docs/adr/0011-isolated-database-integration-tests.md).
+
 ---
 
 ## API Routes

@@ -8,18 +8,19 @@
 
 ## Index
 
-| #                                            | Title                                                                       | Status   | Date       |
-| -------------------------------------------- | --------------------------------------------------------------------------- | -------- | ---------- |
-| [0001](0001-polyglot-persistence.md)         | Polyglot persistence — MongoDB + PostgreSQL                                 | Accepted | 2026-08-29 |
-| [0002](0002-clerk-webhook-vs-lazy-create.md) | Clerk webhook (not lazy create) for user provisioning                       | Accepted | 2026-08-29 |
-| [0003](0003-pgvector-for-rag.md)             | pgvector (not Pinecone/Qdrant) for RAG embeddings                           | Accepted | 2026-08-29 |
-| [0004](0004-bullmq-for-async-jobs.md)        | BullMQ (not in-process) for background jobs                                 | Accepted | 2026-08-29 |
-| [0005](0005-redis-quota-counters.md)         | Redis (atomic INCR+EXPIRE) for daily quota counters                         | Accepted | 2026-08-29 |
-| [0006](0006-defer-firecracker-isolation.md)  | Defer Firecracker/gVisor — accept Docker isolation in v1                    | Accepted | 2026-08-29 |
-| [0007](0007-add-groq-as-llm-fallback.md)     | Add Groq as LLM fallback (NVIDIA primary)                                   | Accepted | 2026-08-29 |
-| [0008](0008-frontend-n-tier.md)              | Frontend (ui/) N-Tier layer model with Reader/Command hooks                 | Accepted | 2026-08-30 |
-| [0009](0009-frontend-layers.md)              | Frontend layers (core, utils, service, data, logic, components, pages, app) | Accepted | 2026-10-22 |
-| [0010](0010-bullmq-piston-execution.md)      | Run coding executions through BullMQ                                        | Accepted | 2026-11-02 |
+| #                                                   | Title                                                                       | Status   | Date       |
+| --------------------------------------------------- | --------------------------------------------------------------------------- | -------- | ---------- |
+| [0001](0001-polyglot-persistence.md)                | Polyglot persistence — MongoDB + PostgreSQL                                 | Accepted | 2026-08-29 |
+| [0002](0002-clerk-webhook-vs-lazy-create.md)        | Clerk webhook (not lazy create) for user provisioning                       | Accepted | 2026-08-29 |
+| [0003](0003-pgvector-for-rag.md)                    | pgvector (not Pinecone/Qdrant) for RAG embeddings                           | Accepted | 2026-08-29 |
+| [0004](0004-bullmq-for-async-jobs.md)               | BullMQ (not in-process) for background jobs                                 | Accepted | 2026-08-29 |
+| [0005](0005-redis-quota-counters.md)                | Redis (atomic INCR+EXPIRE) for daily quota counters                         | Accepted | 2026-08-29 |
+| [0006](0006-defer-firecracker-isolation.md)         | Defer Firecracker/gVisor — accept Docker isolation in v1                    | Accepted | 2026-08-29 |
+| [0007](0007-add-groq-as-llm-fallback.md)            | Add Groq as LLM fallback (NVIDIA primary)                                   | Accepted | 2026-08-29 |
+| [0008](0008-frontend-n-tier.md)                     | Frontend (ui/) N-Tier layer model with Reader/Command hooks                 | Accepted | 2026-08-30 |
+| [0009](0009-frontend-layers.md)                     | Frontend layers (core, utils, service, data, logic, components, pages, app) | Accepted | 2026-10-22 |
+| [0010](0010-bullmq-piston-execution.md)             | Run coding executions through BullMQ                                        | Accepted | 2026-11-02 |
+| [0011](0011-isolated-database-integration-tests.md) | Isolated database integration tests                                         | Accepted | 2026-11-03 |
 
 ---
 

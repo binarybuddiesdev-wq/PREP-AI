@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 — Real database data-isolation tests
+
+- Added opt-in, disposable Podman databases and real Prisma service tests with two persisted users. Tests cover Clerk-to-Mongo settings ownership and PostgreSQL theory/coding session detail; foreign sessions return 404.
+- Added ADR-0011 and root command `pnpm test:database:isolation`. The runner refuses occupied test ports and removes only its per-run test Compose project in a `finally` block.
+- PostgreSQL RLS remains disabled; this covers the listed reads only, not every private-record path.
+
 ## 2026-11-03 — Piston isolation hardening
 
 - Made Piston's job network, process, file, output, wall-time, CPU-time, memory, and concurrency limits explicit; aligned the five-job Piston cap with the BullMQ worker concurrency.
