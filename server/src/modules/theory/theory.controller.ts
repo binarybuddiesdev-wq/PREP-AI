@@ -56,10 +56,19 @@ export class TheoryController {
   @ApiBearerAuth()
   @Post('session/start')
   @HttpCode(201)
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @ApiOperation({ summary: ApiOperationEnum.THEORY_START_SESSION })
   @ApiResponse(StartSessionResponse)
-  async startSession(@Body() dto: StartSessionDto, @CurrentUser('id') userId: string) {
-    const data = await this.theoryService.startSession(dto, userId);
+  async startSession(
+    @Body() dto: StartSessionDto,
+    @CurrentUser('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined
+  ) {
+    const data = await this.theoryService.startSession(dto, userId, idempotencyKey);
     return { message: THEORY_SESSION_STARTED, data };
   }
 

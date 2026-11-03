@@ -21,6 +21,7 @@ import { RedisService } from '@/common/redis/redis.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 import {
+  createIdempotencyOperationId,
   createIdempotencyRequestFingerprint,
   getTheoryLimits,
   requireIdempotencyKey,
@@ -50,15 +51,44 @@ export class TheoryService {
     @InjectPinoLogger(TheoryService.name) private readonly logger: PinoLogger
   ) {}
 
-  async startSession(dto: StartSessionDto, userId: string) {
+  async startSession(dto: StartSessionDto, userId: string, idempotencyKey: string | undefined) {
+    const validatedIdempotencyKey = requireIdempotencyKey(idempotencyKey);
     const { mode, difficulty, totalQuestions, topicId, pdfIds } = dto;
 
     if (mode === 'topic' && !topicId) {
       throw new BadRequestException(THEORY_TOPIC_ID_REQUIRED);
     }
+    if (mode !== 'pdf' && pdfIds !== undefined) {
+      throw new BadRequestException('PDF source IDs are only supported in PDF study mode');
+    }
     if (mode === 'pdf' && (!pdfIds || pdfIds.length < 1 || pdfIds.length > 5)) {
       throw new BadRequestException('Select between one and five PDFs for study mode');
     }
+
+    const pg = this.postgres.client_;
+    if (!pg) {
+      throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
+    }
+
+    const sessionId = createIdempotencyOperationId(
+      userId,
+      'theory-session',
+      validatedIdempotencyKey
+    );
+    const requestFingerprint = this.createSessionFingerprint({
+      mode,
+      difficulty,
+      totalQuestions,
+      topicId: topicId ?? null,
+      pdfIds: pdfIds ?? [],
+    });
+    const findExistingSession = () =>
+      this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.theorySession.findFirst({ where: { id: sessionId, userId } })
+      );
+
+    const existingSession = await findExistingSession();
+    if (existingSession) return this.replaySession(existingSession, requestFingerprint);
 
     const user = await this.prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -73,11 +103,6 @@ export class TheoryService {
 
     if (totalQuestions > limits.questionsPerSession) {
       throw new BadRequestException(THEORY_QUESTIONS_LIMIT_EXCEEDED);
-    }
-
-    const pg = this.postgres.client_;
-    if (!pg) {
-      throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
     }
 
     let pdfSources: Array<{ id: string; activeRevision: number }> = [];
@@ -114,10 +139,14 @@ export class TheoryService {
         secondsUntilUtcMidnight
       );
       if (!quota.allowed) {
+        const concurrentSession = await findExistingSession();
+        if (concurrentSession) return this.replaySession(concurrentSession, requestFingerprint);
         throw new ForbiddenException(THEORY_DAILY_LIMIT_REACHED);
       }
     } catch (error: unknown) {
       if (error instanceof ForbiddenException) throw error;
+      const concurrentSession = await findExistingSession();
+      if (concurrentSession) return this.replaySession(concurrentSession, requestFingerprint);
       this.logger.warn(
         { error: error instanceof Error ? error.message : String(error) },
         'Redis daily quota unavailable; refusing session start to protect the limit'
@@ -132,6 +161,7 @@ export class TheoryService {
       session = await this.postgres.withTenantContext(userId, (transaction) =>
         transaction.theorySession.create({
           data: {
+            id: sessionId,
             userId,
             topicId: topicId ?? null,
             mode,
@@ -159,6 +189,10 @@ export class TheoryService {
           'Could not release reserved theory session quota'
         );
       }
+      if (this.isUniqueViolation(error)) {
+        const concurrentSession = await findExistingSession();
+        if (concurrentSession) return this.replaySession(concurrentSession, requestFingerprint);
+      }
       throw error;
     }
 
@@ -183,6 +217,42 @@ export class TheoryService {
     }
 
     return session;
+  }
+
+  private createSessionFingerprint(input: {
+    mode: string;
+    difficulty: string;
+    totalQuestions: number;
+    topicId: string | null;
+    pdfIds: string[];
+  }): string {
+    return createIdempotencyRequestFingerprint('theory-session', input);
+  }
+
+  private replaySession<
+    T extends {
+      mode: string;
+      difficulty: string;
+      totalQuestions: number;
+      topicId: string | null;
+      pdfIds: string[];
+    },
+  >(session: T, requestFingerprint: string): T {
+    const persistedFingerprint = this.createSessionFingerprint({
+      mode: session.mode,
+      difficulty: session.difficulty,
+      totalQuestions: session.totalQuestions,
+      topicId: session.topicId,
+      pdfIds: session.pdfIds,
+    });
+    if (persistedFingerprint !== requestFingerprint) {
+      throw new ConflictException(IDEMPOTENCY_KEY_REUSED);
+    }
+    return session;
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
   }
 
   async getSessionQuestions(sessionId: string, userId: string, dto: GetSessionQuestionsDto) {

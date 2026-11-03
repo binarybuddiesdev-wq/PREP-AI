@@ -5,6 +5,7 @@ import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.
 import { RedisService } from '@/common/redis/redis.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { createTheoryAnswerId } from './theory-idempotency.js';
+import { createIdempotencyOperationId } from '@/common/idempotency/index.js';
 import { ConfigService } from '@nestjs/config';
 import {
   BadRequestException,
@@ -72,6 +73,7 @@ describe('TheoryService', () => {
     mode: 'topic',
     difficulty: 'Mid',
     totalQuestions: 10,
+    pdfIds: [],
     questionsAnswered: 0,
     avgScore: 0,
     status: 'in_progress',
@@ -193,6 +195,13 @@ describe('TheoryService', () => {
     service = module.get<TheoryService>(TheoryService);
   });
 
+  let sessionKeySequence = 0;
+  const startSession = (
+    dto: StartSessionDto,
+    userId: string,
+    idempotencyKey = `test-theory-session-${++sessionKeySequence}`
+  ) => service.startSession(dto, userId, idempotencyKey);
+
   it.each([
     ['getSessionQuestions', () => service.getSessionQuestions('session_001', 'user_001', {})],
     [
@@ -227,6 +236,61 @@ describe('TheoryService', () => {
       totalQuestions: 10,
     };
 
+    const matchingSession = (sessionDto: StartSessionDto = dto, userId = 'user_001') => ({
+      ...mockSession,
+      id: createIdempotencyOperationId(userId, 'theory-session', 'retry-session'),
+      userId,
+      topicId: sessionDto.topicId ?? null,
+      mode: sessionDto.mode,
+      difficulty: sessionDto.difficulty,
+      totalQuestions: sessionDto.totalQuestions,
+      pdfIds: sessionDto.pdfIds ?? [],
+    });
+
+    it('replays a matching session before reserving quota or enqueueing work', async () => {
+      const existing = matchingSession();
+      postgres.client_.theorySession.findFirst.mockResolvedValueOnce(existing);
+
+      await expect(startSession(dto, 'user_001', 'retry-session')).resolves.toEqual(existing);
+
+      expect(redis.reserveQuota).not.toHaveBeenCalled();
+      expect(postgres.client_.theorySession.create).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('rejects a session key reused with a different request fingerprint', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValueOnce(matchingSession());
+
+      await expect(
+        startSession({ ...dto, totalQuestions: 9 }, 'user_001', 'retry-session')
+      ).rejects.toThrow('Idempotency-Key was already used with a different request');
+
+      expect(redis.reserveQuota).not.toHaveBeenCalled();
+      expect(postgres.client_.theorySession.create).not.toHaveBeenCalled();
+    });
+
+    it('replays when another request consumes the final daily session quota slot', async () => {
+      postgres.client_.theorySession.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(matchingSession());
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      config.get.mockImplementation((key: string) => {
+        const values: Record<string, number> = {
+          THEORY_DAILY_SESSIONS_FREE: 3,
+          THEORY_QUESTIONS_PER_SESSION_FREE: 10,
+        };
+        return values[key];
+      });
+      prisma.topic.findUnique.mockResolvedValue(mockTopic);
+      redis.reserveQuota.mockResolvedValueOnce({ allowed: false });
+
+      await expect(startSession(dto, 'user_001', 'retry-session')).resolves.toMatchObject({
+        id: createIdempotencyOperationId('user_001', 'theory-session', 'retry-session'),
+      });
+
+      expect(postgres.client_.theorySession.create).not.toHaveBeenCalled();
+    });
+
     it('should create a session successfully for free user', async () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
       config.get.mockImplementation((key: string) => {
@@ -239,7 +303,8 @@ describe('TheoryService', () => {
       prisma.topic.findUnique.mockResolvedValue(mockTopic);
       postgres.client_.theorySession.create.mockResolvedValue(mockSession);
 
-      const result = await service.startSession(dto, 'user_001');
+      const idempotencyKey = 'creates-session';
+      const result = await startSession(dto, 'user_001', idempotencyKey);
 
       expect(result).toEqual(mockSession);
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
@@ -253,14 +318,40 @@ describe('TheoryService', () => {
       );
       expect(postgres.client_.theorySession.count).not.toHaveBeenCalled();
       expect(postgres.client_.theorySession.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ userId: 'user_001' }),
+        data: expect.objectContaining({
+          id: createIdempotencyOperationId('user_001', 'theory-session', idempotencyKey),
+          userId: 'user_001',
+        }),
       });
+    });
+
+    it('releases quota and replays the winner when concurrent creation hits a unique constraint', async () => {
+      const idempotencyKey = 'concurrent-session';
+      const winner = matchingSession(dto, 'user_001');
+      postgres.client_.theorySession.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(winner);
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      config.get.mockImplementation((key: string) => {
+        const values: Record<string, number> = {
+          THEORY_DAILY_SESSIONS_FREE: 3,
+          THEORY_QUESTIONS_PER_SESSION_FREE: 10,
+        };
+        return values[key];
+      });
+      prisma.topic.findUnique.mockResolvedValue(mockTopic);
+      postgres.client_.theorySession.create.mockRejectedValueOnce({ code: 'P2002' });
+
+      await expect(startSession(dto, 'user_001', idempotencyKey)).resolves.toEqual(winner);
+
+      expect(redis.releaseQuota).toHaveBeenCalledOnce();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if user not found', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.startSession(dto, 'unknown_user')).rejects.toThrow(NotFoundException);
+      await expect(startSession(dto, 'unknown_user')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if totalQuestions exceeds limit', async () => {
@@ -275,9 +366,7 @@ describe('TheoryService', () => {
 
       const overLimitDto = { ...dto, totalQuestions: 15 };
 
-      await expect(service.startSession(overLimitDto, 'user_001')).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(startSession(overLimitDto, 'user_001')).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ForbiddenException if daily limit reached', async () => {
@@ -292,7 +381,7 @@ describe('TheoryService', () => {
       redis.reserveQuota.mockResolvedValue({ allowed: false, count: 3 });
       prisma.topic.findUnique.mockResolvedValue(mockTopic);
 
-      await expect(service.startSession(dto, 'user_001')).rejects.toThrow(ForbiddenException);
+      await expect(startSession(dto, 'user_001')).rejects.toThrow(ForbiddenException);
       expect(postgres.client_.theorySession.create).not.toHaveBeenCalled();
     });
 
@@ -310,7 +399,7 @@ describe('TheoryService', () => {
       postgres.client_.theorySession.count.mockResolvedValue(0);
       prisma.topic.findUnique.mockResolvedValue(null);
 
-      await expect(service.startSession(dto, 'user_001')).rejects.toThrow(NotFoundException);
+      await expect(startSession(dto, 'user_001')).rejects.toThrow(NotFoundException);
     });
 
     it('should allow premium user 30 questions per session', async () => {
@@ -327,7 +416,7 @@ describe('TheoryService', () => {
 
       const premiumDto = { ...dto, totalQuestions: 25 };
 
-      const result = await service.startSession(premiumDto, 'user_premium');
+      const result = await startSession(premiumDto, 'user_premium');
 
       expect(result).toEqual(mockSession);
     });
@@ -349,7 +438,7 @@ describe('TheoryService', () => {
 
       const weakDto: StartSessionDto = { mode: 'weak', difficulty: 'Mid', totalQuestions: 10 };
 
-      const result = await service.startSession(weakDto, 'user_001');
+      const result = await startSession(weakDto, 'user_001');
 
       expect(result.mode).toBe('weak');
       expect(prisma.topic.findUnique).not.toHaveBeenCalled();
@@ -357,7 +446,14 @@ describe('TheoryService', () => {
 
     it('should require a topic id for topic mode', async () => {
       await expect(
-        service.startSession({ mode: 'topic', difficulty: 'Mid', totalQuestions: 10 }, 'user_001')
+        startSession({ mode: 'topic', difficulty: 'Mid', totalQuestions: 10 }, 'user_001')
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('rejects PDF source IDs when the session mode is not PDF', async () => {
+      await expect(
+        startSession({ ...dto, pdfIds: ['507f1f77bcf86cd799439011'] }, 'user_001')
       ).rejects.toThrow(BadRequestException);
       expect(prisma.user.findUnique).not.toHaveBeenCalled();
     });
@@ -381,7 +477,7 @@ describe('TheoryService', () => {
       };
       postgres.client_.theorySession.create.mockResolvedValue(pdfSession);
 
-      const result = await service.startSession(
+      const result = await startSession(
         { mode: 'pdf', pdfIds: [pdfId], difficulty: 'Mid', totalQuestions: 10 },
         'user_001'
       );
@@ -422,9 +518,7 @@ describe('TheoryService', () => {
       redis.reserveQuota.mockRejectedValue(new Error('Redis unavailable'));
       prisma.topic.findUnique.mockResolvedValue(mockTopic);
 
-      await expect(service.startSession(dto, 'user_001')).rejects.toThrow(
-        ServiceUnavailableException
-      );
+      await expect(startSession(dto, 'user_001')).rejects.toThrow(ServiceUnavailableException);
       expect(postgres.client_.theorySession.count).not.toHaveBeenCalled();
       expect(postgres.client_.theorySession.create).not.toHaveBeenCalled();
     });
@@ -442,7 +536,7 @@ describe('TheoryService', () => {
       const databaseError = new Error('PostgreSQL unavailable');
       postgres.client_.theorySession.create.mockRejectedValueOnce(databaseError);
 
-      await expect(service.startSession(dto, 'user_001')).rejects.toBe(databaseError);
+      await expect(startSession(dto, 'user_001')).rejects.toBe(databaseError);
       expect(redis.releaseQuota).toHaveBeenCalledOnce();
     });
 
@@ -460,7 +554,7 @@ describe('TheoryService', () => {
       postgres.client_.theorySession.create.mockRejectedValueOnce(databaseError);
       redis.releaseQuota.mockRejectedValueOnce('Redis unavailable');
 
-      await expect(service.startSession(dto, 'user_001')).rejects.toBe(databaseError);
+      await expect(startSession(dto, 'user_001')).rejects.toBe(databaseError);
       expect(mockPinoLogger.warn).toHaveBeenCalledWith(
         { error: 'Redis unavailable' },
         'Could not release reserved theory session quota'

@@ -139,10 +139,10 @@ describe('TheoryController', () => {
         totalQuestions: 10,
       };
 
-      const result = await controller.startSession(dto, 'user_001');
+      const result = await controller.startSession(dto, 'user_001', 'request_001');
 
       expect(result).toEqual({ message: THEORY_SESSION_STARTED, data: mockSession });
-      expect(theoryService.startSession).toHaveBeenCalledWith(dto, 'user_001');
+      expect(theoryService.startSession).toHaveBeenCalledWith(dto, 'user_001', 'request_001');
     });
 
     it('should pass userId from auth to service', async () => {
@@ -154,9 +154,9 @@ describe('TheoryController', () => {
         totalQuestions: 5,
       };
 
-      await controller.startSession(dto, 'user_999');
+      await controller.startSession(dto, 'user_999', 'request_002');
 
-      expect(theoryService.startSession).toHaveBeenCalledWith(dto, 'user_999');
+      expect(theoryService.startSession).toHaveBeenCalledWith(dto, 'user_999', 'request_002');
     });
   });
 

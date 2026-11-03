@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — theory session start idempotency
+
+- Required `Idempotency-Key` for theory session start and derived an actor-scoped deterministic PostgreSQL UUID; matching retries replay before quota reservation or PDF question enqueue.
+- Mismatched payload reuse returns 409. Concurrent quota-boundary retries replay the winner, and concurrent insert losers release their quota reservation before replaying.
+- Updated shared idempotency policy, queue behavior notes, backend tracker, and architecture TODO.
+- Verification: focused theory/controller tests passed (82 tests); `pnpm gate -- --stack server --level full` passed (599 tests across 61 files, build, spec type-check, coverage, lint, formatting, Prisma generation, and agent-doc checks); `pnpm build:viewer:check` and `git diff --check` passed. One Important review finding about non-PDF `pdfIds` was fixed with a regression test.
+
 ## 2026-11-03 — PDF upload idempotency
 
 - Required `Idempotency-Key` for PDF multipart uploads and derived a deterministic, user-scoped Mongo ObjectId without a schema change.

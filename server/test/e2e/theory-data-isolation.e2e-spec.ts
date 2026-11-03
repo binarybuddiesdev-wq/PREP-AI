@@ -248,7 +248,8 @@ describe('PostgreSQL theory data isolation', () => {
   it('records newly started sessions under the authenticated Clerk subject', async () => {
     startedSessionA = await service.startSession(
       { mode: 'topic', topicId, difficulty: 'Junior', totalQuestions: 1 },
-      users!.userA.clerkUserId
+      users!.userA.clerkUserId,
+      'theory-isolation-session-start-a'
     );
 
     expect(startedSessionA.userId).toBe(users!.userA.clerkUserId);

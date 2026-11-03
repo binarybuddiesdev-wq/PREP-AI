@@ -2,7 +2,7 @@
 
 ## Intent
 
-Make retries of asynchronous theory-answer, coding-execution, and PDF-upload
+Make retries of theory-session, asynchronous theory-answer, coding-execution, and PDF-upload
 requests safe. A client that loses a response can repeat the same request and
 receive the original persisted operation without consuming another quota slot
 or enqueueing duplicate work.
@@ -10,10 +10,11 @@ or enqueueing duplicate work.
 ## Goals
 
 - Define one shared key-validation and request-fingerprint policy.
-- Require `Idempotency-Key` for theory answer submission, coding run/submit,
-  and PDF upload.
+- Require `Idempotency-Key` for theory session start and answer submission,
+  coding run/submit, and PDF upload.
 - Scope keys to the authenticated actor and operation resource.
-- Return the original persisted answer/execution for a matching replay.
+- Return the original persisted session, answer, execution, or PDF source for
+  a matching replay.
 - Return HTTP 409 when a key is reused with a different request body or scope.
 - Avoid charging quotas or enqueueing duplicate jobs on a matching replay.
 - Preserve existing persisted IDs for theory answers so in-flight and historical
@@ -26,8 +27,8 @@ or enqueueing duplicate work.
 - Make unrelated resource creation, admin writes, webhooks, or PDF reindex/delete
   operations idempotent in this change.
 - Claim a cross-database exactly-once guarantee. PostgreSQL operation records
-  are authoritative for these two flows; external effects remain recoverable
-  through their existing queue/state mechanisms.
+  are authoritative for theory and coding operations; external effects remain
+  recoverable through their existing queue/state mechanisms.
 - Add database schema changes or touch a user's database.
 
 ## Approaches
@@ -55,13 +56,15 @@ or enqueueing duplicate work.
   does not enqueue again or reserve a second quota.
 - Same key plus a different fingerprint returns 409 and does not modify the
   original operation.
-- The replay window follows the lifetime of the persisted answer/execution
-  resource; no separate 24-hour response cache is introduced.
+- The replay window follows the lifetime of the persisted operation resource;
+  no separate 24-hour response cache is introduced.
 - Theory answer IDs retain their current deterministic format for backward
   compatibility. Coding execution IDs become deterministic for a user's
   coding-execution key; queue IDs continue to derive from the execution ID.
 - PDF upload source IDs are deterministic 24-character Mongo ObjectIds derived
   from the actor and key; persisted file metadata acts as the request fingerprint.
+- Theory session IDs are deterministic PostgreSQL UUIDs derived from the actor
+  and key; persisted session fields act as the request fingerprint.
 
 ## Verification
 
@@ -73,7 +76,9 @@ coverage, and docs after the focused tests.
 ## Remaining work
 
 PDF uploads use a deterministic user-scoped Mongo ObjectId and the persisted
-content hash, display name, and byte size as their replay fingerprint. Reindex,
+content hash, display name, and byte size as their replay fingerprint. Theory
+session starts use deterministic PostgreSQL IDs and fingerprint mode,
+difficulty, question count, topic ID, and ordered PDF IDs. Reindex,
 delete, and other mutation types can adopt this policy when their durable
 resource and external side effects can be made replay-safe. The backend tracker
 must keep the policy partial until those routes are explicitly reviewed.
