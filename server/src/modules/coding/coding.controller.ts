@@ -1,8 +1,9 @@
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -86,6 +87,11 @@ export class CodingController {
   }
 
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    description: 'Unique key for this coding request',
+  })
   @Post('session/:sessionId/run')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: ApiOperationEnum.CODING_RUN_CODE })
@@ -93,15 +99,21 @@ export class CodingController {
   async runCode(
     @Param('sessionId') sessionId: string,
     @Body() dto: ExecuteCodingDto,
-    @CurrentUser('id') userId: string
+    @CurrentUser('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string
   ) {
     return {
       message: CODING_EXECUTION_QUEUED,
-      data: await this.codingService.runCode(sessionId, userId, dto),
+      data: await this.codingService.runCode(sessionId, userId, dto, idempotencyKey),
     };
   }
 
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    description: 'Unique key for this coding request',
+  })
   @Post('session/:sessionId/submit')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: ApiOperationEnum.CODING_SUBMIT })
@@ -109,11 +121,12 @@ export class CodingController {
   async submitSolution(
     @Param('sessionId') sessionId: string,
     @Body() dto: ExecuteCodingDto,
-    @CurrentUser('id') userId: string
+    @CurrentUser('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string
   ) {
     return {
       message: CODING_SUBMISSION_QUEUED,
-      data: await this.codingService.submitSolution(sessionId, userId, dto),
+      data: await this.codingService.submitSolution(sessionId, userId, dto, idempotencyKey),
     };
   }
 

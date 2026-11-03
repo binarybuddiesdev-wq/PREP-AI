@@ -96,16 +96,26 @@ describe('CodingController', () => {
       code: 'function solution() {}',
     } satisfies ExecuteCodingDto;
 
-    const run = await controller.runCode('session_001', dto, 'user_001');
-    const submit = await controller.submitSolution('session_001', dto, 'user_001');
+    const run = await controller.runCode('session_001', dto, 'user_001', 'request_001');
+    const submit = await controller.submitSolution('session_001', dto, 'user_001', 'request_001');
 
     expect(run).toEqual({ message: expect.any(String), data: execution });
     expect(submit).toEqual({
       message: expect.any(String),
       data: { ...execution, operation: 'submit' },
     });
-    expect(codingService.runCode).toHaveBeenCalledWith('session_001', 'user_001', dto);
-    expect(codingService.submitSolution).toHaveBeenCalledWith('session_001', 'user_001', dto);
+    expect(codingService.runCode).toHaveBeenCalledWith(
+      'session_001',
+      'user_001',
+      dto,
+      'request_001'
+    );
+    expect(codingService.submitSolution).toHaveBeenCalledWith(
+      'session_001',
+      'user_001',
+      dto,
+      'request_001'
+    );
   });
 
   it('looks up an execution using its session, execution, and authenticated user IDs', async () => {
@@ -152,7 +162,8 @@ describe('CodingController', () => {
       controller.runCode(
         'session_001',
         { problemId: 'problem_001', language: 'javascript', code: 'function solution() {}' },
-        'user_001'
+        'user_001',
+        'request_001'
       )
     ).rejects.toBe(error);
   });

@@ -7,13 +7,17 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'node:crypto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { RedisService } from '@/common/redis/redis.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 import { getCodingLimits } from '@/common/utils/role-limits.js';
+import {
+  createIdempotencyOperationId,
+  createIdempotencyRequestFingerprint,
+  requireIdempotencyKey,
+} from '@/common/idempotency/index.js';
 import {
   CODING_DAILY_LIMIT_REACHED,
   CODING_DATABASE_UNAVAILABLE,
@@ -22,6 +26,7 @@ import {
   CODING_SESSION_COMPLETED_ERROR,
   CODING_SESSION_NOT_FOUND,
   CODING_SUBMISSION_IN_PROGRESS,
+  IDEMPOTENCY_KEY_REUSED,
 } from '@/common/constants/api.constants.js';
 import type { ICodingExecutionJobData } from './coding-execution.types.js';
 import type {
@@ -109,15 +114,30 @@ export class CodingService {
     }
   }
 
-  async runCode(sessionId: string, userId: string, dto: ExecuteCodingDto) {
-    const { problem, session } = await this.loadSessionProblem(sessionId, userId, dto.problemId);
+  async runCode(sessionId: string, userId: string, dto: ExecuteCodingDto, idempotencyKey: string) {
+    requireIdempotencyKey(idempotencyKey);
+    const session = await this.loadOwnedSession(sessionId, userId);
+    const executionId = createIdempotencyOperationId(userId, 'coding-execution', idempotencyKey);
+    const replay = await this.findReplay(sessionId, userId, executionId, dto, 'run');
+    if (replay) return replay;
+    const problem = await this.loadSessionProblem(session, dto.problemId);
     this.assertInProgress(session);
     await this.reserveExecutionCapacity(userId);
-    return this.createExecution(sessionId, userId, dto, problem.examples, 'run', null);
+    return this.createExecution(sessionId, userId, dto, problem.examples, 'run', null, executionId);
   }
 
-  async submitSolution(sessionId: string, userId: string, dto: ExecuteCodingDto) {
-    const { problem, session } = await this.loadSessionProblem(sessionId, userId, dto.problemId);
+  async submitSolution(
+    sessionId: string,
+    userId: string,
+    dto: ExecuteCodingDto,
+    idempotencyKey: string
+  ) {
+    requireIdempotencyKey(idempotencyKey);
+    const session = await this.loadOwnedSession(sessionId, userId);
+    const executionId = createIdempotencyOperationId(userId, 'coding-execution', idempotencyKey);
+    const replay = await this.findReplay(sessionId, userId, executionId, dto, 'submit');
+    if (replay) return replay;
+    const problem = await this.loadSessionProblem(session, dto.problemId);
     this.assertInProgress(session);
     await this.reserveExecutionCapacity(userId);
 
@@ -130,7 +150,6 @@ export class CodingService {
     const quotaKey = `coding-solved:${userId}:${this.utcDate()}`;
     const itemKey = `coding-problem:${userId}:${dto.problemId}`;
     const ttlSeconds = this.secondsUntilUtcMidnight();
-    const executionId = randomUUID();
     let reservation;
     try {
       reservation = await this.redis.reserveUniqueQuota(
@@ -154,6 +173,8 @@ export class CodingService {
       throw new ConflictException(CODING_DAILY_LIMIT_REACHED);
     }
     if (reservation.status === 'in_progress') {
+      const concurrentReplay = await this.findReplay(sessionId, userId, executionId, dto, 'submit');
+      if (concurrentReplay) return concurrentReplay;
       throw new ConflictException(CODING_SUBMISSION_IN_PROGRESS);
     }
 
@@ -271,7 +292,7 @@ export class CodingService {
     }
   }
 
-  private async loadSessionProblem(sessionId: string, userId: string, problemId: string) {
+  private async loadOwnedSession(sessionId: string, userId: string) {
     let session;
     try {
       session = await this.postgres.withTenantContext(userId, (transaction) =>
@@ -281,6 +302,13 @@ export class CodingService {
       throw this.databaseError(error);
     }
     if (!session) throw new NotFoundException(CODING_SESSION_NOT_FOUND);
+    return session as { id: string; userId: string; problemIds: string[]; status: string };
+  }
+
+  private async loadSessionProblem(
+    session: { id: string; problemIds: string[] },
+    problemId: string
+  ) {
     if (!session.problemIds.includes(problemId)) {
       throw new NotFoundException(CODING_PROBLEM_NOT_ASSIGNED);
     }
@@ -288,7 +316,7 @@ export class CodingService {
     try {
       const problem = await this.database().codingQuestion.findFirst({ where: { id: problemId } });
       if (!problem) throw new NotFoundException('Coding problem not found');
-      return { session, problem };
+      return problem;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw this.databaseError(error);
@@ -299,6 +327,71 @@ export class CodingService {
     if (session.status !== 'in_progress') {
       throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
     }
+  }
+
+  private async findReplay(
+    sessionId: string,
+    userId: string,
+    executionId: string,
+    dto: ExecuteCodingDto,
+    operation: 'run' | 'submit'
+  ) {
+    let execution;
+    try {
+      execution = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingExecution.findFirst({ where: { id: executionId, userId } })
+      );
+    } catch (error) {
+      throw this.databaseError(error);
+    }
+    if (!execution) return null;
+    this.assertSameExecutionRequest(execution, sessionId, dto, operation);
+    return this.executionSummary(execution);
+  }
+
+  private assertSameExecutionRequest(
+    execution: {
+      sessionId: string;
+      problemId: string;
+      operation: string;
+      language: string;
+      sourceCode: string;
+    },
+    sessionId: string,
+    dto: ExecuteCodingDto,
+    operation: 'run' | 'submit'
+  ) {
+    const expected = createIdempotencyRequestFingerprint('coding-execution', {
+      sessionId,
+      problemId: dto.problemId,
+      operation,
+      language: dto.language,
+      code: dto.code,
+    });
+    const persisted = createIdempotencyRequestFingerprint('coding-execution', {
+      sessionId: execution.sessionId,
+      problemId: execution.problemId,
+      operation: execution.operation,
+      language: execution.language,
+      code: execution.sourceCode,
+    });
+    if (expected !== persisted) throw new ConflictException(IDEMPOTENCY_KEY_REUSED);
+  }
+
+  private executionSummary(execution: {
+    id: string;
+    sessionId: string;
+    operation: string;
+    status: string;
+    createdAt: Date;
+  }) {
+    return {
+      id: execution.id,
+      sessionId: execution.sessionId,
+      operation: execution.operation,
+      status: execution.status,
+      createdAt: execution.createdAt,
+    };
   }
 
   private async createExecution(
@@ -313,7 +406,7 @@ export class CodingService {
       ttlSeconds: number;
       reservationToken: string;
     } | null,
-    executionId = randomUUID()
+    executionId: string
   ) {
     const queueJobId = this.jobs.getJobId(JOB_QUEUE_NAMES.CODING_EXECUTION, executionId);
     let execution;
@@ -339,6 +432,10 @@ export class CodingService {
         })
       );
     } catch (error) {
+      if ((error as { code?: string })?.code === 'P2002') {
+        const replay = await this.findReplay(sessionId, userId, executionId, dto, operation);
+        if (replay) return replay;
+      }
       throw this.databaseError(error);
     }
 
@@ -376,13 +473,7 @@ export class CodingService {
       }
       throw error;
     }
-    return {
-      id: execution.id,
-      sessionId: execution.sessionId,
-      operation: execution.operation,
-      status: execution.status,
-      createdAt: execution.createdAt,
-    };
+    return this.executionSummary(execution);
   }
 
   private async reserveExecutionCapacity(userId: string) {

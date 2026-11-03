@@ -192,6 +192,7 @@ Run submitted code against problem examples for testing. Does not count toward d
 **Method:** `POST`
 **Route:** `/coding/session/:sessionId/run`
 **Auth:** Bearer Token (session owner)
+**Required header:** `Idempotency-Key` (1–128 visible ASCII characters). Retry with the same key after a lost response. Identical requests return the persisted execution; a different request using the same key returns `409 Conflict`.
 
 ### Path Parameters
 
@@ -233,13 +234,15 @@ Run submitted code against problem examples for testing. Does not count toward d
 
 ### Errors
 
-| Status | Message                                    |
-| ------ | ------------------------------------------ |
-| 404    | Session not found                          |
-| 404    | Session is not visible to the current user |
-| 404    | Problem not found                          |
-| 429    | Code execution rate limit exceeded         |
-| 503    | Execution queue is unavailable             |
+| Status | Message                                                 |
+| ------ | ------------------------------------------------------- |
+| 400    | Missing or invalid Idempotency-Key                      |
+| 409    | Key reused for a different request or session completed |
+| 404    | Session not found                                       |
+| 404    | Session is not visible to the current user              |
+| 404    | Problem not found                                       |
+| 429    | Code execution rate limit exceeded                      |
+| 503    | Execution queue is unavailable                          |
 
 ---
 
@@ -250,6 +253,7 @@ Submit a solution for evaluation. This counts toward the daily solved limit. If 
 **Method:** `POST`
 **Route:** `/coding/session/:sessionId/submit`
 **Auth:** Bearer Token (session owner)
+**Required header:** `Idempotency-Key` (1–128 visible ASCII characters). Retry with the same key after a lost response. Identical requests return the persisted execution without reserving quota or enqueueing again; a different request using the same key returns `409 Conflict`.
 
 ### Path Parameters
 
@@ -294,6 +298,7 @@ Submit a solution for evaluation. This counts toward the daily solved limit. If 
 | Status | Message                                              |
 | ------ | ---------------------------------------------------- |
 | 400    | Validation failed                                    |
+| 409    | Idempotency-Key was reused for a different request   |
 | 404    | Session not found                                    |
 | 404    | Session is not visible to the current user           |
 | 409    | Daily solved-problem limit reached                   |

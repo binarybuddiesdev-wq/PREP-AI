@@ -148,7 +148,9 @@ export const THEORY_ANSWER_SUBMITTED = 'Answer submitted successfully';
 export const THEORY_ANSWER_QUEUED = 'Answer evaluation queued successfully';
 export const THEORY_ANSWER_EVALUATION_FETCHED = 'Answer evaluation fetched successfully';
 export const THEORY_GET_ANSWER_EVALUATION = 'Get theory answer evaluation status and result';
-export const THEORY_IDEMPOTENCY_KEY_REQUIRED = 'A valid Idempotency-Key header is required';
+export const IDEMPOTENCY_KEY_REQUIRED = 'A valid Idempotency-Key header is required';
+export const IDEMPOTENCY_KEY_REUSED = 'Idempotency-Key was already used with a different request';
+export const THEORY_IDEMPOTENCY_KEY_REQUIRED = IDEMPOTENCY_KEY_REQUIRED;
 export const THEORY_ANSWER_EVALUATION_IN_PROGRESS =
   'Cannot complete the session while an answer is still being evaluated';
 export const THEORY_SESSION_COMPLETED = 'Session completed successfully';

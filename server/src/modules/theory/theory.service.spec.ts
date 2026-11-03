@@ -643,16 +643,12 @@ describe('TheoryService', () => {
       );
     });
 
-    it('returns an existing answer when the idempotency key is replayed', async () => {
+    it('returns an existing answer when the same request is replayed', async () => {
       postgres.client_.theorySession.findFirst.mockResolvedValue(mockSession);
       postgres.client_.theoryAnswer.findFirst.mockResolvedValue(queuedAnswer);
-      const changedDto = {
-        ...dto,
-        userAnswer: 'A different body must not replace the first answer.',
-      };
 
       await expect(
-        service.submitAnswer('session_001', 'user_001', changedDto, 'request_001')
+        service.submitAnswer('session_001', 'user_001', dto, 'request_001')
       ).resolves.toEqual(queuedAnswer);
 
       expect(postgres.client_.$transaction).toHaveBeenCalledOnce();
@@ -663,6 +659,34 @@ describe('TheoryService', () => {
           sessionId: 'session_001',
         },
       });
+    });
+
+    it('rejects a replay when the idempotency key is reused for a different request', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValue(mockSession);
+      postgres.client_.theoryAnswer.findFirst.mockResolvedValue(queuedAnswer);
+      const changedDto = { ...dto, userAnswer: 'A different answer' };
+
+      await expect(
+        service.submitAnswer('session_001', 'user_001', changedDto, 'request_001')
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(postgres.client_.$transaction).toHaveBeenCalledOnce();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('treats omitted optional fields as equivalent to their persisted null values', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValue(mockSession);
+      const persistedAnswer = { ...queuedAnswer, questionId: null, timeTaken: null };
+      postgres.client_.theoryAnswer.findFirst.mockResolvedValue(persistedAnswer);
+      const minimalDto = {
+        questionText: dto.questionText,
+        userAnswer: dto.userAnswer,
+      };
+
+      await expect(
+        service.submitAnswer('session_001', 'user_001', minimalDto, 'request_001')
+      ).resolves.toEqual(persistedAnswer);
+      expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('returns the row another concurrent request created with the same key', async () => {

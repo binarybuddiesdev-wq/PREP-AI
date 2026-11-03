@@ -1,6 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  ServiceUnavailableException,
+  BadRequestException,
+} from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CodingService } from './coding.service.js';
 import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.js';
@@ -109,8 +114,8 @@ describe('CodingService', () => {
       create: vi.fn(({ data }: { data: Record<string, unknown> }) =>
         Promise.resolve({ ...queuedExecution, ...data })
       ),
-      findFirst: vi.fn().mockResolvedValue(queuedExecution),
-      findUnique: vi.fn().mockResolvedValue(queuedExecution),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue(null),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     };
     const transaction = vi.fn(async (callback: (tx: unknown) => unknown) =>
@@ -278,7 +283,7 @@ describe('CodingService', () => {
     it('persists the execution before enqueueing and returns its durable queued status', async () => {
       jobs.enqueue.mockResolvedValueOnce('queue-job-id');
 
-      await expect(service.runCode(sessionId, userId, dto)).resolves.toEqual(
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).resolves.toEqual(
         expect.objectContaining({ ...queuedExecution, id: expect.any(String) })
       );
 
@@ -308,7 +313,7 @@ describe('CodingService', () => {
     });
 
     it('persists a queued run for the session owner without consuming solve quota', async () => {
-      await expect(service.runCode(sessionId, userId, dto)).resolves.toEqual(
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).resolves.toEqual(
         expect.objectContaining({ ...queuedExecution, id: expect.any(String) })
       );
 
@@ -332,11 +337,118 @@ describe('CodingService', () => {
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
     });
 
+    it('requires an idempotency key before loading or queueing a run', async () => {
+      await expect(service.runCode(sessionId, userId, dto, '')).rejects.toBeInstanceOf(
+        BadRequestException
+      );
+      expect(pg().codingExecution.create).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('replays a matching durable run without reserving capacity or enqueueing again', async () => {
+      const { createIdempotencyOperationId } = await import('@/common/idempotency/index.js');
+      const executionId = createIdempotencyOperationId(userId, 'coding-execution', 'request_001');
+      const persisted = {
+        ...queuedExecution,
+        id: executionId,
+        problemId,
+        operation: 'run',
+        language: dto.language,
+        sourceCode: dto.code,
+      };
+      pg().codingExecution.findFirst.mockResolvedValueOnce(persisted);
+
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).resolves.toEqual(
+        expect.objectContaining({ id: executionId, operation: 'run' })
+      );
+
+      expect(redis.reserveQuota).not.toHaveBeenCalled();
+      expect(pg().codingExecution.create).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('rejects a run replay when the key is reused for different code', async () => {
+      pg().codingExecution.findFirst.mockResolvedValueOnce({
+        ...queuedExecution,
+        problemId,
+        operation: 'run',
+        language: dto.language,
+        sourceCode: 'different code',
+      });
+
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).rejects.toBeInstanceOf(
+        ConflictException
+      );
+      expect(redis.reserveQuota).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('replays a matching run created by a concurrent request after a unique-key race', async () => {
+      const { createIdempotencyOperationId } = await import('@/common/idempotency/index.js');
+      const executionId = createIdempotencyOperationId(userId, 'coding-execution', 'request_001');
+      const persisted = {
+        ...queuedExecution,
+        id: executionId,
+        problemId,
+        operation: 'run',
+        language: dto.language,
+        sourceCode: dto.code,
+      };
+      pg().codingExecution.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(persisted);
+      pg().codingExecution.create.mockRejectedValueOnce({ code: 'P2002' });
+
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).resolves.toEqual(
+        expect.objectContaining({ id: executionId })
+      );
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('rejects a key reused for the same actor in a different session', async () => {
+      const otherSessionId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+      pg().codingSession.findFirst.mockResolvedValueOnce({
+        ...session,
+        id: otherSessionId,
+        problemIds: [],
+      });
+      pg().codingExecution.findFirst.mockResolvedValueOnce({
+        ...queuedExecution,
+        sessionId,
+        problemId,
+        operation: 'run',
+        language: dto.language,
+        sourceCode: dto.code,
+      });
+
+      await expect(
+        service.runCode(otherSessionId, userId, dto, 'request_001')
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(redis.reserveQuota).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('rejects a key reused for a different problem before checking problem assignment', async () => {
+      pg().codingExecution.findFirst.mockResolvedValueOnce({
+        ...queuedExecution,
+        sessionId,
+        problemId,
+        operation: 'run',
+        language: dto.language,
+        sourceCode: dto.code,
+      });
+      const changedDto = { ...dto, problemId: secondProblemId };
+
+      await expect(
+        service.runCode(sessionId, userId, changedDto, 'request_001')
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(pg().codingQuestion.findFirst).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
     it('returns 404 for another user’s session without running Piston', async () => {
       pg().codingSession.findFirst.mockResolvedValueOnce(null);
-      await expect(service.runCode(sessionId, 'other_user', dto)).rejects.toBeInstanceOf(
-        NotFoundException
-      );
+      await expect(
+        service.runCode(sessionId, 'other_user', dto, 'request_001')
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
@@ -345,7 +457,7 @@ describe('CodingService', () => {
         ...session,
         problemIds: [secondProblemId],
       });
-      await expect(service.runCode(sessionId, userId, dto)).rejects.toBeInstanceOf(
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).rejects.toBeInstanceOf(
         NotFoundException
       );
       expect(jobs.enqueue).not.toHaveBeenCalled();
@@ -353,7 +465,7 @@ describe('CodingService', () => {
 
     it('rejects a completed session before calling Piston', async () => {
       pg().codingSession.findFirst.mockResolvedValueOnce({ ...session, status: 'completed' });
-      await expect(service.runCode(sessionId, userId, dto)).rejects.toBeInstanceOf(
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).rejects.toBeInstanceOf(
         ConflictException
       );
       expect(jobs.enqueue).not.toHaveBeenCalled();
@@ -362,7 +474,7 @@ describe('CodingService', () => {
     it('rejects execution over the per-user rate limit before calling Piston', async () => {
       redis.reserveQuota.mockResolvedValueOnce({ allowed: false, count: 10 });
 
-      await expect(service.runCode(sessionId, userId, dto)).rejects.toThrow(
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).rejects.toThrow(
         'Code execution rate limit exceeded'
       );
       expect(jobs.enqueue).not.toHaveBeenCalled();
@@ -371,7 +483,7 @@ describe('CodingService', () => {
     it('fails closed with 503 when Redis cannot reserve execution capacity', async () => {
       redis.reserveQuota.mockRejectedValueOnce(new Error('redis down'));
 
-      await expect(service.runCode(sessionId, userId, dto)).rejects.toThrow(
+      await expect(service.runCode(sessionId, userId, dto, 'request_001')).rejects.toThrow(
         'Code execution rate limiter is temporarily unavailable'
       );
       expect(jobs.enqueue).not.toHaveBeenCalled();
@@ -386,7 +498,7 @@ describe('CodingService', () => {
     } satisfies ExecuteCodingDto;
 
     it('persists a queued submission and passes the reserved solve slot to the worker', async () => {
-      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).resolves.toEqual(
         expect.objectContaining({ ...queuedExecution, id: expect.any(String), operation: 'submit' })
       );
 
@@ -398,7 +510,7 @@ describe('CodingService', () => {
         expect.any(String)
       );
       expect(redis.reserveQuota).toHaveBeenCalledWith(`coding-execution:${userId}`, 10, 60);
-      expect(pg().$transaction).toHaveBeenCalledTimes(2);
+      expect(pg().$transaction).toHaveBeenCalledTimes(3);
       expect(jobs.enqueue).toHaveBeenCalledWith(
         JOB_QUEUE_NAMES.CODING_EXECUTION,
         expect.objectContaining({
@@ -415,8 +527,31 @@ describe('CodingService', () => {
       expect(redis.finalizeUniqueQuota).not.toHaveBeenCalled();
     });
 
+    it('replays a matching durable submission before checking or reserving quota', async () => {
+      const { createIdempotencyOperationId } = await import('@/common/idempotency/index.js');
+      const executionId = createIdempotencyOperationId(userId, 'coding-execution', 'request_001');
+      const persisted = {
+        ...queuedExecution,
+        id: executionId,
+        problemId,
+        operation: 'submit',
+        language: dto.language,
+        sourceCode: dto.code,
+      };
+      pg().codingExecution.findFirst.mockResolvedValueOnce(persisted);
+
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).resolves.toEqual(
+        expect.objectContaining({ id: executionId, operation: 'submit' })
+      );
+
+      expect(redis.reserveQuota).not.toHaveBeenCalled();
+      expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
+      expect(pg().codingExecution.create).not.toHaveBeenCalled();
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
     it('leaves completed outcome handling and answer creation to the worker', async () => {
-      await service.submitSolution(sessionId, userId, dto);
+      await service.submitSolution(sessionId, userId, dto, 'request_001');
 
       expect(redis.finalizeUniqueQuota).not.toHaveBeenCalled();
       expect(pg().codingAnswer.create).not.toHaveBeenCalled();
@@ -427,9 +562,9 @@ describe('CodingService', () => {
 
     it('does not call Piston when the solve limit is reached', async () => {
       redis.reserveUniqueQuota.mockResolvedValueOnce({ status: 'limit', count: 5 });
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
-        ConflictException
-      );
+      await expect(
+        service.submitSolution(sessionId, userId, dto, 'request_001')
+      ).rejects.toBeInstanceOf(ConflictException);
       expect(jobs.enqueue).not.toHaveBeenCalled();
       expect(pg().codingAnswer.create).not.toHaveBeenCalled();
     });
@@ -437,7 +572,7 @@ describe('CodingService', () => {
     it('rejects submit over the execution rate limit before Piston and daily solve reservation', async () => {
       redis.reserveQuota.mockResolvedValueOnce({ allowed: false, count: 10 });
 
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).rejects.toThrow(
         'Code execution rate limit exceeded'
       );
       expect(jobs.enqueue).not.toHaveBeenCalled();
@@ -446,16 +581,37 @@ describe('CodingService', () => {
 
     it('does not call Piston when this same problem is being submitted concurrently', async () => {
       redis.reserveUniqueQuota.mockResolvedValueOnce({ status: 'in_progress', count: 1 });
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
-        ConflictException
+      await expect(
+        service.submitSolution(sessionId, userId, dto, 'request_001')
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(jobs.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('rechecks durable execution when a same-key submit reservation is already in progress', async () => {
+      const { createIdempotencyOperationId } = await import('@/common/idempotency/index.js');
+      const executionId = createIdempotencyOperationId(userId, 'coding-execution', 'request_001');
+      const persisted = {
+        ...queuedExecution,
+        id: executionId,
+        problemId,
+        operation: 'submit',
+        language: dto.language,
+        sourceCode: dto.code,
+      };
+      pg().codingExecution.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(persisted);
+      redis.reserveUniqueQuota.mockResolvedValueOnce({ status: 'in_progress', count: 1 });
+
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).resolves.toEqual(
+        expect.objectContaining({ id: executionId, operation: 'submit' })
       );
+      expect(pg().codingExecution.create).not.toHaveBeenCalled();
       expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('returns 404 when the authenticated user record is missing', async () => {
       mongo.user.findUnique.mockResolvedValueOnce(null);
 
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).rejects.toThrow(
         'User not found'
       );
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
@@ -465,24 +621,24 @@ describe('CodingService', () => {
     it('returns 503 when the solve quota service is unavailable', async () => {
       redis.reserveUniqueQuota.mockRejectedValueOnce(new Error('Redis unavailable'));
 
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
-        ServiceUnavailableException
-      );
+      await expect(
+        service.submitSolution(sessionId, userId, dto, 'request_001')
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
       expect(jobs.enqueue).not.toHaveBeenCalled();
     });
 
     it('saves a previously solved problem without reserving another daily solve slot', async () => {
       redis.reserveUniqueQuota.mockResolvedValueOnce({ status: 'already_solved', count: 1 });
-      await service.submitSolution(sessionId, userId, dto);
+      await service.submitSolution(sessionId, userId, dto, 'request_001');
       expect(jobs.enqueue).toHaveBeenCalledOnce();
       expect(redis.finalizeUniqueQuota).not.toHaveBeenCalled();
     });
 
     it('releases the slot when Piston fails', async () => {
       jobs.enqueue.mockRejectedValueOnce(new ServiceUnavailableException());
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
-        ServiceUnavailableException
-      );
+      await expect(
+        service.submitSolution(sessionId, userId, dto, 'request_001')
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
       expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
@@ -497,7 +653,7 @@ describe('CodingService', () => {
       jobs.enqueue.mockRejectedValueOnce(new ServiceUnavailableException('worker unavailable'));
       redis.finalizeUniqueQuota.mockRejectedValueOnce(new Error('Redis unavailable'));
 
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).rejects.toThrow(
         'worker unavailable'
       );
       expect(logger.error).toHaveBeenCalledWith(
@@ -508,7 +664,7 @@ describe('CodingService', () => {
 
     it('releases the slot when durable execution creation fails', async () => {
       pg().codingExecution.create.mockRejectedValueOnce(new Error('database write failed'));
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).rejects.toThrow(
         'Coding database is temporarily unavailable'
       );
       expect(redis.finalizeUniqueQuota).toHaveBeenCalledWith(
@@ -522,7 +678,7 @@ describe('CodingService', () => {
 
     it('allows resubmission for an already solved problem without reserving solve quota', async () => {
       redis.reserveUniqueQuota.mockResolvedValueOnce({ status: 'already_solved', count: 1 });
-      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).resolves.toEqual(
         expect.objectContaining({ ...queuedExecution, id: expect.any(String), operation: 'submit' })
       );
       expect(jobs.enqueue).toHaveBeenCalledOnce();
@@ -532,7 +688,7 @@ describe('CodingService', () => {
     });
 
     it('leaves session completion race handling to the transactional worker', async () => {
-      await expect(service.submitSolution(sessionId, userId, dto)).resolves.toEqual(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).resolves.toEqual(
         expect.objectContaining({ ...queuedExecution, id: expect.any(String), operation: 'submit' })
       );
       expect(pg().codingSession.updateMany).not.toHaveBeenCalled();
@@ -541,9 +697,9 @@ describe('CodingService', () => {
 
     it('returns 404 for a session not owned by the caller', async () => {
       pg().codingSession.findFirst.mockResolvedValueOnce(null);
-      await expect(service.submitSolution(sessionId, 'other_user', dto)).rejects.toBeInstanceOf(
-        NotFoundException
-      );
+      await expect(
+        service.submitSolution(sessionId, 'other_user', dto, 'request_001')
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
       expect(jobs.enqueue).not.toHaveBeenCalled();
     });
@@ -553,9 +709,9 @@ describe('CodingService', () => {
         ...session,
         problemIds: [secondProblemId],
       });
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toBeInstanceOf(
-        NotFoundException
-      );
+      await expect(
+        service.submitSolution(sessionId, userId, dto, 'request_001')
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();
       expect(jobs.enqueue).not.toHaveBeenCalled();
     });
@@ -563,7 +719,7 @@ describe('CodingService', () => {
     it('returns 404 when an assigned coding problem no longer exists', async () => {
       pg().codingQuestion.findFirst.mockResolvedValueOnce(null);
 
-      await expect(service.submitSolution(sessionId, userId, dto)).rejects.toThrow(
+      await expect(service.submitSolution(sessionId, userId, dto, 'request_001')).rejects.toThrow(
         'Coding problem not found'
       );
       expect(redis.reserveUniqueQuota).not.toHaveBeenCalled();

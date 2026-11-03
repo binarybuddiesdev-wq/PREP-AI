@@ -206,12 +206,12 @@ describe('PostgreSQL coding data isolation', () => {
       code: 'function solution() {}',
     };
 
-    await expect(service.runCode(sessionB.id, userA, dto)).rejects.toBeInstanceOf(
-      NotFoundException
-    );
-    await expect(service.submitSolution(sessionB.id, userA, dto)).rejects.toBeInstanceOf(
-      NotFoundException
-    );
+    await expect(
+      service.runCode(sessionB.id, userA, dto, 'foreign-session-run')
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.submitSolution(sessionB.id, userA, dto, 'foreign-session-submit')
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('completes only the caller-owned coding session', async () => {

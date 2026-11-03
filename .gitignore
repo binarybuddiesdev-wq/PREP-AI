@@ -54,4 +54,5 @@ yarn-error.log*
 .mimocode*
 .remember/
 .claude/settings.local.json
+.superpowers/
 server/evaluation-results/

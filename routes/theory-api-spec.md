@@ -146,7 +146,7 @@ Persist a user's answer and queue AI evaluation. The response returns immediatel
 
 **Success:** `202 Accepted`
 
-**Required header:** `Idempotency-Key` (1–128 characters). Reuse the same key when retrying a request whose response was lost. The key is unique within the session; replay returns the original answer without consuming another question slot. A replay with a different body still returns the original answer.
+**Required header:** `Idempotency-Key` (1–128 visible ASCII characters). Reuse the same key when retrying a request whose response was lost. The key is unique within the session; an identical replay returns the original answer without consuming another question slot. Reusing it with a different request body returns `409 Conflict`.
 
 ### Path Parameters
 
@@ -202,12 +202,13 @@ Persist a user's answer and queue AI evaluation. The response returns immediatel
 
 ### Errors
 
-| Status | Message                                                  |
-| ------ | -------------------------------------------------------- |
-| 400    | Validation failed or Idempotency-Key is missing/too long |
-| 404    | Session not found or not available to caller             |
-| 409    | Session already completed or question limit reached      |
-| 503    | Theory PostgreSQL database unavailable                   |
+| Status | Message                                                 |
+| ------ | ------------------------------------------------------- |
+| 400    | Validation failed or Idempotency-Key is missing/invalid |
+| 409    | The key was already used for a different request        |
+| 404    | Session not found or not available to caller            |
+| 409    | Session already completed or question limit reached     |
+| 503    | Theory PostgreSQL database unavailable                  |
 
 Queue/Redis unavailability does not discard the accepted answer. The row remains `queued` in PostgreSQL and the worker redispatches it after recovery.
 

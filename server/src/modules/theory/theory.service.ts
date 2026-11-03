@@ -20,7 +20,11 @@ import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.
 import { RedisService } from '@/common/redis/redis.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
-import { getTheoryLimits } from '@/common/index.js';
+import {
+  createIdempotencyRequestFingerprint,
+  getTheoryLimits,
+  requireIdempotencyKey,
+} from '@/common/index.js';
 import { createTheoryAnswerId } from './theory-idempotency.js';
 import {
   THEORY_DAILY_LIMIT_REACHED,
@@ -30,7 +34,7 @@ import {
   THEORY_TOPIC_ID_REQUIRED,
   THEORY_MODE_NOT_SUPPORTED,
   THEORY_DATABASE_UNAVAILABLE,
-  THEORY_IDEMPOTENCY_KEY_REQUIRED,
+  IDEMPOTENCY_KEY_REUSED,
   THEORY_ANSWER_EVALUATION_IN_PROGRESS,
 } from '@/common/constants/api.constants.js';
 import { TOPIC_NOT_FOUND } from '@/common/schemas/topics/topics.response.schema.js';
@@ -246,12 +250,33 @@ export class TheoryService {
     dto: SubmitAnswerDto,
     idempotencyKey: string
   ) {
-    if (!idempotencyKey || idempotencyKey.length > 128) {
-      throw new BadRequestException(THEORY_IDEMPOTENCY_KEY_REQUIRED);
-    }
+    requireIdempotencyKey(idempotencyKey);
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
     const answerId = createTheoryAnswerId(sessionId, idempotencyKey);
+    const fingerprint = createIdempotencyRequestFingerprint(`theory-answer:${sessionId}`, {
+      questionId: dto.questionId ?? null,
+      questionText: dto.questionText,
+      userAnswer: dto.userAnswer,
+      timeTaken: dto.timeTaken ?? null,
+    });
+    const assertSameRequest = (answer: {
+      questionId: string | null;
+      questionText: string;
+      userAnswer: string;
+      timeTaken: number | null;
+    }) => {
+      const persistedFingerprint = createIdempotencyRequestFingerprint(
+        `theory-answer:${sessionId}`,
+        {
+          questionId: answer.questionId,
+          questionText: answer.questionText,
+          userAnswer: answer.userAnswer,
+          timeTaken: answer.timeTaken,
+        }
+      );
+      if (persistedFingerprint !== fingerprint) throw new ConflictException(IDEMPOTENCY_KEY_REUSED);
+    };
 
     const { session, existingAnswer } = await this.postgres.withTenantContext(
       userId,
@@ -267,7 +292,10 @@ export class TheoryService {
       }
     );
     if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-    if (existingAnswer) return existingAnswer;
+    if (existingAnswer) {
+      assertSameRequest(existingAnswer);
+      return existingAnswer;
+    }
     if (session.status === 'completed')
       throw new ConflictException(THEORY_SESSION_ALREADY_COMPLETED);
     if (session.questionsAnswered >= session.totalQuestions) {
@@ -278,7 +306,10 @@ export class TheoryService {
     try {
       answer = await this.postgres.withTenantContext(userId, async (tx) => {
         const replay = await tx.theoryAnswer.findFirst({ where: { id: answerId, sessionId } });
-        if (replay) return replay;
+        if (replay) {
+          assertSameRequest(replay);
+          return replay;
+        }
 
         const slot = await tx.theorySession.updateMany({
           where: {
@@ -310,7 +341,10 @@ export class TheoryService {
         const replay = await this.postgres.withTenantContext(userId, (transaction) =>
           transaction.theoryAnswer.findFirst({ where: { id: answerId, sessionId } })
         );
-        if (replay) return replay;
+        if (replay) {
+          assertSameRequest(replay);
+          return replay;
+        }
       }
       throw error;
     }
