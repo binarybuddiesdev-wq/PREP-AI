@@ -13,6 +13,7 @@ import {
 } from './job-queue.constants.js';
 import { CODING_QUEUE_UNAVAILABLE } from '@/common/constants/api.constants.js';
 import { getCurrentRequestId } from '../request-context/request-context.js';
+import { injectTraceContext } from '@/telemetry/trace-context.js';
 
 export const JOB_QUEUE_COUNT_STATES = [
   'waiting',
@@ -66,7 +67,12 @@ export class JobQueueService implements OnModuleDestroy {
 
     try {
       const requestId = getCurrentRequestId();
-      const jobData = requestId ? { ...data, requestId } : data;
+      const traceContext = injectTraceContext();
+      const jobData = {
+        ...data,
+        ...(requestId ? { requestId } : {}),
+        ...(traceContext.traceparent ? { traceContext } : {}),
+      };
       const job = await queue.add(jobName, jobData, {
         jobId: this.getJobId(queueName, data.idempotencyKey),
       });

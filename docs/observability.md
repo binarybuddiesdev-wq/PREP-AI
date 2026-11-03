@@ -10,7 +10,7 @@
 | ----------------------------------------- | ---------------------------------------------------- |
 | Spot a regression in the first 60 seconds | Structured pino logs with correlation IDs            |
 | Find the slow endpoint                    | Per-request HTTP duration histograms                 |
-| See what a user did before a 500          | Trace context propagated from webhook → service → DB |
+| Follow a request into asynchronous work   | W3C trace context from API request to worker job     |
 | Know when an external is down             | Dependency probe at `/readyz` (see `modules/health`) |
 | Detect abuse early                        | Rate-limit metrics + spike alerts                    |
 
@@ -90,36 +90,46 @@ worker client is not instrumented because worker metrics are not scraped here.
 Raw SQL operations without a model are excluded. Model and operation labels use
 fixed allowlists, and query text, parameters, and user data are never recorded.
 
-### 3. Distributed tracing (TODO)
+### 3. Distributed tracing
 
-Target: **OpenTelemetry** with the OTLP exporter. Trace context propagated:
+OpenTelemetry is initialized before Nest in both API and worker processes.
+The `TraceInterceptor` creates a server span using only the HTTP method,
+normalized route template, and response status. The central queue producer
+injects W3C `traceparent`/`tracestate` into job metadata; every BullMQ consumer
+extracts it and creates a consumer span. Error messages, request bodies,
+query values, user IDs, session IDs, prompts, source code, and raw job payloads
+are never span attributes. Automatic library instrumentation is not enabled,
+so database-internal spans remain future work.
+
+To export spans, set `OTEL_EXPORTER_OTLP_ENDPOINT` to the collector's base URL
+(for example, `http://localhost:4318`). The SDK adds the OTLP trace path. For
+Podman, use the collector's service name on the compose network or
+`host.containers.internal` for a host-based collector. If no endpoint is set,
+the app still propagates context but does not export spans. OTLP errors do not
+fail requests or jobs. The app always selects the `traceidratio` sampler and
+overrides `OTEL_TRACES_SAMPLER`; `OTEL_TRACES_SAMPLER_ARG` sets its root sample
+ratio (default `0.1`). This prevents a remote sampled flag from forcing every
+inbound request to be exported.
+
+Trace context flows through:
 
 ```
-Clerk webhook → Svix verify → POST /webhooks/clerk
-  → UserModule → PrismaService.$connect → MongoDB
+HTTP request span -> JobQueueService.enqueue -> BullMQ trace metadata
+  -> worker consumer span -> job service work
 ```
 
-| Field                | Source                                          |
-| -------------------- | ----------------------------------------------- |
-| `traceId` / `spanId` | OTEL middleware (planned)                       |
-| `userId`             | `ClerkAuthGuard` attaches to `request.user`     |
-| `sessionId`          | `TheorySession.id`                              |
-| `correlationId`      | `X-Request-Id` UUID v4 (validated or generated) |
-
-The pino `reqId` ties together the HTTP request log and response header. For
-jobs enqueued during a request, the validated ID is added centrally to the
-BullMQ payload and included in worker job-failure logs as `requestId`. Scheduled
-and recovery jobs without an originating HTTP request omit it. Full distributed
-tracing and cross-service spans remain open.
+The API and separate worker need the same OTLP endpoint and service-specific
+`OTEL_SERVICE_NAME` values when deployed separately. Local worker calls share
+the API process and naturally remain in its trace. Scheduled jobs without an
+active request start a new trace. Invalid/missing trace metadata never blocks
+job processing.
 
 ## Correlation IDs
 
 Fastify uses the `X-Request-Id` header as `request.id` when it is a single
 lowercase canonical UUID v4; otherwise it generates one. The same ID is set on
 the raw request for `nestjs-pino`, and an `onRequest` hook echoes it in the
-response. CORS exposes the response header to browser clients. BullMQ job
-propagation is implemented for request IDs and worker failure logs;
-OpenTelemetry trace propagation remains open.
+response. CORS exposes the response header to browser clients. BullMQ carries both the UUID request ID for logs and W3C trace context for spans. They serve separate purposes and remain separate fields.
 
 ```
 GET /api/v1/theory/sessions/abc  -> reqId=8d2f…
@@ -200,7 +210,9 @@ P1 incidents are reserved for full outages — see
   headers or failed signature verification and uses the fixed `clerk` label.
   `clerk_auth_failures_total` uses the bounded reasons `missing_header`,
   `invalid_header`, and `invalid_token`; credential values are never labels.
-- Traces: not exposed in dev yet.
+- Traces: set `OTEL_EXPORTER_OTLP_ENDPOINT` to a local or remote collector to
+  export sampled traces during development. Without it, context still flows
+  through jobs but spans are not exported.
 
 ## Open questions
 

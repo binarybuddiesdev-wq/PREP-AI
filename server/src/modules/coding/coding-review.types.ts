@@ -1,4 +1,6 @@
-export interface ICodingReviewJobData {
+import type { ITraceableJobData } from '@/common/jobs/job-context.types.js';
+
+export interface ICodingReviewJobData extends ITraceableJobData {
   idempotencyKey: string;
   executionId: string;
   requestId?: string;

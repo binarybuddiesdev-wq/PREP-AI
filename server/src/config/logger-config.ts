@@ -1,9 +1,11 @@
 import { Params } from 'nestjs-pino';
+import { getCurrentTraceLogFields } from '@/telemetry/trace-context.js';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 export const loggerConfig: Params = {
   pinoHttp: {
+    mixin: getCurrentTraceLogFields,
     redact: {
       paths: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-api-key"]'],
       censor: '[REDACTED]',

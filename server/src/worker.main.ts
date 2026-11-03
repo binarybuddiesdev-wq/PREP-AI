@@ -1,3 +1,4 @@
+import './telemetry/instrumentation.js';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';

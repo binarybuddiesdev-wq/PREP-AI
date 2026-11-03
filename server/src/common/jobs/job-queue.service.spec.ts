@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JobQueueService } from './job-queue.service.js';
 import { JOB_QUEUE_NAMES } from './job-queue.constants.js';
 import { runWithRequestId } from '../request-context/request-context.js';
+import { context, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+
+context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
 
 const bullMocks = vi.hoisted(() => ({
   add: vi.fn(),
@@ -107,6 +111,29 @@ describe('JobQueueService', () => {
       'execute',
       { ...executionData, requestId },
       expect.objectContaining({ jobId: expect.any(String) })
+    );
+  });
+
+  it('adds W3C trace context to queued job metadata without changing its job ID', async () => {
+    const activeContext = trace.setSpanContext(context.active(), {
+      traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+      spanId: '00f067aa0ba902b7',
+      traceFlags: 1,
+    });
+
+    await context.with(activeContext, () =>
+      service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute')
+    );
+
+    expect(bullMocks.add).toHaveBeenCalledWith(
+      'execute',
+      {
+        ...executionData,
+        traceContext: {
+          traceparent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+        },
+      },
+      { jobId: 'a8c0f40f9449f2b7be3547fb5a3ca710dd537068e52cd653776b7fed3b99b173' }
     );
   });
 

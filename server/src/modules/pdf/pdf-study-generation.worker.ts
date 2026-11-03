@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Job, Worker } from 'bullmq';
 import { JOB_QUEUE_NAMES, JOB_QUEUE_POLICIES } from '@/common/jobs/job-queue.constants.js';
+import { traceWorkerJob } from '@/telemetry/worker-tracing.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { PdfStudyGenerationService } from './pdf-study-generation.service.js';
@@ -24,15 +25,19 @@ export class PdfStudyGenerationWorker implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     if (!this.config.get<boolean>('JOBS_WORKER_ENABLED', true)) return;
     const queueName = JOB_QUEUE_NAMES.PDF_QUESTION_GENERATION;
-    this.worker = new Worker<IPdfStudyGenerationJobData>(queueName, (job) => this.processJob(job), {
-      connection: {
-        host: this.config.get<string>('REDIS_HOST', 'localhost'),
-        port: this.config.get<number>('REDIS_PORT', 6379),
-        maxRetriesPerRequest: null,
-      },
-      concurrency: JOB_QUEUE_POLICIES[queueName].concurrency,
-      maxStalledCount: 1,
-    });
+    this.worker = new Worker<IPdfStudyGenerationJobData>(
+      queueName,
+      (job) => traceWorkerJob(queueName, job.data.traceContext, () => this.processJob(job)),
+      {
+        connection: {
+          host: this.config.get<string>('REDIS_HOST', 'localhost'),
+          port: this.config.get<number>('REDIS_PORT', 6379),
+          maxRetriesPerRequest: null,
+        },
+        concurrency: JOB_QUEUE_POLICIES[queueName].concurrency,
+        maxStalledCount: 1,
+      }
+    );
     this.worker.on('failed', this.handleFailedJob);
     this.worker.on('error', this.handleWorkerError);
     await this.reconcile();

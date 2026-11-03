@@ -22,6 +22,7 @@ import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { StudyChatModule } from './modules/study-chat/study-chat.module.js';
+import { TracingModule } from './telemetry/tracing.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -49,6 +50,7 @@ const __dirname = dirname(__filename);
     PdfModule,
     NotificationsModule,
     StudyChatModule,
+    TracingModule,
   ],
   controllers: [],
   providers: [],

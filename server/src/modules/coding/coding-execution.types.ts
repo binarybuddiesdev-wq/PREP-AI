@@ -9,7 +9,7 @@ export interface ICodingSolveQuotaReservation {
   reservationToken: string;
 }
 
-export interface ICodingExecutionJobData {
+export interface ICodingExecutionJobData extends ITraceableJobData {
   idempotencyKey: string;
   executionId: string;
   sessionId: string;
@@ -24,3 +24,4 @@ export interface ICodingExecutionJobData {
 }
 
 export type TCodingExecutionResult = ICodingExecutionResult;
+import type { ITraceableJobData } from '@/common/jobs/job-context.types.js';

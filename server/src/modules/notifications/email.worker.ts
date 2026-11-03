@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Job, Worker } from 'bullmq';
 import { JOB_QUEUE_NAMES, JOB_QUEUE_POLICIES } from '@/common/jobs/job-queue.constants.js';
+import { traceWorkerJob } from '@/telemetry/worker-tracing.js';
 import { NotificationsService } from './notifications.service.js';
 import type { EmailReminderJob } from './email.types.js';
 
@@ -32,7 +33,8 @@ export class EmailWorker implements OnModuleInit, OnModuleDestroy {
 
     this.worker = new Worker<EmailReminderJob>(
       JOB_QUEUE_NAMES.EMAIL,
-      (job) => this.processJob(job),
+      (job) =>
+        traceWorkerJob(JOB_QUEUE_NAMES.EMAIL, job.data.traceContext, () => this.processJob(job)),
       {
         connection: {
           host: this.config.get<string>('REDIS_HOST', 'localhost'),

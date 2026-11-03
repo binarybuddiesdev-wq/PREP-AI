@@ -5,10 +5,15 @@ import {
   RequestContextInterceptor,
   TransformInterceptor,
 } from '@/common/index.js';
+import { TraceInterceptor } from '@/telemetry/trace.interceptor.js';
 
 export const registerGlobalMiddleware = (app: NestFastifyApplication) => {
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new RequestContextInterceptor(), new TransformInterceptor());
+  app.useGlobalInterceptors(
+    new RequestContextInterceptor(),
+    new TraceInterceptor(),
+    new TransformInterceptor()
+  );
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

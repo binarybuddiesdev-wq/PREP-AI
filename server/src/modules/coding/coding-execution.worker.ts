@@ -5,6 +5,7 @@ import { Job, UnrecoverableError, Worker } from 'bullmq';
 import { CODING_SESSION_COMPLETED_ERROR } from '@/common/constants/api.constants.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES, JOB_QUEUE_POLICIES } from '@/common/jobs/job-queue.constants.js';
+import { traceWorkerJob } from '@/telemetry/worker-tracing.js';
 import { RedisService } from '@/common/redis/redis.service.js';
 import { PistonClient } from './piston.client.js';
 import { CodingExecutionService } from './coding-execution.service.js';
@@ -35,7 +36,7 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
     const queueName = JOB_QUEUE_NAMES.CODING_EXECUTION;
     this.worker = new Worker<ICodingExecutionJobData, TCodingExecutionResult>(
       queueName,
-      (job) => this.processJob(job),
+      (job) => traceWorkerJob(queueName, job.data.traceContext, () => this.processJob(job)),
       {
         connection,
         concurrency: JOB_QUEUE_POLICIES[queueName].concurrency,

@@ -1,4 +1,6 @@
-export interface ITheoryEvaluationJobData {
+import type { ITraceableJobData } from '@/common/jobs/job-context.types.js';
+
+export interface ITheoryEvaluationJobData extends ITraceableJobData {
   idempotencyKey: string;
   answerId: string;
   requestId?: string;
