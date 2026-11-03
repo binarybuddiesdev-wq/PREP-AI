@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 — Theory evaluation PII redaction
+
+- Added deterministic local redaction of recognized emails, phone numbers, Luhn-valid payment cards, Aadhaar, PAN and US SSNs to theory evaluator prompt v2. Prompt v1 remains available for historical comparison.
+- Redaction runs before provider prompt construction; stored questions and answers remain unchanged. Tests cover supported patterns, checksum/false-positive boundaries, the prompt registry, and the provider boundary.
+- This is pattern-based protection, not full anonymization: names, free-form addresses and unrecognized formats may remain. Next backend work remains data-isolation and Piston hardening design.
+
 ## 2026-11-02 — Backend implementation tracker
 
 - Added `docs/backend-status.md` as the current backend feature tracker, separating implemented capabilities from partial work and pending implementation/design items.

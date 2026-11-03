@@ -18,7 +18,7 @@ Run baseline and candidate (50 answers each; 100 model calls in total):
 pnpm --filter server eval:theory -- --run --baseline=nvidia:meta/llama-3.1-8b-instruct --candidate=groq:qwen/qwen3.8-27b
 ```
 
-Change either prompt independently with `--baseline-prompt=theory-evaluator-v1` and `--candidate-prompt=theory-evaluator-v1`. Add new prompt versions to `src/mastra/agents/theory-evaluator-prompts.ts` before selecting them. Provider names are `nvidia` and `groq`.
+Change either prompt independently with `--baseline-prompt=theory-evaluator-v1` and `--candidate-prompt=theory-evaluator-v2`. The current production prompt is v2, which locally redacts recognized PII patterns before prompt construction. Version 1 remains available for historical comparison; use only the checked-in synthetic dataset for offline provider runs. Add new prompt versions to `src/mastra/agents/theory-evaluator-prompts.ts` before selecting them. Provider names are `nvidia` and `groq`.
 
 Reports are written to `server/evaluation-results/`, which is ignored by Git. Results include the dataset digest, variant configuration, per-item outputs and scorer results. Mastra experiment and score persistence are disabled for these offline runs.
 

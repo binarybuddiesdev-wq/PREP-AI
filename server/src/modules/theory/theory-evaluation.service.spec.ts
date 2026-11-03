@@ -96,6 +96,42 @@ describe('TheoryEvaluationService', () => {
     vi.unstubAllEnvs();
   });
 
+  it('sends the provider the redacted prompt and leaves persisted user text unchanged', async () => {
+    const answer = {
+      id: 'answer_001',
+      session: { userId: 'user_001' },
+      status: 'queued',
+      questionText: 'Explain how to contact learner@example.com.',
+      userAnswer: 'Call me at 9876543210.',
+    };
+    const postgres = {
+      client_: {
+        theoryAnswer: {
+          findUnique: vi.fn().mockResolvedValue(answer),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+      },
+    };
+    vi.stubEnv('LLM_PROVIDER', 'nvidia');
+    vi.stubEnv('NVIDIA_API_KEY', 'test-key');
+    mockGenerate.mockResolvedValue({
+      object: { score: 8, feedback: 'Clear answer.' },
+      text: '{}',
+      usage: Promise.resolve({ totalTokens: 640 }),
+    });
+    const service = createService(postgres, { info: vi.fn(), warn: vi.fn(), error: vi.fn() });
+
+    await service.evaluate('answer_001');
+
+    const promptSentToProvider = mockGenerate.mock.calls[0]?.[0] as string;
+    expect(promptSentToProvider).toContain('[REDACTED_EMAIL]');
+    expect(promptSentToProvider).toContain('[REDACTED_PHONE]');
+    expect(promptSentToProvider).not.toContain('learner@example.com');
+    expect(promptSentToProvider).not.toContain('9876543210');
+    expect(answer.questionText).toContain('learner@example.com');
+    expect(answer.userAnswer).toContain('9876543210');
+  });
+
   it('persists the provider and model that succeeded after failover', async () => {
     const postgres = {
       client_: {
