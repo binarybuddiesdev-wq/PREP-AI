@@ -1,5 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
+import { randomBytes } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
@@ -13,18 +15,29 @@ const mongoPort = 27018;
 const postgresPort = 5433;
 const databaseName = 'prepai_data_isolation_test';
 const mongoUrl = `mongodb://127.0.0.1:${mongoPort}/${databaseName}?replicaSet=rs0&directConnection=true`;
-const postgresUrl = `postgresql://postgres:postgres@127.0.0.1:${postgresPort}/${databaseName}`;
+const postgresAdminUrl = `postgresql://postgres:postgres@127.0.0.1:${postgresPort}/${databaseName}`;
+const apiPassword = randomBytes(24).toString('hex');
+const workerPassword = randomBytes(24).toString('hex');
+const apiPostgresUrl = `postgresql://prepai_api:${apiPassword}@127.0.0.1:${postgresPort}/${databaseName}?connection_limit=1`;
+const workerPostgresUrl = `postgresql://prepai_worker:${workerPassword}@127.0.0.1:${postgresPort}/${databaseName}?connection_limit=1`;
 const childEnvironment = {
   ...process.env,
   DATABASE_URL: mongoUrl,
-  POSTGRESQL_URL: postgresUrl,
+  POSTGRESQL_URL: apiPostgresUrl,
+  POSTGRESQL_WORKER_URL: workerPostgresUrl,
+};
+const schemaEnvironment = {
+  ...childEnvironment,
+  POSTGRESQL_URL: postgresAdminUrl,
+  POSTGRESQL_WORKER_URL: '',
 };
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd ?? rootDirectory,
     env: options.env ?? process.env,
-    stdio: 'inherit',
+    stdio: options.input === undefined ? 'inherit' : ['pipe', 'inherit', 'inherit'],
+    input: options.input,
     shell: process.platform === 'win32',
   });
 
@@ -107,7 +120,7 @@ try {
     let lastError;
     for (let attempt = 1; attempt <= 20; attempt += 1) {
       try {
-        run('pnpm', ['exec', ...args], { cwd: serverDirectory, env: childEnvironment });
+        run('pnpm', ['exec', ...args], { cwd: serverDirectory, env: schemaEnvironment });
         lastError = undefined;
         break;
       } catch (error) {
@@ -117,6 +130,31 @@ try {
     }
     if (lastError) throw lastError;
   }
+
+  run('pnpm', ['prisma:generate'], { cwd: serverDirectory, env: schemaEnvironment });
+
+  const rolePolicySql = await readFile(
+    path.join(serverDirectory, 'prisma', 'rls', '001-tenant-rls.sql'),
+    'utf8'
+  );
+  run(
+    'podman',
+    [
+      'exec',
+      '-i',
+      `${projectName}_postgres_1`,
+      'psql',
+      '-v',
+      `api_password=${apiPassword}`,
+      '-v',
+      `worker_password=${workerPassword}`,
+      '-U',
+      'postgres',
+      '-d',
+      databaseName,
+    ],
+    { input: rolePolicySql }
+  );
 
   run('pnpm', ['test:e2e'], { cwd: serverDirectory, env: childEnvironment });
 } catch (error) {

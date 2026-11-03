@@ -21,7 +21,10 @@ type TMockPostgresClient = {
 describe('CodingService', () => {
   let service: CodingService;
   let mongo: { user: { findUnique: ReturnType<typeof vi.fn> } };
-  let postgres: { client_: Record<string, unknown> };
+  let postgres: {
+    client_: Record<string, unknown>;
+    withTenantContext: (userId: string, operation: (tx: unknown) => unknown) => Promise<unknown>;
+  };
   let redis: {
     reserveQuota: ReturnType<typeof vi.fn>;
     reserveUniqueQuota: ReturnType<typeof vi.fn>;
@@ -114,6 +117,9 @@ describe('CodingService', () => {
       callback({ codingSession, codingAnswer, codingExecution })
     );
     postgres = {
+      withTenantContext: vi.fn((_userId: string, callback: (tx: unknown) => unknown) =>
+        transaction(callback)
+      ),
       client_: {
         codingQuestion: {
           findMany: vi.fn().mockResolvedValue([problem]),
@@ -392,7 +398,7 @@ describe('CodingService', () => {
         expect.any(String)
       );
       expect(redis.reserveQuota).toHaveBeenCalledWith(`coding-execution:${userId}`, 10, 60);
-      expect(pg().$transaction).not.toHaveBeenCalled();
+      expect(pg().$transaction).toHaveBeenCalledTimes(2);
       expect(jobs.enqueue).toHaveBeenCalledWith(
         JOB_QUEUE_NAMES.CODING_EXECUTION,
         expect.objectContaining({

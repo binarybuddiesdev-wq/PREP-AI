@@ -6,6 +6,7 @@ export const envSchema = z
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     DATABASE_URL: z.string().optional(),
     POSTGRESQL_URL: z.string().optional(),
+    POSTGRESQL_WORKER_URL: z.string().optional(),
     PISTON_URL: z.string().url().optional().default('http://127.0.0.1:2000'),
     PISTON_EXECUTION_ENABLED: z
       .enum(['true', 'false'])
@@ -57,6 +58,16 @@ export const envSchema = z
     {
       message: "DATABASE_URL is required when NODE_ENV is not 'test'",
       path: ['DATABASE_URL'],
+    }
+  )
+  .refine(
+    (data) =>
+      data.NODE_ENV !== 'production' ||
+      !data.JOBS_WORKER_ENABLED ||
+      Boolean(data.POSTGRESQL_WORKER_URL),
+    {
+      message: 'POSTGRESQL_WORKER_URL is required in production when job workers are enabled',
+      path: ['POSTGRESQL_WORKER_URL'],
     }
   );
 

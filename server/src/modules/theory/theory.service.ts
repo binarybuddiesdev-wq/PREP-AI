@@ -34,7 +34,6 @@ import {
   THEORY_ANSWER_EVALUATION_IN_PROGRESS,
 } from '@/common/constants/api.constants.js';
 import { TOPIC_NOT_FOUND } from '@/common/schemas/topics/topics.response.schema.js';
-import type { Prisma } from '../../generated/postgresql-client/index.js';
 
 @Injectable()
 export class TheoryService {
@@ -112,18 +111,20 @@ export class TheoryService {
 
     let session: Awaited<ReturnType<typeof pg.theorySession.create>>;
     try {
-      session = await pg.theorySession.create({
-        data: {
-          userId,
-          topicId: topicId ?? null,
-          mode,
-          difficulty,
-          totalQuestions,
-          questionsAnswered: 0,
-          avgScore: 0,
-          status: 'in_progress',
-        },
-      });
+      session = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.theorySession.create({
+          data: {
+            userId,
+            topicId: topicId ?? null,
+            mode,
+            difficulty,
+            totalQuestions,
+            questionsAnswered: 0,
+            avgScore: 0,
+            status: 'in_progress',
+          },
+        })
+      );
     } catch (error: unknown) {
       try {
         await this.redis.releaseQuota(quotaKey);
@@ -145,7 +146,9 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findFirst({ where: { id: sessionId, userId } });
+    const session = await this.postgres.withTenantContext(userId, (transaction) =>
+      transaction.theorySession.findFirst({ where: { id: sessionId, userId } })
+    );
     if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
 
     const limit = dto.limit ?? session.totalQuestions;
@@ -201,14 +204,22 @@ export class TheoryService {
     }
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
-
-    const session = await pg.theorySession.findFirst({ where: { id: sessionId, userId } });
-    if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-
     const answerId = createTheoryAnswerId(sessionId, idempotencyKey);
-    const existingAnswer = await pg.theoryAnswer.findFirst({
-      where: { id: answerId, sessionId },
-    });
+
+    const { session, existingAnswer } = await this.postgres.withTenantContext(
+      userId,
+      async (transaction) => {
+        const ownedSession = await transaction.theorySession.findFirst({
+          where: { id: sessionId, userId },
+        });
+        if (!ownedSession) return { session: null, existingAnswer: null };
+        const answer = await transaction.theoryAnswer.findFirst({
+          where: { id: answerId, sessionId },
+        });
+        return { session: ownedSession, existingAnswer: answer };
+      }
+    );
+    if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
     if (existingAnswer) return existingAnswer;
     if (session.status === 'completed')
       throw new ConflictException(THEORY_SESSION_ALREADY_COMPLETED);
@@ -218,7 +229,7 @@ export class TheoryService {
 
     let answer: Awaited<ReturnType<typeof pg.theoryAnswer.create>>;
     try {
-      answer = await pg.$transaction(async (tx: Prisma.TransactionClient) => {
+      answer = await this.postgres.withTenantContext(userId, async (tx) => {
         const replay = await tx.theoryAnswer.findFirst({ where: { id: answerId, sessionId } });
         if (replay) return replay;
 
@@ -249,7 +260,9 @@ export class TheoryService {
       });
     } catch (error: unknown) {
       if ((error as { code?: string })?.code === 'P2002') {
-        const replay = await pg.theoryAnswer.findFirst({ where: { id: answerId, sessionId } });
+        const replay = await this.postgres.withTenantContext(userId, (transaction) =>
+          transaction.theoryAnswer.findFirst({ where: { id: answerId, sessionId } })
+        );
         if (replay) return replay;
       }
       throw error;
@@ -276,59 +289,70 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findFirst({ where: { id: sessionId, userId } });
-    if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-    const answer = await pg.theoryAnswer.findFirst({ where: { id: answerId, sessionId } });
-    if (!answer) throw new NotFoundException('Theory answer not found');
-    return answer;
+    return this.postgres.withTenantContext(userId, async (transaction) => {
+      const session = await transaction.theorySession.findFirst({
+        where: { id: sessionId, userId },
+      });
+      if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
+      const answer = await transaction.theoryAnswer.findFirst({
+        where: { id: answerId, sessionId },
+      });
+      if (!answer) throw new NotFoundException('Theory answer not found');
+      return answer;
+    });
   }
 
   async completeSession(sessionId: string, userId: string) {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findFirst({
-      where: { id: sessionId, userId },
-      include: { answers: true },
+    const updated = await this.postgres.withTenantContext(userId, async (transaction) => {
+      const session = await transaction.theorySession.findFirst({
+        where: { id: sessionId, userId },
+        include: { answers: true },
+      });
+      if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
+      if (session.status === 'completed')
+        throw new ConflictException(THEORY_SESSION_ALREADY_COMPLETED);
+
+      if (
+        session.answers.some((answer) => answer.status === 'queued' || answer.status === 'running')
+      ) {
+        throw new ConflictException(THEORY_ANSWER_EVALUATION_IN_PROGRESS);
+      }
+
+      const scoredAnswers = session.answers.filter((answer) => answer.aiScore !== null);
+      const avgScore =
+        scoredAnswers.length > 0
+          ? scoredAnswers.reduce((sum, answer) => sum + (answer.aiScore ?? 0), 0) /
+            scoredAnswers.length
+          : 0;
+
+      const completion = await transaction.theorySession.updateMany({
+        where: {
+          id: sessionId,
+          userId,
+          status: 'in_progress',
+          questionsAnswered: session.answers.length,
+        },
+        data: {
+          status: 'completed',
+          avgScore: Math.round(avgScore * 10) / 10,
+          completedAt: new Date(),
+        },
+      });
+      if (completion.count === 0) {
+        throw new ConflictException(
+          'Cannot complete the session while an answer is still being processed'
+        );
+      }
+
+      const completedSession = await transaction.theorySession.findFirst({
+        where: { id: sessionId, userId },
+      });
+      if (!completedSession) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
+      return completedSession;
     });
-    if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-    if (session.status === 'completed')
-      throw new ConflictException(THEORY_SESSION_ALREADY_COMPLETED);
-
-    if (
-      session.answers.some((answer) => answer.status === 'queued' || answer.status === 'running')
-    ) {
-      throw new ConflictException(THEORY_ANSWER_EVALUATION_IN_PROGRESS);
-    }
-
-    const scoredAnswers = session.answers.filter((answer) => answer.aiScore !== null);
-    const avgScore =
-      scoredAnswers.length > 0
-        ? scoredAnswers.reduce((sum, answer) => sum + (answer.aiScore ?? 0), 0) /
-          scoredAnswers.length
-        : 0;
-
-    const completion = await pg.theorySession.updateMany({
-      where: {
-        id: sessionId,
-        userId,
-        status: 'in_progress',
-        questionsAnswered: session.answers.length,
-      },
-      data: {
-        status: 'completed',
-        avgScore: Math.round(avgScore * 10) / 10,
-        completedAt: new Date(),
-      },
-    });
-    if (completion.count === 0) {
-      throw new ConflictException(
-        'Cannot complete the session while an answer is still being processed'
-      );
-    }
-
-    const updated = await pg.theorySession.findFirst({ where: { id: sessionId, userId } });
-    if (!updated) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
 
     this.logger.info({ sessionId, avgScore: updated.avgScore }, 'Session completed');
     return updated;
@@ -338,13 +362,14 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const session = await pg.theorySession.findFirst({
-      where: { id: sessionId, userId },
-      include: { answers: true },
+    return this.postgres.withTenantContext(userId, async (transaction) => {
+      const session = await transaction.theorySession.findFirst({
+        where: { id: sessionId, userId },
+        include: { answers: true },
+      });
+      if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
+      return session;
     });
-    if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-
-    return session;
   }
 
   async getSessionHistory(userId: string, dto: GetSessionHistoryDto) {
@@ -355,15 +380,17 @@ export class TheoryService {
     const limit = dto.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const [sessions, total] = await Promise.all([
-      pg.theorySession.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      pg.theorySession.count({ where: { userId } }),
-    ]);
+    const [sessions, total] = await this.postgres.withTenantContext(userId, (transaction) =>
+      Promise.all([
+        transaction.theorySession.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        transaction.theorySession.count({ where: { userId } }),
+      ])
+    );
 
     this.logger.info({ userId, page, limit, total }, 'Session history fetched');
     return { sessions, total, page, limit };
@@ -373,9 +400,11 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
 
-    const completedSessions = await pg.theorySession.findMany({
-      where: { userId, status: 'completed', topicId: { not: null } },
-    });
+    const completedSessions = await this.postgres.withTenantContext(userId, (transaction) =>
+      transaction.theorySession.findMany({
+        where: { userId, status: 'completed', topicId: { not: null } },
+      })
+    );
 
     const topicMap = new Map<string, { scores: number[]; lastPracticed: Date }>();
     for (const s of completedSessions) {
@@ -420,15 +449,17 @@ export class TheoryService {
 
     const limit = dto.limit ?? 7;
 
-    const sessions = await pg.theorySession.findMany({
-      where: { userId, status: 'completed' },
-      orderBy: { startedAt: 'desc' },
-      take: limit,
-      select: {
-        startedAt: true,
-        avgScore: true,
-      },
-    });
+    const sessions = await this.postgres.withTenantContext(userId, (transaction) =>
+      transaction.theorySession.findMany({
+        where: { userId, status: 'completed' },
+        orderBy: { startedAt: 'desc' },
+        take: limit,
+        select: {
+          startedAt: true,
+          avgScore: true,
+        },
+      })
+    );
 
     const trend = sessions.reverse().map((s) => ({
       date: s.startedAt.toISOString().split('T')[0],
@@ -443,10 +474,12 @@ export class TheoryService {
     const pg = this.postgres.client_;
     if (!pg) return [];
 
-    const completedSessions = await pg.theorySession.findMany({
-      where: { userId, status: 'completed', topicId: { not: null } },
-      select: { topicId: true, avgScore: true },
-    });
+    const completedSessions = await this.postgres.withTenantContext(userId, (transaction) =>
+      transaction.theorySession.findMany({
+        where: { userId, status: 'completed', topicId: { not: null } },
+        select: { topicId: true, avgScore: true },
+      })
+    );
 
     const topicScores = new Map<string, number[]>();
     for (const s of completedSessions) {

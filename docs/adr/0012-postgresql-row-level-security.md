@@ -68,7 +68,10 @@ are complete.
   ambient mutable process state.
 - Queue recovery must still find work across tenants. Do not grant the worker
   runtime role `BYPASSRLS`. Provide narrowly granted `SECURITY DEFINER` claim
-  functions owned by a dedicated `NOLOGIN` function role. That role may have
+  functions owned by a dedicated `NOLOGIN` function role. Claims use
+  `FOR UPDATE SKIP LOCKED` and a short dispatch lease so concurrent workers do
+  not repeatedly enqueue the same database row; expired leases make work
+  recoverable after a dispatcher crash. That role may have
   `BYPASSRLS` only if required for cross-tenant claims; no process can log in
   as it, and the worker role is not a member. Pin each function's `search_path`,
   validate job state transitions, and return only the persisted job data

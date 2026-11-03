@@ -24,6 +24,7 @@ describe('CodingExecutionWorker', () => {
   let config: { get: ReturnType<typeof vi.fn> };
   let piston: { execute: ReturnType<typeof vi.fn> };
   let executions: {
+    loadPersistedJobData: ReturnType<typeof vi.fn>;
     markRunning: ReturnType<typeof vi.fn>;
     complete: ReturnType<typeof vi.fn>;
     markFailed: ReturnType<typeof vi.fn>;
@@ -70,6 +71,7 @@ describe('CodingExecutionWorker', () => {
     };
     piston = { execute: vi.fn().mockResolvedValue(acceptedResult) };
     executions = {
+      loadPersistedJobData: vi.fn().mockResolvedValue(jobData),
       markRunning: vi.fn().mockResolvedValue(null),
       complete: vi.fn().mockResolvedValue(acceptedResult),
       markFailed: vi.fn().mockResolvedValue(undefined),
@@ -159,6 +161,7 @@ describe('CodingExecutionWorker', () => {
         reservationToken: 'execution-555',
       },
     };
+    executions.loadPersistedJobData.mockResolvedValueOnce(submitData);
 
     await expect(processJob({ id: 'queue-job', data: submitData })).resolves.toEqual(
       acceptedResult
@@ -200,6 +203,7 @@ describe('CodingExecutionWorker', () => {
         reservationToken: 'execution-555',
       },
     };
+    executions.loadPersistedJobData.mockResolvedValueOnce(submitData);
 
     await processJob({ id: 'queue-job', data: submitData });
 
@@ -237,6 +241,7 @@ describe('CodingExecutionWorker', () => {
         reservationToken: 'execution-555',
       },
     };
+    executions.loadPersistedJobData.mockResolvedValueOnce(submitData);
 
     await expect(processJob({ id: 'queue-job', data: submitData })).rejects.toBeInstanceOf(
       UnrecoverableError
@@ -277,6 +282,7 @@ describe('CodingExecutionWorker', () => {
         reservationToken: 'execution-555',
       },
     };
+    executions.loadPersistedJobData.mockResolvedValueOnce(submitData);
 
     await expect(processJob({ id: 'queue-job', data: submitData })).resolves.toEqual(
       acceptedResult
@@ -367,6 +373,7 @@ describe('CodingExecutionWorker', () => {
         reservationToken: 'execution-555',
       },
     };
+    executions.loadPersistedJobData.mockResolvedValueOnce(submitData);
 
     await failedHandler(
       { id: 'job-2', attemptsMade: 3, opts: { attempts: 3 }, data: submitData },
@@ -432,6 +439,7 @@ describe('CodingExecutionWorker', () => {
       error: Error
     ) => Promise<void>;
     const terminalError = new UnrecoverableError('Job stalled too many times');
+    executions.loadPersistedJobData.mockResolvedValueOnce(jobData);
 
     await failedHandler(
       { id: 'job-stalled', attemptsMade: 1, opts: { attempts: 3 }, data: jobData },
@@ -458,6 +466,7 @@ describe('CodingExecutionWorker', () => {
       remove: vi.fn().mockResolvedValue(undefined),
     };
     jobs.getFailedJobs.mockResolvedValue([failedJob]);
+    executions.loadPersistedJobData.mockResolvedValue(failedJob.data);
     executions.markFailed.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
     const worker = new CodingExecutionWorker(
       config as unknown as ConfigService,

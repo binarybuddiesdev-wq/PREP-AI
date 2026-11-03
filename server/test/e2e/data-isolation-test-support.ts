@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { PrismaPostgresqlService, PrismaService } from '../../src/prisma/prisma.service.js';
+import type { Prisma } from '../../src/generated/postgresql-client/index.js';
 
 export interface IIsolationTestDatabase {
   mongo: PrismaService;
   postgresProvider: PrismaPostgresqlService;
   postgres: NonNullable<PrismaPostgresqlService['client_']>;
+  worker: NonNullable<PrismaPostgresqlService['workerClient_']>;
 }
 
 export function createIntegrationLogger() {
@@ -22,12 +24,30 @@ export async function connectIsolationTestDatabases(): Promise<IIsolationTestDat
     await Promise.all([mongo.onModuleInit(), postgresProvider.onModuleInit()]);
     const postgres = postgresProvider.client_;
     if (!postgres) throw new Error('PostgreSQL test database did not connect');
+    const worker = postgresProvider.workerClient_;
+    if (!worker) throw new Error('PostgreSQL worker test database did not connect');
     await Promise.all([mongo.user.count(), postgres.theorySession.count()]);
-    return { mongo, postgresProvider, postgres };
+    return { mongo, postgresProvider, postgres, worker };
   } catch (error) {
     await Promise.allSettled([mongo.onModuleDestroy(), postgresProvider.onModuleDestroy()]);
     throw error;
   }
+}
+
+export function withTestUserContext<T>(
+  database: IIsolationTestDatabase,
+  userId: string,
+  operation: (transaction: Prisma.TransactionClient) => Promise<T>
+) {
+  return database.postgresProvider.withTenantContext(userId, operation);
+}
+
+export function withTestWorkerJobContext<T>(
+  database: IIsolationTestDatabase,
+  jobId: string,
+  operation: (transaction: Prisma.TransactionClient) => Promise<T>
+) {
+  return database.postgresProvider.withWorkerJobContext(jobId, operation);
 }
 
 export async function disconnectIsolationTestDatabases(database: IIsolationTestDatabase) {

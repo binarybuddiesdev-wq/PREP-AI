@@ -17,12 +17,26 @@ vi.mock('../../mastra/mastra.config.js', () => ({
 }));
 
 describe('TheoryEvaluationService', () => {
-  const createService = (postgres: unknown, logger: unknown) =>
-    new TheoryEvaluationService(
+  const createService = (postgres: unknown, logger: unknown) => {
+    const database = postgres as Record<string, unknown>;
+    database['withWorkerJobContext'] ??= async (
+      _jobId: string,
+      operation: (tx: unknown) => unknown
+    ) => {
+      const client = database['client_'] as Record<string, unknown>;
+      const transaction = { ...client, $queryRaw: async () => [{ owner_id: 'user_001' }] };
+      return operation(transaction);
+    };
+    database['setTenantContext'] ??= async () => undefined;
+    if (!('workerClient_' in database)) {
+      database['workerClient_'] = { $queryRaw: vi.fn(async () => [{ answer_id: 'answer_001' }]) };
+    }
+    return new TheoryEvaluationService(
       postgres as PrismaPostgresqlService,
       logger as never,
       mockTokenBudget as unknown as TheoryAiTokenBudgetService
     );
+  };
 
   afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
@@ -397,7 +411,7 @@ describe('TheoryEvaluationService', () => {
 
   it('returns 503 when PostgreSQL is unavailable', async () => {
     const service = createService(
-      { client_: undefined },
+      { client_: undefined, workerClient_: undefined },
       { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
     );
 
@@ -441,15 +455,14 @@ describe('TheoryEvaluationService', () => {
     };
     const postgres = {
       client_: { theoryAnswer: { findMany: vi.fn().mockResolvedValue([queuedAnswer]) } },
+      workerClient_: { $queryRaw: vi.fn(async () => [{ answer_id: queuedAnswer.id }]) },
     };
     const service = createService(postgres, { info: vi.fn(), warn: vi.fn(), error: vi.fn() });
 
     await expect(service.findQueuedForDispatch()).resolves.toEqual([
       { idempotencyKey: 'answer_001', answerId: 'answer_001' },
     ]);
-    expect(postgres.client_.theoryAnswer.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'queued' } })
-    );
+    expect(postgres.workerClient_.$queryRaw).toHaveBeenCalled();
   });
 
   it('marks an answer failed after retries are exhausted', async () => {

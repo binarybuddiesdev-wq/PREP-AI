@@ -7,14 +7,21 @@ import type { ICodingExecutionJobData } from './coding-execution.types.js';
 
 describe('CodingExecutionService', () => {
   let service: CodingExecutionService;
-  let postgres: { client_: Record<string, unknown> };
-  let execution: { status: string; result: unknown };
+  let postgres: {
+    client_: Record<string, unknown>;
+    workerClient_: Record<string, unknown>;
+    withWorkerJobContext: (jobId: string, operation: (tx: unknown) => unknown) => Promise<unknown>;
+    setTenantContext: ReturnType<typeof vi.fn>;
+    setWorkerSessionContext: ReturnType<typeof vi.fn>;
+  };
+  let execution: Record<string, unknown>;
   type TMockModel = Record<string, ReturnType<typeof vi.fn>>;
   let pg: {
     codingExecution: TMockModel;
     codingSession: TMockModel;
     codingAnswer: TMockModel;
-    $transaction: ReturnType<typeof vi.fn>;
+    $transaction: ((callback: (tx: unknown) => unknown) => unknown) & ReturnType<typeof vi.fn>;
+    $queryRaw: ReturnType<typeof vi.fn>;
   };
   let logger: {
     info: ReturnType<typeof vi.fn>;
@@ -44,12 +51,27 @@ describe('CodingExecutionService', () => {
   };
 
   beforeEach(async () => {
-    execution = { status: 'queued', result: null };
+    execution = {
+      id: jobData.executionId,
+      sessionId: jobData.sessionId,
+      userId: jobData.userId,
+      problemId: jobData.problemId,
+      operation: jobData.operation,
+      language: jobData.language,
+      sourceCode: jobData.code,
+      examples: jobData.examples,
+      quotaKey: null,
+      quotaItemKey: null,
+      quotaTtlSeconds: null,
+      quotaReservationToken: null,
+      status: 'queued',
+      result: null,
+    };
     const codingExecution = {
       findUnique: vi.fn().mockImplementation(() => Promise.resolve(execution)),
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) => {
-        execution = { ...execution, ...data } as typeof execution;
+        execution = { ...execution, ...data };
         return Promise.resolve({ count: 1 });
       }),
     };
@@ -63,10 +85,26 @@ describe('CodingExecutionService', () => {
       codingSession,
       codingAnswer,
       $transaction: vi.fn((callback: (tx: unknown) => unknown) =>
-        callback({ codingExecution, codingSession, codingAnswer })
+        callback({
+          codingExecution,
+          codingSession,
+          codingAnswer,
+          $queryRaw: vi.fn(async () => [
+            { owner_id: jobData.userId, session_id: jobData.sessionId },
+          ]),
+        })
       ),
+      $queryRaw: vi.fn(async () => [{ owner_id: jobData.userId, session_id: jobData.sessionId }]),
     };
-    postgres = { client_: pg as unknown as Record<string, unknown> };
+    postgres = {
+      client_: pg as unknown as Record<string, unknown>,
+      workerClient_: pg as unknown as Record<string, unknown>,
+      withWorkerJobContext: vi.fn(async (_jobId: string, operation: (tx: unknown) => unknown) =>
+        pg.$transaction(operation)
+      ),
+      setTenantContext: vi.fn(),
+      setWorkerSessionContext: vi.fn(),
+    };
     logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
     const module = await Test.createTestingModule({
@@ -82,8 +120,12 @@ describe('CodingExecutionService', () => {
   it('marks a queued execution running before the processor starts', async () => {
     await expect(service.markRunning(jobData.executionId)).resolves.toBeNull();
     expect(pg.codingExecution.updateMany).toHaveBeenCalledWith({
-      where: { id: jobData.executionId, status: 'queued' },
-      data: { status: 'running', startedAt: expect.any(Date) },
+      where: { id: jobData.executionId, userId: jobData.userId, status: 'queued' },
+      data: {
+        status: 'running',
+        startedAt: expect.any(Date),
+        dispatchClaimedAt: null,
+      },
     });
   });
 
@@ -119,21 +161,16 @@ describe('CodingExecutionService', () => {
   });
 
   it('reconstructs queued jobs from durable execution rows after a worker restart', async () => {
-    pg.codingExecution.findMany.mockResolvedValueOnce([
-      {
-        id: jobData.executionId,
-        sessionId: jobData.sessionId,
-        userId: jobData.userId,
-        problemId: jobData.problemId,
-        operation: 'submit',
-        language: jobData.language,
-        sourceCode: jobData.code,
-        examples: jobData.examples,
-        quotaKey: 'quota-key',
-        quotaItemKey: 'item-key',
-        quotaTtlSeconds: 180,
-        quotaReservationToken: jobData.executionId,
-      },
+    execution = {
+      ...execution,
+      operation: 'submit',
+      quotaKey: 'quota-key',
+      quotaItemKey: 'item-key',
+      quotaTtlSeconds: 180,
+      quotaReservationToken: jobData.executionId,
+    };
+    (pg as unknown as { $queryRaw: ReturnType<typeof vi.fn> }).$queryRaw.mockResolvedValueOnce([
+      { execution_id: jobData.executionId },
     ]);
 
     await expect(service.findQueuedForDispatch()).resolves.toEqual([
@@ -149,19 +186,17 @@ describe('CodingExecutionService', () => {
         },
       },
     ]);
-    expect(pg.codingExecution.findMany).toHaveBeenCalledWith({
-      where: { status: 'queued' },
-      orderBy: { createdAt: 'asc' },
-      take: 100,
-      select: expect.objectContaining({ sourceCode: true, examples: true }),
-    });
+    expect((pg as unknown as { $queryRaw: ReturnType<typeof vi.fn> }).$queryRaw).toHaveBeenCalled();
   });
-
   it('persists a run result inside a transaction', async () => {
     await expect(service.complete(jobData, result)).resolves.toEqual(result);
     expect(pg.$transaction).toHaveBeenCalledOnce();
     expect(pg.codingExecution.updateMany).toHaveBeenCalledWith({
-      where: { id: jobData.executionId, status: { in: ['queued', 'running'] } },
+      where: {
+        id: jobData.executionId,
+        userId: jobData.userId,
+        status: { in: ['queued', 'running'] },
+      },
       data: expect.objectContaining({ status: 'completed', result }),
     });
     expect(pg.codingAnswer.create).not.toHaveBeenCalled();
@@ -213,6 +248,7 @@ describe('CodingExecutionService', () => {
 
   it('creates one answer and updates session counters atomically for a submission', async () => {
     const submitData = { ...jobData, operation: 'submit' as const };
+    execution.operation = 'submit';
 
     await expect(service.complete(submitData, result)).resolves.toEqual(result);
 
@@ -248,6 +284,7 @@ describe('CodingExecutionService', () => {
   it('does not increment solved count when the problem already has an accepted answer', async () => {
     pg.codingAnswer.findFirst.mockResolvedValueOnce({ id: 'prior-answer' });
     const submitData = { ...jobData, operation: 'submit' as const };
+    execution.operation = 'submit';
 
     await service.complete(submitData, result);
 
@@ -258,6 +295,7 @@ describe('CodingExecutionService', () => {
   it('creates a wrong-answer record without looking up or incrementing solved answers', async () => {
     const wrongResult = { ...result, status: 'wrong_answer' as const };
     const submitData = { ...jobData, operation: 'submit' as const };
+    execution.operation = 'submit';
 
     await service.complete(submitData, wrongResult);
 
@@ -271,6 +309,7 @@ describe('CodingExecutionService', () => {
   it('rolls back finalization if the session was completed before the worker committed', async () => {
     pg.codingSession.updateMany.mockResolvedValueOnce({ count: 0 });
     const submitData = { ...jobData, operation: 'submit' as const };
+    execution.operation = 'submit';
 
     await expect(service.complete(submitData, result)).rejects.toBeInstanceOf(ConflictException);
     expect(pg.codingAnswer.create).not.toHaveBeenCalled();
@@ -280,13 +319,19 @@ describe('CodingExecutionService', () => {
     await service.markFailed(jobData.executionId);
 
     expect(pg.codingExecution.updateMany).toHaveBeenCalledWith({
-      where: { id: jobData.executionId, status: { in: ['queued', 'running'] } },
+      where: {
+        id: jobData.executionId,
+        userId: jobData.userId,
+        status: { in: ['queued', 'running'] },
+      },
       data: expect.objectContaining({ status: 'failed', completedAt: expect.any(Date) }),
     });
   });
 
   it('fails with 503 if the PostgreSQL client is unavailable', async () => {
     postgres.client_ = undefined as unknown as Record<string, unknown>;
+    postgres.workerClient_ = undefined as unknown as Record<string, unknown>;
+    postgres.withWorkerJobContext = vi.fn().mockRejectedValue(new Error('PostgreSQL unavailable'));
 
     await expect(service.markFailed(jobData.executionId)).rejects.toBeInstanceOf(
       ServiceUnavailableException

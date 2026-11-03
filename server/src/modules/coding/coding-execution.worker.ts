@@ -65,22 +65,30 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
   }
 
   private async processJob(job: Job<ICodingExecutionJobData>): Promise<TCodingExecutionResult> {
-    const persistedResult = await this.executions.markRunning(job.data.executionId);
+    const persistedData = await this.executions.loadPersistedJobData(job.data.executionId);
+    const persistedResult = await this.executions.markRunning(persistedData.executionId);
     let result: TCodingExecutionResult;
     try {
       result =
         persistedResult ??
         (await this.executions.complete(
-          job.data,
-          await this.piston.execute(job.data.code, job.data.language, job.data.examples)
+          persistedData,
+          await this.piston.execute(
+            persistedData.code,
+            persistedData.language,
+            persistedData.examples
+          )
         ));
     } catch (error) {
       if (!(error instanceof ConflictException)) throw error;
-      await this.executions.markFailed(job.data.executionId, CODING_SESSION_COMPLETED_ERROR);
-      await this.finalizeSolveQuota(job.data, 'release');
+      await this.executions.markFailed(persistedData.executionId, CODING_SESSION_COMPLETED_ERROR);
+      await this.finalizeSolveQuota(persistedData, 'release');
       throw new UnrecoverableError(CODING_SESSION_COMPLETED_ERROR);
     }
-    await this.finalizeSolveQuota(job.data, result.status === 'accepted' ? 'solved' : 'release');
+    await this.finalizeSolveQuota(
+      persistedData,
+      result.status === 'accepted' ? 'solved' : 'release'
+    );
     return result;
   }
 
@@ -100,14 +108,15 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      await this.executions.markFailed(job.data.executionId);
+      const persistedData = await this.executions.loadPersistedJobData(job.data.executionId);
+      await this.executions.markFailed(persistedData.executionId);
+      await this.finalizeSolveQuota(persistedData, 'release');
     } catch (persistenceError) {
       this.logger.error(
         { executionId: job.data.executionId, err: persistenceError },
         'Failed to persist terminal coding execution failure'
       );
     }
-    await this.finalizeSolveQuota(job.data, 'release');
   };
 
   private readonly handleWorkerError = (error: Error): void => {
@@ -122,8 +131,9 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
       );
       for (const job of failedJobs) {
         try {
-          await this.executions.markFailed(job.data.executionId);
-          await this.finalizeSolveQuota(job.data, 'release');
+          const persistedData = await this.executions.loadPersistedJobData(job.data.executionId);
+          await this.executions.markFailed(persistedData.executionId);
+          await this.finalizeSolveQuota(persistedData, 'release');
           await job.remove();
         } catch (error) {
           this.logger.warn(

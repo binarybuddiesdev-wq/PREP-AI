@@ -45,18 +45,21 @@ export class TheoryEvaluationService {
   ) {}
 
   async evaluate(answerId: string): Promise<void> {
-    const pg = this.database();
-    const answer = await pg.theoryAnswer.findUnique({
-      where: { id: answerId },
-      include: { session: { select: { userId: true } } },
-    });
+    const answer = await this.withWorkerAnswer(answerId, (transaction) =>
+      transaction.theoryAnswer.findUnique({
+        where: { id: answerId },
+        include: { session: { select: { userId: true } } },
+      })
+    );
     if (!answer) throw new NotFoundException('Theory answer not found');
     if (answer.status === 'completed' || answer.status === 'failed') return;
 
-    await pg.theoryAnswer.updateMany({
-      where: { id: answerId, status: 'queued' },
-      data: { status: 'running', startedAt: new Date() },
-    });
+    await this.withWorkerAnswer(answerId, (transaction) =>
+      transaction.theoryAnswer.updateMany({
+        where: { id: answerId, status: 'queued' },
+        data: { status: 'running', startedAt: new Date(), dispatchClaimedAt: null },
+      })
+    );
 
     const agent = mastra.getAgent('theoryEvaluatorAgent');
     const prompt = currentTheoryEvaluatorPrompt.buildPrompt({
@@ -126,14 +129,16 @@ export class TheoryEvaluationService {
       });
     } catch (error: unknown) {
       if (budgetExceeded) {
-        await pg.theoryAnswer.updateMany({
-          where: { id: answerId, status: 'running' },
-          data: {
-            status: 'failed',
-            failureMessage: THEORY_AI_TOKEN_BUDGET_REACHED,
-            completedAt: new Date(),
-          },
-        });
+        await this.withWorkerAnswer(answerId, (transaction) =>
+          transaction.theoryAnswer.updateMany({
+            where: { id: answerId, status: 'running' },
+            data: {
+              status: 'failed',
+              failureMessage: THEORY_AI_TOKEN_BUDGET_REACHED,
+              completedAt: new Date(),
+            },
+          })
+        );
         this.logger.warn({ answerId }, 'Theory evaluation stopped at the daily AI token budget');
         return;
       }
@@ -156,20 +161,24 @@ export class TheoryEvaluationService {
       throw new ServiceUnavailableException(THEORY_EVALUATION_UNAVAILABLE);
     }
 
-    const persisted = await pg.theoryAnswer.updateMany({
-      where: { id: answerId, status: 'running' },
-      data: {
-        status: 'completed',
-        aiScore: Math.max(0, Math.min(10, result.score)),
-        aiFeedback: result.feedback,
-        evaluationProvider: provider,
-        evaluationModel: defaultModel[provider](),
-        evaluationPromptVersion: THEORY_EVALUATOR_PROMPT_VERSION,
-        completedAt: new Date(),
-      },
-    });
+    const persisted = await this.withWorkerAnswer(answerId, (transaction) =>
+      transaction.theoryAnswer.updateMany({
+        where: { id: answerId, status: 'running' },
+        data: {
+          status: 'completed',
+          aiScore: Math.max(0, Math.min(10, result.score)),
+          aiFeedback: result.feedback,
+          evaluationProvider: provider,
+          evaluationModel: defaultModel[provider](),
+          evaluationPromptVersion: THEORY_EVALUATOR_PROMPT_VERSION,
+          completedAt: new Date(),
+        },
+      })
+    );
     if (persisted.count === 0) {
-      const latest = await pg.theoryAnswer.findUnique({ where: { id: answerId } });
+      const latest = await this.withWorkerAnswer(answerId, (transaction) =>
+        transaction.theoryAnswer.findUnique({ where: { id: answerId } })
+      );
       if (latest?.status === 'completed' || latest?.status === 'failed') return;
       throw new Error(`Theory answer ${answerId} could not transition to completed`);
     }
@@ -177,24 +186,44 @@ export class TheoryEvaluationService {
   }
 
   async markFailed(answerId: string): Promise<void> {
-    await this.database().theoryAnswer.updateMany({
-      where: { id: answerId, status: { in: ['queued', 'running'] } },
-      data: {
-        status: 'failed',
-        failureMessage: THEORY_EVALUATION_UNAVAILABLE,
-        completedAt: new Date(),
-      },
-    });
+    await this.withWorkerAnswer(answerId, (transaction) =>
+      transaction.theoryAnswer.updateMany({
+        where: { id: answerId, status: { in: ['queued', 'running'] } },
+        data: {
+          status: 'failed',
+          failureMessage: THEORY_EVALUATION_UNAVAILABLE,
+          completedAt: new Date(),
+        },
+      })
+    );
   }
 
   async findQueuedForDispatch(limit = 100): Promise<ITheoryEvaluationJobData[]> {
-    const queuedAnswers = await this.database().theoryAnswer.findMany({
-      where: { status: 'queued' },
-      orderBy: { createdAt: 'asc' },
-      take: limit,
-      select: { id: true },
+    const worker = this.postgres.workerClient_;
+    if (!worker) throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
+    const queuedAnswers = await worker.$queryRaw<Array<{ answer_id: string }>>`
+      SELECT answer_id FROM public.prepai_list_queued_theory_answer_ids(${limit}::integer)
+    `;
+    return queuedAnswers.map(({ answer_id }) => ({
+      idempotencyKey: answer_id,
+      answerId: answer_id,
+    }));
+  }
+
+  private async withWorkerAnswer<T>(
+    answerId: string,
+    operation: (
+      transaction: import('../../generated/postgresql-client/index.js').Prisma.TransactionClient
+    ) => Promise<T>
+  ): Promise<T> {
+    return this.postgres.withWorkerJobContext(answerId, async (transaction) => {
+      const [owner] = await transaction.$queryRaw<Array<{ owner_id: string }>>`
+        SELECT owner_id FROM public.prepai_get_theory_answer_owner(${answerId})
+      `;
+      if (!owner) throw new NotFoundException('Theory answer not found');
+      await this.postgres.setTenantContext(transaction, owner.owner_id);
+      return operation(transaction);
     });
-    return queuedAnswers.map(({ id }) => ({ idempotencyKey: id, answerId: id }));
   }
 
   private database() {

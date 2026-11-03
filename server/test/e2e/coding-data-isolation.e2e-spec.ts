@@ -9,6 +9,7 @@ import {
   connectIsolationTestDatabases,
   createIntegrationLogger,
   disconnectIsolationTestDatabases,
+  withTestUserContext,
 } from './data-isolation-test-support.js';
 
 type TDatabase = Awaited<ReturnType<typeof connectIsolationTestDatabases>>;
@@ -67,7 +68,9 @@ describe('PostgreSQL coding data isolation', () => {
     });
 
     const createSession = (userId: string, problemIds = [problem.id]) =>
-      database!.postgres.codingSession.create({ data: { userId, problemIds } });
+      withTestUserContext(database!, userId, (transaction) =>
+        transaction.codingSession.create({ data: { userId, problemIds } })
+      );
     [sessionA, sessionB] = await Promise.all([createSession(userA), createSession(userB)]);
     [completionSessionA, completionSessionB] = await Promise.all([
       createSession(userA, []),
@@ -78,30 +81,34 @@ describe('PostgreSQL coding data isolation', () => {
       createSession(userB, []),
     ]);
     [executionA, executionB] = await Promise.all([
-      database.postgres.codingExecution.create({
-        data: {
-          sessionId: sessionA.id,
-          userId: userA,
-          problemId: problem.id,
-          operation: 'run',
-          language: 'javascript',
-          sourceCode: 'function solution() {}',
-          examples: problem.examples as never,
-          queueJobId: `test-${randomUUID()}`,
-        },
-      }),
-      database.postgres.codingExecution.create({
-        data: {
-          sessionId: sessionB.id,
-          userId: userB,
-          problemId: problem.id,
-          operation: 'run',
-          language: 'javascript',
-          sourceCode: 'function solution() {}',
-          examples: problem.examples as never,
-          queueJobId: `test-${randomUUID()}`,
-        },
-      }),
+      withTestUserContext(database, userA, (transaction) =>
+        transaction.codingExecution.create({
+          data: {
+            sessionId: sessionA.id,
+            userId: userA,
+            problemId: problem.id,
+            operation: 'run',
+            language: 'javascript',
+            sourceCode: 'function solution() {}',
+            examples: problem.examples as never,
+            queueJobId: `test-${randomUUID()}`,
+          },
+        })
+      ),
+      withTestUserContext(database, userB, (transaction) =>
+        transaction.codingExecution.create({
+          data: {
+            sessionId: sessionB.id,
+            userId: userB,
+            problemId: problem.id,
+            operation: 'run',
+            language: 'javascript',
+            sourceCode: 'function solution() {}',
+            examples: problem.examples as never,
+            queueJobId: `test-${randomUUID()}`,
+          },
+        })
+      ),
     ]);
     [workerExecutionA, workerExecutionMismatch] = await Promise.all([
       createWorkerExecution(workerSessionA.id, userA),
@@ -110,29 +117,33 @@ describe('PostgreSQL coding data isolation', () => {
   }, 30_000);
 
   async function createWorkerExecution(sessionId: string, ownerId: string) {
-    return database!.postgres.codingExecution.create({
-      data: {
-        sessionId,
-        userId: ownerId,
-        problemId: problem.id,
-        operation: 'submit',
-        language: 'javascript',
-        sourceCode: 'function solution() {}',
-        examples: problem.examples as never,
-        queueJobId: `test-${randomUUID()}`,
-      },
-    });
+    return withTestUserContext(database!, ownerId, (transaction) =>
+      transaction.codingExecution.create({
+        data: {
+          sessionId,
+          userId: ownerId,
+          problemId: problem.id,
+          operation: 'submit',
+          language: 'javascript',
+          sourceCode: 'function solution() {}',
+          examples: problem.examples as never,
+          queueJobId: `test-${randomUUID()}`,
+        },
+      })
+    );
   }
 
   afterAll(async () => {
     if (!database) return;
     if (userA && userB) {
-      await database.postgres.codingAnswer.deleteMany({
-        where: { userId: { in: [userA, userB] } },
-      });
-      await database.postgres.codingSession.deleteMany({
-        where: { userId: { in: [userA, userB] } },
-      });
+      await Promise.all(
+        [userA, userB].map((userId) =>
+          withTestUserContext(database!, userId, async (transaction) => {
+            await transaction.codingAnswer.deleteMany({ where: { userId } });
+            await transaction.codingSession.deleteMany({ where: { userId } });
+          })
+        )
+      );
     }
     if (problem?.id) {
       await database.postgres.codingQuestion.delete({ where: { id: problem.id } });
@@ -148,6 +159,22 @@ describe('PostgreSQL coding data isolation', () => {
     await expect(service.getSessionDetail(sessionB.id, userA)).rejects.toBeInstanceOf(
       NotFoundException
     );
+  });
+
+  it('claims queued worker rows once and releases the dispatch lease on processing', async () => {
+    const queued = await executionService.findQueuedForDispatch();
+    expect(queued.map(({ executionId }) => executionId)).toContain(workerExecutionA.id);
+    expect(queued.map(({ executionId }) => executionId)).toContain(workerExecutionMismatch.id);
+
+    const secondScan = await executionService.findQueuedForDispatch();
+    expect(secondScan.map(({ executionId }) => executionId)).not.toContain(workerExecutionA.id);
+    expect(secondScan.map(({ executionId }) => executionId)).not.toContain(
+      workerExecutionMismatch.id
+    );
+
+    await executionService.markRunning(workerExecutionA.id);
+    const thirdScan = await executionService.findQueuedForDispatch();
+    expect(thirdScan.map(({ executionId }) => executionId)).not.toContain(workerExecutionA.id);
   });
 
   it('scopes execution reads by execution, session, and owner', async () => {
@@ -196,7 +223,9 @@ describe('PostgreSQL coding data isolation', () => {
       NotFoundException
     );
     await expect(
-      database!.postgres.codingSession.findUnique({ where: { id: completionSessionB.id } })
+      withTestUserContext(database!, userB, (transaction) =>
+        transaction.codingSession.findUnique({ where: { id: completionSessionB.id } })
+      )
     ).resolves.toMatchObject({ userId: userB, status: 'in_progress' });
   });
 
@@ -205,7 +234,9 @@ describe('PostgreSQL coding data isolation', () => {
 
     expect(created.userId).toBe(userA);
     await expect(
-      database!.postgres.codingSession.findUnique({ where: { id: created.id } })
+      withTestUserContext(database!, userA, (transaction) =>
+        transaction.codingSession.findUnique({ where: { id: created.id } })
+      )
     ).resolves.toMatchObject({ userId: userA });
   });
 
@@ -235,20 +266,28 @@ describe('PostgreSQL coding data isolation', () => {
       executionService.complete(createJob(workerExecutionA.id, userA), acceptedResult)
     ).resolves.toEqual(acceptedResult);
     await expect(
-      database!.postgres.codingSession.findUnique({ where: { id: workerSessionA.id } })
+      withTestUserContext(database!, userA, (transaction) =>
+        transaction.codingSession.findUnique({ where: { id: workerSessionA.id } })
+      )
     ).resolves.toMatchObject({ problemsAttempted: 1, problemsSolved: 1 });
     await expect(
-      database!.postgres.codingSession.findUnique({ where: { id: workerSessionB.id } })
+      withTestUserContext(database!, userB, (transaction) =>
+        transaction.codingSession.findUnique({ where: { id: workerSessionB.id } })
+      )
     ).resolves.toMatchObject({ problemsAttempted: 0, problemsSolved: 0 });
 
     await expect(
       executionService.complete(createJob(workerExecutionMismatch.id, userB), acceptedResult)
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).resolves.toEqual(acceptedResult);
     await expect(
-      database!.postgres.codingExecution.findUnique({ where: { id: workerExecutionMismatch.id } })
-    ).resolves.toMatchObject({ userId: userA, status: 'queued' });
+      withTestUserContext(database!, userA, (transaction) =>
+        transaction.codingExecution.findUnique({ where: { id: workerExecutionMismatch.id } })
+      )
+    ).resolves.toMatchObject({ userId: userA, status: 'completed' });
     await expect(
-      database!.postgres.codingSession.findUnique({ where: { id: workerSessionA.id } })
-    ).resolves.toMatchObject({ problemsAttempted: 1, problemsSolved: 1 });
+      withTestUserContext(database!, userA, (transaction) =>
+        transaction.codingSession.findUnique({ where: { id: workerSessionA.id } })
+      )
+    ).resolves.toMatchObject({ problemsAttempted: 2, problemsSolved: 1 });
   });
 });

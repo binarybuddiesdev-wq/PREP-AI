@@ -100,7 +100,9 @@ export class CodingService {
         throw new NotFoundException('One or more coding problems were not found');
       }
       if (problemIds.length === 0) throw new NotFoundException('No coding problems are available');
-      return await pg.codingSession.create({ data: { userId, problemIds } });
+      return await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingSession.create({ data: { userId, problemIds } })
+      );
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw this.databaseError(error);
@@ -179,23 +181,25 @@ export class CodingService {
 
   async getExecution(sessionId: string, executionId: string, userId: string) {
     try {
-      const execution = await this.database().codingExecution.findFirst({
-        where: { id: executionId, sessionId, userId },
-        select: {
-          id: true,
-          sessionId: true,
-          problemId: true,
-          operation: true,
-          language: true,
-          status: true,
-          result: true,
-          failureMessage: true,
-          createdAt: true,
-          startedAt: true,
-          completedAt: true,
-          answer: true,
-        },
-      });
+      const execution = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingExecution.findFirst({
+          where: { id: executionId, sessionId, userId },
+          select: {
+            id: true,
+            sessionId: true,
+            problemId: true,
+            operation: true,
+            language: true,
+            status: true,
+            result: true,
+            failureMessage: true,
+            createdAt: true,
+            startedAt: true,
+            completedAt: true,
+            answer: true,
+          },
+        })
+      );
       if (!execution) throw new NotFoundException('Coding execution not found');
       return execution;
     } catch (error) {
@@ -206,10 +210,12 @@ export class CodingService {
 
   async getSessionDetail(sessionId: string, userId: string) {
     try {
-      const session = await this.database().codingSession.findFirst({
-        where: { id: sessionId, userId },
-        include: { answers: { orderBy: { createdAt: 'asc' } } },
-      });
+      const session = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingSession.findFirst({
+          where: { id: sessionId, userId },
+          include: { answers: { orderBy: { createdAt: 'asc' } } },
+        })
+      );
       if (!session) throw new NotFoundException(CODING_SESSION_NOT_FOUND);
       return session;
     } catch (error) {
@@ -221,18 +227,22 @@ export class CodingService {
   async completeSession(sessionId: string, userId: string) {
     const pg = this.database();
     try {
-      const session = await pg.codingSession.findFirst({ where: { id: sessionId, userId } });
-      if (!session) throw new NotFoundException(CODING_SESSION_NOT_FOUND);
-      if (session.status !== 'in_progress') {
-        throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
-      }
-      const completedAt = new Date();
-      const updated = await pg.codingSession.updateMany({
-        where: { id: sessionId, userId, status: 'in_progress' },
-        data: { status: 'completed', completedAt },
+      return await this.postgres.withTenantContext(userId, async (transaction) => {
+        const session = await transaction.codingSession.findFirst({
+          where: { id: sessionId, userId },
+        });
+        if (!session) throw new NotFoundException(CODING_SESSION_NOT_FOUND);
+        if (session.status !== 'in_progress') {
+          throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
+        }
+        const completedAt = new Date();
+        const updated = await transaction.codingSession.updateMany({
+          where: { id: sessionId, userId, status: 'in_progress' },
+          data: { status: 'completed', completedAt },
+        });
+        if (updated.count !== 1) throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
+        return { ...session, status: 'completed', completedAt };
       });
-      if (updated.count !== 1) throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
-      return { ...session, status: 'completed', completedAt };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ConflictException) throw error;
       throw this.databaseError(error);
@@ -244,15 +254,17 @@ export class CodingService {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
     try {
-      const [sessions, total] = await Promise.all([
-        pg.codingSession.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        pg.codingSession.count({ where: { userId } }),
-      ]);
+      const [sessions, total] = await this.postgres.withTenantContext(userId, (transaction) =>
+        Promise.all([
+          transaction.codingSession.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            skip: (page - 1) * limit,
+            take: limit,
+          }),
+          transaction.codingSession.count({ where: { userId } }),
+        ])
+      );
       return { sessions, total, page, limit };
     } catch (error) {
       throw this.databaseError(error);
@@ -262,7 +274,9 @@ export class CodingService {
   private async loadSessionProblem(sessionId: string, userId: string, problemId: string) {
     let session;
     try {
-      session = await this.database().codingSession.findFirst({ where: { id: sessionId, userId } });
+      session = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingSession.findFirst({ where: { id: sessionId, userId } })
+      );
     } catch (error) {
       throw this.databaseError(error);
     }
@@ -304,24 +318,26 @@ export class CodingService {
     const queueJobId = this.jobs.getJobId(JOB_QUEUE_NAMES.CODING_EXECUTION, executionId);
     let execution;
     try {
-      execution = await this.database().codingExecution.create({
-        data: {
-          id: executionId,
-          sessionId,
-          userId,
-          problemId: dto.problemId,
-          operation,
-          language: dto.language,
-          status: 'queued',
-          sourceCode: dto.code,
-          examples: examples as Prisma.InputJsonValue,
-          queueJobId,
-          quotaKey: quotaReservation?.quotaKey ?? null,
-          quotaItemKey: quotaReservation?.itemKey ?? null,
-          quotaTtlSeconds: quotaReservation?.ttlSeconds ?? null,
-          quotaReservationToken: quotaReservation?.reservationToken ?? null,
-        },
-      });
+      execution = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingExecution.create({
+          data: {
+            id: executionId,
+            sessionId,
+            userId,
+            problemId: dto.problemId,
+            operation,
+            language: dto.language,
+            status: 'queued',
+            sourceCode: dto.code,
+            examples: examples as Prisma.InputJsonValue,
+            queueJobId,
+            quotaKey: quotaReservation?.quotaKey ?? null,
+            quotaItemKey: quotaReservation?.itemKey ?? null,
+            quotaTtlSeconds: quotaReservation?.ttlSeconds ?? null,
+            quotaReservationToken: quotaReservation?.reservationToken ?? null,
+          },
+        })
+      );
     } catch (error) {
       throw this.databaseError(error);
     }
@@ -342,14 +358,16 @@ export class CodingService {
       await this.jobs.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, jobData, 'execute');
     } catch (error) {
       try {
-        await this.database().codingExecution.updateMany({
-          where: { id: executionId, status: 'queued' },
-          data: {
-            status: 'failed',
-            failureMessage: CODING_EXECUTION_FAILED,
-            completedAt: new Date(),
-          },
-        });
+        await this.postgres.withTenantContext(userId, (transaction) =>
+          transaction.codingExecution.updateMany({
+            where: { id: executionId, userId, status: 'queued' },
+            data: {
+              status: 'failed',
+              failureMessage: CODING_EXECUTION_FAILED,
+              completedAt: new Date(),
+            },
+          })
+        );
       } catch (persistenceError) {
         this.logger.error(
           { executionId, err: persistenceError },

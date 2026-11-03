@@ -7,6 +7,7 @@ import {
   createIntegrationLogger,
   createTestUserPair,
   disconnectIsolationTestDatabases,
+  withTestUserContext,
 } from './data-isolation-test-support.js';
 
 type TDatabase = Awaited<ReturnType<typeof connectIsolationTestDatabases>>;
@@ -56,42 +57,47 @@ describe('PostgreSQL theory data isolation', () => {
       },
     });
 
-    const pg = database.postgres;
     const createSession = (userId: string, data: Record<string, unknown> = {}) =>
-      pg.theorySession.create({
-        data: {
-          userId,
-          topicId,
-          mode: 'topic',
-          difficulty: 'Junior',
-          totalQuestions: 1,
-          ...data,
-        } as never,
-      });
+      withTestUserContext(database!, userId, (transaction) =>
+        transaction.theorySession.create({
+          data: {
+            userId,
+            topicId,
+            mode: 'topic',
+            difficulty: 'Junior',
+            totalQuestions: 1,
+            ...data,
+          } as never,
+        })
+      );
 
     [sessionA, sessionB] = await Promise.all([
       createSession(users.userA.clerkUserId, { questionsAnswered: 1 }),
       createSession(users.userB.clerkUserId, { questionsAnswered: 1 }),
     ]);
     [answerA, answerB] = await Promise.all([
-      pg.theoryAnswer.create({
-        data: {
-          sessionId: sessionA.id,
-          questionText: 'A question for A',
-          userAnswer: 'A answer',
-          aiScore: 4,
-          status: 'completed',
-        },
-      }),
-      pg.theoryAnswer.create({
-        data: {
-          sessionId: sessionB.id,
-          questionText: 'A question for B',
-          userAnswer: 'B answer',
-          aiScore: 10,
-          status: 'completed',
-        },
-      }),
+      withTestUserContext(database, users.userA.clerkUserId, (transaction) =>
+        transaction.theoryAnswer.create({
+          data: {
+            sessionId: sessionA.id,
+            questionText: 'A question for A',
+            userAnswer: 'A answer',
+            aiScore: 4,
+            status: 'completed',
+          },
+        })
+      ),
+      withTestUserContext(database, users.userB.clerkUserId, (transaction) =>
+        transaction.theoryAnswer.create({
+          data: {
+            sessionId: sessionB.id,
+            questionText: 'A question for B',
+            userAnswer: 'B answer',
+            aiScore: 10,
+            status: 'completed',
+          },
+        })
+      ),
     ]);
     [submissionSessionA, submissionSessionB] = await Promise.all([
       createSession(users.userA.clerkUserId),
@@ -118,9 +124,14 @@ describe('PostgreSQL theory data isolation', () => {
   afterAll(async () => {
     if (!database) return;
     if (users) {
-      await database.postgres.theorySession.deleteMany({
-        where: { userId: { in: [users.userA.clerkUserId, users.userB.clerkUserId] } },
-      });
+      await Promise.all([
+        withTestUserContext(database, users.userA.clerkUserId, (transaction) =>
+          transaction.theorySession.deleteMany({ where: { userId: users!.userA.clerkUserId } })
+        ),
+        withTestUserContext(database, users.userB.clerkUserId, (transaction) =>
+          transaction.theorySession.deleteMany({ where: { userId: users!.userB.clerkUserId } })
+        ),
+      ]);
       if (topicId) {
         await database.mongo.question.deleteMany({ where: { topicId } });
         await database.mongo.topic.delete({ where: { id: topicId } });
@@ -183,10 +194,14 @@ describe('PostgreSQL theory data isolation', () => {
       service.submitAnswer(submissionSessionB.id, users!.userA.clerkUserId, dto, key)
     ).rejects.toBeInstanceOf(NotFoundException);
     await expect(
-      database!.postgres.theoryAnswer.count({ where: { sessionId: submissionSessionA.id } })
+      withTestUserContext(database!, users!.userA.clerkUserId, (transaction) =>
+        transaction.theoryAnswer.count({ where: { sessionId: submissionSessionA.id } })
+      )
     ).resolves.toBe(1);
     await expect(
-      database!.postgres.theoryAnswer.count({ where: { sessionId: submissionSessionB.id } })
+      withTestUserContext(database!, users!.userA.clerkUserId, (transaction) =>
+        transaction.theoryAnswer.count({ where: { sessionId: submissionSessionB.id } })
+      )
     ).resolves.toBe(0);
   });
 
@@ -198,7 +213,9 @@ describe('PostgreSQL theory data isolation', () => {
       service.completeSession(completionSessionB.id, users!.userA.clerkUserId)
     ).rejects.toBeInstanceOf(NotFoundException);
     await expect(
-      database!.postgres.theorySession.findUnique({ where: { id: completionSessionB.id } })
+      withTestUserContext(database!, users!.userB.clerkUserId, (transaction) =>
+        transaction.theorySession.findUnique({ where: { id: completionSessionB.id } })
+      )
     ).resolves.toMatchObject({ userId: users!.userB.clerkUserId, status: 'in_progress' });
   });
 
@@ -236,7 +253,9 @@ describe('PostgreSQL theory data isolation', () => {
 
     expect(startedSessionA.userId).toBe(users!.userA.clerkUserId);
     await expect(
-      database!.postgres.theorySession.findUnique({ where: { id: startedSessionA.id } })
+      withTestUserContext(database!, users!.userA.clerkUserId, (transaction) =>
+        transaction.theorySession.findUnique({ where: { id: startedSessionA.id } })
+      )
     ).resolves.toMatchObject({ userId: users!.userA.clerkUserId });
   });
 });

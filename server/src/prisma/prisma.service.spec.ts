@@ -7,6 +7,8 @@ const prismaMocks = vi.hoisted(() => ({
   postgresConnect: vi.fn(),
   postgresDisconnect: vi.fn(),
   postgresConstructor: vi.fn(),
+  postgresTransaction: vi.fn(),
+  postgresExecuteRaw: vi.fn(),
 }));
 
 vi.mock('@prisma/client', () => ({
@@ -23,8 +25,8 @@ vi.mock('@prisma/client', () => ({
 
 vi.mock('../generated/postgresql-client/index.js', () => ({
   PrismaClient: class PostgresPrismaClientMock {
-    constructor() {
-      prismaMocks.postgresConstructor();
+    constructor(options?: unknown) {
+      prismaMocks.postgresConstructor(options);
     }
 
     $connect() {
@@ -33,6 +35,10 @@ vi.mock('../generated/postgresql-client/index.js', () => ({
 
     $disconnect() {
       return prismaMocks.postgresDisconnect();
+    }
+
+    $transaction(callback: (transaction: unknown) => unknown) {
+      return prismaMocks.postgresTransaction(callback);
     }
   },
 }));
@@ -50,6 +56,10 @@ describe('Prisma services', () => {
     prismaMocks.mongoDisconnect.mockResolvedValue(undefined);
     prismaMocks.postgresConnect.mockResolvedValue(undefined);
     prismaMocks.postgresDisconnect.mockResolvedValue(undefined);
+    prismaMocks.postgresExecuteRaw.mockResolvedValue(1);
+    prismaMocks.postgresTransaction.mockImplementation((callback) =>
+      callback({ $executeRaw: prismaMocks.postgresExecuteRaw })
+    );
     log = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
@@ -106,6 +116,53 @@ describe('Prisma services', () => {
     expect(prismaMocks.postgresConnect).toHaveBeenCalledOnce();
     expect(prismaMocks.postgresDisconnect).toHaveBeenCalledOnce();
     expect(log).toHaveBeenCalledWith('PostgreSQL connected');
+  });
+
+  it('sets user identity inside a transaction before running tenant work', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    const operation = vi.fn().mockResolvedValue('tenant-result');
+    await service.onModuleInit();
+
+    await expect(service.withTenantContext('user_123', operation)).resolves.toBe('tenant-result');
+
+    expect(prismaMocks.postgresTransaction).toHaveBeenCalledOnce();
+    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledOnce();
+    expect(operation).toHaveBeenCalledOnce();
+    await service.onModuleDestroy();
+  });
+
+  it('rejects empty tenant identities before starting a transaction', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.withTenantContext('  ', async () => undefined)).rejects.toThrow(
+      'Tenant identity is required'
+    );
+    expect(prismaMocks.postgresTransaction).not.toHaveBeenCalled();
+    await service.onModuleDestroy();
+  });
+
+  it('connects the worker role separately and scopes its job transaction', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    const operation = vi.fn().mockResolvedValue('worker-result');
+    await service.onModuleInit();
+
+    await expect(service.withWorkerJobContext('job_123', operation)).resolves.toBe('worker-result');
+
+    expect(prismaMocks.postgresConstructor).toHaveBeenNthCalledWith(1, {
+      datasourceUrl: 'postgresql://api@localhost:5432/prepai',
+    });
+    expect(prismaMocks.postgresConstructor).toHaveBeenNthCalledWith(2, {
+      datasourceUrl: 'postgresql://worker@localhost:5432/prepai',
+    });
+    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledOnce();
+    expect(operation).toHaveBeenCalledOnce();
+    await service.onModuleDestroy();
+    expect(prismaMocks.postgresDisconnect).toHaveBeenCalledTimes(2);
   });
 
   it('logs PostgreSQL connection failures without failing module initialization', async () => {

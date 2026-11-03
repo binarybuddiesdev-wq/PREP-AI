@@ -25,6 +25,7 @@ describe('TheoryService', () => {
     question: { findMany: ReturnType<typeof vi.fn> };
   };
   let postgres: {
+    withTenantContext: (userId: string, operation: (tx: unknown) => unknown) => Promise<unknown>;
     client_: {
       theorySession: {
         count: ReturnType<typeof vi.fn>;
@@ -42,7 +43,7 @@ describe('TheoryService', () => {
         findMany: ReturnType<typeof vi.fn>;
         updateMany: ReturnType<typeof vi.fn>;
       };
-      $transaction: ReturnType<typeof vi.fn>;
+      $transaction: (operation: (tx: unknown) => unknown) => Promise<unknown>;
     };
   };
   let redis: {
@@ -123,6 +124,9 @@ describe('TheoryService', () => {
     };
 
     postgres = {
+      withTenantContext: vi.fn((_userId: string, operation: (tx: unknown) => unknown) =>
+        postgres.client_.$transaction(operation)
+      ),
       client_: {
         theorySession: {
           count: vi.fn(),
@@ -164,6 +168,13 @@ describe('TheoryService', () => {
     };
 
     vi.clearAllMocks();
+    const scopedClient = postgres.client_;
+    (scopedClient.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+      async (operation: (tx: unknown) => unknown) => operation(scopedClient)
+    );
+    (postgres.withTenantContext as ReturnType<typeof vi.fn>).mockImplementation(
+      (_userId: string, operation: (tx: unknown) => unknown) => scopedClient.$transaction(operation)
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -573,7 +584,7 @@ describe('TheoryService', () => {
       const result = await service.submitAnswer('session_001', 'user_001', dto, 'request_001');
 
       expect(result).toEqual(queuedAnswer);
-      expect(postgres.client_.$transaction).toHaveBeenCalledOnce();
+      expect(postgres.client_.$transaction).toHaveBeenCalledTimes(2);
       expect(postgres.client_.theoryAnswer.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           id: createTheoryAnswerId('session_001', 'request_001'),
@@ -603,7 +614,7 @@ describe('TheoryService', () => {
         service.submitAnswer('session_001', 'user_001', changedDto, 'request_001')
       ).resolves.toEqual(queuedAnswer);
 
-      expect(postgres.client_.$transaction).not.toHaveBeenCalled();
+      expect(postgres.client_.$transaction).toHaveBeenCalledOnce();
       expect(jobs.enqueue).not.toHaveBeenCalled();
       expect(postgres.client_.theoryAnswer.findFirst).toHaveBeenCalledWith({
         where: {
@@ -618,7 +629,14 @@ describe('TheoryService', () => {
       postgres.client_.theoryAnswer.findFirst
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(queuedAnswer);
-      postgres.client_.$transaction.mockRejectedValue({ code: 'P2002' });
+      const tx = postgres.client_.$transaction as ReturnType<typeof vi.fn>;
+      tx.mockImplementationOnce(async (operation: (client: unknown) => unknown) =>
+        operation(postgres.client_)
+      );
+      tx.mockRejectedValueOnce({ code: 'P2002' });
+      tx.mockImplementationOnce(async (operation: (client: unknown) => unknown) =>
+        operation(postgres.client_)
+      );
 
       await expect(
         service.submitAnswer('session_001', 'user_001', dto, 'request_001')

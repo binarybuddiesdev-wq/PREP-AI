@@ -20,21 +20,22 @@ export class CodingExecutionService {
   ) {}
 
   async markRunning(executionId: string): Promise<TCodingExecutionResult | null> {
-    const pg = this.database();
     try {
-      const execution = await pg.codingExecution.findUnique({ where: { id: executionId } });
-      if (!execution) throw new Error('Coding execution record is missing');
-      if (execution.status === 'completed' && execution.result) {
-        return execution.result as unknown as TCodingExecutionResult;
-      }
-      if (execution.status === 'failed') throw new Error(CODING_EXECUTION_FAILED);
-      if (execution.status === 'queued') {
-        await pg.codingExecution.updateMany({
-          where: { id: executionId, status: 'queued' },
-          data: { status: 'running', startedAt: new Date() },
-        });
-      }
-      return null;
+      return await this.withWorkerExecution(executionId, async (tx, owner) => {
+        const execution = await tx.codingExecution.findUnique({ where: { id: executionId } });
+        if (!execution) throw new Error('Coding execution record is missing');
+        if (execution.status === 'completed' && execution.result) {
+          return execution.result as unknown as TCodingExecutionResult;
+        }
+        if (execution.status === 'failed') throw new Error(CODING_EXECUTION_FAILED);
+        if (execution.status === 'queued') {
+          await tx.codingExecution.updateMany({
+            where: { id: executionId, userId: owner.owner_id, status: 'queued' },
+            data: { status: 'running', startedAt: new Date(), dispatchClaimedAt: null },
+          });
+        }
+        return null;
+      });
     } catch (error) {
       throw this.databaseError(error);
     }
@@ -44,12 +45,9 @@ export class CodingExecutionService {
     jobData: ICodingExecutionJobData,
     result: TCodingExecutionResult
   ): Promise<TCodingExecutionResult> {
-    const pg = this.database();
     try {
-      return await pg.$transaction(async (tx: Prisma.TransactionClient) => {
-        const current = await tx.codingExecution.findUnique({
-          where: { id: jobData.executionId },
-        });
+      return await this.withWorkerExecution(jobData.executionId, async (tx, owner) => {
+        const current = await tx.codingExecution.findUnique({ where: { id: jobData.executionId } });
         if (!current) throw new Error('Coding execution record is missing');
         if (current.status === 'completed' && current.result) {
           return current.result as unknown as TCodingExecutionResult;
@@ -57,7 +55,11 @@ export class CodingExecutionService {
         if (current.status === 'failed') throw new Error(CODING_EXECUTION_FAILED);
 
         const transitioned = await tx.codingExecution.updateMany({
-          where: { id: jobData.executionId, status: { in: ['queued', 'running'] } },
+          where: {
+            id: jobData.executionId,
+            userId: owner.owner_id,
+            status: { in: ['queued', 'running'] },
+          },
           data: {
             status: 'completed',
             result: result as unknown as Prisma.InputJsonValue,
@@ -75,7 +77,9 @@ export class CodingExecutionService {
           throw new Error('Coding execution could not transition to completed');
         }
 
-        if (jobData.operation === 'submit') await this.persistAnswer(tx, jobData, result);
+        const persistedJobData = this.toJobData(current);
+        if (persistedJobData.operation === 'submit')
+          await this.persistAnswer(tx, persistedJobData, result);
         return result;
       });
     } catch (error) {
@@ -86,13 +90,11 @@ export class CodingExecutionService {
 
   async markFailed(executionId: string, failureMessage = CODING_EXECUTION_FAILED): Promise<void> {
     try {
-      await this.database().codingExecution.updateMany({
-        where: { id: executionId, status: { in: ['queued', 'running'] } },
-        data: {
-          status: 'failed',
-          failureMessage,
-          completedAt: new Date(),
-        },
+      await this.withWorkerExecution(executionId, async (tx, owner) => {
+        await tx.codingExecution.updateMany({
+          where: { id: executionId, userId: owner.owner_id, status: { in: ['queued', 'running'] } },
+          data: { status: 'failed', failureMessage, completedAt: new Date() },
+        });
       });
     } catch (error) {
       throw this.databaseError(error);
@@ -101,56 +103,13 @@ export class CodingExecutionService {
 
   async findQueuedForDispatch(limit = 100): Promise<ICodingExecutionJobData[]> {
     try {
-      const queued = await this.database().codingExecution.findMany({
-        where: { status: 'queued' },
-        orderBy: { createdAt: 'asc' },
-        take: limit,
-        select: {
-          id: true,
-          sessionId: true,
-          userId: true,
-          problemId: true,
-          operation: true,
-          language: true,
-          sourceCode: true,
-          examples: true,
-          quotaKey: true,
-          quotaItemKey: true,
-          quotaTtlSeconds: true,
-          quotaReservationToken: true,
-        },
-      });
-      return queued.map((execution) => {
-        const reservationFields = [
-          execution.quotaKey,
-          execution.quotaItemKey,
-          execution.quotaTtlSeconds,
-          execution.quotaReservationToken,
-        ];
-        const hasReservation = reservationFields.some((field) => field !== null);
-        if (hasReservation && reservationFields.some((field) => field === null)) {
-          throw new Error(`Coding execution ${execution.id} has incomplete quota metadata`);
-        }
-        return {
-          idempotencyKey: execution.id,
-          executionId: execution.id,
-          sessionId: execution.sessionId,
-          userId: execution.userId,
-          problemId: execution.problemId,
-          operation: execution.operation as ICodingExecutionJobData['operation'],
-          language: execution.language as ICodingExecutionJobData['language'],
-          code: execution.sourceCode,
-          examples: execution.examples,
-          quotaReservation: hasReservation
-            ? {
-                quotaKey: execution.quotaKey!,
-                itemKey: execution.quotaItemKey!,
-                ttlSeconds: execution.quotaTtlSeconds!,
-                reservationToken: execution.quotaReservationToken!,
-              }
-            : null,
-        };
-      });
+      const worker = this.workerDatabase();
+      const queued = await worker.$queryRaw<Array<{ execution_id: string }>>`
+        SELECT execution_id FROM public.prepai_list_queued_coding_execution_ids(${limit}::integer)
+      `;
+      return await Promise.all(
+        queued.map(({ execution_id }) => this.loadPersistedJobData(execution_id))
+      );
     } catch (error) {
       throw this.databaseError(error);
     }
@@ -206,9 +165,81 @@ export class CodingExecutionService {
     });
   }
 
-  private database(): PostgresPrismaClient {
-    if (!this.postgres.client_) throw new ServiceUnavailableException(CODING_DATABASE_UNAVAILABLE);
-    return this.postgres.client_ as PostgresPrismaClient;
+  async loadPersistedJobData(executionId: string): Promise<ICodingExecutionJobData> {
+    return this.withWorkerExecution(executionId, async (tx) => {
+      const execution = await tx.codingExecution.findUnique({ where: { id: executionId } });
+      if (!execution) throw new Error(`Coding execution ${executionId} is missing`);
+      return this.toJobData(execution);
+    });
+  }
+
+  private toJobData(execution: {
+    id: string;
+    sessionId: string;
+    userId: string;
+    problemId: string;
+    operation: string;
+    language: string;
+    sourceCode: string;
+    examples: unknown;
+    quotaKey: string | null;
+    quotaItemKey: string | null;
+    quotaTtlSeconds: number | null;
+    quotaReservationToken: string | null;
+  }): ICodingExecutionJobData {
+    const reservationFields = [
+      execution.quotaKey,
+      execution.quotaItemKey,
+      execution.quotaTtlSeconds,
+      execution.quotaReservationToken,
+    ];
+    const hasReservation = reservationFields.some((field) => field !== null);
+    if (hasReservation && reservationFields.some((field) => field === null)) {
+      throw new Error(`Coding execution ${execution.id} has incomplete quota metadata`);
+    }
+    return {
+      idempotencyKey: execution.id,
+      executionId: execution.id,
+      sessionId: execution.sessionId,
+      userId: execution.userId,
+      problemId: execution.problemId,
+      operation: execution.operation as ICodingExecutionJobData['operation'],
+      language: execution.language as ICodingExecutionJobData['language'],
+      code: execution.sourceCode,
+      examples: execution.examples,
+      quotaReservation: hasReservation
+        ? {
+            quotaKey: execution.quotaKey!,
+            itemKey: execution.quotaItemKey!,
+            ttlSeconds: execution.quotaTtlSeconds!,
+            reservationToken: execution.quotaReservationToken!,
+          }
+        : null,
+    };
+  }
+
+  private async withWorkerExecution<T>(
+    executionId: string,
+    operation: (
+      transaction: Prisma.TransactionClient,
+      owner: { owner_id: string; session_id: string }
+    ) => Promise<T>
+  ): Promise<T> {
+    return this.postgres.withWorkerJobContext(executionId, async (transaction) => {
+      const [owner] = await transaction.$queryRaw<Array<{ owner_id: string; session_id: string }>>`
+        SELECT owner_id, session_id FROM public.prepai_get_coding_execution_owner(${executionId})
+      `;
+      if (!owner) throw new Error('Coding execution record is missing');
+      await this.postgres.setTenantContext(transaction, owner.owner_id);
+      await this.postgres.setWorkerSessionContext(transaction, owner.session_id);
+      return operation(transaction, owner);
+    });
+  }
+
+  private workerDatabase(): PostgresPrismaClient {
+    if (!this.postgres.workerClient_)
+      throw new ServiceUnavailableException(CODING_DATABASE_UNAVAILABLE);
+    return this.postgres.workerClient_ as PostgresPrismaClient;
   }
 
   private databaseError(error: unknown) {

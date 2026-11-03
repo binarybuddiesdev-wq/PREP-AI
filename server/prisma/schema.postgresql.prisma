@@ -49,6 +49,7 @@ model TheoryAnswer {
   failureMessage          String?
   timeTaken               Int? // seconds
   startedAt               DateTime?
+  dispatchClaimedAt       DateTime?
   completedAt             DateTime?
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @default(now()) @updatedAt
@@ -57,6 +58,7 @@ model TheoryAnswer {
 
   @@index([sessionId])
   @@index([status, createdAt])
+  @@index([status, dispatchClaimedAt, createdAt])
 }
 
 model CodingSession {
@@ -142,6 +144,7 @@ model CodingExecution {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   startedAt             DateTime?
+  dispatchClaimedAt     DateTime?
   completedAt           DateTime?
 
   session CodingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -150,5 +153,6 @@ model CodingExecution {
   @@index([userId, createdAt])
   @@index([sessionId, userId, createdAt])
   @@index([status, createdAt])
+  @@index([status, dispatchClaimedAt, createdAt])
   @@index([queueJobId])
 }
