@@ -16,6 +16,10 @@ import { RedisService } from '@/common/redis/redis.service.js';
 import { createHash } from 'node:crypto';
 import { createPdfUploadSourceId } from './pdf-upload-idempotency.js';
 import { IDEMPOTENCY_KEY_REUSED } from '@/common/constants/api.constants.js';
+import {
+  createIdempotencyOperationId,
+  createIdempotencyRequestFingerprint,
+} from '@/common/idempotency/index.js';
 
 describe('PdfService', () => {
   let service: PdfService;
@@ -382,6 +386,110 @@ describe('PdfService', () => {
     await expect(service.delete('x', 'u')).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('replays a prior reindex request before checking source status or queuing work', async () => {
+    const operationId = createIdempotencyOperationId('user_1', 'pdf-reindex:source_1', 'same-key');
+    prisma.pdfSource.findFirst.mockResolvedValueOnce({
+      id: 'source_1',
+      userId: 'user_1',
+      status: 'processing',
+      requestedRevision: 3,
+      reindexOperations: [
+        {
+          operationId,
+          requestFingerprint: createIdempotencyRequestFingerprint('pdf-reindex', {
+            sourceId: 'source_1',
+          }),
+          requestedRevision: 3,
+        },
+      ],
+    });
+
+    await expect(service.reindex('source_1', 'user_1', 'same-key')).resolves.toEqual({
+      id: 'source_1',
+      status: 'queued',
+      requestedRevision: 3,
+    });
+
+    expect(prisma.pdfSource.updateMany).not.toHaveBeenCalled();
+    expect(jobs.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('replays an accepted reindex after the source has since been deleted', async () => {
+    const operationId = createIdempotencyOperationId('user_1', 'pdf-reindex:source_1', 'same-key');
+    prisma.pdfSource.findFirst.mockResolvedValueOnce({
+      id: 'source_1',
+      userId: 'user_1',
+      status: 'deleted',
+      requestedRevision: 3,
+      reindexOperations: [
+        {
+          operationId,
+          requestFingerprint: createIdempotencyRequestFingerprint('pdf-reindex', {
+            sourceId: 'source_1',
+          }),
+          requestedRevision: 3,
+        },
+      ],
+    });
+
+    await expect(service.reindex('source_1', 'user_1', 'same-key')).resolves.toEqual({
+      id: 'source_1',
+      status: 'queued',
+      requestedRevision: 3,
+    });
+
+    expect(prisma.pdfSource.updateMany).not.toHaveBeenCalled();
+    expect(jobs.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reindex operation whose persisted fingerprint does not match', async () => {
+    const operationId = createIdempotencyOperationId('user_1', 'pdf-reindex:source_1', 'same-key');
+    prisma.pdfSource.findFirst.mockResolvedValueOnce({
+      id: 'source_1',
+      userId: 'user_1',
+      status: 'ready',
+      requestedRevision: 3,
+      reindexOperations: [{ operationId, requestFingerprint: 'different', requestedRevision: 3 }],
+    });
+
+    await expect(service.reindex('source_1', 'user_1', 'same-key')).rejects.toThrow(
+      IDEMPOTENCY_KEY_REUSED
+    );
+  });
+
+  it('replays the winning revision when concurrent reindex calls use the same key', async () => {
+    const operationId = createIdempotencyOperationId('user_1', 'pdf-reindex:source_1', 'same-key');
+    const source = {
+      id: 'source_1',
+      userId: 'user_1',
+      status: 'ready',
+      activeRevision: 2,
+      requestedRevision: 2,
+      assetId: 'private-asset',
+    };
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(source).mockResolvedValueOnce({
+      ...source,
+      requestedRevision: 3,
+      reindexOperations: [
+        {
+          operationId,
+          requestFingerprint: createIdempotencyRequestFingerprint('pdf-reindex', {
+            sourceId: 'source_1',
+          }),
+          requestedRevision: 3,
+        },
+      ],
+    });
+    prisma.pdfSource.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(service.reindex('source_1', 'user_1', 'same-key')).resolves.toMatchObject({
+      requestedRevision: 3,
+    });
+
+    expect(prisma.pdfSource.updateMany).toHaveBeenCalledOnce();
+    expect(jobs.enqueue).not.toHaveBeenCalled();
+  });
+
   it('queues a new revision for reindexing without replacing the active revision early', async () => {
     prisma.pdfSource.findFirst.mockResolvedValue({
       id: 'source_1',
@@ -393,14 +501,31 @@ describe('PdfService', () => {
     });
     prisma.pdfSource.updateMany.mockResolvedValue({ count: 1 });
 
-    await expect(service.reindex('source_1', 'user_1')).resolves.toEqual({
+    const idempotencyKey = 'retry-reindex';
+    await expect(service.reindex('source_1', 'user_1', idempotencyKey)).resolves.toEqual({
       id: 'source_1',
       status: 'queued',
       requestedRevision: 3,
     });
     expect(prisma.pdfSource.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ requestedRevision: 3, dispatchNeeded: true }),
+        data: expect.objectContaining({
+          requestedRevision: 3,
+          dispatchNeeded: true,
+          reindexOperations: [
+            {
+              operationId: createIdempotencyOperationId(
+                'user_1',
+                'pdf-reindex:source_1',
+                idempotencyKey
+              ),
+              requestFingerprint: createIdempotencyRequestFingerprint('pdf-reindex', {
+                sourceId: 'source_1',
+              }),
+              requestedRevision: 3,
+            },
+          ],
+        }),
       })
     );
     expect(jobs.enqueue).toHaveBeenCalledWith(
@@ -412,17 +537,20 @@ describe('PdfService', () => {
 
   it('rejects reindexing missing, unavailable, or concurrently changed sources', async () => {
     prisma.pdfSource.findFirst.mockResolvedValueOnce(null);
-    await expect(service.reindex('x', 'u')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.reindex('x', 'u', 'missing')).rejects.toBeInstanceOf(NotFoundException);
     prisma.pdfSource.findFirst.mockResolvedValueOnce({ id: 'x', status: 'ready', assetId: null });
-    await expect(service.reindex('x', 'u')).rejects.toBeInstanceOf(ConflictException);
-    prisma.pdfSource.findFirst.mockResolvedValueOnce({
+    await expect(service.reindex('x', 'u', 'no-asset')).rejects.toBeInstanceOf(ConflictException);
+    const concurrentSource = {
       id: 'x',
       status: 'ready',
       assetId: 'asset',
       requestedRevision: 1,
-    });
+    };
+    prisma.pdfSource.findFirst
+      .mockResolvedValueOnce(concurrentSource)
+      .mockResolvedValueOnce(concurrentSource);
     prisma.pdfSource.updateMany.mockResolvedValueOnce({ count: 0 });
-    await expect(service.reindex('x', 'u')).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.reindex('x', 'u', 'changed')).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('keeps reindex recoverable when enqueue fails', async () => {
@@ -434,7 +562,9 @@ describe('PdfService', () => {
     });
     prisma.pdfSource.updateMany.mockResolvedValue({ count: 1 });
     jobs.enqueue.mockRejectedValueOnce(new Error('redis down'));
-    await expect(service.reindex('source_1', 'u')).resolves.toMatchObject({ requestedRevision: 4 });
+    await expect(
+      service.reindex('source_1', 'u', 'retry-after-queue-failure')
+    ).resolves.toMatchObject({ requestedRevision: 4 });
   });
 
   it('claims and dispatches queued and deleting sources, leaving failed claims untouched', async () => {

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { RedisService } from '@/common/redis/redis.service.js';
@@ -15,12 +16,23 @@ import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 import { PdfStorageService } from './pdf-storage.service.js';
 import { PdfTextExtractor } from './pdf-text-extractor.js';
 import { validatePdfUpload } from './pdf-upload.validation.js';
-import { requireIdempotencyKey } from '@/common/idempotency/index.js';
+import {
+  createIdempotencyOperationId,
+  createIdempotencyRequestFingerprint,
+  requireIdempotencyKey,
+} from '@/common/idempotency/index.js';
 import { createPdfUploadSourceId } from './pdf-upload-idempotency.js';
 import { IDEMPOTENCY_KEY_REUSED } from '@/common/constants/api.constants.js';
 
 const ACTIVE_STATUSES = ['uploading', 'queued', 'processing', 'ready', 'deleting'];
 const MAX_LIST_LIMIT = 50;
+const MAX_PDF_REINDEX_OPERATIONS = 100;
+
+interface IPdfReindexOperation {
+  operationId: string;
+  requestFingerprint: string;
+  requestedRevision: number;
+}
 
 interface IPdfUploadReplaySource {
   id: string;
@@ -226,15 +238,34 @@ export class PdfService {
     return this.toPublicSource(source);
   }
 
-  async reindex(sourceId: string, userId: string) {
-    const source = await this.prisma.pdfSource.findFirst({
-      where: { id: sourceId, userId, status: { in: ['ready', 'failed'] } },
-    });
-    if (!source) throw new NotFoundException('PDF source not found or cannot be reindexed');
+  async reindex(sourceId: string, userId: string, idempotencyKey: string | undefined) {
+    const key = requireIdempotencyKey(idempotencyKey);
+    const operationId = createIdempotencyOperationId(userId, `pdf-reindex:${sourceId}`, key);
+    const requestFingerprint = createIdempotencyRequestFingerprint('pdf-reindex', { sourceId });
+    const source = await this.prisma.pdfSource.findFirst({ where: { id: sourceId, userId } });
+    if (!source) {
+      throw new NotFoundException('PDF source not found or cannot be reindexed');
+    }
+
+    const existingOperation = this.findReindexOperation(source.reindexOperations, operationId);
+    if (existingOperation)
+      return this.replayReindex(sourceId, existingOperation, requestFingerprint);
+    if (source.status === 'deleted') {
+      throw new NotFoundException('PDF source not found or cannot be reindexed');
+    }
+    if (!['ready', 'failed'].includes(source.status)) {
+      throw new NotFoundException('PDF source not found or cannot be reindexed');
+    }
     if (!source.assetId)
       throw new ConflictException('PDF source file is unavailable for reindexing');
 
     const revision = source.requestedRevision + 1;
+    const operations = this.readReindexOperations(source.reindexOperations);
+    const nextOperation: IPdfReindexOperation = {
+      operationId,
+      requestFingerprint,
+      requestedRevision: revision,
+    };
     const updated = await this.prisma.pdfSource.updateMany({
       where: {
         id: source.id,
@@ -242,10 +273,31 @@ export class PdfService {
         status: source.status,
         requestedRevision: source.requestedRevision,
       },
-      data: { requestedRevision: revision, dispatchNeeded: true, failureCode: null },
+      data: {
+        requestedRevision: revision,
+        dispatchNeeded: true,
+        failureCode: null,
+        reindexOperations: [...operations, nextOperation].slice(
+          -MAX_PDF_REINDEX_OPERATIONS
+        ) as unknown as Prisma.InputJsonValue,
+      },
     });
-    if (!updated.count)
+    if (!updated.count) {
+      const concurrentSource = await this.prisma.pdfSource.findFirst({
+        where: { id: sourceId, userId },
+      });
+      if (!concurrentSource || concurrentSource.status === 'deleted') {
+        throw new NotFoundException('PDF source not found or cannot be reindexed');
+      }
+      const concurrentOperation = this.findReindexOperation(
+        concurrentSource.reindexOperations,
+        operationId
+      );
+      if (concurrentOperation) {
+        return this.replayReindex(sourceId, concurrentOperation, requestFingerprint);
+      }
       throw new ConflictException('PDF source changed; retry the reindex request');
+    }
 
     try {
       await this.jobs.enqueue(
@@ -264,6 +316,42 @@ export class PdfService {
       );
     }
     return { id: source.id, status: 'queued' as const, requestedRevision: revision };
+  }
+
+  private readReindexOperations(value: unknown): IPdfReindexOperation[] {
+    if (!Array.isArray(value)) return [];
+    return value.filter(
+      (operation): operation is IPdfReindexOperation =>
+        typeof operation === 'object' &&
+        operation !== null &&
+        'operationId' in operation &&
+        typeof operation.operationId === 'string' &&
+        'requestFingerprint' in operation &&
+        typeof operation.requestFingerprint === 'string' &&
+        'requestedRevision' in operation &&
+        typeof operation.requestedRevision === 'number'
+    );
+  }
+
+  private findReindexOperation(value: unknown, operationId: string) {
+    return this.readReindexOperations(value).find(
+      (operation) => operation.operationId === operationId
+    );
+  }
+
+  private replayReindex(
+    sourceId: string,
+    operation: IPdfReindexOperation,
+    requestFingerprint: string
+  ) {
+    if (operation.requestFingerprint !== requestFingerprint) {
+      throw new ConflictException(IDEMPOTENCY_KEY_REUSED);
+    }
+    return {
+      id: sourceId,
+      status: 'queued' as const,
+      requestedRevision: operation.requestedRevision,
+    };
   }
 
   async delete(sourceId: string, userId: string) {

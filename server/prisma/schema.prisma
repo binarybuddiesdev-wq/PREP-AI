@@ -40,6 +40,7 @@ model PdfSource {
   status            String    @default("uploading")
   activeRevision    Int       @default(0)
   requestedRevision Int       @default(1)
+  reindexOperations Json?
   failureCode       String?
   dispatchNeeded    Boolean   @default(false)
   dispatchClaimId   String?

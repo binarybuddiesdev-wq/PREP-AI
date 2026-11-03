@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — PDF reindex idempotency
+
+- Required `Idempotency-Key` on PDF reindex and stored the deterministic operation ID, request fingerprint, and assigned revision in an optional MongoDB source ledger.
+- A same-key retry or concurrent loser returns the original revision without another CAS update or queue enqueue. The per-source history is bounded to the latest 100 operations; keys aged out of that history may start a new reindex.
+- Updated the PDF API contract, shared idempotency design, backend tracker, and architecture TODO.
+- Verification: focused PDF service/controller tests passed (32); `pnpm gate -- --stack server --level full` passed (610 tests across 61 files, build, spec type-check, coverage, lint, formatting, Prisma generation, and agent-doc checks); architecture viewer check and `git diff --check` passed. Review's important deleted-source replay finding was fixed with a RED/GREEN test. One minor 404-versus-409 difference when a different reindex loses its CAS to concurrent deletion is deferred.
+
 ## 2026-11-03 — retry-safe session completion
 
 - Theory and coding completion endpoints now return the persisted completed session on a retry instead of returning 409.

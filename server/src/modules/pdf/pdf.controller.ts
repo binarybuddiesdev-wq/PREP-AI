@@ -85,10 +85,22 @@ export class PdfController {
 
   @Post(':pdfId/reindex')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @ApiOperation({ summary: 'Rebuild the searchable index for an owned PDF' })
   @ApiResponse({ status: HttpStatus.ACCEPTED, description: 'PDF reindex accepted' })
-  async reindex(@Param('pdfId') pdfId: string, @CurrentUser('id') userId: string) {
-    return { message: 'PDF reindex queued', data: await this.pdfs.reindex(pdfId, userId) };
+  async reindex(
+    @Param('pdfId') pdfId: string,
+    @CurrentUser('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined
+  ) {
+    return {
+      message: 'PDF reindex queued',
+      data: await this.pdfs.reindex(pdfId, userId, idempotencyKey),
+    };
   }
 
   @Delete(':pdfId')

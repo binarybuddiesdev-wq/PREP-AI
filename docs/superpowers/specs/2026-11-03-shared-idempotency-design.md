@@ -2,17 +2,16 @@
 
 ## Intent
 
-Make retries of theory/coding sessions, asynchronous theory-answer,
-coding-execution, and PDF-upload
-requests safe. A client that loses a response can repeat the same request and
-receive the original persisted operation without consuming another quota slot
-or enqueueing duplicate work.
+Make retries of theory/coding sessions, asynchronous theory answers, coding
+executions, and PDF upload/reindex requests safe. A client that loses a
+response can repeat the same request and receive the original persisted
+operation without consuming another quota slot or enqueueing duplicate work.
 
 ## Goals
 
 - Define one shared key-validation and request-fingerprint policy.
 - Require `Idempotency-Key` for theory session start and answer submission,
-  coding session start and run/submit, and PDF upload.
+  coding session start and run/submit, and PDF upload/reindex.
 - Scope keys to the authenticated actor and operation resource.
 - Return the original persisted session, answer, execution, or PDF source for
   a matching replay.
@@ -25,12 +24,13 @@ or enqueueing duplicate work.
 
 - Add generic HTTP response-caching middleware or store arbitrary response
   bodies containing user data.
-- Make unrelated resource creation, admin writes, webhooks, or PDF reindex/delete
+- Make unrelated resource creation, admin writes, webhooks, or PDF deletion
   operations idempotent in this change.
 - Claim a cross-database exactly-once guarantee. PostgreSQL operation records
   are authoritative for theory and coding operations; external effects remain
   recoverable through their existing queue/state mechanisms.
-- Add database schema changes or touch a user's database.
+- Add relational schema changes or touch a user's database. PDF reindex adds
+  one optional MongoDB source field; existing documents remain valid.
 
 ## Approaches
 
@@ -39,8 +39,9 @@ or enqueueing duplicate work.
    commit with MongoDB writes and external provider effects.
 2. **Domain-record replay (selected):** derive stable operation IDs from the
    key, compare the incoming request fingerprint with the persisted domain
-   record, and return that record on replay. This uses the existing PostgreSQL
-   transaction and worker lifecycle and avoids an extra schema/table.
+   record, and return that record on replay. PostgreSQL resources use their
+   existing records; PDF reindex uses a same-document MongoDB revision compare-
+   and-set to record the operation with its assigned revision.
 3. **Redis-only key reservations:** low database change, but Redis expiry or
    data loss could forget completed operations while durable rows remain.
 
@@ -57,13 +58,16 @@ or enqueueing duplicate work.
   does not enqueue again or reserve a second quota.
 - Same key plus a different fingerprint returns 409 and does not modify the
   original operation.
-- The replay window follows the lifetime of the persisted operation resource;
-  no separate 24-hour response cache is introduced.
+- The replay window follows the lifetime of the persisted operation resource,
+  except PDF reindex, which retains the latest 100 operations per source. No
+  separate 24-hour response cache is introduced.
 - Theory answer IDs retain their current deterministic format for backward
   compatibility. Coding execution IDs become deterministic for a user's
   coding-execution key; queue IDs continue to derive from the execution ID.
 - PDF upload source IDs are deterministic 24-character Mongo ObjectIds derived
   from the actor and key; persisted file metadata acts as the request fingerprint.
+- PDF reindex stores the deterministic operation ID, request fingerprint, and
+  assigned revision in a bounded per-source ledger (the latest 100 operations).
 - Theory session IDs are deterministic PostgreSQL UUIDs derived from the actor
   and key; persisted session fields act as the request fingerprint.
 - Coding session IDs are deterministic PostgreSQL UUIDs derived from the actor
@@ -80,11 +84,6 @@ coverage, and docs after the focused tests.
 
 ## Remaining work
 
-PDF uploads use a deterministic user-scoped Mongo ObjectId and the persisted
-content hash, display name, and byte size as their replay fingerprint. Theory
-session starts use deterministic PostgreSQL IDs and fingerprint mode,
-difficulty, question count, topic ID, and ordered PDF IDs. Coding session starts
-fingerprint the effective assigned problem IDs as an unordered set. Reindex,
-delete, and other mutation types can adopt this policy when their durable
+PDF deletion and other mutations can adopt this policy when their durable
 resource and external side effects can be made replay-safe. The backend tracker
 must keep the policy partial until those routes are explicitly reviewed.

@@ -91,7 +91,10 @@ describe('PdfController', () => {
     const controller = new PdfController(pdfs as never);
     expect(await controller.list('u', { limit: 10 })).toMatchObject({ data: [] });
     expect(await controller.get('pdf_1', 'u')).toMatchObject({ data: { id: 'pdf_1' } });
-    expect(await controller.reindex('pdf_1', 'u')).toMatchObject({ data: { status: 'queued' } });
+    expect(await controller.reindex('pdf_1', 'u', 'request-1')).toMatchObject({
+      data: { status: 'queued' },
+    });
+    expect(pdfs.reindex).toHaveBeenCalledWith('pdf_1', 'u', 'request-1');
     expect(await controller.delete('pdf_1', 'u')).toMatchObject({ data: { status: 'deleting' } });
   });
 });
