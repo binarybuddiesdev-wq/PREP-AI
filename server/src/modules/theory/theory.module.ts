@@ -16,5 +16,6 @@ import { MetricsModule } from '../metrics/metrics.module.js';
     TheoryAiTokenBudgetService,
   ],
   controllers: [TheoryController],
+  exports: [TheoryAiTokenBudgetService],
 })
 export class TheoryModule {}

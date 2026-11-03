@@ -50,6 +50,19 @@ model InAppNotification {
   @@index([userId, readAt, createdAt])
 }
 
+model StudyChatConversation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String
+  title     String
+  messages  Json
+  turnCount Int      @default(0)
+  revision  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt, id])
+}
+
 model PdfSource {
   id                String    @id @default(auto()) @map("_id") @db.ObjectId
   userId            String

@@ -18,6 +18,7 @@ Each module has its own detailed spec file in the `routes/` directory:
 | **Theory**        | [`routes/theory-api-spec.md`](routes/theory-api-spec.md)               | Theory practice sessions, answers, AI scoring, weak areas         |
 | **Coding**        | [`routes/coding-api-spec.md`](routes/coding-api-spec.md)               | Coding problems, sessions, code execution, AI review, daily stats |
 | **Notifications** | [`routes/notifications-api-spec.md`](routes/notifications-api-spec.md) | In-app inbox, daily reminders, preferences, and unsubscribe       |
+| **Study Chat**    | [`routes/study-chat-api-spec.md`](routes/study-chat-api-spec.md)       | Authenticated interview-prep conversations powered by Mastra      |
 
 ---
 

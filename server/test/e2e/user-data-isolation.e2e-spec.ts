@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../src/modules/user/user.service.js';
 import { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
+import { StudyChatService } from '../../src/modules/study-chat/study-chat.service.js';
 import {
   connectIsolationTestDatabases,
   createIntegrationLogger,
@@ -15,6 +16,7 @@ describe('MongoDB user data isolation', () => {
   let users: Awaited<ReturnType<typeof createTestUserPair>> | undefined;
   let service: UserService;
   let notifications: NotificationsService;
+  let studyChat: StudyChatService;
 
   beforeAll(async () => {
     database = await connectIsolationTestDatabases();
@@ -26,6 +28,11 @@ describe('MongoDB user data isolation', () => {
       { get: vi.fn(() => undefined) } as never,
       createIntegrationLogger() as never,
       null
+    );
+    studyChat = new StudyChatService(
+      database.mongo,
+      { generateReply: vi.fn().mockResolvedValue('A study coach response.') } as never,
+      createIntegrationLogger() as never
     );
 
     await Promise.all([
@@ -42,6 +49,7 @@ describe('MongoDB user data isolation', () => {
     if (!database) return;
     if (users) {
       const userIds = [users.userA.id, users.userB.id];
+      await database.mongo.studyChatConversation.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.inAppNotification.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.userSettings.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.user.deleteMany({ where: { id: { in: userIds } } });
@@ -114,6 +122,35 @@ describe('MongoDB user data isolation', () => {
     expect(await notifications.getUnreadNotificationCount(users!.userB.clerkUserId)).toBe(1);
   });
 
+  it('isolates study chat conversations and turns between two users', async () => {
+    const [conversationA, conversationB] = await Promise.all([
+      studyChat.createConversation(users!.userA.clerkUserId, 'Explain binary search'),
+      studyChat.createConversation(users!.userB.clerkUserId, 'Explain hash maps'),
+    ]);
+    const pageA = await studyChat.listConversations(users!.userA.clerkUserId);
+    const pageB = await studyChat.listConversations(users!.userB.clerkUserId);
+
+    expect(pageA.items.map((item) => item.id)).toEqual([conversationA.id]);
+    expect(pageB.items.map((item) => item.id)).toEqual([conversationB.id]);
+    await expect(
+      studyChat.getConversation(users!.userB.clerkUserId, conversationA.id)
+    ).rejects.toThrow('Conversation not found');
+    await expect(
+      studyChat.sendMessage(users!.userB.clerkUserId, conversationA.id, 'Follow up')
+    ).rejects.toThrow('Conversation not found');
+    await expect(
+      studyChat.deleteConversation(users!.userB.clerkUserId, conversationA.id)
+    ).rejects.toThrow('Conversation not found');
+
+    const continued = await studyChat.sendMessage(
+      users!.userA.clerkUserId,
+      conversationA.id,
+      'What is its time complexity?'
+    );
+    expect(continued.turnCount).toBe(2);
+    expect(continued.messages).toHaveLength(4);
+  });
+
   it('updates, completes setup, and deletes one user without changing the other user', async () => {
     const updatedUser = await service.updateUser(users!.userA.clerkUserId, {
       name: 'Updated Isolation User A',
@@ -133,9 +170,15 @@ describe('MongoDB user data isolation', () => {
     await expect(
       database!.mongo.inAppNotification.findMany({ where: { userId: users!.userA.id } })
     ).resolves.toEqual([]);
+    await expect(
+      database!.mongo.studyChatConversation.findMany({ where: { userId: users!.userA.id } })
+    ).resolves.toEqual([]);
     await expect(service.findByClerkId(users!.userB.clerkUserId)).resolves.toMatchObject({
       clerkUserId: users!.userB.clerkUserId,
     });
+    await expect(
+      database!.mongo.studyChatConversation.findMany({ where: { userId: users!.userB.id } })
+    ).resolves.toHaveLength(1);
     await expect(service.getSettings(users!.userB.clerkUserId)).resolves.toMatchObject({
       preferences: { ownerMarker: 'user-b' },
     });

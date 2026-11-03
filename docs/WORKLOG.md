@@ -1,5 +1,21 @@
 # Worklog
 
+## 2026-11-03 - Persistent Study Chat
+
+- Added a dedicated authenticated Mastra study-coach API for persistent,
+  owner-scoped conversations with bounded transcripts, conflict detection, and
+  account deletion cleanup. The agent uses the existing NVIDIA/Groq failover
+  and metrics path.
+- Shared the role-based daily AI token quota with theory evaluation. Calls
+  reserve before provider execution, settle from usage when available, and
+  return 429 when over quota. Updated the API contract, server README, backend
+  tracker, architecture notes, and Mongo schema rollout instructions.
+- Verification: full server gate passed (728 tests, 90.02% branch coverage),
+  restricted-role database isolation passed (27 tests), architecture viewer
+  check passed, and `git diff --check` passed. Fresh review found no Critical
+  or Important issues; it noted a minor opportunity to test concurrent
+  revision conflicts against Mongo rather than only mocking the zero-row CAS.
+
 ## 2026-11-03 — Persistent in-app notification inbox
 
 - Added a Mongo-backed notification collection with per-user pagination,

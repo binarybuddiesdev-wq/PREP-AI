@@ -106,8 +106,8 @@ open.
 Groq-failover. The production evaluation stores answer provenance. The
 offline comparison harness and synthetic baseline are documented in
 `server/evaluation/README.md`; role-based daily token budgets are enforced for
-theory evaluations. The outstanding items above still need design and
-implementation.
+theory evaluations and shared with Study Chat. The outstanding items above
+still need design and implementation.
 
 ### 4. RAG pipeline
 

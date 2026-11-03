@@ -5,4 +5,8 @@ describe('Mastra configuration', () => {
   it('registers the coding review agent', () => {
     expect(() => mastra.getAgent('codingReviewAgent')).not.toThrow();
   });
+
+  it('registers the study coach agent', () => {
+    expect(() => mastra.getAgent('studyCoachAgent')).not.toThrow();
+  });
 });
