@@ -50,4 +50,4 @@
 - [x] Add a worker-only bounded function to list queued code-review executions and test its contract.
 - [x] Document route, lifecycle, quota, retry/recovery, and deployment schema prerequisite.
 - [x] Run the full server gate, viewer check, and `git diff --check`.
-- [ ] Perform fresh review, commit, and push to `main`.
+- [x] Perform fresh review, commit, and push to `main` (`015a1e9`).
