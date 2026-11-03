@@ -1,6 +1,6 @@
 # Observability
 
-> **Status:** `[Missing]` in `docs/architecture/TODO.md` §8. This document is
+> **Status:** `[Partial]` in `docs/architecture/TODO.md` §8. This document is
 > the source of truth for how PrepAI is observed in production. Every PR that
 > introduces a new dependency, log line, or metric MUST update this file.
 
@@ -31,7 +31,7 @@ Every log line carries at minimum: `level`, `time`, `service`, `pid`,
 Pino level is configurable per-env via `LOG_LEVEL` (planned — see
 [Open questions](#open-questions)).
 
-### 2. Metrics (TODO — wire before first production deploy)
+### 2. Metrics
 
 Target stack: **Prometheus** + **Grafana** (or any OTLP-compatible backend).
 
@@ -39,16 +39,20 @@ Endpoints to expose:
 
 | Endpoint   | Method | Purpose                                                               |
 | ---------- | ------ | --------------------------------------------------------------------- |
-| `/metrics` | GET    | Prometheus scrape target. Rate-limit disabled (loopback only).        |
+| `/metrics` | GET    | Protected Prometheus scrape target; disabled without a bearer token.  |
 | `/readyz`  | GET    | Already implemented in `modules/health`. Use as the readiness signal. |
 | `/healthz` | GET    | Already implemented in `modules/health`. Use as the liveness signal.  |
 
-Metrics to publish (Prometheus names):
+Current and planned metric families (Prometheus names):
+
+The HTTP histogram and in-flight gauge are emitted now. A histogram also
+exposes a count by method, route, and status, which can be used to graph request
+rate and error rate. The remaining rows are future instrumentation.
 
 | Name                                                  | Type      | Labels                          | Source                               |
 | ----------------------------------------------------- | --------- | ------------------------------- | ------------------------------------ |
-| `http_request_duration_seconds`                       | Histogram | `method`, `route`, `status`     | Pino access logs (computed)          |
-| `http_requests_in_flight`                             | Gauge     | `route`                         | Fastify hook                         |
+| `http_request_duration_seconds`                       | Histogram | `method`, `route`, `status`     | Fastify request lifecycle hooks      |
+| `http_requests_in_flight`                             | Gauge     | `route`                         | Fastify request lifecycle hooks      |
 | `mastra_agent_duration_seconds`                       | Histogram | `agent`, `provider`, `fallback` | Agent timer in `mastra/providers.ts` |
 | `mastra_provider_failover_total`                      | Counter   | `from`, `to`, `reason`          | `chatWithFailover`                   |
 | `prisma_query_duration_seconds`                       | Histogram | `model`, `operation`            | Prisma `$on('query')` hook           |
@@ -138,15 +142,19 @@ P1 incidents are reserved for full outages — see
 ## Local development
 
 - Logs: tail `pnpm dev` in `server/`. Pino-pretty prints colourised lines.
-- Metrics: not exposed in dev yet — open
-  [issue #TODO](https://github.com/anomalyco/PrepAI/issues) if you need
-  metrics locally and we'll wire `prom-client`.
+- Metrics: set `METRICS_BEARER_TOKEN` to a random value of at least 32
+  characters, restart the API, then scrape `/metrics` with
+  `Authorization: Bearer <token>`. Without the token, `/metrics` returns 404.
+  Only HTTP duration and in-flight metrics are currently collected. Route
+  labels use Fastify route templates, and the scrape endpoint is excluded from
+  collection. The small local collector supports these metric types only; use
+  a general-purpose collector if additional metric types are needed.
 - Traces: not exposed in dev yet.
 
 ## Open questions
 
-- [ ] Pin a metric backend (Prometheus vs OTLP-only Datadog/NewRelic).
-      Decision blocks the `@willsoto/nestjs-prometheus` install.
+- [x] Pin Prometheus exposition for the initial HTTP RED metrics.
+- [ ] Decide whether future metrics and traces should also be exported via OTLP.
 - [ ] Decide whether Sentry owns `console.error` and uncaught rejections or
       we install a `Logger.error` interceptor in `app.module.ts`.
 - [ ] Pin correlation-id format (UUIDv4 vs ULID vs nanoid).

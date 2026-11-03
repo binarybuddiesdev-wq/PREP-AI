@@ -25,6 +25,7 @@ Status meanings:
 | Queue and quota reliability   | Done           | BullMQ coding execution and theory evaluation flows, Redis-backed daily quotas, retries, idempotent result persistence, and separate worker support in the full Podman profile. More queue consumers are pending.                                                                                                                                                                                                                                                                                                               |
 | PDF Study and RAG             | Implemented v1 | Authenticated PDF upload/list/status/delete/reindex, private Cloudinary assets, PDF.js page extraction, NVIDIA embeddings, revisioned pgvector indexing, owner-scoped retrieval, and asynchronous Mastra question generation with validated page citations. OCR is not supported. Apply PostgreSQL schema/RLS and verify restricted roles before production. See [PDF API](routes/pdf-api-spec.md), [design](superpowers/specs/2026-11-03-pdf-ingestion-rag-design.md), and [background jobs](architecture/background-jobs.md). |
 | AI evaluation quality tooling | Partial        | Mastra comparison harness and a 50-case synthetic baseline exist. Subject-matter review of labels and continued evaluation after model/prompt changes remain. See [evaluation README](../server/evaluation/README.md).                                                                                                                                                                                                                                                                                                          |
+| HTTP metrics                  | Partial        | Protected Prometheus `/metrics` exposes HTTP duration histograms and in-flight requests with route-template labels. Configure `METRICS_BEARER_TOKEN` (32+ characters) to enable scraping. Request and error rates are derivable from histogram counts; application-specific metrics, dashboards, and tracing remain open. See [observability](observability.md).                                                                                                                                                                |
 | Verification                  | Done           | The full server gate is the required backend check: lint, formatting, Prisma generation, server build, spec type-check, unit tests, coverage, and agent-doc checks. Run `pnpm gate -- --stack server --level full` after changes.                                                                                                                                                                                                                                                                                               |
 
 ## Pending implementation and design
@@ -47,8 +48,8 @@ Status meanings:
 
 The staged PostgreSQL RLS rollout is deliberately last. Until then, continue
 with repository-buildable gaps such as reviewing which additional durable
-mutations need idempotency, adding cache/endpoint metrics, and selecting the
-next independent backend feature. PDF production enablement and public Piston
+mutations need idempotency and selecting the next independent backend feature.
+PDF production enablement and public Piston
 execution both depend on the final RLS and runtime-boundary rollout gates; see
 the [RLS rollout guide](backend/postgresql-rls-rollout.md) and
 [Piston runbook](runbooks/piston.md).

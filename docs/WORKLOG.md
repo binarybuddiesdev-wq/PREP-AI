@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — protected HTTP metrics
+
+- Added authenticated Prometheus `/metrics` with HTTP duration histograms and in-flight gauges; disabled unless a dedicated 32+ character `METRICS_BEARER_TOKEN` is configured.
+- Request metrics use Fastify route templates, exclude the scrape endpoint, and record status/duration once across normal/error response hooks.
+- Added env validation, observability docs, backend tracker entry, and architecture TODO status update. The local collector is scoped to the HTTP histogram and gauge to preserve the repository's Node 20 runtime without adding a runtime-incompatible package.
+- Verification: `pnpm gate -- --stack server --level full` passed (586 unit tests, coverage, build, formatting, lint, Prisma generation, spec type-check, and agent-doc checks); `pnpm build:viewer:check` and `git diff --check` also passed.
+
 ## 2026-11-03 — Topic catalog caching
 
 - Added a shared Redis cache for topic lists and slug details with a 60-second TTL. MongoDB remains authoritative; cache read/write failures fall back to MongoDB.

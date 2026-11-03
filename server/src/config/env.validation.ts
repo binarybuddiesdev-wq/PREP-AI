@@ -4,6 +4,7 @@ export const envSchema = z
   .object({
     PORT: z.coerce.number().default(3000),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    METRICS_BEARER_TOKEN: z.string().min(32).optional(),
     DATABASE_URL: z.string().optional(),
     POSTGRESQL_URL: z.string().optional(),
     POSTGRESQL_WORKER_URL: z.string().optional(),

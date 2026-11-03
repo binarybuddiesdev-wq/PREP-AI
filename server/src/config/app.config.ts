@@ -20,5 +20,6 @@ export const appConfig = registerAs('app', () => {
     nodeEnv,
     databaseUrl: databaseUrl ?? '',
     postgresqlUrl: postgresqlUrl ?? '',
+    metricsBearerToken: process.env.METRICS_BEARER_TOKEN,
   };
 });

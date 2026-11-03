@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { envSchema } from './env.validation.js';
 
 describe('background worker environment validation', () => {
+  it('requires a long dedicated token before enabling metrics scrapes', () => {
+    expect(() =>
+      envSchema.parse({ NODE_ENV: 'test', METRICS_BEARER_TOKEN: 'too-short' })
+    ).toThrow();
+    expect(
+      envSchema.parse({ NODE_ENV: 'test', METRICS_BEARER_TOKEN: 'm'.repeat(32) })
+        .METRICS_BEARER_TOKEN
+    ).toBe('m'.repeat(32));
+  });
+
   it('enables the worker by default', () => {
     const result = envSchema.parse({ NODE_ENV: 'test' });
 

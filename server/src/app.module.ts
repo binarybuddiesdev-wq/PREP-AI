@@ -18,6 +18,7 @@ import { TheoryModule } from './modules/theory/theory.module.js';
 import { CodingModule } from './modules/coding/coding.module.js';
 import { PdfModule } from './modules/pdf/pdf.module.js';
 import { RedisModule } from './common/redis/redis.module.js';
+import { MetricsModule } from './modules/metrics/metrics.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,6 +35,7 @@ const __dirname = dirname(__filename);
     RedisModule,
     PrismaModule,
     HealthModule,
+    MetricsModule,
     TechExpertModule,
     UserModule,
     TopicModule,
