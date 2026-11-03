@@ -17,16 +17,24 @@ describe('Theory request DTOs', () => {
     expect(errors.some((error) => error.property === 'topicId')).toBe(true);
   });
 
-  it('rejects PDF sessions until PDF question generation is implemented', async () => {
+  it('accepts PDF sessions with one to five Mongo PDF IDs', async () => {
     const dto = plainToInstance(StartSessionDto, {
+      mode: 'pdf',
+      pdfIds: ['507f1f77bcf86cd799439011'],
+      difficulty: 'Mid',
+      totalQuestions: 10,
+    });
+    const errors = await validate(dto);
+    expect(errors).toEqual([]);
+
+    const missingSources = plainToInstance(StartSessionDto, {
       mode: 'pdf',
       difficulty: 'Mid',
       totalQuestions: 10,
     });
-
-    const errors = await validate(dto);
-
-    expect(errors.some((error) => error.property === 'mode')).toBe(true);
+    expect((await validate(missingSources)).some((error) => error.property === 'pdfIds')).toBe(
+      true
+    );
   });
 
   it('rejects oversized question text and answers before they reach the evaluator', async () => {

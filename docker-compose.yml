@@ -70,7 +70,7 @@ services:
 
   # ── PostgreSQL — sessions, answers, vectors, audit (ADR-0001, ADR-0003) ─
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: prepai-postgres
     restart: unless-stopped
     ports:

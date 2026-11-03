@@ -112,6 +112,12 @@ try {
   await Promise.all([waitForTcp(mongoPort), waitForTcp(postgresPort)]);
   await Promise.all([waitForContainerHealth('mongo'), waitForContainerHealth('postgres')]);
 
+  run(
+    'podman',
+    ['exec', `${projectName}_postgres_1`, 'psql', '-U', 'postgres', '-d', databaseName],
+    { cwd: rootDirectory, env: process.env, input: 'CREATE EXTENSION IF NOT EXISTS vector;\n' }
+  );
+
   const schemaCommands = [
     ['prisma', 'db', 'push', '--schema=prisma/schema.prisma', '--skip-generate'],
     ['prisma', 'db', 'push', '--schema=prisma/schema.postgresql.prisma', '--skip-generate'],
@@ -154,6 +160,16 @@ try {
       databaseName,
     ],
     { input: rolePolicySql }
+  );
+
+  const pdfPolicySql = await readFile(
+    path.join(serverDirectory, 'prisma', 'rls', '002-pdf-rag.sql'),
+    'utf8'
+  );
+  run(
+    'podman',
+    ['exec', '-i', `${projectName}_postgres_1`, 'psql', '-U', 'postgres', '-d', databaseName],
+    { input: pdfPolicySql }
   );
 
   run('pnpm', ['test:e2e'], { cwd: serverDirectory, env: childEnvironment });

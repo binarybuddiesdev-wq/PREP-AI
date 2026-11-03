@@ -408,7 +408,7 @@ All under [`docs/`](docs/). Edit diagrams in `.mmd` files (rendered natively by 
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 20.16+ (Node 22+ recommended)
 - pnpm 9+
 - **Podman Desktop** — Download from https://podman-desktop.io (required for Piston)
 - **Podman CLI** — Installed automatically with Podman Desktop
@@ -430,7 +430,7 @@ The stack publishes MongoDB on `localhost:27017`, PostgreSQL on `localhost:5432`
 pnpm podman:down
 ```
 
-The backend and UI remain host-run; the optional Compose `full` profile is not started by these commands. For the host-run backend, set `POSTGRESQL_URL=postgresql://postgres:postgres@localhost:5432/prepai` and `REDIS_HOST=localhost`, `REDIS_PORT=6379` in `.env`.
+The backend and UI remain host-run; the optional Compose `full` profile is not started by these commands. For the host-run backend, set `POSTGRESQL_URL=postgresql://postgres:postgres@127.0.0.1:5432/prepai` and `REDIS_HOST=localhost`, `REDIS_PORT=6379` in `.env`.
 
 ### Full Podman Development Stack
 

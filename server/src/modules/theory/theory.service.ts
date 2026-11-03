@@ -47,13 +47,13 @@ export class TheoryService {
   ) {}
 
   async startSession(dto: StartSessionDto, userId: string) {
-    const { mode, difficulty, totalQuestions, topicId } = dto;
+    const { mode, difficulty, totalQuestions, topicId, pdfIds } = dto;
 
     if (mode === 'topic' && !topicId) {
       throw new BadRequestException(THEORY_TOPIC_ID_REQUIRED);
     }
-    if ((mode as string) === 'pdf') {
-      throw new BadRequestException(THEORY_MODE_NOT_SUPPORTED);
+    if (mode === 'pdf' && (!pdfIds || pdfIds.length < 1 || pdfIds.length > 5)) {
+      throw new BadRequestException('Select between one and five PDFs for study mode');
     }
 
     const user = await this.prisma.user.findUnique({
@@ -76,9 +76,23 @@ export class TheoryService {
       throw new ServiceUnavailableException(THEORY_DATABASE_UNAVAILABLE);
     }
 
+    let pdfSources: Array<{ id: string; activeRevision: number }> = [];
     if (mode === 'topic') {
       const topic = await this.prisma.topic.findUnique({ where: { id: topicId! } });
       if (!topic) throw new NotFoundException(TOPIC_NOT_FOUND);
+    } else if (mode === 'pdf') {
+      pdfSources = await this.prisma.pdfSource.findMany({
+        where: {
+          id: { in: pdfIds! },
+          userId,
+          status: { in: ['ready', 'processing'] },
+          activeRevision: { gt: 0 },
+        },
+        select: { id: true, activeRevision: true },
+      });
+      if (pdfSources.length !== pdfIds!.length) {
+        throw new BadRequestException('Select only PDFs that are yours and ready for study');
+      }
     }
 
     const now = new Date();
@@ -122,6 +136,13 @@ export class TheoryService {
             questionsAnswered: 0,
             avgScore: 0,
             status: 'in_progress',
+            pdfIds: mode === 'pdf' ? pdfIds! : [],
+            pdfRevisions:
+              mode === 'pdf'
+                ? Object.fromEntries(pdfSources.map((source) => [source.id, source.activeRevision]))
+                : undefined,
+            pdfGenerationStatus: mode === 'pdf' ? 'queued' : null,
+            pdfGenerationError: null,
           },
         })
       );
@@ -139,6 +160,24 @@ export class TheoryService {
 
     this.logger.info({ sessionId: session.id, userId, mode, difficulty }, 'Theory session started');
 
+    if (mode === 'pdf') {
+      try {
+        await this.jobs.enqueue(
+          JOB_QUEUE_NAMES.PDF_QUESTION_GENERATION,
+          { idempotencyKey: `pdf-study:${session.id}`, sessionId: session.id },
+          'generate'
+        );
+      } catch (error) {
+        this.logger.warn(
+          {
+            sessionId: session.id,
+            errorName: error instanceof Error ? error.name : 'UnknownError',
+          },
+          'PDF study session persisted as queued; worker reconciliation will dispatch it'
+        );
+      }
+    }
+
     return session;
   }
 
@@ -155,7 +194,15 @@ export class TheoryService {
 
     let questions;
 
-    if (session.mode === 'topic') {
+    if (session.mode === 'pdf') {
+      if (session.pdfGenerationStatus === 'queued' || session.pdfGenerationStatus === 'running') {
+        throw new ConflictException('PDF study questions are still being generated');
+      }
+      if (session.pdfGenerationStatus === 'failed') {
+        throw new ServiceUnavailableException('PDF study questions could not be generated');
+      }
+      questions = Array.isArray(session.pdfQuestions) ? session.pdfQuestions.slice(0, limit) : [];
+    } else if (session.mode === 'topic') {
       if (!session.topicId) throw new BadRequestException(THEORY_TOPIC_ID_REQUIRED);
       questions = await this.prisma.question.findMany({
         where: {

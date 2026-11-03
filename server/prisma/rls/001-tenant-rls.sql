@@ -40,6 +40,10 @@ GRANT SELECT, UPDATE ON public."TheoryAnswer" TO prepai_worker;
 GRANT SELECT, UPDATE ON public."CodingSession" TO prepai_worker;
 GRANT SELECT, UPDATE ON public."CodingExecution" TO prepai_worker;
 GRANT SELECT, INSERT ON public."CodingAnswer" TO prepai_worker;
+GRANT UPDATE ("pdfGenerationStatus", "pdfGenerationError", "pdfQuestions")
+  ON public."TheorySession" TO prepai_worker;
+GRANT UPDATE ("pdfDispatchClaimedAt")
+  ON public."TheorySession" TO prepai_rls_function_owner;
 
 GRANT SELECT ON
   public."TheorySession",

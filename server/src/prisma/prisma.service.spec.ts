@@ -9,6 +9,7 @@ const prismaMocks = vi.hoisted(() => ({
   postgresConstructor: vi.fn(),
   postgresTransaction: vi.fn(),
   postgresExecuteRaw: vi.fn(),
+  postgresQueryRaw: vi.fn(),
 }));
 
 vi.mock('@prisma/client', () => ({
@@ -37,6 +38,10 @@ vi.mock('../generated/postgresql-client/index.js', () => ({
       return prismaMocks.postgresDisconnect();
     }
 
+    $queryRaw() {
+      return prismaMocks.postgresQueryRaw();
+    }
+
     $transaction(callback: (transaction: unknown) => unknown) {
       return prismaMocks.postgresTransaction(callback);
     }
@@ -57,6 +62,7 @@ describe('Prisma services', () => {
     prismaMocks.postgresConnect.mockResolvedValue(undefined);
     prismaMocks.postgresDisconnect.mockResolvedValue(undefined);
     prismaMocks.postgresExecuteRaw.mockResolvedValue(1);
+    prismaMocks.postgresQueryRaw.mockResolvedValue([{ session_id: 'session_1' }]);
     prismaMocks.postgresTransaction.mockImplementation((callback) =>
       callback({ $executeRaw: prismaMocks.postgresExecuteRaw })
     );
@@ -163,6 +169,39 @@ describe('Prisma services', () => {
     expect(operation).toHaveBeenCalledOnce();
     await service.onModuleDestroy();
     expect(prismaMocks.postgresDisconnect).toHaveBeenCalledTimes(2);
+  });
+
+  it('scopes PDF worker writes to the persisted owner, source, and revision', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    const operation = vi.fn().mockResolvedValue('pdf-result');
+    await service.onModuleInit();
+
+    await expect(service.withWorkerPdfContext('user_1', 'source_1', 2, operation)).resolves.toBe(
+      'pdf-result'
+    );
+
+    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledTimes(3);
+    expect(operation).toHaveBeenCalledOnce();
+    await expect(service.withWorkerPdfContext('', 'source_1', 2, operation)).rejects.toThrow(
+      'PDF worker owner identity is required'
+    );
+    await expect(service.withWorkerPdfContext('user_1', 'source_1', 0, operation)).rejects.toThrow(
+      'PDF worker revision must be a positive integer'
+    );
+    await service.onModuleDestroy();
+  });
+
+  it('claims queued PDF study sessions through the narrow worker dispatch function', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.listQueuedPdfStudySessionIds(25)).resolves.toEqual(['session_1']);
+    expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledOnce();
+    await service.onModuleDestroy();
   });
 
   it('logs PostgreSQL connection failures without failing module initialization', async () => {

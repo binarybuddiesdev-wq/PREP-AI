@@ -3,7 +3,8 @@
 The API now supports transaction-local tenant identity, and the worker uses a
 separate PostgreSQL client when `POSTGRESQL_WORKER_URL` is configured. The
 disposable isolation suite provisions restricted runtime roles, applies the
-policy SQL, and exercises API and worker access against real PostgreSQL:
+base and PDF policy SQL, and exercises API and worker access—including PDF
+owner/source/revision scoping—against real pgvector/PostgreSQL:
 
 ```powershell
 pnpm test:database:isolation
@@ -17,7 +18,7 @@ development database or enable row security in an existing environment.
 `server/prisma/rls/001-tenant-rls.sql` provisions `prepai_api`,
 `prepai_worker`, and the non-login function owner. The API and worker roles are
 neither superusers nor RLS bypass roles. The function owner has `BYPASSRLS`
-only so its four narrowly scoped queue/owner lookup functions can read across
+only so its narrowly scoped queue/owner lookup functions can read across
 tenants; queue functions take row locks with `SKIP LOCKED` and set a
 30-second dispatch lease so a crashed dispatcher can be retried; no application
 process can log in as that role.

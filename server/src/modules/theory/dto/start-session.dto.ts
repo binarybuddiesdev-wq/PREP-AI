@@ -7,6 +7,11 @@ import {
   Max,
   ValidateIf,
   MaxLength,
+  IsArray,
+  ArrayNotEmpty,
+  ArrayMaxSize,
+  ArrayUnique,
+  IsMongoId,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -23,11 +28,23 @@ export class StartSessionDto {
   @MaxLength(MAX_TOPIC_ID_LENGTH)
   topicId?: string;
 
-  @ApiProperty({ enum: ['topic', 'weak'], example: 'topic' })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'One to five owned, ready PDF source IDs. Required for PDF mode.',
+  })
+  @ValidateIf((dto: StartSessionDto) => dto.mode === 'pdf')
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(5)
+  @ArrayUnique()
+  @IsMongoId({ each: true })
+  pdfIds?: string[];
+
+  @ApiProperty({ enum: ['topic', 'weak', 'pdf'], example: 'topic' })
   @IsNotEmpty()
   @IsString()
-  @IsIn(['topic', 'weak'])
-  mode!: 'topic' | 'weak';
+  @IsIn(['topic', 'weak', 'pdf'])
+  mode!: 'topic' | 'weak' | 'pdf';
 
   @ApiProperty({ enum: ['Junior', 'Mid', 'Senior'], example: 'Mid' })
   @IsNotEmpty()

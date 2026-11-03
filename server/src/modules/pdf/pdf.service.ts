@@ -1,0 +1,331 @@
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { createHash, randomUUID } from 'node:crypto';
+import { PrismaService } from '@/prisma/prisma.service.js';
+import { RedisService } from '@/common/redis/redis.service.js';
+import { JobQueueService } from '@/common/jobs/job-queue.service.js';
+import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
+import { PdfStorageService } from './pdf-storage.service.js';
+import { PdfTextExtractor } from './pdf-text-extractor.js';
+import { validatePdfUpload } from './pdf-upload.validation.js';
+
+const ACTIVE_STATUSES = ['uploading', 'queued', 'processing', 'ready', 'deleting'];
+const MAX_LIST_LIMIT = 50;
+
+@Injectable()
+export class PdfService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: PdfStorageService,
+    private readonly extractor: PdfTextExtractor,
+    private readonly jobs: JobQueueService,
+    private readonly redis: RedisService,
+    private readonly config: ConfigService,
+    @InjectPinoLogger(PdfService.name) private readonly logger: PinoLogger
+  ) {}
+
+  async upload(buffer: Buffer, filename: string, mimetype: string, userId: string) {
+    const maxBytes = this.config.get<number>('PDF_MAX_FILE_BYTES', 10 * 1024 * 1024);
+    const { displayName, byteSize } = validatePdfUpload(buffer, filename, mimetype, maxBytes);
+    const maxPages = this.config.get<number>('PDF_MAX_PAGES', 100);
+    let extraction;
+    try {
+      extraction = await this.extractor.extract(
+        buffer,
+        maxPages,
+        this.config.get<number>('PDF_MAX_EXTRACTED_CHARS', 1_000_000)
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'PDF contains no extractable text') {
+        throw new BadRequestException(
+          'This PDF has no selectable text. Scanned PDFs are not supported yet.'
+        );
+      }
+      if (message === 'PDF exceeds the extracted text limit') {
+        throw new BadRequestException('PDF contains too much extractable text');
+      }
+      if (
+        message.startsWith('PDF exceeds the ') ||
+        message === 'PDF page limit must be a positive integer'
+      ) {
+        throw new BadRequestException(message);
+      }
+      throw new BadRequestException(
+        'PDF could not be parsed. Check that the file is a valid, unencrypted PDF.'
+      );
+    }
+
+    await this.enforceStorageQuota(userId, byteSize);
+    const quotaKey = this.dailyUploadQuotaKey(userId);
+    try {
+      const quota = await this.redis.reserveQuota(
+        quotaKey,
+        this.config.get<number>('PDF_DAILY_UPLOADS_PER_USER', 3),
+        this.secondsUntilUtcMidnight()
+      );
+      if (!quota.allowed) throw new ConflictException('Daily PDF upload limit reached');
+    } catch (error) {
+      if (error instanceof ConflictException) throw error;
+      throw new ServiceUnavailableException('PDF upload quota service is temporarily unavailable', {
+        cause: error,
+      });
+    }
+
+    let source: Awaited<ReturnType<PrismaService['pdfSource']['create']>> | undefined;
+    let assetId: string | undefined;
+    try {
+      source = await this.prisma.pdfSource.create({
+        data: {
+          userId,
+          displayName,
+          byteSize,
+          contentHash: createHash('sha256').update(buffer).digest('hex'),
+          pageCount: extraction.pageCount,
+          status: 'uploading',
+          activeRevision: 0,
+          requestedRevision: 1,
+        },
+      });
+      assetId = await this.storage.upload(buffer, source.id);
+      const queued = await this.prisma.pdfSource.update({
+        where: { id: source.id },
+        data: { assetId, status: 'queued', failureCode: null, dispatchNeeded: true },
+      });
+
+      try {
+        await this.jobs.enqueue(
+          JOB_QUEUE_NAMES.PDF_INGESTION,
+          {
+            idempotencyKey: `pdf:${source.id}:1`,
+            sourceId: source.id,
+            revision: 1,
+          },
+          'ingest'
+        );
+      } catch (error) {
+        this.logger.warn(
+          { sourceId: source.id, errorName: error instanceof Error ? error.name : 'UnknownError' },
+          'PDF source persisted as queued; worker reconciliation will dispatch it'
+        );
+      }
+      return this.toPublicSource(queued);
+    } catch (error) {
+      if (source) {
+        await this.prisma.pdfSource
+          .update({
+            where: { id: source.id },
+            data: { status: 'failed', failureCode: 'storage_upload_failed' },
+          })
+          .catch(() => undefined);
+      }
+      if (assetId) await this.storage.delete(assetId).catch(() => undefined);
+      await this.redis.releaseQuota(quotaKey).catch(() => undefined);
+      throw error instanceof ServiceUnavailableException
+        ? error
+        : new ServiceUnavailableException('PDF upload could not be completed', { cause: error });
+    }
+  }
+
+  async list(userId: string, limit = 20) {
+    const safeLimit = Math.min(Math.max(Math.floor(limit), 1), MAX_LIST_LIMIT);
+    const sources = await this.prisma.pdfSource.findMany({
+      where: { userId, status: { notIn: ['deleted'] } },
+      orderBy: { createdAt: 'desc' },
+      take: safeLimit,
+    });
+    return sources.map((source) => this.toPublicSource(source));
+  }
+
+  async get(sourceId: string, userId: string) {
+    const source = await this.prisma.pdfSource.findFirst({
+      where: { id: sourceId, userId, status: { not: 'deleted' } },
+    });
+    if (!source) throw new NotFoundException('PDF source not found');
+    return this.toPublicSource(source);
+  }
+
+  async reindex(sourceId: string, userId: string) {
+    const source = await this.prisma.pdfSource.findFirst({
+      where: { id: sourceId, userId, status: { in: ['ready', 'failed'] } },
+    });
+    if (!source) throw new NotFoundException('PDF source not found or cannot be reindexed');
+    if (!source.assetId)
+      throw new ConflictException('PDF source file is unavailable for reindexing');
+
+    const revision = source.requestedRevision + 1;
+    const updated = await this.prisma.pdfSource.updateMany({
+      where: {
+        id: source.id,
+        userId,
+        status: source.status,
+        requestedRevision: source.requestedRevision,
+      },
+      data: { requestedRevision: revision, dispatchNeeded: true, failureCode: null },
+    });
+    if (!updated.count)
+      throw new ConflictException('PDF source changed; retry the reindex request');
+
+    try {
+      await this.jobs.enqueue(
+        JOB_QUEUE_NAMES.PDF_INGESTION,
+        { idempotencyKey: `pdf:${source.id}:${revision}`, sourceId: source.id, revision },
+        'ingest'
+      );
+    } catch (error) {
+      this.logger.warn(
+        {
+          sourceId: source.id,
+          revision,
+          errorName: error instanceof Error ? error.name : 'UnknownError',
+        },
+        'PDF reindex persisted; worker reconciliation will dispatch it'
+      );
+    }
+    return { id: source.id, status: 'queued' as const, requestedRevision: revision };
+  }
+
+  async delete(sourceId: string, userId: string) {
+    const source = await this.prisma.pdfSource.findFirst({ where: { id: sourceId, userId } });
+    if (!source || source.status === 'deleted') throw new NotFoundException('PDF source not found');
+    if (source.status !== 'deleting') {
+      await this.prisma.pdfSource.updateMany({
+        where: { id: source.id, userId, status: { not: 'deleted' } },
+        data: { status: 'deleting', deletedAt: new Date(), dispatchNeeded: true },
+      });
+    }
+    try {
+      await this.jobs.enqueue(
+        JOB_QUEUE_NAMES.PDF_INGESTION,
+        {
+          idempotencyKey: `pdf-delete:${source.id}`,
+          sourceId: source.id,
+          revision: source.activeRevision,
+        },
+        'delete'
+      );
+    } catch (error) {
+      this.logger.warn(
+        { sourceId: source.id, errorName: error instanceof Error ? error.name : 'UnknownError' },
+        'PDF deletion persisted; worker reconciliation will dispatch cleanup'
+      );
+    }
+    return { id: source.id, status: 'deleting' as const };
+  }
+
+  async dispatchRecoverableSources(): Promise<void> {
+    const sources = await this.prisma.pdfSource.findMany({
+      where: {
+        OR: [{ status: 'queued' }, { dispatchNeeded: true }, { status: 'deleting' }],
+      },
+      orderBy: { updatedAt: 'asc' },
+      take: 100,
+    });
+
+    for (const source of sources) {
+      const claimId = randomUUID();
+      const claim = await this.prisma.pdfSource.updateMany({
+        where: {
+          id: source.id,
+          status: source.status,
+          dispatchNeeded: source.dispatchNeeded,
+          OR: [
+            { dispatchClaimedAt: null },
+            { dispatchClaimedAt: { lt: new Date(Date.now() - 30_000) } },
+          ],
+        },
+        data: { dispatchClaimId: claimId, dispatchClaimedAt: new Date() },
+      });
+      if (!claim.count) continue;
+
+      const isDelete = source.status === 'deleting';
+      let enqueued = false;
+      try {
+        await this.jobs.enqueue(
+          JOB_QUEUE_NAMES.PDF_INGESTION,
+          {
+            idempotencyKey: isDelete
+              ? `pdf-delete:${source.id}`
+              : `pdf:${source.id}:${source.requestedRevision}`,
+            sourceId: source.id,
+            revision: isDelete ? source.activeRevision : source.requestedRevision,
+          },
+          isDelete ? 'delete' : 'ingest'
+        );
+        enqueued = true;
+      } catch (error) {
+        this.logger.warn(
+          { sourceId: source.id, errorName: error instanceof Error ? error.name : 'UnknownError' },
+          'PDF queue dispatch failed; source lease will expire for retry'
+        );
+      } finally {
+        await this.prisma.pdfSource
+          .updateMany({
+            where: { id: source.id, dispatchClaimId: claimId },
+            data: {
+              dispatchClaimId: null,
+              dispatchClaimedAt: null,
+              ...(!isDelete && enqueued ? { dispatchNeeded: false } : {}),
+            },
+          })
+          .catch(() => undefined);
+      }
+    }
+  }
+
+  private async enforceStorageQuota(userId: string, incomingBytes: number): Promise<void> {
+    const sources = await this.prisma.pdfSource.findMany({
+      where: { userId, status: { in: ACTIVE_STATUSES } },
+      select: { byteSize: true },
+    });
+    if (sources.length >= this.config.get<number>('PDF_MAX_FILES_PER_USER', 5)) {
+      throw new ConflictException('PDF file limit reached');
+    }
+    const currentBytes = sources.reduce((total, source) => total + source.byteSize, 0);
+    const maximum = this.config.get<number>('PDF_MAX_STORAGE_BYTES_PER_USER', 50 * 1024 * 1024);
+    if (currentBytes + incomingBytes > maximum) {
+      throw new ConflictException('PDF storage limit reached');
+    }
+  }
+
+  private dailyUploadQuotaKey(userId: string): string {
+    return `quota:${userId}:${new Date().toISOString().slice(0, 10)}:pdf_uploads`;
+  }
+
+  private secondsUntilUtcMidnight(): number {
+    const now = new Date();
+    const midnight = new Date(`${now.toISOString().slice(0, 10)}T00:00:00.000Z`);
+    return Math.max(1, Math.ceil((midnight.getTime() + 86_400_000 - now.getTime()) / 1000));
+  }
+
+  private toPublicSource(source: {
+    id: string;
+    displayName: string;
+    byteSize: number;
+    pageCount: number | null;
+    status: string;
+    activeRevision: number;
+    failureCode: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }) {
+    return {
+      id: source.id,
+      displayName: source.displayName,
+      byteSize: source.byteSize,
+      pageCount: source.pageCount,
+      status: source.status,
+      activeRevision: source.activeRevision,
+      failureCode: source.failureCode,
+      createdAt: source.createdAt,
+      updatedAt: source.updatedAt,
+    };
+  }
+}

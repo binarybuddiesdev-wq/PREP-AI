@@ -78,15 +78,15 @@ Each service has:
 
 ### `worker` — BullMQ job worker
 
-| Field                  | Value                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| **Owner**              | uday                                                                              |
-| **Status**             | Coding execution and theory evaluation consumers implemented                      |
-| **Implemented queues** | `coding-execution` and `theory-eval` (concurrency 5, 3 attempts, 7-day retention) |
-| **Planned queues**     | Code review, PDF ingestion, email, payments                                       |
-| **Runtime**            | In-process with host API by default; separate Podman process in full profile      |
-| **Dependencies**       | Redis, Piston                                                                     |
-| **Runbook**            | [Background jobs](background-jobs.md)                                             |
+| Field                  | Value                                                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**              | uday                                                                                                                                           |
+| **Status**             | Coding execution, theory evaluation, PDF ingestion, and PDF question consumers implemented                                                     |
+| **Implemented queues** | `coding-execution`, `theory-eval`, `pdf-ingest-queue` (2 concurrency, 5 attempts), `pdf-question-generation-queue` (3 concurrency, 3 attempts) |
+| **Planned queues**     | Code review, email, payments                                                                                                                   |
+| **Runtime**            | In-process with host API by default; separate Podman process in full profile                                                                   |
+| **Dependencies**       | Redis, Piston                                                                                                                                  |
+| **Runbook**            | [Background jobs](background-jobs.md)                                                                                                          |
 
 ---
 
@@ -106,16 +106,16 @@ Each service has:
 
 ### `postgres` — PostgreSQL (Theory sessions and answers)
 
-| Field                  | Value                                                                              |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| **Owner**              | uday                                                                               |
-| **Hosting (prod)**     | Neon / Supabase / RDS                                                              |
-| **Implemented models** | `TheorySession`, `TheoryAnswer`, `CodingSession`, `CodingQuestion`, `CodingAnswer` |
-| **Extensions**         | None declared by the current Prisma schema                                         |
-| **SLO — availability** | 99.9%                                                                              |
-| **Backup**             | Daily `pg_dump` to S3 + WAL archiving, 7-day PITR                                  |
-| **Runbook**            | [docs/runbooks/postgres.md](../runbooks/postgres.md) _(TODO)_                      |
-| **Last incident**      | —                                                                                  |
+| Field                  | Value                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| **Owner**              | uday                                                                                           |
+| **Hosting (prod)**     | Neon / Supabase / RDS                                                                          |
+| **Implemented models** | `TheorySession`, `TheoryAnswer`, `CodingSession`, `CodingQuestion`, `CodingAnswer`, `PdfChunk` |
+| **Extensions**         | pgvector, enabled by the PDF RAG rollout script                                                |
+| **SLO — availability** | 99.9%                                                                                          |
+| **Backup**             | Daily `pg_dump` to S3 + WAL archiving, 7-day PITR                                              |
+| **Runbook**            | [docs/runbooks/postgres.md](../runbooks/postgres.md) _(TODO)_                                  |
+| **Last incident**      | —                                                                                              |
 
 ---
 
@@ -139,7 +139,7 @@ Each service has:
 | **Clerk**                | Auth, user webhook                    | Login fails for new users; existing sessions still work until token expires (~60s). Webhook backlog replays on recovery. |
 | **NVIDIA NIM** (primary) | LLM (theory evaluation, tech answers) | Calls retry with Groq when configured; if both fail, endpoints return their documented error/fallback.                   |
 | **Groq** (fallback)      | LLM (theory evaluation, tech answers) | Used after NVIDIA fails unless `LLM_PROVIDER` explicitly selects one provider.                                           |
-| **Cloudinary**           | Planned PDF storage                   | No Cloudinary integration or PDF module exists yet.                                                                      |
+| **Cloudinary**           | Private PDF source storage            | PDF module stores authenticated raw assets; configure account credentials and allow authenticated PDF delivery.          |
 | **Resend**               | Planned email delivery                | No email module or queue exists yet.                                                                                     |
 | **Razorpay**             | Planned payments                      | No payment API or webhook module exists yet.                                                                             |
 | **Podman / Piston**      | Local code execution                  | Coding API sends bounded execution jobs through BullMQ to the Piston worker.                                             |

@@ -66,7 +66,7 @@ The backend connects to published host ports. Set these values in `.env`:
 
 ```dotenv
 DATABASE_URL=mongodb://prepai:prepai@localhost:27017/prepai?authSource=admin&replicaSet=rs0&directConnection=true
-POSTGRESQL_URL=postgresql://postgres:postgres@localhost:5432/prepai
+POSTGRESQL_URL=postgresql://postgres:postgres@127.0.0.1:5432/prepai
 PISTON_URL=http://127.0.0.1:2000
 REDIS_HOST=localhost
 REDIS_PORT=6379

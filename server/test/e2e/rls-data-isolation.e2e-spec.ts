@@ -13,6 +13,8 @@ describe('PostgreSQL row-level security', () => {
   let userB: string;
   let sessionA: { id: string };
   let sessionB: { id: string };
+  let pdfChunkA: { id: string; sourceId: string; revision: number };
+  let pdfChunkB: { id: string; sourceId: string; revision: number };
 
   beforeAll(async () => {
     database = await connectIsolationTestDatabases();
@@ -20,6 +22,9 @@ describe('PostgreSQL row-level security', () => {
     userA = `rls-user-a-${fixtureId}`;
     userB = `rls-user-b-${fixtureId}`;
     [sessionA, sessionB] = await Promise.all([createSession(userA), createSession(userB)]);
+    pdfChunkA = { id: randomUUID(), sourceId: randomUUID(), revision: 1 };
+    pdfChunkB = { id: randomUUID(), sourceId: randomUUID(), revision: 2 };
+    await Promise.all([insertPdfChunk(userA, pdfChunkA), insertPdfChunk(userB, pdfChunkB)]);
   }, 30_000);
 
   async function createSession(userId: string) {
@@ -37,15 +42,34 @@ describe('PostgreSQL row-level security', () => {
     });
   }
 
+  async function insertPdfChunk(
+    ownerId: string,
+    chunk: { id: string; sourceId: string; revision: number }
+  ) {
+    const vector = `[${Array(1024).fill(0).join(',')}]`;
+    await database!.postgresProvider.withTenantContext(
+      ownerId,
+      (transaction) =>
+        transaction.$executeRaw`
+        INSERT INTO public."PdfChunk"
+          ("id", "ownerId", "sourceId", "revision", "chunkIndex", "pageStart", "pageEnd", "text", "contentHash", "embeddingModel", "embedding", "createdAt")
+        VALUES
+          (${chunk.id}, ${ownerId}, ${chunk.sourceId}, ${chunk.revision}, 0, 1, 1, 'test content', 'hash', 'test-model', ${vector}::vector, NOW())
+      `
+    );
+  }
+
   afterAll(async () => {
     if (!database) return;
     await Promise.all([
       database.postgresProvider.client_!.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT set_config('app.current_user_id', ${userA}, true)`;
+        await tx.$executeRaw`DELETE FROM public."PdfChunk" WHERE "ownerId" = ${userA}`;
         await tx.theorySession.deleteMany({ where: { userId: userA } });
       }),
       database.postgresProvider.client_!.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT set_config('app.current_user_id', ${userB}, true)`;
+        await tx.$executeRaw`DELETE FROM public."PdfChunk" WHERE "ownerId" = ${userB}`;
         await tx.theorySession.deleteMany({ where: { userId: userB } });
       }),
     ]);
@@ -123,5 +147,63 @@ describe('PostgreSQL row-level security', () => {
     await expect(client.theorySession.findMany({ where: { id: sessionA.id } })).resolves.toEqual(
       []
     );
+  });
+
+  it('limits PDF vectors to the tenant and exact worker source revision', async () => {
+    const client = database!.postgresProvider.client_!;
+    const worker = database!.worker;
+
+    await expect(
+      client.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.current_user_id', ${userA}, true)`;
+        return tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM public."PdfChunk" WHERE "id" IN (${pdfChunkA.id}, ${pdfChunkB.id})
+        `;
+      })
+    ).resolves.toEqual([{ id: pdfChunkA.id }]);
+
+    await expect(
+      database!.postgresProvider.withWorkerPdfContext(
+        userA,
+        pdfChunkA.sourceId,
+        pdfChunkA.revision,
+        (transaction) => transaction.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM public."PdfChunk" WHERE "id" IN (${pdfChunkA.id}, ${pdfChunkB.id})
+        `
+      )
+    ).resolves.toEqual([{ id: pdfChunkA.id }]);
+
+    await expect(
+      database!.postgresProvider.withWorkerPdfContext(
+        userA,
+        pdfChunkA.sourceId,
+        pdfChunkA.revision + 1,
+        (transaction) => transaction.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM public."PdfChunk" WHERE "id" = ${pdfChunkA.id}
+        `
+      )
+    ).resolves.toEqual([]);
+
+    await expect(
+      worker.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM public."PdfChunk" WHERE "id" = ${pdfChunkA.id}
+      `
+    ).resolves.toEqual([]);
+
+    const spoofedId = randomUUID();
+    const vector = `[${Array(1024).fill(0).join(',')}]`;
+    await expect(
+      database!.postgresProvider.withWorkerPdfContext(
+        userA,
+        pdfChunkA.sourceId,
+        pdfChunkA.revision,
+        (transaction) => transaction.$executeRaw`
+          INSERT INTO public."PdfChunk"
+            ("id", "ownerId", "sourceId", "revision", "chunkIndex", "pageStart", "pageEnd", "text", "contentHash", "embeddingModel", "embedding", "createdAt")
+          VALUES
+            (${spoofedId}, ${userB}, ${pdfChunkA.sourceId}, ${pdfChunkA.revision}, 1, 1, 1, 'spoofed', 'hash', 'test-model', ${vector}::vector, NOW())
+        `
+      )
+    ).rejects.toThrow();
   });
 });

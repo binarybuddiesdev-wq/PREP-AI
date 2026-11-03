@@ -38,7 +38,10 @@ export const registerFastifyPlugins = async (app: NestFastifyApplication) => {
   // Fastify native multipart parsing
   await app.register(multipart, {
     limits: {
-      fileSize: 10 * 1024 * 1024,
+      fileSize: Number(process.env.PDF_MAX_FILE_BYTES ?? 10 * 1024 * 1024),
+      files: 1,
+      fields: 4,
+      parts: 5,
     },
   });
 };

@@ -1,11 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/postgresql-client"
+  provider        = "prisma-client-js"
+  output          = "../src/generated/postgresql-client"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRESQL_URL")
+  provider   = "postgresql"
+  url        = env("POSTGRESQL_URL")
+  extensions = [vector]
 }
 
 enum TheoryAnswerStatus {
@@ -16,22 +18,47 @@ enum TheoryAnswerStatus {
 }
 
 model TheorySession {
-  id                String         @id @default(uuid())
-  userId            String
-  topicId           String? // null for Weak Areas mode (AI picks topics)
-  mode              String // "topic" | "weak" | "pdf"
-  difficulty        String // "Junior" | "Mid" | "Senior"
-  totalQuestions    Int
-  questionsAnswered Int            @default(0)
-  avgScore          Float          @default(0)
-  status            String         @default("in_progress") // "in_progress" | "completed"
-  startedAt         DateTime       @default(now())
-  completedAt       DateTime?
-  createdAt         DateTime       @default(now())
-  answers           TheoryAnswer[]
+  id                   String         @id @default(uuid())
+  userId               String
+  topicId              String? // null for Weak Areas mode (AI picks topics)
+  mode                 String // "topic" | "weak" | "pdf"
+  difficulty           String // "Junior" | "Mid" | "Senior"
+  totalQuestions       Int
+  questionsAnswered    Int            @default(0)
+  avgScore             Float          @default(0)
+  status               String         @default("in_progress") // "in_progress" | "completed"
+  pdfIds               String[]       @default([])
+  pdfRevisions         Json?
+  pdfGenerationStatus  String?
+  pdfGenerationError   String?
+  pdfQuestions         Json?
+  pdfDispatchClaimedAt DateTime?
+  startedAt            DateTime       @default(now())
+  completedAt          DateTime?
+  createdAt            DateTime       @default(now())
+  answers              TheoryAnswer[]
 
   @@index([userId])
   @@index([userId, createdAt])
+}
+
+model PdfChunk {
+  id             String                      @id @default(uuid())
+  ownerId        String
+  sourceId       String
+  revision       Int
+  chunkIndex     Int
+  pageStart      Int
+  pageEnd        Int
+  text           String
+  contentHash    String
+  embeddingModel String
+  embedding      Unsupported("vector(1024)")
+  createdAt      DateTime                    @default(now())
+
+  @@unique([ownerId, sourceId, revision, chunkIndex])
+  @@index([ownerId, sourceId, revision])
+  @@map("PdfChunk")
 }
 
 model TheoryAnswer {

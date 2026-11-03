@@ -6,14 +6,15 @@ BullMQ stores jobs in the existing Redis service. The API and worker share the s
 
 Coding run and submit requests first create a `CodingExecution` row in PostgreSQL, then enqueue Piston work on `coding-execution-queue` and return HTTP 202 with the execution ID. Clients read current state and result from the session-scoped execution lookup. The worker marks the row running, executes through `PistonClient`, and persists completion and submission side effects transactionally.
 
-| Queue                     | Concurrency | Attempts | Current consumer        |
-| ------------------------- | ----------: | -------: | ----------------------- |
-| `coding-execution-queue`  |           5 |        3 | Piston code execution   |
-| `theory-eval-queue`       |           5 |        3 | Mastra theory evaluator |
-| `code-review-queue`       |           3 |        3 | Planned                 |
-| `pdf-ingest-queue`        |           2 |        5 | Planned                 |
-| `email-queue`             |          10 |        5 | Planned                 |
-| `payment-reconcile-queue` |           1 |        3 | Planned                 |
+| Queue                           | Concurrency | Attempts | Current consumer                                       |
+| ------------------------------- | ----------: | -------: | ------------------------------------------------------ |
+| `coding-execution-queue`        |           5 |        3 | Piston code execution                                  |
+| `theory-eval-queue`             |           5 |        3 | Mastra theory evaluator                                |
+| `code-review-queue`             |           3 |        3 | Planned                                                |
+| `pdf-ingest-queue`              |           2 |        5 | PDF extraction, embeddings, indexing, revision cleanup |
+| `pdf-question-generation-queue` |           3 |        3 | Mastra PDF-grounded question generation                |
+| `email-queue`                   |          10 |        5 | Planned                                                |
+| `payment-reconcile-queue`       |           1 |        3 | Planned                                                |
 
 All jobs use exponential backoff starting at one second. Completed jobs are retained for up to seven days or 1,000 jobs; failed jobs are retained for up to seven days or 5,000 jobs. Worker failure logs include the queue job ID and attempt count, never the source code or job payload. Inspect retained failures using BullMQ tooling or a Redis-aware operator workflow; a dashboard is not configured yet.
 
@@ -33,7 +34,7 @@ A queue submission failure marks the execution failed and returns HTTP 503. Afte
 
 Each coding execution UUID is its idempotency key and the BullMQ job ID is derived from its hash. A theory answer UUID is a stable UUID derived from the session ID and request `Idempotency-Key`; that answer UUID is also the BullMQ job identity. BullMQ retries and PostgreSQL redispatch reuse the same job. The theory worker conditionally transitions the answer row and only writes the result while it remains `running`. A replay returns the persisted answer without reserving another slot. The keys are endpoint-specific; a shared cross-endpoint idempotency policy is still open work.
 
-Theory evaluation uses the registered `theoryEvaluatorAgent` with structured Zod output and the existing NVIDIA/Groq provider router. Each successful result stores the provider that succeeded after failover, configured model name, and evaluator prompt version alongside score and feedback. It is a single stateless model call, so BullMQ owns background delivery/retry and Mastra owns agent/model execution; Mastra workflows, durable agents, and memory are not configured for this use case. Code review, PDF ingestion, email, and payment reconciliation remain planned consumers.
+Theory evaluation uses the registered `theoryEvaluatorAgent` with structured Zod output and the existing NVIDIA/Groq provider router. Each successful result stores the provider that succeeded after failover, configured model name, and evaluator prompt version alongside score and feedback. PDF indexing extracts page-aware text with Mozilla PDF.js, stores private originals in Cloudinary, and writes revisioned 1024-dimensional NVIDIA vectors to PostgreSQL/pgvector. The PDF question worker uses the registered Mastra PDF study agent, validates generated citations against retrieved chunks, and stores questions on the theory session. PDF uploads and generated questions are recoverable through Mongo/PostgreSQL reconciliation when queue submission fails. OCR is not supported in v1; production deployment must apply the PDF schema and RLS SQL and use restricted runtime roles. Code review, email, and payment reconciliation remain planned consumers.
 
 ## References
 

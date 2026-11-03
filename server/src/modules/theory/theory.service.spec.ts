@@ -21,6 +21,7 @@ describe('TheoryService', () => {
   let service: TheoryService;
   let prisma: {
     user: { findUnique: ReturnType<typeof vi.fn> };
+    pdfSource: { findMany: ReturnType<typeof vi.fn> };
     topic: { findUnique: ReturnType<typeof vi.fn> };
     question: { findMany: ReturnType<typeof vi.fn> };
   };
@@ -119,6 +120,7 @@ describe('TheoryService', () => {
   beforeEach(async () => {
     prisma = {
       user: { findUnique: vi.fn() },
+      pdfSource: { findMany: vi.fn() },
       topic: { findUnique: vi.fn() },
       question: { findMany: vi.fn() },
     };
@@ -360,14 +362,52 @@ describe('TheoryService', () => {
       expect(prisma.user.findUnique).not.toHaveBeenCalled();
     });
 
-    it('should reject PDF mode instead of creating a general session', async () => {
-      await expect(
-        service.startSession(
-          { mode: 'pdf', difficulty: 'Mid', totalQuestions: 10 } as unknown as StartSessionDto,
-          'user_001'
-        )
-      ).rejects.toThrow(BadRequestException);
-      expect(postgres.client_.theorySession.create).not.toHaveBeenCalled();
+    it('should persist selected ready PDF revisions and enqueue generation by session ID', async () => {
+      const pdfId = '507f1f77bcf86cd799439011';
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.pdfSource.findMany.mockResolvedValue([{ id: pdfId, activeRevision: 3 }]);
+      config.get.mockImplementation((key: string) => {
+        const values: Record<string, number> = {
+          THEORY_DAILY_SESSIONS_FREE: 3,
+          THEORY_QUESTIONS_PER_SESSION_FREE: 10,
+        };
+        return values[key];
+      });
+      const pdfSession = {
+        ...mockSession,
+        mode: 'pdf',
+        topicId: null,
+        pdfGenerationStatus: 'queued',
+      };
+      postgres.client_.theorySession.create.mockResolvedValue(pdfSession);
+
+      const result = await service.startSession(
+        { mode: 'pdf', pdfIds: [pdfId], difficulty: 'Mid', totalQuestions: 10 },
+        'user_001'
+      );
+
+      expect(result).toEqual(pdfSession);
+      expect(prisma.pdfSource.findMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: [pdfId] },
+          userId: 'user_001',
+          status: { in: ['ready', 'processing'] },
+          activeRevision: { gt: 0 },
+        },
+        select: { id: true, activeRevision: true },
+      });
+      expect(postgres.client_.theorySession.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          mode: 'pdf',
+          pdfIds: [pdfId],
+          pdfRevisions: { [pdfId]: 3 },
+        }),
+      });
+      expect(jobs.enqueue).toHaveBeenCalledWith(
+        'pdf-question-generation-queue',
+        { idempotencyKey: 'pdf-study:session_001', sessionId: 'session_001' },
+        'generate'
+      );
     });
 
     it('should fail closed when Redis quota is unavailable', async () => {
@@ -502,10 +542,11 @@ describe('TheoryService', () => {
       postgres.client_.theorySession.findFirst.mockResolvedValue({
         ...mockSession,
         mode: 'pdf',
+        pdfGenerationStatus: 'queued',
       });
 
       await expect(service.getSessionQuestions('session_001', 'user_001', dto)).rejects.toThrow(
-        BadRequestException
+        ConflictException
       );
       expect(prisma.question.findMany).not.toHaveBeenCalled();
     });

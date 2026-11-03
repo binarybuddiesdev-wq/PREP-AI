@@ -5,6 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  fastify: 5.12.7
   lodash: 4.18.0
   tmp: 0.2.6
   basic-ftp: 6.2.1

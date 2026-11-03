@@ -10,6 +10,7 @@ export enum ApiTags {
   ANSWERS = 'Answers',
   ANALYTICS = 'Analytics',
   CHATBOT = 'Chatbot',
+  PDFS = 'PDF Study',
 }
 
 export enum ApiRoutes {
@@ -24,6 +25,7 @@ export enum ApiRoutes {
   ANSWERS = 'answers',
   ANALYTICS = 'analytics',
   CHATBOT = 'chatbot',
+  PDFS = 'pdfs',
 }
 
 export enum ApiOperation {

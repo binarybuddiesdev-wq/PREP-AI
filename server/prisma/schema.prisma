@@ -8,15 +8,15 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  clerkUserId   String   @unique
-  email         String   @unique
-  name          String
-  avatarUrl     String?
-  role          String   @default("USER")
-  isNewUser     Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkUserId String   @unique
+  email       String   @unique
+  name        String
+  avatarUrl   String?
+  role        String   @default("USER")
+  isNewUser   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model UserSettings {
@@ -27,6 +27,29 @@ model UserSettings {
   notifications Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model PdfSource {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String
+  displayName       String
+  byteSize          Int
+  contentHash       String
+  assetId           String?
+  pageCount         Int?
+  status            String    @default("uploading")
+  activeRevision    Int       @default(0)
+  requestedRevision Int       @default(1)
+  failureCode       String?
+  dispatchNeeded    Boolean   @default(false)
+  dispatchClaimId   String?
+  dispatchClaimedAt DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, status, createdAt])
 }
 
 model Topic {
@@ -40,8 +63,8 @@ model Topic {
 }
 
 model Question {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  question  String
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  question        String
   topicId         String   @db.ObjectId
   difficulty      String
   referenceAnswer String?

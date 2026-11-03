@@ -113,6 +113,39 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     await transaction.$executeRaw`SELECT set_config('app.worker_session_id', ${sessionId}, true)`;
   }
 
+  async listQueuedPdfStudySessionIds(limit = 100): Promise<string[]> {
+    const client = this.workerClient;
+    if (!client) throw new Error('PostgreSQL worker client is not connected');
+    const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
+    const rows = await client.$queryRaw<Array<{ session_id: string }>>`
+      SELECT session_id
+      FROM public.prepai_list_queued_pdf_study_session_ids(${safeLimit})
+    `;
+    return rows.map((row) => row.session_id);
+  }
+
+  async withWorkerPdfContext<T>(
+    ownerId: string,
+    sourceId: string,
+    revision: number,
+    operation: (transaction: Prisma.TransactionClient) => Promise<T>
+  ): Promise<T> {
+    this.assertIdentity(ownerId, 'PDF worker owner identity is required');
+    this.assertIdentity(sourceId, 'PDF worker source identity is required');
+    if (!Number.isInteger(revision) || revision < 1) {
+      throw new Error('PDF worker revision must be a positive integer');
+    }
+    const client = this.workerClient;
+    if (!client) throw new Error('PostgreSQL worker client is not connected');
+
+    return client.$transaction(async (transaction) => {
+      await this.setTenantContext(transaction, ownerId);
+      await transaction.$executeRaw`SELECT set_config('app.worker_source_id', ${sourceId}, true)`;
+      await transaction.$executeRaw`SELECT set_config('app.worker_revision', ${String(revision)}, true)`;
+      return operation(transaction);
+    });
+  }
+
   private assertIdentity(value: string, message: string): void {
     if (!value.trim()) throw new Error(message);
   }
