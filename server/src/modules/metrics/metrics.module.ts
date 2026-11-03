@@ -3,9 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { MetricsController } from './metrics.controller.js';
 import { MetricsService } from './metrics.service.js';
 import { RedisModule } from '../../common/redis/redis.module.js';
+import { JobQueueModule } from '../../common/jobs/job-queue.module.js';
 
 @Module({
-  imports: [RedisModule],
+  imports: [RedisModule, JobQueueModule],
   controllers: [MetricsController],
   providers: [
     MetricsService,

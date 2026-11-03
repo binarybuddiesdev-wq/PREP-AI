@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - BullMQ queue metrics
+
+- Added Prometheus `bullmq_job_count` gauges for every registered queue and the fixed `waiting`, `active`, `completed`, `failed`, and `delayed` states. Queue and state labels are bounded; job identifiers and user data are excluded.
+- Queue count reads fail open so a Redis outage omits queue samples without taking down the metrics scrape. Updated the observability guide, backend tracker, and architecture TODO.
+- Verification: focused queue/metrics tests passed (16 tests); `pnpm gate -- --stack server --level full` passed (771 tests, 90.18% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed. Review found no Critical or Important issues.
+
 ## 2026-11-03 - HTTP request correlation IDs
 
 - Fastify now accepts a canonical UUID v4 from `X-Request-Id` or generates a

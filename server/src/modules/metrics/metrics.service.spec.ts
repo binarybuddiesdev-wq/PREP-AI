@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MetricsService } from './metrics.service.js';
+import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 
 describe('MetricsService', () => {
   it('records request duration with bounded route labels and releases in-flight count', async () => {
@@ -87,5 +88,44 @@ describe('MetricsService', () => {
     expect(output).toContain('# TYPE http_request_duration_seconds histogram');
     expect(output).toContain('# TYPE mastra_provider_failovers_total counter');
     expect(output).not.toContain('mastra_provider_failovers_total{from=');
+  });
+
+  it('exports bounded BullMQ counts for registered queues and states', async () => {
+    const jobs = {
+      getJobCounts: vi.fn().mockResolvedValue({
+        [JOB_QUEUE_NAMES.THEORY_EVALUATION]: {
+          waiting: 3,
+          active: 1,
+          completed: 8,
+          failed: 2,
+          delayed: 0,
+        },
+      }),
+    };
+    const metrics = new MetricsService(
+      { getMetricCounter: vi.fn().mockResolvedValue(0) } as never,
+      jobs as never
+    );
+
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE bullmq_job_count gauge');
+    expect(output).toContain('bullmq_job_count{queue="theory-eval-queue",state="waiting"} 3');
+    expect(output).toContain('bullmq_job_count{queue="theory-eval-queue",state="failed"} 2');
+    expect(output).not.toContain('jobId=');
+    expect(jobs.getJobCounts).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the scrape available when Redis cannot return queue counts', async () => {
+    const jobs = { getJobCounts: vi.fn().mockRejectedValue(new Error('Redis unavailable')) };
+    const metrics = new MetricsService(
+      { getMetricCounter: vi.fn().mockResolvedValue(0) } as never,
+      jobs as never
+    );
+
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE http_request_duration_seconds histogram');
+    expect(output).not.toContain('bullmq_job_count{');
   });
 });

@@ -1,5 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { RedisService } from '../../common/redis/redis.service.js';
+import { JOB_QUEUE_NAMES } from '../../common/jobs/job-queue.constants.js';
+import {
+  JOB_QUEUE_COUNT_STATES,
+  JobQueueService,
+  TJobQueueCounts,
+} from '../../common/jobs/job-queue.service.js';
 
 export interface IHttpMetricLabels {
   method: string;
@@ -18,7 +24,10 @@ export class MetricsService {
   >();
   private readonly topicCacheRequests = new Map<string, number>();
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    @Optional() private readonly jobs?: JobQueueService
+  ) {}
 
   beginRequest(
     routeTemplate: string
@@ -70,6 +79,7 @@ export class MetricsService {
         count: await this.redis.getMetricCounter(this.providerFailoverKey(from, to)),
       }))
     ).catch(() => []);
+    const jobCounts = await this.jobs?.getJobCounts().catch(() => undefined);
     const lines = [
       '# HELP http_requests_in_flight Number of HTTP requests currently being handled.',
       '# TYPE http_requests_in_flight gauge',
@@ -94,6 +104,9 @@ export class MetricsService {
           const [operation, result] = key.split(':');
           return `topic_cache_requests_total{operation="${operation}",result="${result}"} ${count}`;
         }),
+      '# HELP bullmq_job_count Number of jobs by queue and BullMQ state.',
+      '# TYPE bullmq_job_count gauge',
+      ...this.formatJobCounts(jobCounts),
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -129,6 +142,19 @@ export class MetricsService {
 
   private providerFailoverKey(from: string, to: string): string {
     return `prepai:metrics:provider-failover:${from}:${to}`;
+  }
+
+  private formatJobCounts(jobCounts: TJobQueueCounts | undefined): string[] {
+    if (!jobCounts) return [];
+
+    return Object.values(JOB_QUEUE_NAMES)
+      .sort((left, right) => left.localeCompare(right))
+      .flatMap((queue) =>
+        JOB_QUEUE_COUNT_STATES.map((state) => {
+          const count = jobCounts[queue]?.[state] ?? 0;
+          return `bullmq_job_count{queue="${this.escapeLabel(queue)}",state="${state}"} ${count}`;
+        })
+      );
   }
 
   private normalizeRoute(route: string): string {

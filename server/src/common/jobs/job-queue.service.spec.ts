@@ -10,6 +10,7 @@ const bullMocks = vi.hoisted(() => ({
   queueClose: vi.fn(),
   queueOn: vi.fn(),
   getJobs: vi.fn(),
+  getJobCounts: vi.fn(),
 }));
 
 vi.mock('bullmq', () => ({
@@ -19,6 +20,7 @@ vi.mock('bullmq', () => ({
       close: bullMocks.queueClose,
       on: bullMocks.queueOn,
       getJobs: bullMocks.getJobs,
+      getJobCounts: bullMocks.getJobCounts,
     };
   }),
 }));
@@ -101,6 +103,31 @@ describe('JobQueueService', () => {
       failedJobs
     );
     expect(bullMocks.getJobs).toHaveBeenCalledWith(['failed'], 0, 24);
+  });
+
+  it('reads fixed state counts for every registered queue', async () => {
+    bullMocks.getJobCounts.mockImplementation(async (...states: string[]) =>
+      Object.fromEntries(states.map((state) => [state, state === 'waiting' ? 2 : 0]))
+    );
+
+    const result = await service.getJobCounts();
+
+    expect(Object.keys(result).sort()).toEqual(Object.values(JOB_QUEUE_NAMES).sort());
+    expect(bullMocks.getJobCounts).toHaveBeenCalledTimes(Object.keys(JOB_QUEUE_NAMES).length);
+    expect(bullMocks.getJobCounts).toHaveBeenCalledWith(
+      'waiting',
+      'active',
+      'completed',
+      'failed',
+      'delayed'
+    );
+    expect(result[JOB_QUEUE_NAMES.THEORY_EVALUATION]).toEqual({
+      waiting: 2,
+      active: 0,
+      completed: 0,
+      failed: 0,
+      delayed: 0,
+    });
   });
 
   it('logs producer connection failures', () => {

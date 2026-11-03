@@ -13,6 +13,17 @@ import {
 } from './job-queue.constants.js';
 import { CODING_QUEUE_UNAVAILABLE } from '@/common/constants/api.constants.js';
 
+export const JOB_QUEUE_COUNT_STATES = [
+  'waiting',
+  'active',
+  'completed',
+  'failed',
+  'delayed',
+] as const;
+
+export type TJobQueueCountState = (typeof JOB_QUEUE_COUNT_STATES)[number];
+export type TJobQueueCounts = Record<TJobQueueName, Record<TJobQueueCountState, number>>;
+
 @Injectable()
 export class JobQueueService implements OnModuleDestroy {
   private readonly queues = new Map<TJobQueueName, Queue>();
@@ -66,6 +77,16 @@ export class JobQueueService implements OnModuleDestroy {
     const queue = this.queues.get(queueName);
     if (!queue) return [];
     return (await queue.getJobs(['failed'], 0, Math.max(0, limit - 1))) as Job<TData>[];
+  }
+
+  async getJobCounts(): Promise<TJobQueueCounts> {
+    const entries = await Promise.all(
+      [...this.queues.entries()].map(async ([queueName, queue]) => [
+        queueName,
+        await queue.getJobCounts(...JOB_QUEUE_COUNT_STATES),
+      ])
+    );
+    return Object.fromEntries(entries) as TJobQueueCounts;
   }
 
   getJobId(queueName: TJobQueueName, idempotencyKey: string): string {
