@@ -61,7 +61,13 @@ export class EmailWorker implements OnModuleInit, OnModuleDestroy {
     error: Error
   ): void => {
     this.logger.error(
-      { userId: job?.data.userId, jobId: job?.id, attemptsMade: job?.attemptsMade, err: error },
+      {
+        userId: job?.data.userId,
+        jobId: job?.id,
+        attemptsMade: job?.attemptsMade,
+        requestId: job?.data.requestId,
+        err: error,
+      },
       'Email reminder job failed'
     );
   };

@@ -88,9 +88,11 @@ Clerk webhook → Svix verify → POST /webhooks/clerk
 | `sessionId`          | `TheorySession.id`                              |
 | `correlationId`      | `X-Request-Id` UUID v4 (validated or generated) |
 
-Until OTEL and queue propagation are wired, the pino `reqId` ties together the
-HTTP request log and response header. Propagating it through job payloads
-remains open.
+The pino `reqId` ties together the HTTP request log and response header. For
+jobs enqueued during a request, the validated ID is added centrally to the
+BullMQ payload and included in worker job-failure logs as `requestId`. Scheduled
+and recovery jobs without an originating HTTP request omit it. Full distributed
+tracing and cross-service spans remain open.
 
 ## Correlation IDs
 
@@ -157,7 +159,8 @@ P1 incidents are reserved for full outages — see
 - Logs: tail `pnpm dev` in `server/`. Pino-pretty prints colourised lines.
 - Request IDs: send a UUID v4 in `X-Request-Id` to correlate the request log
   with the response. Invalid or missing values are replaced with a generated
-  UUID v4.
+  UUID v4. Jobs enqueued by that request carry the same value in their payload,
+  and worker failure logs include it as `requestId`.
 - Metrics: set `METRICS_BEARER_TOKEN` to a random value of at least 32
   characters, restart the API, then scrape `/metrics` with
   `Authorization: Bearer <token>`. Without the token, `/metrics` returns 404.

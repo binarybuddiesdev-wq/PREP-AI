@@ -62,7 +62,12 @@ export class PdfIngestionWorker implements OnModuleInit, OnModuleDestroy {
     error: Error
   ): Promise<void> => {
     this.logger.error(
-      { jobId: job?.id, sourceId: job?.data.sourceId, errorName: error.name },
+      {
+        jobId: job?.id,
+        sourceId: job?.data.sourceId,
+        requestId: job?.data.requestId,
+        errorName: error.name,
+      },
       'PDF background job failed'
     );
     if (!job || job.name === 'delete' || job.attemptsMade < (job.opts.attempts ?? 1)) return;

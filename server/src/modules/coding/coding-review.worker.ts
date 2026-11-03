@@ -66,6 +66,7 @@ export class CodingReviewWorker implements OnModuleInit, OnModuleDestroy {
         executionId: job?.data.executionId,
         jobId: job?.id,
         attemptsMade: job?.attemptsMade,
+        requestId: job?.data.requestId,
         err: error,
       },
       'Coding review job failed'

@@ -111,8 +111,9 @@ describe('PdfStudyGenerationWorker', () => {
     const errored = bullMocks.on.mock.calls.find(([event]) => event === 'error')?.[1] as
       ((error: Error) => void) | undefined;
     await failed?.(undefined, new Error('no job'));
+    const requestId = '8d2f6b25-35f4-4cb7-97d1-310eaf8cd4b3';
     await failed?.(
-      { id: 'j', data: { sessionId: 's' }, attemptsMade: 1, opts: { attempts: 2 } },
+      { id: 'j', data: { sessionId: 's', requestId }, attemptsMade: 1, opts: { attempts: 2 } },
       new Error('retry')
     );
     await failed?.(
@@ -121,7 +122,10 @@ describe('PdfStudyGenerationWorker', () => {
     );
     errored?.(new Error('worker'));
     expect(logger.warn).toHaveBeenCalled();
-    expect(logger.error).toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId }),
+      'PDF question generation job failed'
+    );
     await worker.onModuleDestroy();
   });
 

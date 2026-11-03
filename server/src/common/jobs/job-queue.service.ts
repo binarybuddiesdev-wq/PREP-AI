@@ -12,6 +12,7 @@ import {
   TJobQueueName,
 } from './job-queue.constants.js';
 import { CODING_QUEUE_UNAVAILABLE } from '@/common/constants/api.constants.js';
+import { getCurrentRequestId } from '../request-context/request-context.js';
 
 export const JOB_QUEUE_COUNT_STATES = [
   'waiting',
@@ -64,7 +65,9 @@ export class JobQueueService implements OnModuleDestroy {
     }
 
     try {
-      const job = await queue.add(jobName, data, {
+      const requestId = getCurrentRequestId();
+      const jobData = requestId ? { ...data, requestId } : data;
+      const job = await queue.add(jobName, jobData, {
         jobId: this.getJobId(queueName, data.idempotencyKey),
       });
       return job.id ?? this.getJobId(queueName, data.idempotencyKey);

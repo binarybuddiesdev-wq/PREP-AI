@@ -332,13 +332,19 @@ describe('CodingExecutionWorker', () => {
       error: Error
     ) => Promise<void>;
 
+    const requestId = '8d2f6b25-35f4-4cb7-97d1-310eaf8cd4b3';
     await failedHandler(
-      { id: 'job-1', attemptsMade: 3, opts: { attempts: 3 }, data: jobData },
+      {
+        id: 'job-1',
+        attemptsMade: 3,
+        opts: { attempts: 3 },
+        data: { ...jobData, requestId },
+      },
       new Error('Piston unavailable')
     );
 
     expect(logger.error).toHaveBeenCalledWith(
-      expect.objectContaining({ jobId: 'job-1', attemptsMade: 3 }),
+      expect.objectContaining({ jobId: 'job-1', attemptsMade: 3, requestId }),
       expect.any(String)
     );
     expect(JSON.stringify(logger.error.mock.calls)).not.toContain(jobData.code);

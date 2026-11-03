@@ -104,6 +104,31 @@ describe('CodingReviewWorker', () => {
     await worker.onModuleDestroy();
   });
 
+  it('includes the originating request ID in failed job logs', async () => {
+    const worker = createWorker();
+    await worker.onModuleInit();
+    const requestId = '8d2f6b25-35f4-4cb7-97d1-310eaf8cd4b3';
+    const failedHandler = bullMocks.on.mock.calls.find(([event]) => event === 'failed')?.[1] as (
+      job: Pick<Job<ICodingReviewJobData>, 'data' | 'attemptsMade' | 'opts'>,
+      error: Error
+    ) => Promise<void>;
+
+    await failedHandler(
+      {
+        data: { ...reviewJob, requestId },
+        attemptsMade: 1,
+        opts: { attempts: 3 },
+      } as never,
+      new Error('retry')
+    );
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId }),
+      'Coding review job failed'
+    );
+    await worker.onModuleDestroy();
+  });
+
   it('keeps the worker disabled when the process is configured as producer-only', async () => {
     config.get.mockImplementation((key: string, fallback?: unknown) =>
       key === 'JOBS_WORKER_ENABLED' ? false : fallback

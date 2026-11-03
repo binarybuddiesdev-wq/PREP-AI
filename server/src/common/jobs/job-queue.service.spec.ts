@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JobQueueService } from './job-queue.service.js';
 import { JOB_QUEUE_NAMES } from './job-queue.constants.js';
+import { runWithRequestId } from '../request-context/request-context.js';
 
 const bullMocks = vi.hoisted(() => ({
   add: vi.fn(),
@@ -93,6 +94,30 @@ describe('JobQueueService', () => {
     await expect(
       service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute')
     ).resolves.toBe('a8c0f40f9449f2b7be3547fb5a3ca710dd537068e52cd653776b7fed3b99b173');
+  });
+
+  it('adds the current request ID to the queued job payload', async () => {
+    const requestId = '8d2f6b25-35f4-4cb7-97d1-310eaf8cd4b3';
+
+    await runWithRequestId(requestId, () =>
+      service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute')
+    );
+
+    expect(bullMocks.add).toHaveBeenCalledWith(
+      'execute',
+      { ...executionData, requestId },
+      expect.objectContaining({ jobId: expect.any(String) })
+    );
+  });
+
+  it('does not add request metadata to jobs enqueued without an HTTP context', async () => {
+    await service.enqueue(JOB_QUEUE_NAMES.CODING_EXECUTION, executionData, 'execute');
+
+    expect(bullMocks.add).toHaveBeenCalledWith(
+      'execute',
+      executionData,
+      expect.objectContaining({ jobId: expect.any(String) })
+    );
   });
 
   it('exposes retained failed jobs for durable execution reconciliation', async () => {

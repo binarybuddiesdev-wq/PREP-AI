@@ -92,13 +92,24 @@ describe('TheoryEvaluationWorker', () => {
       job: Job<ITheoryEvaluationJobData>,
       error: Error
     ) => Promise<void>;
-    const job = { id: 'job_001', data: jobData, attemptsMade: 3, opts: { attempts: 3 } };
+    const requestId = '8d2f6b25-35f4-4cb7-97d1-310eaf8cd4b3';
+    const job = {
+      id: 'job_001',
+      data: { ...jobData, requestId },
+      attemptsMade: 3,
+      opts: { attempts: 3 },
+    };
 
     await failedHandler(job as Job<ITheoryEvaluationJobData>, new Error('provider failed'));
 
     expect(evaluations.markFailed).toHaveBeenCalledWith('answer_001');
     expect(logger.error).toHaveBeenCalledWith(
-      expect.objectContaining({ jobId: 'job_001', attemptsMade: 3, errorName: 'Error' }),
+      expect.objectContaining({
+        jobId: 'job_001',
+        attemptsMade: 3,
+        errorName: 'Error',
+        requestId,
+      }),
       'Theory evaluation job failed'
     );
     await worker.onModuleDestroy();

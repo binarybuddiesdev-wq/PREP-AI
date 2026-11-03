@@ -88,15 +88,20 @@ describe('PdfIngestionWorker', () => {
     )?.[1] as ((job: unknown, error: Error) => Promise<void>) | undefined;
     const errorHandler = bullMocks.workerOn.mock.calls.find(([event]) => event === 'error')?.[1] as
       ((error: Error) => void) | undefined;
+    const requestId = '8d2f6b25-35f4-4cb7-97d1-310eaf8cd4b3';
     await failedHandler?.(
       {
         id: 'job',
         name: 'ingest',
-        data: { sourceId: 's', revision: 1 },
+        data: { sourceId: 's', revision: 1, requestId },
         attemptsMade: 1,
         opts: { attempts: 2 },
       },
       new Error('retry')
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId }),
+      'PDF background job failed'
     );
     expect(indexing.markFailed).not.toHaveBeenCalled();
     indexing.markFailed.mockRejectedValueOnce(new Error('db down'));

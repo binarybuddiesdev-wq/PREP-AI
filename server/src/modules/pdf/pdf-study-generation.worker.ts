@@ -55,7 +55,12 @@ export class PdfStudyGenerationWorker implements OnModuleInit, OnModuleDestroy {
     error: Error
   ): Promise<void> => {
     this.logger.error(
-      { jobId: job?.id, sessionId: job?.data.sessionId, errorName: error.name },
+      {
+        jobId: job?.id,
+        sessionId: job?.data.sessionId,
+        requestId: job?.data.requestId,
+        errorName: error.name,
+      },
       'PDF question generation job failed'
     );
     if (!job || job.attemptsMade < (job.opts.attempts ?? 1)) return;

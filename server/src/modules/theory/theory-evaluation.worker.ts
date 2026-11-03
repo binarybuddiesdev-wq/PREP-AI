@@ -63,7 +63,12 @@ export class TheoryEvaluationWorker implements OnModuleInit, OnModuleDestroy {
     error: Error
   ): Promise<void> => {
     this.logger.error(
-      { jobId: job?.id, attemptsMade: job?.attemptsMade, errorName: error.name },
+      {
+        jobId: job?.id,
+        attemptsMade: job?.attemptsMade,
+        errorName: error.name,
+        requestId: job?.data.requestId,
+      },
       'Theory evaluation job failed'
     );
     if (!job || job.attemptsMade < (job.opts.attempts ?? 1)) return;

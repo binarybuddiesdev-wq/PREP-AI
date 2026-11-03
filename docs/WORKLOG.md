@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - Queue request correlation
+
+- Added request-scoped async context around Nest route execution. `JobQueueService` copies the existing UUID v4 request ID into BullMQ job data centrally; enqueue calls outside HTTP requests omit it.
+- Worker failure logs for theory evaluation, coding execution/review, PDF ingestion/question generation, and email reminders include `requestId` when present. No shared logger bindings or database schema changed.
+- Verification: focused request-context, queue, and worker tests passed (54 tests); `pnpm gate -- --stack server --level full` passed (777 tests, 90.15% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed.
+
 ## 2026-11-03 - BullMQ queue metrics
 
 - Added Prometheus `bullmq_job_count` gauges for every registered queue and the fixed `waiting`, `active`, `completed`, `failed`, and `delayed` states. Queue and state labels are bounded; job identifiers and user data are excluded.
@@ -12,7 +18,8 @@
   replacement before Pino logs the request. Responses echo the same ID, and
   CORS exposes it to browser clients.
 - Updated the observability guide, architecture checklist, and API request-ID
-  design. Queue payload propagation and distributed tracing remain future work.
+  design. Queue payload propagation is tracked in the follow-up entry above;
+  distributed tracing remains future work.
 - Verification: full server gate passed (768 tests, 90.12% branch coverage),
   real Mongo isolation passed (28 tests), architecture viewer check passed, and
   `git diff --check` passed. Review confirmed the raw request ID is reused by

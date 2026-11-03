@@ -97,7 +97,12 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
     error: Error
   ): Promise<void> => {
     this.logger.error(
-      { jobId: job?.id, attemptsMade: job?.attemptsMade, err: error },
+      {
+        jobId: job?.id,
+        attemptsMade: job?.attemptsMade,
+        requestId: job?.data.requestId,
+        err: error,
+      },
       'Coding execution job failed'
     );
     if (

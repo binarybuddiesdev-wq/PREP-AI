@@ -1,6 +1,7 @@
 export interface ICodingReviewJobData {
   idempotencyKey: string;
   executionId: string;
+  requestId?: string;
 }
 
 export interface ICodingReviewResult {

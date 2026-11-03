@@ -20,6 +20,7 @@ export interface ICodingExecutionJobData {
   code: string;
   examples: unknown;
   quotaReservation: ICodingSolveQuotaReservation | null;
+  requestId?: string;
 }
 
 export type TCodingExecutionResult = ICodingExecutionResult;

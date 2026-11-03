@@ -92,4 +92,25 @@ describe('EmailWorker', () => {
     expect(Worker).not.toHaveBeenCalled();
     expect(logger.warn).not.toHaveBeenCalled();
   });
+
+  it('includes the originating request ID in failed reminder logs', async () => {
+    const worker = createWorker();
+    await worker.onModuleInit();
+    const failedHandler = bullMocks.on.mock.calls.find(([event]) => event === 'failed')?.[1] as (
+      job: Job<EmailReminderJob>,
+      error: Error
+    ) => void;
+    const requestId = '8d2f6b25-35f4-4cb7-97d1-310eaf8cd4b3';
+
+    failedHandler(
+      { data: { ...data, requestId } } as Job<EmailReminderJob>,
+      new Error('mail provider unavailable')
+    );
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId }),
+      'Email reminder job failed'
+    );
+    await worker.onModuleDestroy();
+  });
 });
