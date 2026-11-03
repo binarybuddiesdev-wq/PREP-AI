@@ -45,22 +45,22 @@ Endpoints to expose:
 
 Current and planned metric families (Prometheus names):
 
-The HTTP histogram, in-flight gauge, and provider failover counter are emitted
-now. A histogram also exposes a count by method, route, and status, which can be
-used to graph request rate and error rate. The remaining rows are future
-instrumentation.
+The HTTP histogram, in-flight gauge, provider failover counter, and topic-cache
+hit/miss counter are emitted now. The HTTP histogram also exposes a count by
+method, route, and status, which can be used to graph request rate and error
+rate. The remaining rows are future instrumentation.
 
-| Name                                                  | Type      | Labels                          | Source                                     |
-| ----------------------------------------------------- | --------- | ------------------------------- | ------------------------------------------ |
-| `http_request_duration_seconds`                       | Histogram | `method`, `route`, `status`     | Fastify request lifecycle hooks            |
-| `http_requests_in_flight`                             | Gauge     | `route`                         | Fastify request lifecycle hooks            |
-| `mastra_agent_duration_seconds`                       | Histogram | `agent`, `provider`, `fallback` | Agent timer in `mastra/providers.ts`       |
-| `mastra_provider_failovers_total`                     | Counter   | `from`, `to`                    | `chatWithFailover` after fallback succeeds |
-| `prisma_query_duration_seconds`                       | Histogram | `model`, `operation`            | Prisma `$on('query')` hook                 |
-| `redis_cache_hits_total` / `redis_cache_misses_total` | Counter   | `key_prefix`                    | `cache-manager` events                     |
-| `piston_execution_duration_seconds`                   | Histogram | `language`, `verdict`           | Piston module                              |
-| `webhook_signature_failures_total`                    | Counter   | `provider`                      | Svix verification path                     |
-| `clerk_auth_failures_total`                           | Counter   | `reason`                        | `ClerkAuthGuard`                           |
+| Name                                | Type      | Labels                          | Source                                     |
+| ----------------------------------- | --------- | ------------------------------- | ------------------------------------------ |
+| `http_request_duration_seconds`     | Histogram | `method`, `route`, `status`     | Fastify request lifecycle hooks            |
+| `http_requests_in_flight`           | Gauge     | `route`                         | Fastify request lifecycle hooks            |
+| `mastra_agent_duration_seconds`     | Histogram | `agent`, `provider`, `fallback` | Agent timer in `mastra/providers.ts`       |
+| `mastra_provider_failovers_total`   | Counter   | `from`, `to`                    | `chatWithFailover` after fallback succeeds |
+| `prisma_query_duration_seconds`     | Histogram | `model`, `operation`            | Prisma `$on('query')` hook                 |
+| `topic_cache_requests_total`        | Counter   | `operation`, `result`           | Topic list/detail Redis cache reads        |
+| `piston_execution_duration_seconds` | Histogram | `language`, `verdict`           | Piston module                              |
+| `webhook_signature_failures_total`  | Counter   | `provider`                      | Svix verification path                     |
+| `clerk_auth_failures_total`         | Counter   | `reason`                        | `ClerkAuthGuard`                           |
 
 `mastra_provider_failovers_total` increments once when a fallback succeeds
 after another configured provider failed. Provider labels are limited to
@@ -154,11 +154,13 @@ P1 incidents are reserved for full outages — see
 - Metrics: set `METRICS_BEARER_TOKEN` to a random value of at least 32
   characters, restart the API, then scrape `/metrics` with
   `Authorization: Bearer <token>`. Without the token, `/metrics` returns 404.
-  HTTP duration, in-flight requests, and successful AI provider failovers are
-  currently collected. Route labels use Fastify route templates, and the
-  scrape endpoint is excluded from collection. HTTP metrics are process-local;
-  provider failovers are shared through Redis. The scrape still returns HTTP
-  metrics if Redis is unavailable.
+  HTTP duration, in-flight requests, successful AI provider failovers, and
+  topic-cache hits/misses are currently collected. Topic cache labels are
+  limited to `operation=list|detail` and `result=hit|miss`; cache slugs,
+  categories, and users are never labels. Route labels use Fastify route
+  templates, and the scrape endpoint is excluded from collection. HTTP and
+  topic-cache metrics are process-local; provider failovers are shared through
+  Redis. The scrape still returns local metrics if Redis is unavailable.
 - Traces: not exposed in dev yet.
 
 ## Open questions

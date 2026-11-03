@@ -56,6 +56,26 @@ describe('MetricsService', () => {
     expect(output).not.toContain('unknown');
   });
 
+  it('records topic cache hits and misses with bounded labels', async () => {
+    const metrics = new MetricsService({
+      incrementMetricCounter: vi.fn(),
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+    } as never);
+
+    metrics.recordTopicCacheRequest('list', 'hit');
+    metrics.recordTopicCacheRequest('detail', 'miss');
+    metrics.recordTopicCacheRequest('slug:react', 'hit');
+
+    const output = await metrics.getMetrics();
+    expect(output).toContain(
+      '# HELP topic_cache_requests_total Topic cache requests by operation and result.'
+    );
+    expect(output).toContain('# TYPE topic_cache_requests_total counter');
+    expect(output).toContain('topic_cache_requests_total{operation="list",result="hit"} 1');
+    expect(output).toContain('topic_cache_requests_total{operation="detail",result="miss"} 1');
+    expect(output).not.toContain('slug:react');
+  });
+
   it('keeps the scrape available when Redis cannot provide the counter', async () => {
     const metrics = new MetricsService({
       incrementMetricCounter: vi.fn(),

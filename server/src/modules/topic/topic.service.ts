@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { RedisService } from '@/common/redis/redis.service.js';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { CreateTopicDto, GetTopicsDto, UpdateTopicDto } from './dto/index.js';
 import {
   TOPIC_ALREADY_EXISTS,
@@ -38,6 +39,7 @@ export class TopicService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly metrics: MetricsService,
     @InjectPinoLogger(TopicService.name) private readonly logger: PinoLogger
   ) {}
 
@@ -73,7 +75,11 @@ export class TopicService {
     const cachedTopics = await this.readTopicCache<
       Awaited<ReturnType<typeof this.prisma.topic.findMany>>
     >(cacheKey, (value) => Array.isArray(value) && value.every(isTopicCacheEntry));
-    if (cachedTopics !== null) return cachedTopics;
+    if (cachedTopics !== null) {
+      this.metrics.recordTopicCacheRequest('list', 'hit');
+      return cachedTopics;
+    }
+    this.metrics.recordTopicCacheRequest('list', 'miss');
     const where = category ? { category } : {};
 
     const topics = await this.prisma.topic.findMany({ where });
@@ -89,7 +95,11 @@ export class TopicService {
     const cachedTopic = await this.readTopicCache<
       Awaited<ReturnType<typeof this.prisma.topic.findUnique>>
     >(cacheKey, isTopicCacheEntry);
-    if (cachedTopic !== null) return cachedTopic;
+    if (cachedTopic !== null) {
+      this.metrics.recordTopicCacheRequest('detail', 'hit');
+      return cachedTopic;
+    }
+    this.metrics.recordTopicCacheRequest('detail', 'miss');
     const topic = await this.prisma.topic.findUnique({ where: { slug } });
 
     if (!topic) {

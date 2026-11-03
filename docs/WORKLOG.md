@@ -1,5 +1,19 @@
 # Worklog
 
+## 2026-11-03 - Topic cache metrics
+
+- Added the Prometheus `topic_cache_requests_total` counter to the existing
+  metrics service. It records list/detail cache hits and misses, including
+  malformed entries and Redis read failures, using only bounded operation and
+  result labels.
+- Updated the cache design, observability guide, backend tracker, and
+  architecture checklist. The Redis cache keys, TTL, fallback, and write
+  invalidation behavior are unchanged.
+- Verification: full server gate passed (759 tests, 90.12% branch coverage),
+  real Mongo isolation passed (28 tests), architecture viewer check passed, and
+  `git diff --check` passed. Read-only review found no issues; added a direct
+  assertion for detail-cache misses from its optional coverage recommendation.
+
 ## 2026-11-03 - Study Chat retry safety
 
 - Added required `Idempotency-Key` handling to conversation creation and message

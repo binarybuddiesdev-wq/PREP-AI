@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TopicService } from './topic.service.js';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { RedisService } from '@/common/redis/redis.service.js';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -30,6 +31,7 @@ describe('TopicService', () => {
     warn: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
   };
+  let metrics: { recordTopicCacheRequest: ReturnType<typeof vi.fn> };
 
   const mockTopic = {
     id: 'topic_001',
@@ -66,12 +68,14 @@ describe('TopicService', () => {
       warn: vi.fn(),
       error: vi.fn(),
     };
+    metrics = { recordTopicCacheRequest: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TopicService,
         { provide: PrismaService, useValue: prisma },
         { provide: RedisService, useValue: redis },
+        { provide: MetricsService, useValue: metrics },
         { provide: 'PinoLogger:TopicService', useValue: mockPinoLogger },
       ],
     }).compile();
@@ -212,6 +216,7 @@ describe('TopicService', () => {
 
       expect(prisma.topic.findMany).not.toHaveBeenCalled();
       expect(redis.setCacheValue).not.toHaveBeenCalled();
+      expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('list', 'hit');
     });
 
     it('uses distinct keys for the supported categories', async () => {
@@ -240,6 +245,7 @@ describe('TopicService', () => {
         60
       );
       expect(redis.deleteCacheValues).toHaveBeenCalledWith('prepai:cache:topics:v1:list:all');
+      expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('list', 'miss');
     });
 
     it('refreshes a valid JSON cache entry with the wrong list shape', async () => {
@@ -261,6 +267,7 @@ describe('TopicService', () => {
 
       expect(prisma.topic.findMany).toHaveBeenCalledOnce();
       expect(mockPinoLogger.warn).toHaveBeenCalled();
+      expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('list', 'miss');
     });
   });
 
@@ -272,6 +279,7 @@ describe('TopicService', () => {
 
       expect(result).toEqual(mockTopic);
       expect(prisma.topic.findUnique).toHaveBeenCalledWith({ where: { slug: 'react' } });
+      expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('detail', 'miss');
     });
 
     it('should throw NotFoundException if topic not found', async () => {
@@ -290,6 +298,7 @@ describe('TopicService', () => {
 
       expect(prisma.topic.findUnique).not.toHaveBeenCalled();
       expect(redis.setCacheValue).not.toHaveBeenCalled();
+      expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('detail', 'hit');
     });
 
     it('refreshes a valid JSON cache entry with the wrong detail shape', async () => {
@@ -300,6 +309,7 @@ describe('TopicService', () => {
 
       expect(prisma.topic.findUnique).toHaveBeenCalledOnce();
       expect(redis.deleteCacheValues).toHaveBeenCalledWith('prepai:cache:topics:v1:slug:react');
+      expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('detail', 'miss');
     });
   });
 

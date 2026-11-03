@@ -29,8 +29,9 @@ is unavailable.
    deployment.
 
 Redis is selected for shared entries and centralized invalidation. The short
-TTL bounds stale reads if invalidation fails. No cache metrics system currently
-exists; this change will not introduce a metrics dependency.
+TTL bounds stale reads if invalidation fails. Cache hit/miss telemetry uses the
+existing Prometheus `MetricsService`; see the
+[topic cache metrics design](2026-11-03-topic-cache-metrics-design.md).
 
 ## Behavior
 

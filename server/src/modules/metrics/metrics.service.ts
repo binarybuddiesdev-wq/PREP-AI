@@ -16,6 +16,7 @@ export class MetricsService {
     string,
     { method: string; route: string; status: string; count: number; sum: number; buckets: number[] }
   >();
+  private readonly topicCacheRequests = new Map<string, number>();
 
   constructor(private readonly redis: RedisService) {}
 
@@ -85,6 +86,14 @@ export class MetricsService {
         ({ from, to, count }) =>
           `mastra_provider_failovers_total{from="${from}",to="${to}"} ${count}`
       ),
+      '# HELP topic_cache_requests_total Topic cache requests by operation and result.',
+      '# TYPE topic_cache_requests_total counter',
+      ...[...this.topicCacheRequests.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, count]) => {
+          const [operation, result] = key.split(':');
+          return `topic_cache_requests_total{operation="${operation}",result="${result}"} ${count}`;
+        }),
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -110,6 +119,12 @@ export class MetricsService {
     if (!this.validProviderNames.has(from) || !this.validProviderNames.has(to) || from === to)
       return;
     await this.redis.incrementMetricCounter(this.providerFailoverKey(from, to));
+  }
+
+  recordTopicCacheRequest(operation: string, result: string): void {
+    if (!['list', 'detail'].includes(operation) || !['hit', 'miss'].includes(result)) return;
+    const key = `${operation}:${result}`;
+    this.topicCacheRequests.set(key, (this.topicCacheRequests.get(key) ?? 0) + 1);
   }
 
   private providerFailoverKey(from: string, to: string): string {
