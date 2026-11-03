@@ -1,8 +1,28 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, Query, Res } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import type { FastifyReply } from 'fastify';
 import { NotificationsService } from './notifications.service.js';
+import { ClerkAuthGuard } from '@/common/guards/clerk-auth.guard.js';
+import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe.js';
+import {
+  notificationIdSchema,
+  notificationListQuerySchema,
+  type NotificationListQuery,
+} from './in-app-notification.schema.js';
 
 @ApiTags('Notifications')
 @Controller('notifications')
@@ -33,6 +53,67 @@ export class NotificationsController {
       .send(
         '<!doctype html><html><body><main><h1>Reminder emails disabled</h1><p>You will no longer receive daily PrepAI study reminders.</p></main></body></html>'
       );
+  }
+
+  @Get()
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List the authenticated user in-app notifications' })
+  async list(
+    @CurrentUser('id') clerkUserId: string,
+    @Query(new ZodValidationPipe(notificationListQuerySchema)) query: NotificationListQuery
+  ) {
+    const data = await this.notifications.listInAppNotifications(
+      clerkUserId,
+      query.cursor,
+      query.limit
+    );
+    return { message: 'Notifications retrieved successfully', data };
+  }
+
+  @Get('unread-count')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get the authenticated user unread notification count' })
+  async unreadCount(@CurrentUser('id') clerkUserId: string) {
+    const count = await this.notifications.getUnreadNotificationCount(clerkUserId);
+    return { data: { count } };
+  }
+
+  @Patch('read-all')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark all authenticated user notifications as read' })
+  async markAllRead(@CurrentUser('id') clerkUserId: string) {
+    const updatedCount = await this.notifications.markAllInAppNotificationsRead(clerkUserId);
+    return { message: 'Notifications marked as read', data: { updatedCount } };
+  }
+
+  @Patch(':id/read')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark one authenticated user notification as read' })
+  async markRead(
+    @Param('id', new ZodValidationPipe(notificationIdSchema)) notificationId: string,
+    @CurrentUser('id') clerkUserId: string
+  ) {
+    const data = await this.notifications.markInAppNotificationRead(clerkUserId, notificationId);
+    return { message: 'Notification marked as read', data };
+  }
+
+  @Delete(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete one authenticated user notification' })
+  async deleteNotification(
+    @Param('id', new ZodValidationPipe(notificationIdSchema)) notificationId: string,
+    @CurrentUser('id') clerkUserId: string
+  ) {
+    await this.notifications.deleteInAppNotification(clerkUserId, notificationId);
+    return { message: 'Notification deleted', data: null };
   }
 }
 

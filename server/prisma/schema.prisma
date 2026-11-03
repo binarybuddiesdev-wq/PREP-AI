@@ -34,6 +34,22 @@ model UserSettings {
   @@index([dailyReminderEnabled])
 }
 
+model InAppNotification {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String
+  idempotencyKey String
+  category       String
+  title          String
+  body           String
+  link           String?
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt, id])
+  @@index([userId, readAt, createdAt])
+}
+
 model PdfSource {
   id                String    @id @default(auto()) @map("_id") @db.ObjectId
   userId            String

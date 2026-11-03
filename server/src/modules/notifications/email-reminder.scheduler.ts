@@ -21,4 +21,14 @@ export class EmailReminderScheduler {
       this.logger.error({ err: error }, 'Failed to scan daily email reminders');
     }
   }
+
+  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  async cleanupExpiredNotifications(): Promise<void> {
+    if (!this.config.get<boolean>('JOBS_WORKER_ENABLED', true)) return;
+    try {
+      await this.notifications.cleanupExpiredInAppNotifications();
+    } catch (error) {
+      this.logger.error({ err: error }, 'Failed to clean up expired in-app notifications');
+    }
+  }
 }

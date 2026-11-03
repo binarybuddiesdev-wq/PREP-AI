@@ -153,6 +153,9 @@ export class UserService {
     await this.prisma.userSettings.deleteMany({
       where: { userId: user.id },
     });
+    await this.prisma.inAppNotification.deleteMany({
+      where: { userId: user.id },
+    });
 
     await this.prisma.user.delete({
       where: { clerkUserId },

@@ -4,13 +4,19 @@ import { EmailReminderScheduler } from './email-reminder.scheduler.js';
 import { NotificationsService } from './notifications.service.js';
 
 describe('EmailReminderScheduler', () => {
-  let notifications: { enqueueDueDailyReminders: ReturnType<typeof vi.fn> };
+  let notifications: {
+    enqueueDueDailyReminders: ReturnType<typeof vi.fn>;
+    cleanupExpiredInAppNotifications: ReturnType<typeof vi.fn>;
+  };
   let logger: { error: ReturnType<typeof vi.fn> };
   let config: { get: ReturnType<typeof vi.fn> };
   let scheduler: EmailReminderScheduler;
 
   beforeEach(() => {
-    notifications = { enqueueDueDailyReminders: vi.fn().mockResolvedValue(0) };
+    notifications = {
+      enqueueDueDailyReminders: vi.fn().mockResolvedValue(0),
+      cleanupExpiredInAppNotifications: vi.fn().mockResolvedValue(0),
+    };
     logger = { error: vi.fn() };
     config = { get: vi.fn((_key: string, fallback?: unknown) => fallback) };
     scheduler = new EmailReminderScheduler(
@@ -43,5 +49,11 @@ describe('EmailReminderScheduler', () => {
     await scheduler.scheduleDueReminders();
 
     expect(notifications.enqueueDueDailyReminders).not.toHaveBeenCalled();
+  });
+
+  it('cleans up notifications older than ninety days on its daily schedule', async () => {
+    await scheduler.cleanupExpiredNotifications();
+
+    expect(notifications.cleanupExpiredInAppNotifications).toHaveBeenCalledOnce();
   });
 });

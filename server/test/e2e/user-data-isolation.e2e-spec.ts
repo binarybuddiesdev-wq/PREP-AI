@@ -1,5 +1,6 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../src/modules/user/user.service.js';
+import { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
 import {
   connectIsolationTestDatabases,
   createIntegrationLogger,
@@ -13,11 +14,19 @@ describe('MongoDB user data isolation', () => {
   let database: TDatabase | undefined;
   let users: Awaited<ReturnType<typeof createTestUserPair>> | undefined;
   let service: UserService;
+  let notifications: NotificationsService;
 
   beforeAll(async () => {
     database = await connectIsolationTestDatabases();
     users = await createTestUserPair(database.mongo, 'user-data-isolation');
     service = new UserService(database.mongo, {} as never, createIntegrationLogger() as never);
+    notifications = new NotificationsService(
+      database.mongo,
+      {} as never,
+      { get: vi.fn(() => undefined) } as never,
+      createIntegrationLogger() as never,
+      null
+    );
 
     await Promise.all([
       service.upsertSettings(users.userA.clerkUserId, {
@@ -33,6 +42,7 @@ describe('MongoDB user data isolation', () => {
     if (!database) return;
     if (users) {
       const userIds = [users.userA.id, users.userB.id];
+      await database.mongo.inAppNotification.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.userSettings.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.user.deleteMany({ where: { id: { in: userIds } } });
     }
@@ -71,6 +81,39 @@ describe('MongoDB user data isolation', () => {
     });
   });
 
+  it('isolates inbox listing and mutations by the authenticated user', async () => {
+    await notifications.createReminderNotification(users!.userA.id, '2026-11-03');
+    await notifications.createReminderNotification(users!.userA.id, '2026-11-03');
+    await notifications.createReminderNotification(users!.userB.id, '2026-11-03');
+
+    const [pageA, pageB] = await Promise.all([
+      notifications.listInAppNotifications(users!.userA.clerkUserId),
+      notifications.listInAppNotifications(users!.userB.clerkUserId),
+    ]);
+    expect(pageA.items).toHaveLength(1);
+    expect(pageB.items).toHaveLength(1);
+    expect(pageA.unreadCount).toBe(1);
+    expect(pageA.items[0]?.id).not.toBe(pageB.items[0]?.id);
+    expect(pageA.items[0]).not.toHaveProperty('userId');
+    expect(pageA.items[0]).not.toHaveProperty('idempotencyKey');
+
+    const userANotificationId = pageA.items[0]!.id;
+    await expect(
+      notifications.markInAppNotificationRead(users!.userB.clerkUserId, userANotificationId)
+    ).rejects.toThrow('Notification not found');
+    await expect(
+      notifications.deleteInAppNotification(users!.userB.clerkUserId, userANotificationId)
+    ).rejects.toThrow('Notification not found');
+
+    const readNotification = await notifications.markInAppNotificationRead(
+      users!.userA.clerkUserId,
+      userANotificationId
+    );
+    expect(readNotification.readAt).toBeInstanceOf(Date);
+    expect(await notifications.getUnreadNotificationCount(users!.userA.clerkUserId)).toBe(0);
+    expect(await notifications.getUnreadNotificationCount(users!.userB.clerkUserId)).toBe(1);
+  });
+
   it('updates, completes setup, and deletes one user without changing the other user', async () => {
     const updatedUser = await service.updateUser(users!.userA.clerkUserId, {
       name: 'Updated Isolation User A',
@@ -87,6 +130,9 @@ describe('MongoDB user data isolation', () => {
     await service.deleteUser(users!.userA.clerkUserId);
 
     await expect(service.getSettings(users!.userA.clerkUserId)).resolves.toBeNull();
+    await expect(
+      database!.mongo.inAppNotification.findMany({ where: { userId: users!.userA.id } })
+    ).resolves.toEqual([]);
     await expect(service.findByClerkId(users!.userB.clerkUserId)).resolves.toMatchObject({
       clerkUserId: users!.userB.clerkUserId,
     });

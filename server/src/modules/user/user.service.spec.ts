@@ -25,6 +25,7 @@ describe('UserService', () => {
       upsert: ReturnType<typeof vi.fn>;
       deleteMany: ReturnType<typeof vi.fn>;
     };
+    inAppNotification: { deleteMany: ReturnType<typeof vi.fn> };
   };
   let mockPinoLogger: {
     info: ReturnType<typeof vi.fn>;
@@ -65,6 +66,7 @@ describe('UserService', () => {
         upsert: vi.fn(),
         deleteMany: vi.fn(),
       },
+      inAppNotification: { deleteMany: vi.fn() },
     };
 
     mockPinoLogger = {
@@ -342,6 +344,9 @@ describe('UserService', () => {
 
       expect(result).toEqual(mockUser);
       expect(prisma.userSettings.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user_001' },
+      });
+      expect(prisma.inAppNotification.deleteMany).toHaveBeenCalledWith({
         where: { userId: 'user_001' },
       });
       expect(prisma.user.delete).toHaveBeenCalledWith({

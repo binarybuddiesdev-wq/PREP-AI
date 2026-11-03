@@ -1,5 +1,23 @@
 # Worklog
 
+## 2026-11-03 — Persistent in-app notification inbox
+
+- Added a Mongo-backed notification collection with per-user pagination,
+  unread counts, mark-read, mark-all-read, owner-scoped deletion, and a unique
+  user/local-date key for daily reminders. The inbox API resolves Clerk
+  subjects to internal user IDs and omits ownership/idempotency fields from
+  responses.
+- Daily reminders now persist in-app items even without Resend configured;
+  email enqueueing remains independent. A daily worker cleanup removes records
+  older than 90 days, and user deletion removes that user's inbox items.
+- Documented the authenticated API and updated background-job and backend
+  trackers. Live email-provider validation and frontend inbox UI remain open.
+- Verification: full server gate passed (699 tests, 90.13% branch coverage),
+  restricted-role database isolation passed (26 tests), architecture viewer
+  check passed, and `git diff --check` passed. Fresh review found no Critical
+  or Important issues; its schema-push prerequisite and README status note were
+  addressed.
+
 ## 2026-11-03 — Opt-in daily study reminder emails
 
 - Added validated user settings for reminder opt-in, local send time, and IANA

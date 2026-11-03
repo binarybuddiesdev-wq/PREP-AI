@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -25,18 +26,37 @@ export class NotificationsService {
   ) {}
 
   async enqueueDueDailyReminders(now = new Date()): Promise<number> {
-    if (!this.isDeliveryConfigured()) return 0;
     const optedIn = await this.prisma.userSettings.findMany({
       where: { dailyReminderEnabled: true },
       select: { userId: true, dailyReminderEnabled: true, dailyReminderTime: true, timezone: true },
     });
     let enqueued = 0;
     for (const settings of optedIn) {
+      const reminderTime = settings.dailyReminderTime ?? '19:00';
+      const timezone = settings.timezone ?? 'UTC';
+      let localDate: string;
       try {
-        const reminderTime = settings.dailyReminderTime ?? '19:00';
-        const timezone = settings.timezone ?? 'UTC';
         if (!isReminderDue(now, reminderTime, timezone)) continue;
-        const localDate = getLocalReminderDate(now, timezone);
+        localDate = getLocalReminderDate(now, timezone);
+      } catch (error) {
+        this.logger.warn(
+          { userId: settings.userId, err: error },
+          'Failed to determine a daily study reminder time'
+        );
+        continue;
+      }
+
+      try {
+        await this.createReminderNotification(settings.userId, localDate);
+      } catch (error) {
+        this.logger.warn(
+          { userId: settings.userId, err: error },
+          'Failed to create an in-app daily study reminder'
+        );
+      }
+
+      if (!this.isDeliveryConfigured()) continue;
+      try {
         const job: EmailReminderJob = {
           idempotencyKey: `daily-reminder:${settings.userId}:${localDate}`,
           userId: settings.userId,
@@ -47,11 +67,124 @@ export class NotificationsService {
       } catch (error) {
         this.logger.warn(
           { userId: settings.userId, err: error },
-          'Failed to schedule a daily study reminder'
+          'Failed to schedule a daily study reminder email'
         );
       }
     }
     return enqueued;
+  }
+
+  async listInAppNotifications(clerkUserId: string, cursor?: string, limit = 20) {
+    const userId = await this.resolveInAppUserId(clerkUserId);
+    if (cursor) {
+      const cursorNotification = await this.prisma.inAppNotification.findFirst({
+        where: { id: cursor, userId },
+        select: { id: true },
+      });
+      if (!cursorNotification) throw new BadRequestException('Invalid notification cursor');
+    }
+
+    const [rows, unreadCount] = await Promise.all([
+      this.prisma.inAppNotification.findMany({
+        where: { userId },
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        take: limit + 1,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: {
+          id: true,
+          category: true,
+          title: true,
+          body: true,
+          link: true,
+          readAt: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.inAppNotification.count({ where: { userId, readAt: null } }),
+    ]);
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    return {
+      items,
+      nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+      unreadCount,
+    };
+  }
+
+  async getUnreadNotificationCount(clerkUserId: string): Promise<number> {
+    const userId = await this.resolveInAppUserId(clerkUserId);
+    return this.prisma.inAppNotification.count({ where: { userId, readAt: null } });
+  }
+
+  async markInAppNotificationRead(clerkUserId: string, notificationId: string) {
+    const userId = await this.resolveInAppUserId(clerkUserId);
+    await this.prisma.inAppNotification.updateMany({
+      where: { id: notificationId, userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+    const notification = await this.prisma.inAppNotification.findFirst({
+      where: { id: notificationId, userId },
+      select: {
+        id: true,
+        category: true,
+        title: true,
+        body: true,
+        link: true,
+        readAt: true,
+        createdAt: true,
+      },
+    });
+    if (!notification) throw new NotFoundException('Notification not found');
+    return notification;
+  }
+
+  async markAllInAppNotificationsRead(clerkUserId: string): Promise<number> {
+    const userId = await this.resolveInAppUserId(clerkUserId);
+    const result = await this.prisma.inAppNotification.updateMany({
+      where: { userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return result.count;
+  }
+
+  async deleteInAppNotification(clerkUserId: string, notificationId: string): Promise<void> {
+    const userId = await this.resolveInAppUserId(clerkUserId);
+    const result = await this.prisma.inAppNotification.deleteMany({
+      where: { id: notificationId, userId },
+    });
+    if (!result.count) throw new NotFoundException('Notification not found');
+  }
+
+  async createReminderNotification(userId: string, localDate: string): Promise<void> {
+    const idempotencyKey = `daily-reminder:${userId}:${localDate}`;
+    try {
+      await this.prisma.inAppNotification.create({
+        data: {
+          userId,
+          idempotencyKey,
+          category: 'reminder',
+          title: 'A little practice goes a long way',
+          body: 'Take a few minutes today to keep your interview preparation moving.',
+          link: '/dashboard',
+          readAt: null,
+        },
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+      const existing = await this.prisma.inAppNotification.findFirst({
+        where: { userId, idempotencyKey },
+        select: { id: true },
+      });
+      if (!existing) throw error;
+    }
+  }
+
+  async cleanupExpiredInAppNotifications(now = new Date()): Promise<number> {
+    const cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const result = await this.prisma.inAppNotification.deleteMany({
+      where: { createdAt: { lt: cutoff } },
+    });
+    return result.count;
   }
 
   async sendDailyReminder(userId: string, localDate: string): Promise<void> {
@@ -128,12 +261,25 @@ export class NotificationsService {
     );
   }
 
+  private async resolveInAppUserId(clerkUserId: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({
+      where: { clerkUserId },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user.id;
+  }
+
   private createUnsubscribeUrl(userId: string): string {
     const secret = this.config.get<string>('EMAIL_UNSUBSCRIBE_SECRET')!;
     const baseUrl = this.config.get<string>('API_BASE_URL')!;
     const token = createUnsubscribeToken(userId, secret);
     return `${baseUrl.replace(/\/$/, '')}/api/v1/notifications/unsubscribe?token=${encodeURIComponent(token)}`;
   }
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 }
 
 function escapeHtml(value: string): string {

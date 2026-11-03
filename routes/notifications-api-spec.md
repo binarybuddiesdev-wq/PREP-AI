@@ -2,6 +2,41 @@
 
 Base URL: `http://localhost:3000/api/v1`
 
+## In-app notification inbox
+
+These routes require a valid Clerk bearer token. Items belong to the signed-in
+user; a known notification ID never grants access to another user's item.
+
+| Method   | Route                                 | Behavior                                                                        |
+| -------- | ------------------------------------- | ------------------------------------------------------------------------------- |
+| `GET`    | `/notifications?cursor=<id>&limit=20` | Newest-first page and unread count. `limit` defaults to 20 and is capped at 50. |
+| `GET`    | `/notifications/unread-count`         | Returns `{ "data": { "count": 2 } }`.                                           |
+| `PATCH`  | `/notifications/:id/read`             | Marks one owned item read.                                                      |
+| `PATCH`  | `/notifications/read-all`             | Marks all owned unread items read.                                              |
+| `DELETE` | `/notifications/:id`                  | Deletes one owned item.                                                         |
+
+The list response is `{ "message": "Notifications retrieved successfully", "data": { "items": [], "nextCursor": null, "unreadCount": 0 } }`.
+Pass `nextCursor` as `cursor` for the next page. IDs and cursors must be valid
+Mongo ObjectIds. Invalid cursors return 400; missing or foreign notification
+IDs return the same 404 response. In-app reminders are stored independently of
+email-provider configuration. Daily cleanup removes items older than 90 days.
+
+Before deploying the inbox or enabling the reminder scheduler, apply the Mongo
+schema to the target database so the per-user idempotency index exists:
+
+```bash
+pnpm --filter server prisma:push:mongodb
+```
+
+Run this with `DATABASE_URL` set to the intended MongoDB database. Schedule
+creation relies on the compound unique index to prevent duplicates when ticks
+overlap.
+
+Daily reminders create one in-app item per user and local calendar date. Its
+stable unique key prevents duplicate items when scheduler ticks overlap. Items
+use category `reminder`, title `A little practice goes a long way`, and link
+`/dashboard`.
+
 ## Daily reminder preferences
 
 Update the authenticated user's settings through `PATCH /users/settings`.

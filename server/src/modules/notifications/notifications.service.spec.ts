@@ -5,6 +5,14 @@ import { createUnsubscribeToken } from './email-unsubscribe-token.js';
 describe('NotificationsService', () => {
   let settings: { findMany: ReturnType<typeof vi.fn> };
   let prisma: {
+    inAppNotification: {
+      findMany: ReturnType<typeof vi.fn>;
+      findFirst: ReturnType<typeof vi.fn>;
+      count: ReturnType<typeof vi.fn>;
+      create: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
+    };
     userSettings: {
       findMany: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
@@ -34,6 +42,14 @@ describe('NotificationsService', () => {
       ]),
     };
     prisma = {
+      inAppNotification: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn().mockResolvedValue({ id: 'notice-1', userId: 'db-user-1' }),
+        count: vi.fn().mockResolvedValue(0),
+        create: vi.fn().mockResolvedValue({ id: 'notice-1', userId: 'db-user-1' }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       userSettings: {
         ...settings,
         findUnique: vi.fn().mockResolvedValue({
@@ -97,13 +113,160 @@ describe('NotificationsService', () => {
     );
   });
 
+  it('creates an inbox reminder even when email delivery is not configured', async () => {
+    config.get.mockReturnValue(undefined);
+    const service = createService();
+
+    await expect(service.enqueueDueDailyReminders(new Date('2026-11-03T13:30:00Z'))).resolves.toBe(
+      0
+    );
+
+    expect(prisma.inAppNotification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'user-kolkata',
+        idempotencyKey: 'daily-reminder:user-kolkata:2026-11-03',
+        category: 'reminder',
+      }),
+    });
+    expect(jobs.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('still queues email if creating the in-app reminder fails', async () => {
+    prisma.inAppNotification.create.mockRejectedValueOnce(new Error('Mongo unavailable'));
+    const service = createService();
+
+    await expect(service.enqueueDueDailyReminders(new Date('2026-11-03T13:30:00Z'))).resolves.toBe(
+      1
+    );
+    expect(jobs.enqueue).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the in-app reminder if adding the email job fails', async () => {
+    jobs.enqueue.mockRejectedValueOnce(new Error('Redis unavailable'));
+    const service = createService();
+
+    await expect(service.enqueueDueDailyReminders(new Date('2026-11-03T13:30:00Z'))).resolves.toBe(
+      0
+    );
+    expect(prisma.inAppNotification.create).toHaveBeenCalledOnce();
+  });
+
+  it('treats a duplicate reminder key as an idempotent success', async () => {
+    prisma.inAppNotification.create.mockRejectedValueOnce({ code: 'P2002' });
+    prisma.inAppNotification.findFirst.mockResolvedValueOnce({ id: 'existing-reminder' });
+    const service = createService();
+
+    await expect(
+      service.createReminderNotification('db-user-1', '2026-11-03')
+    ).resolves.toBeUndefined();
+    expect(prisma.inAppNotification.findFirst).toHaveBeenCalledWith({
+      where: { userId: 'db-user-1', idempotencyKey: 'daily-reminder:db-user-1:2026-11-03' },
+      select: { id: true },
+    });
+  });
+
+  it('removes only notifications older than ninety days during cleanup', async () => {
+    const service = createService();
+    const now = new Date('2026-11-03T12:00:00Z');
+
+    await service.cleanupExpiredInAppNotifications(now);
+
+    expect(prisma.inAppNotification.deleteMany).toHaveBeenCalledWith({
+      where: { createdAt: { lt: new Date('2026-08-05T12:00:00Z') } },
+    });
+  });
+
+  it('lists only the current user notifications with a bounded page and unread count', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({ id: 'db-user-1' });
+    prisma.inAppNotification.findMany.mockResolvedValueOnce([{ id: 'notice-1' }]);
+    prisma.inAppNotification.count.mockResolvedValueOnce(3);
+    const service = createService();
+
+    await expect(service.listInAppNotifications('clerk-user-1', undefined, 20)).resolves.toEqual({
+      items: [{ id: 'notice-1' }],
+      nextCursor: null,
+      unreadCount: 3,
+    });
+    expect(prisma.inAppNotification.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'db-user-1' }, take: 21 })
+    );
+    expect(prisma.inAppNotification.count).toHaveBeenCalledWith({
+      where: { userId: 'db-user-1', readAt: null },
+    });
+  });
+
+  it('does not return another user notification when the cursor belongs to that user', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({ id: 'db-user-1' });
+    prisma.inAppNotification.findFirst.mockResolvedValueOnce(null);
+    const service = createService();
+
+    await expect(
+      service.listInAppNotifications('clerk-user-1', '507f1f77bcf86cd799439011', 20)
+    ).rejects.toThrow('Invalid notification cursor');
+    expect(prisma.inAppNotification.findMany).not.toHaveBeenCalled();
+  });
+
+  it('returns a stable next cursor when another page exists', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({ id: 'db-user-1' });
+    prisma.inAppNotification.findMany.mockResolvedValueOnce([
+      { id: 'notice-newest' },
+      { id: 'notice-next' },
+      { id: 'notice-older' },
+    ]);
+    const service = createService();
+
+    await expect(service.listInAppNotifications('clerk-user-1', undefined, 2)).resolves.toEqual({
+      items: [{ id: 'notice-newest' }, { id: 'notice-next' }],
+      nextCursor: 'notice-next',
+      unreadCount: 0,
+    });
+    expect(prisma.inAppNotification.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 3, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] })
+    );
+  });
+
+  it('marks, bulk marks, counts, and deletes only notifications owned by the authenticated user', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'db-user-1' });
+    const service = createService();
+
+    await service.markInAppNotificationRead('clerk-user-1', '507f1f77bcf86cd799439011');
+    await service.markAllInAppNotificationsRead('clerk-user-1');
+    await service.getUnreadNotificationCount('clerk-user-1');
+    await service.deleteInAppNotification('clerk-user-1', '507f1f77bcf86cd799439011');
+
+    expect(prisma.inAppNotification.updateMany).toHaveBeenNthCalledWith(1, {
+      where: { id: '507f1f77bcf86cd799439011', userId: 'db-user-1', readAt: null },
+      data: { readAt: expect.any(Date) },
+    });
+    expect(prisma.inAppNotification.updateMany).toHaveBeenNthCalledWith(2, {
+      where: { userId: 'db-user-1', readAt: null },
+      data: { readAt: expect.any(Date) },
+    });
+    expect(prisma.inAppNotification.count).toHaveBeenCalledWith({
+      where: { userId: 'db-user-1', readAt: null },
+    });
+    expect(prisma.inAppNotification.deleteMany).toHaveBeenCalledWith({
+      where: { id: '507f1f77bcf86cd799439011', userId: 'db-user-1' },
+    });
+  });
+
+  it('returns not found for a notification ID owned by another user', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({ id: 'db-user-1' });
+    prisma.inAppNotification.updateMany.mockResolvedValueOnce({ count: 0 });
+    prisma.inAppNotification.findFirst.mockResolvedValueOnce(null);
+    const service = createService();
+
+    await expect(
+      service.markInAppNotificationRead('clerk-user-1', '507f1f77bcf86cd799439011')
+    ).rejects.toThrow('Notification not found');
+  });
+
   it('does not enqueue when the email provider configuration is incomplete', async () => {
     config.get.mockReturnValue(undefined);
     const service = createService();
 
     await expect(service.enqueueDueDailyReminders(new Date())).resolves.toBe(0);
 
-    expect(settings.findMany).not.toHaveBeenCalled();
     expect(jobs.enqueue).not.toHaveBeenCalled();
   });
 
