@@ -250,6 +250,20 @@ describe('NotificationsService', () => {
     });
   });
 
+  it('treats deleting a missing or foreign notification as a successful retry', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'db-user-1' });
+    prisma.inAppNotification.deleteMany.mockResolvedValue({ count: 0 });
+    const service = createService();
+
+    await expect(
+      service.deleteInAppNotification('clerk-user-1', '507f1f77bcf86cd799439011')
+    ).resolves.toBeUndefined();
+
+    expect(prisma.inAppNotification.deleteMany).toHaveBeenCalledWith({
+      where: { id: '507f1f77bcf86cd799439011', userId: 'db-user-1' },
+    });
+  });
+
   it('returns not found for a notification ID owned by another user', async () => {
     prisma.user.findUnique.mockResolvedValueOnce({ id: 'db-user-1' });
     prisma.inAppNotification.updateMany.mockResolvedValueOnce({ count: 0 });

@@ -261,11 +261,10 @@ export class StudyChatService {
 
   async deleteConversation(clerkUserId: string, conversationId: string): Promise<void> {
     const userId = await this.resolveUserId(clerkUserId);
-    const result = await this.prisma.studyChatConversation.deleteMany({
+    await this.prisma.studyChatConversation.deleteMany({
       where: { id: conversationId, userId },
     });
     await this.idempotency.deleteForConversation(userId, conversationId);
-    if (!result.count) throw new NotFoundException('Conversation not found');
   }
 
   private async resolveUserId(clerkUserId: string): Promise<string> {

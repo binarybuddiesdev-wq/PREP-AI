@@ -200,8 +200,10 @@ Replay records expire after 24 hours and are cleaned hourly. Apply the MongoDB s
 
 | Status | Message                                     |
 | ------ | ------------------------------------------- |
-| 404    | Topic not found                             |
 | 400    | Cannot delete topic with existing questions |
+
+Deleting a missing topic succeeds, so retrying a completed delete returns the
+same success response. A topic that still has questions continues to return 400.
 
 ---
 

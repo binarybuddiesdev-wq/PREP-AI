@@ -142,9 +142,8 @@ The existing duplicate-question check is not protected against simultaneous crea
 
 **Logic:**
 
-1. Find question by id → throw NotFoundException if not found
-2. Delete question
-3. Return void
+1. Delete by ID; deleting an ID that is already absent is also successful
+2. Return void
 
 **Controller:** `DELETE /questions/:id` → `@Roles('ADMIN')` → `@HttpCode(200)`
 
@@ -210,7 +209,7 @@ The existing duplicate-question check is not protected against simultaneous crea
 | `getAllQuestions` | Returns all questions, filters by topicId, filters by difficulty, filters by both, returns empty array   |
 | `getQuestionById` | Returns question, throws NotFoundException if not found                                                  |
 | `updateQuestion`  | Updates successfully, throws NotFoundException if not found, throws NotFoundException if invalid topicId |
-| `deleteQuestion`  | Deletes successfully, throws NotFoundException if not found                                              |
+| `deleteQuestion`  | Deletes successfully; repeated deletes also succeed                                                      |
 
 ### Controller Tests
 

@@ -547,7 +547,7 @@ describe('StudyChatService', () => {
     ).rejects.toThrow('Conversation changed while generating a reply');
   });
 
-  it('deletes only an owned conversation and returns 404 for a foreign ID', async () => {
+  it('deletes only an owned conversation and treats a repeated delete as successful', async () => {
     await expect(
       service.deleteConversation('clerk-user-1', '507f1f77bcf86cd799439011')
     ).resolves.toBeUndefined();
@@ -562,6 +562,7 @@ describe('StudyChatService', () => {
     prisma.studyChatConversation.deleteMany.mockResolvedValueOnce({ count: 0 });
     await expect(
       service.deleteConversation('clerk-user-1', '507f1f77bcf86cd799439011')
-    ).rejects.toThrow('Conversation not found');
+    ).resolves.toBeUndefined();
+    expect(idempotency.deleteForConversation).toHaveBeenCalledTimes(2);
   });
 });

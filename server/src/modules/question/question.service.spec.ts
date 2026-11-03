@@ -20,6 +20,7 @@ describe('QuestionService', () => {
       create: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
       delete: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
     };
     topic: {
       findUnique: ReturnType<typeof vi.fn>;
@@ -85,6 +86,7 @@ describe('QuestionService', () => {
         create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       topic: {
         findUnique: vi.fn(),
@@ -304,19 +306,19 @@ describe('QuestionService', () => {
   describe('deleteQuestion', () => {
     it('should delete question if found', async () => {
       prisma.question.findUnique.mockResolvedValue(mockQuestion);
-      prisma.question.delete.mockResolvedValue(mockQuestion);
+      prisma.question.deleteMany.mockResolvedValue({ count: 1 });
 
       const result = await service.deleteQuestion('q_001');
 
-      expect(prisma.question.delete).toHaveBeenCalledWith({ where: { id: 'q_001' } });
-      expect(result).toEqual(mockQuestion);
+      expect(prisma.question.deleteMany).toHaveBeenCalledWith({ where: { id: 'q_001' } });
+      expect(result).toBeUndefined();
     });
 
-    it('should throw NotFoundException if question not found', async () => {
+    it('treats a missing question delete as a successful retry', async () => {
       prisma.question.findUnique.mockResolvedValue(null);
 
-      await expect(service.deleteQuestion('nonexistent')).rejects.toThrow(NotFoundException);
-      await expect(service.deleteQuestion('nonexistent')).rejects.toThrow(QUESTION_NOT_FOUND);
+      await expect(service.deleteQuestion('nonexistent')).resolves.toBeUndefined();
+      expect(prisma.question.delete).not.toHaveBeenCalled();
     });
   });
 });

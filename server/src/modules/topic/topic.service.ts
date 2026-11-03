@@ -156,9 +156,7 @@ export class TopicService {
   async deleteTopic(id: string) {
     const existing = await this.prisma.topic.findUnique({ where: { id } });
 
-    if (!existing) {
-      throw new NotFoundException(TOPIC_NOT_FOUND);
-    }
+    if (!existing) return;
 
     const questionCount = await this.prisma.question.count({ where: { topicId: id } });
 
@@ -166,7 +164,7 @@ export class TopicService {
       throw new BadRequestException(CANNOT_DELETE_TOPIC_WITH_QUESTIONS);
     }
 
-    await this.prisma.topic.delete({ where: { id } });
+    await this.prisma.topic.deleteMany({ where: { id } });
 
     await this.invalidateTopicCache(existing.slug);
     this.logger.info({ id }, TOPIC_DELETED_LOG);

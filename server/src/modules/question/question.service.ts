@@ -143,15 +143,7 @@ export class QuestionService {
   }
 
   async deleteQuestion(id: string) {
-    const existing = await this.prisma.question.findUnique({ where: { id } });
-
-    if (!existing) {
-      throw new NotFoundException(QUESTION_NOT_FOUND);
-    }
-
-    const deleted = await this.prisma.question.delete({ where: { id } });
-
-    this.logger.info({ questionId: deleted.id }, QUESTION_DELETED_LOG);
-    return deleted;
+    const deleted = await this.prisma.question.deleteMany({ where: { id } });
+    if (deleted.count) this.logger.info({ questionId: id }, QUESTION_DELETED_LOG);
   }
 }

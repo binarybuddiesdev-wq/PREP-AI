@@ -51,13 +51,16 @@ the first message and truncated to 80 characters.
 | `GET`    | `/study-chat/conversations?cursor=<id>&limit=20`     | Newest-updated conversations, default 20 per page, maximum 50.                                           |
 | `GET`    | `/study-chat/conversations/:conversationId`          | Owned transcript and conversation metadata.                                                              |
 | `POST`   | `/study-chat/conversations/:conversationId/messages` | Requires `Idempotency-Key`; body `{ "message": "..." }`; returns updated transcript and assistant reply. |
-| `DELETE` | `/study-chat/conversations/:conversationId`          | Deletes the owned conversation.                                                                          |
+| `DELETE` | `/study-chat/conversations/:conversationId`          | Deletes the owned conversation; a repeated delete succeeds without revealing ownership.                  |
 
 Message text is trimmed and must contain 1 to 4,000 characters. Each
 conversation allows 30 user turns. The stored transcript holds up to 60
 messages; at most the latest 20 messages are included in the next Mastra call.
 Start a new conversation after the turn limit. Concurrent updates use a
 revision check; a request that loses the race receives 409 and must be retried.
+Deleting a missing or foreign conversation also succeeds, so a retry after an
+uncertain network response does not expose whether another user's conversation
+exists.
 
 Both POST routes require an `Idempotency-Key` containing 1-128 visible ASCII
 characters. Generate a new key for each distinct action and reuse it for

@@ -106,6 +106,9 @@ coverage, and docs after the focused tests.
 
 ## Remaining work
 
-Other mutations can adopt this policy when their durable resource and external
-side effects can be made replay-safe. The backend tracker must keep the policy
-partial until those routes are explicitly reviewed.
+The remaining audit item is simultaneous duplicate question creation with
+different keys; that requires a database uniqueness constraint and safe
+existing-data rollout. Settings/setup writes, Clerk user synchronization,
+notification state updates, and resource deletions use retry-safe state
+semantics. Durable response replay remains appropriate for operations whose
+retries repeat AI work, queue submissions, or external writes.

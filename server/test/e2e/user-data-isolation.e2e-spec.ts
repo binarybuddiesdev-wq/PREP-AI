@@ -116,7 +116,7 @@ describe('MongoDB user data isolation', () => {
     ).rejects.toThrow('Notification not found');
     await expect(
       notifications.deleteInAppNotification(users!.userB.clerkUserId, userANotificationId)
-    ).rejects.toThrow('Notification not found');
+    ).resolves.toBeUndefined();
 
     const readNotification = await notifications.markInAppNotificationRead(
       users!.userA.clerkUserId,
@@ -152,7 +152,7 @@ describe('MongoDB user data isolation', () => {
     ).rejects.toThrow('Conversation not found');
     await expect(
       studyChat.deleteConversation(users!.userB.clerkUserId, conversationA.id)
-    ).rejects.toThrow('Conversation not found');
+    ).resolves.toBeUndefined();
 
     const continued = await studyChat.sendMessage(
       users!.userA.clerkUserId,

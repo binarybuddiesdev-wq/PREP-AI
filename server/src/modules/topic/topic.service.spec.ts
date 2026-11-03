@@ -21,6 +21,7 @@ describe('TopicService', () => {
       create: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
       delete: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
     };
     question: {
       count: ReturnType<typeof vi.fn>;
@@ -82,6 +83,7 @@ describe('TopicService', () => {
         create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       question: {
         count: vi.fn(),
@@ -494,13 +496,13 @@ describe('TopicService', () => {
     it('should delete topic successfully when no questions exist', async () => {
       prisma.topic.findUnique.mockResolvedValue(mockTopic);
       prisma.question.count.mockResolvedValue(0);
-      prisma.topic.delete.mockResolvedValue(mockTopic);
+      prisma.topic.deleteMany.mockResolvedValue({ count: 1 });
 
       await service.deleteTopic('topic_001');
 
       expect(prisma.topic.findUnique).toHaveBeenCalledWith({ where: { id: 'topic_001' } });
       expect(prisma.question.count).toHaveBeenCalledWith({ where: { topicId: 'topic_001' } });
-      expect(prisma.topic.delete).toHaveBeenCalledWith({ where: { id: 'topic_001' } });
+      expect(prisma.topic.deleteMany).toHaveBeenCalledWith({ where: { id: 'topic_001' } });
       expect(redis.deleteCacheValues).toHaveBeenCalledWith(
         'prepai:cache:topics:v1:list:all',
         'prepai:cache:topics:v1:list:practice',
@@ -512,23 +514,24 @@ describe('TopicService', () => {
     it('completes a successful delete when Redis invalidation is unavailable', async () => {
       prisma.topic.findUnique.mockResolvedValue(mockTopic);
       prisma.question.count.mockResolvedValue(0);
-      prisma.topic.delete.mockResolvedValue(mockTopic);
+      prisma.topic.deleteMany.mockResolvedValue({ count: 1 });
       redis.deleteCacheValues.mockRejectedValueOnce(new Error('Redis unavailable'));
 
       await expect(service.deleteTopic('topic_001')).resolves.toBeUndefined();
 
-      expect(prisma.topic.delete).toHaveBeenCalledOnce();
+      expect(prisma.topic.deleteMany).toHaveBeenCalledOnce();
       expect(mockPinoLogger.warn).toHaveBeenCalledWith(
         expect.objectContaining({ err: expect.any(Error) }),
         'Topic cache invalidation failed'
       );
     });
 
-    it('should throw NotFoundException if topic not found', async () => {
+    it('treats a missing topic delete as a successful retry', async () => {
       prisma.topic.findUnique.mockResolvedValue(null);
 
-      await expect(service.deleteTopic('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.deleteTopic('nonexistent')).resolves.toBeUndefined();
       expect(prisma.question.count).not.toHaveBeenCalled();
+      expect(prisma.topic.deleteMany).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if topic has associated questions', async () => {
@@ -536,7 +539,7 @@ describe('TopicService', () => {
       prisma.question.count.mockResolvedValue(3);
 
       await expect(service.deleteTopic('topic_001')).rejects.toThrow(BadRequestException);
-      expect(prisma.topic.delete).not.toHaveBeenCalled();
+      expect(prisma.topic.deleteMany).not.toHaveBeenCalled();
     });
   });
 });

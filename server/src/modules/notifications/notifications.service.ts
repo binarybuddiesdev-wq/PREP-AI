@@ -149,10 +149,9 @@ export class NotificationsService {
 
   async deleteInAppNotification(clerkUserId: string, notificationId: string): Promise<void> {
     const userId = await this.resolveInAppUserId(clerkUserId);
-    const result = await this.prisma.inAppNotification.deleteMany({
+    await this.prisma.inAppNotification.deleteMany({
       where: { id: notificationId, userId },
     });
-    if (!result.count) throw new NotFoundException('Notification not found');
   }
 
   async createReminderNotification(userId: string, localDate: string): Promise<void> {

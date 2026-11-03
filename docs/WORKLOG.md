@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-04 - Retry-safe resource deletion
+
+- Audited backend mutation routes for state-changing operations that behave inconsistently when clients retry after a lost response. Missing/foreign notification and Study Chat conversation deletes, plus repeated topic/question deletes, now return the same success response; database deletes remain owner-scoped where applicable. Topic deletion still rejects resources with questions.
+- Updated API contracts and the idempotency tracker. Set-style settings/setup, Clerk synchronization, notification updates, PDF deletion, and other state-based operations remain retry-safe without response-snapshot records. The separate question uniqueness race across different keys remains open.
+- Verification: red/green focused tests passed (92 tests); `pnpm gate -- --stack server --level full` passed (821 tests, 90.01% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (31 tests), architecture viewer check and `git diff --check` passed.
+
 ## 2026-11-03 - PostgreSQL Prisma query duration metrics
 
 - Added `prisma_query_duration_seconds` around PostgreSQL model operations on the API client, whose process exposes `/metrics`. Local worker operations sharing that client are included; the separate production worker client is not instrumented because worker metrics are not scraped. Successful and failed calls are measured; raw SQL calls without a model are omitted, and model/operation labels are allowlisted.
