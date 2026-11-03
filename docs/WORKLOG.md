@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — PDF deletion retry safety
+
+- Repeated delete requests now return the owned source's `deleted` state after cleanup has completed instead of returning 404.
+- While cleanup is pending, retries continue to dispatch the same deterministic worker job; missing or unowned sources remain 404.
+- Updated the PDF API contract, shared idempotency policy, backend tracker, and architecture TODO.
+- Verification: focused PDF service/controller tests passed (34); `pnpm gate -- --stack server --level full` passed (612 tests across 61 files, build, spec type-check, coverage, lint, formatting, Prisma generation, and agent-doc checks); architecture viewer check and `git diff --check` passed. Review found no Critical/Important issues; one minor envelope message still says `PDF deletion queued` for an already deleted source and is deferred.
+
 ## 2026-11-03 — PDF reindex idempotency
 
 - Required `Idempotency-Key` on PDF reindex and stored the deterministic operation ID, request fingerprint, and assigned revision in an optional MongoDB source ledger.

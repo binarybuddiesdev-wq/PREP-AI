@@ -24,7 +24,7 @@ operation without consuming another quota slot or enqueueing duplicate work.
 
 - Add generic HTTP response-caching middleware or store arbitrary response
   bodies containing user data.
-- Make unrelated resource creation, admin writes, webhooks, or PDF deletion
+- Make unrelated resource creation, admin writes, or webhooks
   operations idempotent in this change.
 - Claim a cross-database exactly-once guarantee. PostgreSQL operation records
   are authoritative for theory and coding operations; external effects remain
@@ -74,6 +74,8 @@ operation without consuming another quota slot or enqueueing duplicate work.
   and key; the effective assigned problem IDs act as the request fingerprint.
 - Session completion endpoints are naturally retry-safe: repeated calls return
   the persisted completed session without another transition.
+- PDF deletion is naturally retry-safe: pending retries reuse the deterministic
+  cleanup job, and completed retries return the owned tombstone.
 
 ## Verification
 

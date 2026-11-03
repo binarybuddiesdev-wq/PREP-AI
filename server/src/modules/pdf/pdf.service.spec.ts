@@ -378,12 +378,47 @@ describe('PdfService', () => {
     );
   });
 
-  it('returns 404 for missing or already-deleted sources', async () => {
-    prisma.pdfSource.findFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'x', status: 'deleted' });
+  it('returns 404 for missing sources', async () => {
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(null);
     await expect(service.delete('x', 'u')).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.delete('x', 'u')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('replays a completed deletion without enqueueing cleanup again', async () => {
+    prisma.pdfSource.findFirst.mockResolvedValueOnce({
+      id: 'source_1',
+      userId: 'u',
+      status: 'deleted',
+      activeRevision: 2,
+    });
+
+    await expect(service.delete('source_1', 'u')).resolves.toEqual({
+      id: 'source_1',
+      status: 'deleted',
+    });
+
+    expect(prisma.pdfSource.updateMany).not.toHaveBeenCalled();
+    expect(jobs.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('re-dispatches the same deterministic delete job when deletion is pending', async () => {
+    prisma.pdfSource.findFirst.mockResolvedValueOnce({
+      id: 'source_1',
+      userId: 'u',
+      status: 'deleting',
+      activeRevision: 2,
+    });
+
+    await expect(service.delete('source_1', 'u')).resolves.toEqual({
+      id: 'source_1',
+      status: 'deleting',
+    });
+
+    expect(prisma.pdfSource.updateMany).not.toHaveBeenCalled();
+    expect(jobs.enqueue).toHaveBeenCalledWith(
+      'pdf-ingest-queue',
+      { idempotencyKey: 'pdf-delete:source_1', sourceId: 'source_1', revision: 2 },
+      'delete'
+    );
   });
 
   it('replays a prior reindex request before checking source status or queuing work', async () => {

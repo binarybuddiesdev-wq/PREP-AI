@@ -356,7 +356,8 @@ export class PdfService {
 
   async delete(sourceId: string, userId: string) {
     const source = await this.prisma.pdfSource.findFirst({ where: { id: sourceId, userId } });
-    if (!source || source.status === 'deleted') throw new NotFoundException('PDF source not found');
+    if (!source) throw new NotFoundException('PDF source not found');
+    if (source.status === 'deleted') return { id: source.id, status: 'deleted' as const };
     if (source.status !== 'deleting') {
       await this.prisma.pdfSource.updateMany({
         where: { id: source.id, userId, status: { not: 'deleted' } },

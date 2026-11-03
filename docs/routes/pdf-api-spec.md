@@ -37,6 +37,11 @@ Reindex keys use the shared 1–128 visible ASCII character policy. The newest
 original revision even while that revision is processing. Once an operation
 ages out of this bounded history, its key can start another reindex.
 
+Deletion is naturally retry-safe without an idempotency header. While cleanup
+is pending, a repeated delete dispatches the same deterministic worker job. If
+cleanup has completed, the endpoint returns the owned source's `deleted`
+status without scheduling another job; missing or unowned sources remain 404.
+
 Source records expose `id`, `displayName`, `byteSize`, `pageCount`, `status`,
 `activeRevision`, `failureCode`, and timestamps. They never expose Cloudinary
 asset IDs, storage URLs, signed URLs, extracted text, or embeddings.
