@@ -1,7 +1,8 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Optional } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaClient as PostgresPrismaClient } from '../generated/postgresql-client/index.js';
 import type { Prisma } from '../generated/postgresql-client/index.js';
+import { MetricsService } from '../modules/metrics/metrics.service.js';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -27,6 +28,8 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
   private client: PostgresPrismaClient | undefined;
   private workerClient: PostgresPrismaClient | undefined;
 
+  constructor(@Optional() private readonly metrics?: MetricsService) {}
+
   async onModuleInit(): Promise<void> {
     if (!process.env['POSTGRESQL_URL']) {
       this.logger.warn('POSTGRESQL_URL not set — PostgreSQL skipped');
@@ -34,11 +37,11 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      this.client = new PostgresPrismaClient({ datasourceUrl: process.env['POSTGRESQL_URL'] });
+      this.client = this.createClient(process.env['POSTGRESQL_URL']);
       await this.client.$connect();
       const workerUrl = process.env['POSTGRESQL_WORKER_URL'];
       if (workerUrl) {
-        this.workerClient = new PostgresPrismaClient({ datasourceUrl: workerUrl });
+        this.workerClient = this.createClient(workerUrl, false);
         await this.workerClient.$connect();
       } else if (process.env['NODE_ENV'] !== 'production') {
         this.workerClient = this.client;
@@ -148,5 +151,30 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
 
   private assertIdentity(value: string, message: string): void {
     if (!value.trim()) throw new Error(message);
+  }
+
+  private createClient(datasourceUrl: string, measureQueries = true): PostgresPrismaClient {
+    const client = new PostgresPrismaClient({ datasourceUrl });
+    const metrics = this.metrics;
+    if (!metrics || !measureQueries) return client;
+
+    return client.$extends({
+      name: 'prepai-query-duration-metrics',
+      query: {
+        async $allOperations({ model, operation, args, query }) {
+          if (!model) return query(args);
+          const startedAt = performance.now();
+          try {
+            return await query(args);
+          } finally {
+            metrics.recordPrismaQueryDuration(
+              model,
+              operation,
+              (performance.now() - startedAt) / 1_000
+            );
+          }
+        },
+      },
+    }) as unknown as PostgresPrismaClient;
   }
 }

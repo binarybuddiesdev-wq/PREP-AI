@@ -233,4 +233,25 @@ describe('MetricsService', () => {
     expect(output).not.toContain('private_agent');
     expect(output).not.toContain('provider="unknown"');
   });
+
+  it('exports Prisma query durations with bounded model and operation labels', async () => {
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getMemoryStats: vi.fn().mockResolvedValue({ usedMemoryBytes: 0, maxMemoryBytes: 0 }),
+    } as never);
+
+    metrics.recordPrismaQueryDuration('TheorySession', 'findMany', 0.125);
+    metrics.recordPrismaQueryDuration('UnknownModel', 'findMany', 0.25);
+    metrics.recordPrismaQueryDuration('TheorySession', 'unknown', 0.5);
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE prisma_query_duration_seconds histogram');
+    expect(output).toContain(
+      'prisma_query_duration_seconds_count{model="TheorySession",operation="findMany"} 1'
+    );
+    expect(output).toContain(
+      'prisma_query_duration_seconds_sum{model="TheorySession",operation="findMany"} 0.125'
+    );
+    expect(output).not.toContain('UnknownModel');
+  });
 });

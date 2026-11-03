@@ -23,6 +23,34 @@ export class MetricsService {
     'coding_review',
     'pdf_question_generator',
   ]);
+  private readonly validPrismaModels = new Set([
+    'TheorySession',
+    'TheoryAnswer',
+    'CodingSession',
+    'CodingQuestion',
+    'CodingAnswer',
+    'CodingExecution',
+    'PdfChunk',
+  ]);
+  private readonly validPrismaOperations = new Set([
+    'findUnique',
+    'findUniqueOrThrow',
+    'findFirst',
+    'findFirstOrThrow',
+    'findMany',
+    'create',
+    'createMany',
+    'createManyAndReturn',
+    'update',
+    'updateMany',
+    'updateManyAndReturn',
+    'upsert',
+    'delete',
+    'deleteMany',
+    'aggregate',
+    'groupBy',
+    'count',
+  ]);
   private readonly validWebhookProviders = new Set(['clerk']);
   private readonly validClerkAuthFailureReasons = new Set([
     'missing_header',
@@ -52,6 +80,10 @@ export class MetricsService {
       sum: number;
       buckets: number[];
     }
+  >();
+  private readonly prismaQueryDurations = new Map<
+    string,
+    { model: string; operation: string; count: number; sum: number; buckets: number[] }
   >();
 
   constructor(
@@ -160,6 +192,8 @@ export class MetricsService {
       '# TYPE piston_execution_duration_seconds histogram',
       '# HELP mastra_agent_duration_seconds Duration of individual Mastra provider attempts in seconds.',
       '# TYPE mastra_agent_duration_seconds histogram',
+      '# HELP prisma_query_duration_seconds Duration of PostgreSQL Prisma model operations in seconds.',
+      '# TYPE prisma_query_duration_seconds histogram',
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -208,6 +242,22 @@ export class MetricsService {
       lines.push(`mastra_agent_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`);
       lines.push(`mastra_agent_duration_seconds_sum{${labels}} ${metric.sum}`);
       lines.push(`mastra_agent_duration_seconds_count{${labels}} ${metric.count}`);
+    }
+
+    for (const metric of [...this.prismaQueryDurations.values()].sort((left, right) =>
+      JSON.stringify([left.model, left.operation]).localeCompare(
+        JSON.stringify([right.model, right.operation])
+      )
+    )) {
+      const labels = `model="${metric.model}",operation="${metric.operation}"`;
+      metric.buckets.forEach((count, index) => {
+        lines.push(
+          `prisma_query_duration_seconds_bucket{${labels},le="${this.buckets[index]}"} ${count}`
+        );
+      });
+      lines.push(`prisma_query_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`);
+      lines.push(`prisma_query_duration_seconds_sum{${labels}} ${metric.sum}`);
+      lines.push(`prisma_query_duration_seconds_count{${labels}} ${metric.count}`);
     }
 
     return `${lines.join('\n')}\n`;
@@ -282,6 +332,25 @@ export class MetricsService {
       if (duration <= bucket) metric.buckets[index] += 1;
     });
     this.mastraAgentDurations.set(key, metric);
+  }
+
+  recordPrismaQueryDuration(model: string, operation: string, durationSeconds: number): void {
+    if (!this.validPrismaModels.has(model) || !this.validPrismaOperations.has(operation)) return;
+    const key = JSON.stringify([model, operation]);
+    const metric = this.prismaQueryDurations.get(key) ?? {
+      model,
+      operation,
+      count: 0,
+      sum: 0,
+      buckets: this.buckets.map(() => 0),
+    };
+    const duration = Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0;
+    metric.count += 1;
+    metric.sum += duration;
+    this.buckets.forEach((bucket, index) => {
+      if (duration <= bucket) metric.buckets[index] += 1;
+    });
+    this.prismaQueryDurations.set(key, metric);
   }
 
   private providerFailoverKey(from: string, to: string): string {

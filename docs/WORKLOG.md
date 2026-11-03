@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - PostgreSQL Prisma query duration metrics
+
+- Added `prisma_query_duration_seconds` around PostgreSQL model operations on the API client, whose process exposes `/metrics`. Local worker operations sharing that client are included; the separate production worker client is not instrumented because worker metrics are not scraped. Successful and failed calls are measured; raw SQL calls without a model are omitted, and model/operation labels are allowlisted.
+- Updated observability documentation and the backend architecture tracker. Query text, parameters, and user data are not recorded.
+- Verification: focused Prisma/metrics tests passed (25 tests); `pnpm gate -- --stack server --level full` passed (793 tests, 90.27% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed.
+
 ## 2026-11-03 - Mastra agent duration metrics
 
 - Added `mastra_agent_duration_seconds` for each provider attempt across tech expert, Study Chat, theory evaluation, coding review, and PDF question generation. Fixed agent/provider/fallback labels are allowlisted, and telemetry failures do not affect provider calls.

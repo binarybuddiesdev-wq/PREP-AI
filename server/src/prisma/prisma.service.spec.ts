@@ -10,6 +10,7 @@ const prismaMocks = vi.hoisted(() => ({
   postgresTransaction: vi.fn(),
   postgresExecuteRaw: vi.fn(),
   postgresQueryRaw: vi.fn(),
+  postgresExtensions: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock('@prisma/client', () => ({
@@ -38,6 +39,11 @@ vi.mock('../generated/postgresql-client/index.js', () => ({
       return prismaMocks.postgresDisconnect();
     }
 
+    $extends(extension: Record<string, unknown>) {
+      prismaMocks.postgresExtensions.push(extension);
+      return this;
+    }
+
     $queryRaw() {
       return prismaMocks.postgresQueryRaw();
     }
@@ -57,6 +63,7 @@ describe('Prisma services', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMocks.postgresExtensions.length = 0;
     prismaMocks.mongoConnect.mockResolvedValue(undefined);
     prismaMocks.mongoDisconnect.mockResolvedValue(undefined);
     prismaMocks.postgresConnect.mockResolvedValue(undefined);
@@ -122,6 +129,50 @@ describe('Prisma services', () => {
     expect(prismaMocks.postgresConnect).toHaveBeenCalledOnce();
     expect(prismaMocks.postgresDisconnect).toHaveBeenCalledOnce();
     expect(log).toHaveBeenCalledWith('PostgreSQL connected');
+  });
+
+  it('records bounded API PostgreSQL model query timing for successful and failed calls', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    const metrics = { recordPrismaQueryDuration: vi.fn() };
+    const service = new PrismaPostgresqlService(metrics as never);
+    await service.onModuleInit();
+
+    expect(prismaMocks.postgresExtensions).toHaveLength(1);
+    const extension = prismaMocks.postgresExtensions[0] as {
+      query: {
+        $allOperations: (input: {
+          model: string;
+          operation: string;
+          args: unknown;
+          query: (args: unknown) => Promise<unknown>;
+        }) => Promise<unknown>;
+      };
+    };
+    const query = vi.fn().mockResolvedValue([]);
+    await extension.query.$allOperations({
+      model: 'TheorySession',
+      operation: 'findMany',
+      args: {},
+      query,
+    });
+
+    const failure = new Error('database failed');
+    await expect(
+      extension.query.$allOperations({
+        model: 'TheorySession',
+        operation: 'findMany',
+        args: {},
+        query: vi.fn().mockRejectedValue(failure),
+      })
+    ).rejects.toBe(failure);
+    expect(metrics.recordPrismaQueryDuration).toHaveBeenCalledTimes(2);
+    expect(metrics.recordPrismaQueryDuration).toHaveBeenCalledWith(
+      'TheorySession',
+      'findMany',
+      expect.any(Number)
+    );
+    await service.onModuleDestroy();
   });
 
   it('sets user identity inside a transaction before running tenant work', async () => {

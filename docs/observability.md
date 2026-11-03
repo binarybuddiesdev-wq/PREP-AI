@@ -61,7 +61,7 @@ rate and error rate. The remaining rows are future instrumentation.
 | `redis_memory_max_bytes`            | Gauge     | none                            | Redis `INFO memory`; 0 means unlimited     |
 | `mastra_agent_duration_seconds`     | Histogram | `agent`, `provider`, `fallback` | `chatWithFailover` provider-attempt timer  |
 | `mastra_provider_failovers_total`   | Counter   | `from`, `to`                    | `chatWithFailover` after fallback succeeds |
-| `prisma_query_duration_seconds`     | Histogram | `model`, `operation`            | Prisma `$on('query')` hook                 |
+| `prisma_query_duration_seconds`     | Histogram | `model`, `operation`            | API PostgreSQL Prisma query extension      |
 | `topic_cache_requests_total`        | Counter   | `operation`, `result`           | Topic list/detail Redis cache reads        |
 | `piston_execution_duration_seconds` | Histogram | `language`, `verdict`           | Piston module                              |
 | `webhook_signature_failures_total`  | Counter   | `provider`                      | Svix header and verification checks        |
@@ -82,6 +82,13 @@ and fallback labels are fixed allowlists; prompts, user identifiers, model
 names, and error text are never labels. Timing telemetry is fail-open and does
 not change provider retries or results. The `fallback` label is `true` when an
 attempt follows a failed earlier provider attempt.
+
+`prisma_query_duration_seconds` records successful and failed PostgreSQL model
+operations from the API client, which is the process exposing `/metrics`.
+Local worker operations sharing that client are included. A separate production
+worker client is not instrumented because worker metrics are not scraped here.
+Raw SQL operations without a model are excluded. Model and operation labels use
+fixed allowlists, and query text, parameters, and user data are never recorded.
 
 ### 3. Distributed tracing (TODO)
 
