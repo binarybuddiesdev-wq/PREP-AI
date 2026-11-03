@@ -190,4 +190,24 @@ describe('MetricsService', () => {
     expect(output).toContain('clerk_auth_failures_total{reason="invalid_token"} 1');
     expect(output).not.toContain('raw-token');
   });
+
+  it('exports bounded Piston execution duration histograms', async () => {
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getMemoryStats: vi.fn().mockResolvedValue({ usedMemoryBytes: 0, maxMemoryBytes: 0 }),
+    } as never);
+
+    metrics.recordPistonExecutionDuration('javascript', 'accepted', 0.25);
+    metrics.recordPistonExecutionDuration('not-a-language', 'accepted', 0.5);
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE piston_execution_duration_seconds histogram');
+    expect(output).toContain(
+      'piston_execution_duration_seconds_count{language="javascript",verdict="accepted"} 1'
+    );
+    expect(output).toContain(
+      'piston_execution_duration_seconds_sum{language="javascript",verdict="accepted"} 0.25'
+    );
+    expect(output).not.toContain('not-a-language');
+  });
 });

@@ -47,8 +47,8 @@ Current and planned metric families (Prometheus names):
 
 The HTTP histogram, in-flight gauge, provider failover counter, topic-cache
 hit/miss counter, BullMQ queue-count gauge, Redis used/max-memory gauges,
-webhook signature failure counter, and Clerk authentication failure counter
-are emitted now. The HTTP histogram also
+webhook signature failure counter, Clerk authentication failure counter, and
+Piston execution duration histogram are emitted now. The HTTP histogram also
 exposes a count by method, route, and status, which can be used to graph request
 rate and error rate. The remaining rows are future instrumentation.
 
@@ -167,7 +167,8 @@ P1 incidents are reserved for full outages — see
 - Metrics: set `METRICS_BEARER_TOKEN` to a random value of at least 32
   characters, restart the API, then scrape `/metrics` with
   `Authorization: Bearer <token>`. Without the token, `/metrics` returns 404.
-  HTTP duration, in-flight requests, successful AI provider failovers,
+  HTTP duration, in-flight requests, Piston duration by fixed language/verdict,
+  successful AI provider failovers,
   topic-cache hits/misses, Redis used/max memory, and BullMQ counts for each
   registered queue and `waiting`, `active`, `completed`, `failed`, and `delayed`
   state are currently collected. Queue and state labels come from fixed registries; job IDs and

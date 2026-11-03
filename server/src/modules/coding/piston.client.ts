@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, ServiceUnavailableException } from '@n
 import { ConfigService } from '@nestjs/config';
 import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
+import { performance } from 'node:perf_hooks';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 
 export const CODING_MAX_SOURCE_LENGTH = 32_000;
 export const CODING_MAX_TEST_CASES = 20;
@@ -62,7 +64,10 @@ interface IPistonResponse {
 export class PistonClient {
   private readonly baseUrl: string;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly metrics: MetricsService
+  ) {
     this.baseUrl = config.get<string>('PISTON_URL', 'http://127.0.0.1:2000').replace(/\/+$/, '');
   }
 
@@ -87,40 +92,51 @@ export class PistonClient {
       throw new BadRequestException('Problem examples are not valid executable test cases');
     }
 
-    const testCases: ICodingTestCaseResult[] = [];
-    let hasExecutionError = false;
-    const deadline = Date.now() + CODING_REQUEST_TIMEOUT_MS;
-    for (const example of parsedExamples.data) {
-      const remainingMs = deadline - Date.now();
-      if (remainingMs <= 0) {
-        throw new ServiceUnavailableException('Code execution timed out');
+    const startedAt = performance.now();
+    let verdict: ICodingExecutionResult['status'] = 'error';
+    try {
+      const testCases: ICodingTestCaseResult[] = [];
+      let hasExecutionError = false;
+      const deadline = Date.now() + CODING_REQUEST_TIMEOUT_MS;
+      for (const example of parsedExamples.data) {
+        const remainingMs = deadline - Date.now();
+        if (remainingMs <= 0) {
+          throw new ServiceUnavailableException('Code execution timed out');
+        }
+        const { result, isError } = await this.executeExample(
+          code,
+          parsedLanguage.data,
+          example,
+          remainingMs
+        );
+        testCases.push(result);
+        hasExecutionError ||= isError;
+        if (isError) break;
       }
-      const { result, isError } = await this.executeExample(
-        code,
+
+      const testCasesPassed = testCases.filter((testCase) => testCase.passed).length;
+      const testCasesTotal = parsedExamples.data.length;
+      const result: ICodingExecutionResult = {
+        status: hasExecutionError
+          ? 'error'
+          : testCasesPassed === testCasesTotal
+            ? 'accepted'
+            : 'wrong_answer',
+        testCasesPassed,
+        testCasesTotal,
+        testCases,
+        runtime: null,
+        memoryUsage: null,
+      };
+      verdict = result.status;
+      return result;
+    } finally {
+      this.metrics.recordPistonExecutionDuration(
         parsedLanguage.data,
-        example,
-        remainingMs
+        verdict,
+        Math.max(0, (performance.now() - startedAt) / 1000)
       );
-      testCases.push(result);
-      hasExecutionError ||= isError;
-      if (isError) break;
     }
-
-    const testCasesPassed = testCases.filter((testCase) => testCase.passed).length;
-    const testCasesTotal = parsedExamples.data.length;
-
-    return {
-      status: hasExecutionError
-        ? 'error'
-        : testCasesPassed === testCasesTotal
-          ? 'accepted'
-          : 'wrong_answer',
-      testCasesPassed,
-      testCasesTotal,
-      testCases,
-      runtime: null,
-      memoryUsage: null,
-    };
   }
 
   private async executeExample(

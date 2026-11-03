@@ -7,6 +7,7 @@ describe('PistonClient', () => {
   let client: PistonClient;
   let fetchMock: ReturnType<typeof vi.fn>;
   const config = { get: vi.fn() };
+  const metrics = { recordPistonExecutionDuration: vi.fn() };
   const examples = [
     { input: [[2, 7, 11, 15], 9], output: [0, 1], explanation: 'The first pair sums to 9.' },
     { input: [[3, 2, 4], 6], output: [1, 2] },
@@ -25,9 +26,10 @@ describe('PistonClient', () => {
   beforeEach(() => {
     config.get.mockReset();
     config.get.mockReturnValue('http://127.0.0.1:2000');
+    metrics.recordPistonExecutionDuration.mockReset();
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    client = new PistonClient(config as unknown as ConfigService);
+    client = new PistonClient(config as unknown as ConfigService, metrics as never);
   });
 
   afterEach(() => {
@@ -51,6 +53,11 @@ describe('PistonClient', () => {
     );
 
     expect(result.status).toBe('accepted');
+    expect(metrics.recordPistonExecutionDuration).toHaveBeenCalledWith(
+      language,
+      'accepted',
+      expect.any(Number)
+    );
     expect(result.testCasesPassed).toBe(2);
     expect(result.testCasesTotal).toBe(2);
     expect(result.testCases.every((testCase: { passed: boolean }) => testCase.passed)).toBe(true);
@@ -82,6 +89,20 @@ describe('PistonClient', () => {
     expect(requestBody.compile_memory_limit).toBe(268_435_456);
     expect(requestBody).not.toHaveProperty('args');
     expect(requestBody).not.toHaveProperty('run_timeout', 999_999);
+  });
+
+  it('records an error verdict when the Piston service is unavailable', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('connection refused'));
+
+    await expect(
+      client.execute('function solution() { return 1; }', 'javascript', [examples[0]])
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+
+    expect(metrics.recordPistonExecutionDuration).toHaveBeenCalledWith(
+      'javascript',
+      'error',
+      expect.any(Number)
+    );
   });
 
   it('builds a Python harness without accepting client-controlled harness options', async () => {
@@ -276,7 +297,7 @@ describe('PistonClient', () => {
       if (key === 'PISTON_EXECUTION_ENABLED') return undefined;
       return fallback;
     });
-    client = new PistonClient(config as unknown as ConfigService);
+    client = new PistonClient(config as unknown as ConfigService, metrics as never);
 
     await expect(
       client.execute('function solution() { return [0, 1]; }', 'javascript', [examples[0]])
@@ -289,7 +310,7 @@ describe('PistonClient', () => {
       if (key === 'PISTON_EXECUTION_ENABLED') return true;
       return fallback;
     });
-    client = new PistonClient(config as unknown as ConfigService);
+    client = new PistonClient(config as unknown as ConfigService, metrics as never);
     fetchMock.mockResolvedValue(pistonSuccess('[0,1]\n'));
 
     await expect(
@@ -304,7 +325,7 @@ describe('PistonClient', () => {
       if (key === 'PISTON_EXECUTION_ENABLED') return undefined;
       return fallback;
     });
-    client = new PistonClient(config as unknown as ConfigService);
+    client = new PistonClient(config as unknown as ConfigService, metrics as never);
     fetchMock.mockResolvedValue(pistonSuccess('[0,1]\n'));
 
     await expect(

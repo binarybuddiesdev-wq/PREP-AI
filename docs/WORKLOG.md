@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - Piston execution duration metrics
+
+- Added `piston_execution_duration_seconds` histogram with fixed language and verdict labels. It measures validated Piston execution requests, including service/timeout errors, without recording code or test data.
+- Updated observability docs and backend tracker.
+- Verification: focused metrics and Piston tests passed (38 tests); `pnpm gate -- --stack server --level full` passed (789 tests, 90.3% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed.
+
 ## 2026-11-03 - Clerk authentication failure metrics
 
 - Added process-local `clerk_auth_failures_total` for missing authorization headers, malformed bearer headers, and rejected Clerk tokens. Reason labels come from a fixed allowlist; credentials and token contents are never recorded.

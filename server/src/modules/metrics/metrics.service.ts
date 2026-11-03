@@ -31,6 +31,10 @@ export class MetricsService {
   private readonly topicCacheRequests = new Map<string, number>();
   private readonly webhookSignatureFailures = new Map<string, number>();
   private readonly clerkAuthFailures = new Map<string, number>();
+  private readonly pistonExecutionDurations = new Map<
+    string,
+    { language: string; verdict: string; count: number; sum: number; buckets: number[] }
+  >();
 
   constructor(
     private readonly redis: RedisService,
@@ -134,6 +138,8 @@ export class MetricsService {
       ...[...this.clerkAuthFailures.entries()]
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([reason, count]) => `clerk_auth_failures_total{reason="${reason}"} ${count}`),
+      '# HELP piston_execution_duration_seconds Duration of code execution requests in seconds.',
+      '# TYPE piston_execution_duration_seconds histogram',
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -150,6 +156,22 @@ export class MetricsService {
       lines.push(`http_request_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`);
       lines.push(`http_request_duration_seconds_sum{${labels}} ${metric.sum}`);
       lines.push(`http_request_duration_seconds_count{${labels}} ${metric.count}`);
+    }
+
+    for (const metric of [...this.pistonExecutionDurations.values()].sort((left, right) =>
+      JSON.stringify([left.language, left.verdict]).localeCompare(
+        JSON.stringify([right.language, right.verdict])
+      )
+    )) {
+      const labels = `language="${metric.language}",verdict="${metric.verdict}"`;
+      metric.buckets.forEach((count, index) => {
+        lines.push(
+          `piston_execution_duration_seconds_bucket{${labels},le="${this.buckets[index]}"} ${count}`
+        );
+      });
+      lines.push(`piston_execution_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`);
+      lines.push(`piston_execution_duration_seconds_sum{${labels}} ${metric.sum}`);
+      lines.push(`piston_execution_duration_seconds_count{${labels}} ${metric.count}`);
     }
 
     return `${lines.join('\n')}\n`;
@@ -178,6 +200,26 @@ export class MetricsService {
   recordClerkAuthFailure(reason: string): void {
     if (!this.validClerkAuthFailureReasons.has(reason)) return;
     this.clerkAuthFailures.set(reason, (this.clerkAuthFailures.get(reason) ?? 0) + 1);
+  }
+
+  recordPistonExecutionDuration(language: string, verdict: string, durationSeconds: number): void {
+    if (!['javascript', 'typescript', 'python'].includes(language)) return;
+    if (!['accepted', 'wrong_answer', 'error'].includes(verdict)) return;
+    const key = JSON.stringify([language, verdict]);
+    const metric = this.pistonExecutionDurations.get(key) ?? {
+      language,
+      verdict,
+      count: 0,
+      sum: 0,
+      buckets: this.buckets.map(() => 0),
+    };
+    const duration = Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0;
+    metric.count += 1;
+    metric.sum += duration;
+    this.buckets.forEach((bucket, index) => {
+      if (duration <= bucket) metric.buckets[index] += 1;
+    });
+    this.pistonExecutionDurations.set(key, metric);
   }
 
   private providerFailoverKey(from: string, to: string): string {
