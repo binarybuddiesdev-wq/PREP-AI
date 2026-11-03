@@ -16,6 +16,7 @@ export interface IHttpMetricLabels {
 @Injectable()
 export class MetricsService {
   private readonly validProviderNames = new Set(['nvidia', 'groq']);
+  private readonly validWebhookProviders = new Set(['clerk']);
   private readonly buckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
   private readonly inFlight = new Map<string, number>();
   private readonly durations = new Map<
@@ -23,6 +24,7 @@ export class MetricsService {
     { method: string; route: string; status: string; count: number; sum: number; buckets: number[] }
   >();
   private readonly topicCacheRequests = new Map<string, number>();
+  private readonly webhookSignatureFailures = new Map<string, number>();
 
   constructor(
     private readonly redis: RedisService,
@@ -114,6 +116,13 @@ export class MetricsService {
       '# HELP redis_memory_max_bytes Configured Redis maxmemory in bytes; zero means unlimited.',
       '# TYPE redis_memory_max_bytes gauge',
       ...(redisMemory ? [`redis_memory_max_bytes ${redisMemory.maxMemoryBytes}`] : []),
+      '# HELP webhook_signature_failures_total Rejected webhook signature verifications.',
+      '# TYPE webhook_signature_failures_total counter',
+      ...[...this.webhookSignatureFailures.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(
+          ([provider, count]) => `webhook_signature_failures_total{provider="${provider}"} ${count}`
+        ),
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -145,6 +154,14 @@ export class MetricsService {
     if (!['list', 'detail'].includes(operation) || !['hit', 'miss'].includes(result)) return;
     const key = `${operation}:${result}`;
     this.topicCacheRequests.set(key, (this.topicCacheRequests.get(key) ?? 0) + 1);
+  }
+
+  recordWebhookSignatureFailure(provider: string): void {
+    if (!this.validWebhookProviders.has(provider)) return;
+    this.webhookSignatureFailures.set(
+      provider,
+      (this.webhookSignatureFailures.get(provider) ?? 0) + 1
+    );
   }
 
   private providerFailoverKey(from: string, to: string): string {

@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - Clerk webhook signature metrics
+
+- Added process-local `webhook_signature_failures_total` with the fixed `provider="clerk"` label. It counts missing Svix headers and failed signature verification; webhook configuration and downstream processing failures do not affect it.
+- Updated the observability guide and backend tracker.
+- Verification: focused metrics and webhook tests passed (19 tests); `pnpm gate -- --stack server --level full` passed (785 tests, 90.22% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed.
+
 ## 2026-11-03 - Redis memory metrics
 
 - Added `redis_memory_used_bytes` and `redis_memory_max_bytes` gauges from the existing Redis `INFO memory` command. The gauges have no labels, max memory `0` represents unlimited, and malformed/unavailable data omits the samples while other metrics remain available.

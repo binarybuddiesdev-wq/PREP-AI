@@ -3,9 +3,10 @@ import { UserService } from './user.service.js';
 import { UserController } from './user.controller.js';
 import { WebhookController } from './webhook.controller.js';
 import { PrismaModule } from '@/prisma/prisma.module.js';
+import { MetricsModule } from '../metrics/metrics.module.js';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, MetricsModule],
   providers: [UserService],
   controllers: [UserController, WebhookController],
   exports: [UserService],

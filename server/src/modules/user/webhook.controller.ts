@@ -16,12 +16,14 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Webhook } from 'svix';
 import { UserService } from './user.service.js';
 import { ClerkWebhookEventDto } from './dto/index.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 
 @Controller('webhooks')
 export class WebhookController {
   constructor(
     private readonly userService: UserService,
     private readonly config: ConfigService,
+    private readonly metrics: MetricsService,
     @InjectPinoLogger(WebhookController.name) private readonly logger: PinoLogger
   ) {}
 
@@ -41,6 +43,7 @@ export class WebhookController {
     }
 
     if (!svixId || !svixTimestamp || !svixSignature) {
+      this.metrics.recordWebhookSignatureFailure('clerk');
       this.logger.warn('Missing svix headers');
       throw new BadRequestException('Missing webhook headers');
     }
@@ -58,6 +61,7 @@ export class WebhookController {
         'svix-signature': svixSignature,
       });
     } catch (err) {
+      this.metrics.recordWebhookSignatureFailure('clerk');
       this.logger.warn({ err }, 'Webhook signature verification failed');
       throw new BadRequestException('Invalid webhook signature');
     }

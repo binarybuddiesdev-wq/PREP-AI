@@ -46,10 +46,10 @@ Endpoints to expose:
 Current and planned metric families (Prometheus names):
 
 The HTTP histogram, in-flight gauge, provider failover counter, topic-cache
-hit/miss counter, BullMQ queue-count gauge, and Redis used/max-memory gauges
-are emitted now. The HTTP histogram also exposes a count by method, route, and
-status, which can be used to graph request rate and error rate. The remaining
-rows are future instrumentation.
+hit/miss counter, BullMQ queue-count gauge, Redis used/max-memory gauges, and
+webhook signature failure counter are emitted now. The HTTP histogram also
+exposes a count by method, route, and status, which can be used to graph request
+rate and error rate. The remaining rows are future instrumentation.
 
 | Name                                | Type      | Labels                          | Source                                     |
 | ----------------------------------- | --------- | ------------------------------- | ------------------------------------------ |
@@ -63,7 +63,7 @@ rows are future instrumentation.
 | `prisma_query_duration_seconds`     | Histogram | `model`, `operation`            | Prisma `$on('query')` hook                 |
 | `topic_cache_requests_total`        | Counter   | `operation`, `result`           | Topic list/detail Redis cache reads        |
 | `piston_execution_duration_seconds` | Histogram | `language`, `verdict`           | Piston module                              |
-| `webhook_signature_failures_total`  | Counter   | `provider`                      | Svix verification path                     |
+| `webhook_signature_failures_total`  | Counter   | `provider`                      | Svix header and verification checks        |
 | `clerk_auth_failures_total`         | Counter   | `reason`                        | `ClerkAuthGuard`                           |
 
 `mastra_provider_failovers_total` increments once when a fallback succeeds
@@ -175,9 +175,11 @@ P1 incidents are reserved for full outages — see
   limited to `operation=list|detail` and `result=hit|miss`; cache slugs,
   categories, and users are never labels. Route labels use Fastify route
   templates, and the scrape endpoint is excluded from collection. HTTP and
-  topic-cache metrics are process-local; provider failovers are shared through
-  Redis. The scrape still returns local metrics if Redis is unavailable;
+  topic-cache and webhook failure metrics are process-local; provider
+  failovers are shared through Redis. The scrape still returns local metrics if Redis is unavailable;
   Redis-backed provider and memory samples are omitted for failed reads.
+  `webhook_signature_failures_total` counts Clerk requests with missing Svix
+  headers or failed signature verification and uses the fixed `clerk` label.
 - Traces: not exposed in dev yet.
 
 ## Open questions

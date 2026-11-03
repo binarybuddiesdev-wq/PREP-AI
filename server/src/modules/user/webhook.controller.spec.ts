@@ -7,6 +7,7 @@ import { UserService } from './user.service.js';
 import type { ClerkWebhookEventDto } from './dto/index.js';
 import { BadRequestException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MetricsService } from '../metrics/metrics.service.js';
 
 const { verifyWebhookMock } = vi.hoisted(() => ({ verifyWebhookMock: vi.fn() }));
 
@@ -36,6 +37,7 @@ describe('WebhookController', () => {
     warn: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
   };
+  const metrics = { recordWebhookSignatureFailure: vi.fn() };
 
   const mockUser = {
     id: 'user_001',
@@ -70,6 +72,9 @@ describe('WebhookController', () => {
 
   beforeEach(async () => {
     config.get.mockReturnValue('whsec_test_secret');
+    verifyWebhookMock.mockReset();
+    verifyWebhookMock.mockImplementation(() => undefined);
+    metrics.recordWebhookSignatureFailure.mockReset();
     userService = {
       createUser: vi.fn(),
       updateUser: vi.fn(),
@@ -87,6 +92,7 @@ describe('WebhookController', () => {
       providers: [
         { provide: UserService, useValue: userService },
         { provide: ConfigService, useValue: config },
+        { provide: MetricsService, useValue: metrics },
         { provide: 'PinoLogger:WebhookController', useValue: mockPinoLogger },
       ],
     }).compile();
@@ -191,6 +197,18 @@ describe('WebhookController', () => {
       await expect(
         invokeWebhook(body, { 'svix-id': '', 'svix-timestamp': '', 'svix-signature': '' })
       ).rejects.toThrow(BadRequestException);
+      expect(metrics.recordWebhookSignatureFailure).toHaveBeenCalledWith('clerk');
+    });
+
+    it('counts invalid webhook signatures with a bounded Clerk provider label', async () => {
+      verifyWebhookMock.mockImplementationOnce(() => {
+        throw new Error('signature mismatch');
+      });
+      const body = { type: 'user.created', data: { id: 'clerk_123' } };
+
+      await expect(invokeWebhook(body)).rejects.toThrow(BadRequestException);
+
+      expect(metrics.recordWebhookSignatureFailure).toHaveBeenCalledWith('clerk');
     });
 
     it('should handle user.updated with missing names gracefully', async () => {

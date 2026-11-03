@@ -158,4 +158,19 @@ describe('MetricsService', () => {
     expect(output).toContain('# TYPE http_request_duration_seconds histogram');
     expect(output).not.toMatch(/\nredis_memory_used_bytes \d/);
   });
+
+  it('counts webhook signature failures only for registered providers', async () => {
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getMemoryStats: vi.fn().mockResolvedValue({ usedMemoryBytes: 0, maxMemoryBytes: 0 }),
+    } as never);
+
+    metrics.recordWebhookSignatureFailure('clerk');
+    metrics.recordWebhookSignatureFailure('unknown');
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE webhook_signature_failures_total counter');
+    expect(output).toContain('webhook_signature_failures_total{provider="clerk"} 1');
+    expect(output).not.toContain('provider="unknown"');
+  });
 });
