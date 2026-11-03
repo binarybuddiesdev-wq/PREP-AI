@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — retry-safe session completion
+
+- Theory and coding completion endpoints now return the persisted completed session on a retry instead of returning 409.
+- If a concurrent conditional update wins, the loser reloads the owner-scoped session and replays it only when status is completed; incomplete sessions retain conflict behavior.
+- Updated both session API notes, shared idempotency policy, backend tracker, and architecture TODO.
+- Verification: focused theory/coding service tests passed (130); `pnpm gate -- --stack server --level full` passed (606 tests across 61 files, build, spec type-check, coverage, lint, formatting, Prisma generation, and agent-doc checks); architecture viewer check and `git diff --check` passed. Review found no Critical or Important issues.
+
 ## 2026-11-03 — coding session start idempotency
 
 - Required `Idempotency-Key` for coding session start and derived actor-scoped deterministic PostgreSQL session UUIDs.

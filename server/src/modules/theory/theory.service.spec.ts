@@ -908,11 +908,14 @@ describe('TheoryService', () => {
     });
 
     it('should reject completion while an answer slot is still being processed', async () => {
-      postgres.client_.theorySession.findFirst.mockResolvedValue({
+      const incompleteSession = {
         ...mockSession,
         questionsAnswered: 1,
         answers: [],
-      });
+      };
+      postgres.client_.theorySession.findFirst
+        .mockResolvedValueOnce(incompleteSession)
+        .mockResolvedValueOnce(incompleteSession);
       postgres.client_.theorySession.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(service.completeSession('session_001', 'user_001')).rejects.toThrow(
@@ -922,7 +925,7 @@ describe('TheoryService', () => {
         where: expect.objectContaining({ questionsAnswered: 0, status: 'in_progress' }),
         data: expect.any(Object),
       });
-      expect(postgres.client_.theorySession.findFirst).toHaveBeenCalledTimes(1);
+      expect(postgres.client_.theorySession.findFirst).toHaveBeenCalledTimes(2);
     });
 
     it('rejects completion while a persisted answer is still queued or running', async () => {
@@ -979,11 +982,27 @@ describe('TheoryService', () => {
       });
     });
 
-    it('should throw ConflictException when already completed', async () => {
-      postgres.client_.theorySession.findFirst.mockResolvedValue(mockCompletedSession);
+    it('replays a completed session without applying the transition twice', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValue({
+        ...mockCompletedSession,
+        answers: [{ aiScore: 7.5 }],
+      });
 
-      await expect(service.completeSession('session_001', 'user_001')).rejects.toThrow(
-        ConflictException
+      await expect(service.completeSession('session_001', 'user_001')).resolves.toEqual(
+        mockCompletedSession
+      );
+      expect(postgres.client_.theorySession.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('replays a completion that wins a concurrent status update', async () => {
+      const completedSession = { ...mockCompletedSession };
+      postgres.client_.theorySession.findFirst
+        .mockResolvedValueOnce({ ...mockSession, answers: [] })
+        .mockResolvedValueOnce(completedSession);
+      postgres.client_.theorySession.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.completeSession('session_001', 'user_001')).resolves.toEqual(
+        completedSession
       );
     });
 

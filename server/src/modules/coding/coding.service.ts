@@ -298,6 +298,7 @@ export class CodingService {
           where: { id: sessionId, userId },
         });
         if (!session) throw new NotFoundException(CODING_SESSION_NOT_FOUND);
+        if (session.status === 'completed') return session;
         if (session.status !== 'in_progress') {
           throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
         }
@@ -306,7 +307,14 @@ export class CodingService {
           where: { id: sessionId, userId, status: 'in_progress' },
           data: { status: 'completed', completedAt },
         });
-        if (updated.count !== 1) throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
+        if (updated.count !== 1) {
+          const concurrentResult = await transaction.codingSession.findFirst({
+            where: { id: sessionId, userId },
+          });
+          if (!concurrentResult) throw new NotFoundException(CODING_SESSION_NOT_FOUND);
+          if (concurrentResult.status === 'completed') return concurrentResult;
+          throw new ConflictException(CODING_SESSION_COMPLETED_ERROR);
+        }
         return { ...session, status: 'completed', completedAt };
       });
     } catch (error) {

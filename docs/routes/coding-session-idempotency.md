@@ -15,3 +15,11 @@ record, so the retry window lasts as long as that record exists.
 The API derives a deterministic PostgreSQL session UUID from the authenticated
 user and key. If concurrent requests race to create the same operation, the
 loser returns the winning session when the assignment matches.
+
+## Completion retries
+
+Repeating `POST /api/v1/coding/session/:sessionId/complete` for an already
+completed session returns its persisted completed state. If another request
+completes the session concurrently, the losing request reloads and returns the
+completed row. A session that remains in progress after a failed conditional
+update still returns a conflict.

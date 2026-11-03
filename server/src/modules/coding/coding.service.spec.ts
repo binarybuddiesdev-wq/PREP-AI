@@ -879,14 +879,28 @@ describe('CodingService', () => {
       );
     });
 
-    it('rejects repeat completion and updates that lose the status race', async () => {
+    it('replays a completed session without applying the transition twice', async () => {
       pg().codingSession.findFirst.mockResolvedValueOnce({ ...session, status: 'completed' });
-      await expect(service.completeSession(sessionId, userId)).rejects.toBeInstanceOf(
-        ConflictException
-      );
+      await expect(service.completeSession(sessionId, userId)).resolves.toMatchObject({
+        status: 'completed',
+      });
+      expect(pg().codingSession.updateMany).not.toHaveBeenCalled();
+    });
 
+    it('replays a completion that wins a concurrent status update', async () => {
       pg().codingSession.findFirst.mockResolvedValueOnce(session);
+      pg().codingSession.findFirst.mockResolvedValueOnce({ ...session, status: 'completed' });
       pg().codingSession.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.completeSession(sessionId, userId)).resolves.toMatchObject({
+        status: 'completed',
+      });
+    });
+
+    it('retains a conflict when a lost completion update did not complete the session', async () => {
+      pg().codingSession.findFirst.mockResolvedValueOnce(session).mockResolvedValueOnce(session);
+      pg().codingSession.updateMany.mockResolvedValueOnce({ count: 0 });
+
       await expect(service.completeSession(sessionId, userId)).rejects.toBeInstanceOf(
         ConflictException
       );

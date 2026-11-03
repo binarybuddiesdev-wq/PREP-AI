@@ -2,7 +2,8 @@
 
 ## Intent
 
-Make retries of theory-session, asynchronous theory-answer, coding-execution, and PDF-upload
+Make retries of theory/coding sessions, asynchronous theory-answer,
+coding-execution, and PDF-upload
 requests safe. A client that loses a response can repeat the same request and
 receive the original persisted operation without consuming another quota slot
 or enqueueing duplicate work.
@@ -67,6 +68,8 @@ or enqueueing duplicate work.
   and key; persisted session fields act as the request fingerprint.
 - Coding session IDs are deterministic PostgreSQL UUIDs derived from the actor
   and key; the effective assigned problem IDs act as the request fingerprint.
+- Session completion endpoints are naturally retry-safe: repeated calls return
+  the persisted completed session without another transition.
 
 ## Verification
 

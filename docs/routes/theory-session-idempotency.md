@@ -25,3 +25,11 @@ Content-Type: application/json
 The API derives a deterministic PostgreSQL session UUID from the authenticated
 user and key. If concurrent requests race to create the same operation, the
 loser releases its quota reservation and returns the winning session.
+
+## Completion retries
+
+Repeating `POST /api/v1/theory/session/:sessionId/complete` for an already
+completed session returns its persisted completion summary. If another request
+completes the session concurrently, the losing request reloads and returns the
+completed summary. A session with answers still being evaluated remains
+ineligible for completion.

@@ -143,7 +143,8 @@ mocked Prisma tests prove database enforcement.
 The implemented policy covers theory session/answer creation and coding
 session creation/run/submit:
 bounded keys, durable record replay, 409 on payload mismatch, and no duplicate
-queue or quota work for persisted replays. Theory answer IDs preserve their
+queue or quota work for persisted replays. Theory and coding completion also
+return the durable completed state on retries. Theory answer IDs preserve their
 existing format; theory session, coding session, and coding execution IDs are
 actor-scoped. Other mutations and key-retention policy remain open. See the
 [shared idempotency design](../superpowers/specs/2026-11-03-shared-idempotency-design.md).

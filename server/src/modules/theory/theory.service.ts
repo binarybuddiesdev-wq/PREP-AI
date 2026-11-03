@@ -463,8 +463,10 @@ export class TheoryService {
         include: { answers: true },
       });
       if (!session) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
-      if (session.status === 'completed')
-        throw new ConflictException(THEORY_SESSION_ALREADY_COMPLETED);
+      if (session.status === 'completed') {
+        const { answers: _answers, ...completedSession } = session;
+        return completedSession;
+      }
 
       if (
         session.answers.some((answer) => answer.status === 'queued' || answer.status === 'running')
@@ -493,6 +495,11 @@ export class TheoryService {
         },
       });
       if (completion.count === 0) {
+        const concurrentResult = await transaction.theorySession.findFirst({
+          where: { id: sessionId, userId },
+        });
+        if (!concurrentResult) throw new NotFoundException(THEORY_SESSION_NOT_FOUND);
+        if (concurrentResult.status === 'completed') return concurrentResult;
         throw new ConflictException(
           'Cannot complete the session while an answer is still being processed'
         );
