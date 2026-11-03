@@ -1,7 +1,11 @@
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { NodeSDK } from '@opentelemetry/sdk-node';
+import { initializeErrorTracking, shutdownErrorTracking } from './sentry.js';
 import { registerTelemetryShutdown } from './sdk-state.js';
+
+const isWorkerProcess = process.argv.some((argument) => argument.includes('worker.main'));
+initializeErrorTracking(process.env, isWorkerProcess ? 'worker' : 'api');
 
 const hasOtlpEndpoint = Boolean(
   process.env['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'] || process.env['OTEL_EXPORTER_OTLP_ENDPOINT']
@@ -15,7 +19,6 @@ process.env['OTEL_TRACES_SAMPLER_ARG'] =
     ? String(configuredRatio)
     : '0.1';
 if (!hasOtlpEndpoint) process.env['OTEL_TRACES_EXPORTER'] = 'none';
-const isWorkerProcess = process.argv.some((argument) => argument.includes('worker.main'));
 process.env['OTEL_SERVICE_NAME'] ??= isWorkerProcess ? 'prepai-worker' : 'prepai-api';
 
 export const telemetrySdk = new NodeSDK({
@@ -24,4 +27,6 @@ export const telemetrySdk = new NodeSDK({
 });
 
 telemetrySdk.start();
-registerTelemetryShutdown(() => telemetrySdk.shutdown());
+registerTelemetryShutdown(async () => {
+  await Promise.all([telemetrySdk.shutdown(), shutdownErrorTracking()]);
+});

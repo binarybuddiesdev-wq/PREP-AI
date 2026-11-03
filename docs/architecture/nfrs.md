@@ -163,14 +163,14 @@
 
 ## 9. Observability
 
-| Signal          | Tool                                                 | Retention        | Notes                                         |
-| --------------- | ---------------------------------------------------- | ---------------- | --------------------------------------------- |
-| Structured logs | Pino → stdout → managed log sink (CloudWatch / Loki) | 30d hot, 1y cold | `X-Request-Id` propagated end-to-end          |
-| Metrics (RED)   | Prometheus + Grafana                                 | 90d              | Per-endpoint: rate, errors, duration          |
-| Tracing         | OpenTelemetry → Jaeger / Tempo                       | 30d              | Spans: HTTP → service → Prisma → Piston / NIM |
-| Error tracking  | Sentry                                               | 90d              | Unhandled exceptions, with user context       |
-| Uptime          | BetterStack / Cronitor                               | 1y               | External probe of `/health/ready` every 60s   |
-| Audit log       | Postgres `AuditLog` table, append-only               | 2y               | Payments, role changes, erasure requests      |
+| Signal          | Tool                                                 | Retention        | Notes                                                                           |
+| --------------- | ---------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------- |
+| Structured logs | Pino → stdout → managed log sink (CloudWatch / Loki) | 30d hot, 1y cold | `X-Request-Id` propagated end-to-end                                            |
+| Metrics (RED)   | Prometheus + Grafana                                 | 90d              | Per-endpoint: rate, errors, duration                                            |
+| Tracing         | OpenTelemetry → Jaeger / Tempo                       | 30d              | Spans: HTTP → service → Prisma → Piston / NIM                                   |
+| Error tracking  | Sentry                                               | 90d              | Unexpected API/worker exceptions; request and user data scrubbed before sending |
+| Uptime          | BetterStack / Cronitor                               | 1y               | External probe of `/health/ready` every 60s                                     |
+| Audit log       | Postgres `AuditLog` table, append-only               | 2y               | Payments, role changes, erasure requests                                        |
 
 ---
 

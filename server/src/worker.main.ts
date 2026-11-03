@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module.js';
+import { captureUnhandledException } from './telemetry/sentry.js';
 
 async function bootstrapWorker(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule, { bufferLogs: true });
@@ -17,6 +18,8 @@ async function bootstrapWorker(): Promise<void> {
 }
 
 void bootstrapWorker().catch((error: unknown) => {
-  Logger.error(error, 'Background job worker failed to start', 'WorkerBootstrap');
-  process.exitCode = 1;
+  return captureUnhandledException(error).finally(() => {
+    Logger.error(error, 'Background job worker failed to start', 'WorkerBootstrap');
+    process.exitCode = 1;
+  });
 });

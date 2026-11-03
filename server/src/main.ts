@@ -8,6 +8,7 @@ import type { Http2ServerRequest } from 'node:http2';
 import { AppModule } from './app.module.js';
 import { configureApp } from './config/configure-app.js';
 import { assignRequestId } from './config/request-id.js';
+import { captureUnhandledException } from './telemetry/sentry.js';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -29,4 +30,9 @@ async function bootstrap(): Promise<void> {
   Logger.log(`Server listening on port ${port}`, 'Bootstrap');
 }
 
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  return captureUnhandledException(error).finally(() => {
+    Logger.error(error, 'Application failed to start', 'Bootstrap');
+    process.exitCode = 1;
+  });
+});

@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-04 - Optional Sentry error tracking
+
+- Added optional Sentry reporting for unexpected API exceptions and API/worker bootstrap failures. Event request, user, breadcrumb, and extra fields are scrubbed; Sentry tracing remains disabled so OpenTelemetry stays the trace pipeline. Startup failures flush captured errors before the process exits.
+- Documented `SENTRY_DSN`, release and region options, privacy behavior, and remaining source-map upload work. Reporting stays disabled until a DSN is configured.
+- Verification: Sentry tests passed (4 tests); full server gate passed (unit tests, 90%+ branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (31 tests), architecture viewer check and `git diff --check` passed.
+
 ## 2026-11-04 - Retry-safe resource deletion
 
 - Audited backend mutation routes for state-changing operations that behave inconsistently when clients retry after a lost response. Missing/foreign notification and Study Chat conversation deletes, plus repeated topic/question deletes, now return the same success response; database deletes remain owner-scoped where applicable. Topic deletion still rejects resources with questions.

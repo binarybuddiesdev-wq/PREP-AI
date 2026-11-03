@@ -138,13 +138,22 @@ POST /api/v1/theory/answer        -> reqId=8d2f…
 
 ## Error tracking
 
-Target: **Sentry** (Node SDK). Install in `server/`, sample 100% in
-production, 0% in tests. Source maps uploaded by the CI build step.
+The official NestJS SDK reports unexpected API exceptions through the global
+HTTP exception filter and captures API/worker bootstrap failures. It initializes
+before the Nest applications and flushes during shutdown. Error reporting is
+disabled when `SENTRY_DSN` is empty or `NODE_ENV=test`; configured production
+events use a 100% error sample rate.
 
-- DSN via `SENTRY_DSN` env var
-- Release name pinned to `package.json` version + git SHA
-- `tracesSampleRate: 0.1` (10%) to keep costs flat
-- Tags: `service=api`, `nodeEnv`, `region`
+- Set `SENTRY_DSN` to enable error reporting.
+- `SENTRY_RELEASE` overrides the default `<package-version>+<git-sha>` release
+  (the SHA falls back to `local` when `GIT_SHA` is unset).
+- `REGION` adds an optional deployment region tag.
+- Events carry fixed `service` (`api` or `worker`) and `nodeEnv` tags.
+- Request, user, breadcrumb, and extra data are removed before sending. Default
+  PII collection is disabled.
+- Sentry tracing is disabled (`tracesSampleRate: 0`); OpenTelemetry remains the
+  single trace pipeline.
+- CI source-map upload is still a deployment follow-up.
 
 ## Uptime monitoring
 
