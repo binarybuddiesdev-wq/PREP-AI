@@ -12,6 +12,7 @@ const redisMocks = vi.hoisted(() => ({
     on: vi.fn(),
     disconnect: vi.fn(),
     ping: vi.fn(),
+    incr: vi.fn(),
   },
   constructor: vi.fn(),
 }));
@@ -43,6 +44,7 @@ describe('RedisService unique quota reservations', () => {
     redisMocks.client.on.mockReset();
     redisMocks.client.disconnect.mockReset();
     redisMocks.client.ping.mockReset();
+    redisMocks.client.incr.mockReset();
 
     const config = {
       get: vi.fn((key: string) => (key === 'REDIS_HOST' ? '127.0.0.1' : 6379)),
@@ -91,6 +93,31 @@ describe('RedisService unique quota reservations', () => {
       '{"items":[]}'
     );
     expect(redisMocks.client.get).toHaveBeenCalledWith('prepai:cache:topics:v1:list:all');
+  });
+
+  it('increments and reads a shared metrics counter in Redis', async () => {
+    redisMocks.client.incr.mockResolvedValueOnce(3);
+    redisMocks.client.get.mockResolvedValueOnce('3');
+
+    await expect(
+      service.incrementMetricCounter('prepai:metrics:provider-failover:nvidia:groq')
+    ).resolves.toBe(3);
+    await expect(
+      service.getMetricCounter('prepai:metrics:provider-failover:nvidia:groq')
+    ).resolves.toBe(3);
+    expect(redisMocks.client.incr).toHaveBeenCalledWith(
+      'prepai:metrics:provider-failover:nvidia:groq'
+    );
+    expect(redisMocks.client.get).toHaveBeenCalledWith(
+      'prepai:metrics:provider-failover:nvidia:groq'
+    );
+  });
+
+  it('returns zero for a shared counter not yet created', async () => {
+    redisMocks.client.get.mockResolvedValueOnce(null);
+    await expect(
+      service.getMetricCounter('prepai:metrics:provider-failover:nvidia:groq')
+    ).resolves.toBe(0);
   });
 
   it('writes a cache value with the requested expiration', async () => {

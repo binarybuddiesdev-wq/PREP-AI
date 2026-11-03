@@ -19,6 +19,7 @@ import type {
   ITheoryEvaluationResult,
 } from './theory-evaluation.types.js';
 import { TheoryAiTokenBudgetService } from './theory-ai-token-budget.service.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 
 const MAX_THEORY_EVALUATION_FEEDBACK_LENGTH = 2000;
 const MAX_THEORY_EVALUATION_OUTPUT_TOKENS = 512;
@@ -41,7 +42,8 @@ export class TheoryEvaluationService {
   constructor(
     private readonly postgres: PrismaPostgresqlService,
     @InjectPinoLogger(TheoryEvaluationService.name) private readonly logger: PinoLogger,
-    private readonly tokenBudget: TheoryAiTokenBudgetService
+    private readonly tokenBudget: TheoryAiTokenBudgetService,
+    private readonly metrics: MetricsService
   ) {}
 
   async evaluate(answerId: string): Promise<void> {
@@ -77,56 +79,59 @@ export class TheoryEvaluationService {
       response: Awaited<ReturnType<typeof agent.generate>>;
     };
     try {
-      providerResult = await chatWithFailover(async (provider) => {
-        if (budgetExceeded || budgetUnavailable) {
-          throw new Error('Theory AI token budget reservation is unavailable');
-        }
-        let reservation;
-        try {
-          reservation = await this.tokenBudget.reserve(
-            answer.session.userId,
-            randomUUID(),
-            estimatedTokens
-          );
-        } catch (error: unknown) {
-          budgetUnavailable = true;
-          throw error;
-        }
-        if (!reservation.allowed) {
-          budgetExceeded = true;
-          throw new Error('Daily AI token budget reached');
-        }
-        const response = await agent.generate(prompt, {
-          model: getModel(provider),
-          instructions: currentTheoryEvaluatorPrompt.instructions,
-          modelSettings: { maxOutputTokens: MAX_THEORY_EVALUATION_OUTPUT_TOKENS },
-          structuredOutput: {
-            schema: theoryAnswerEvalSchema,
-            jsonPromptInjection: true,
-            errorStrategy: 'fallback',
-            fallbackValue: theoryEvaluationFallback,
-          },
-        });
-        let actualTokens = estimatedTokens;
-        try {
-          const usage = await response.usage;
-          actualTokens = readTotalTokens(usage) ?? estimatedTokens;
-        } catch (error: unknown) {
-          this.logger.warn(
-            { answerId, error: error instanceof Error ? error.message : String(error) },
-            'Could not read provider token usage; keeping the reserved allowance'
-          );
-        }
-        try {
-          await this.tokenBudget.settle(reservation, actualTokens);
-        } catch (error: unknown) {
-          this.logger.warn(
-            { answerId, error: error instanceof Error ? error.message : String(error) },
-            'Could not settle AI token usage; keeping the reserved allowance'
-          );
-        }
-        return { provider, response };
-      });
+      providerResult = await chatWithFailover(
+        async (provider) => {
+          if (budgetExceeded || budgetUnavailable) {
+            throw new Error('Theory AI token budget reservation is unavailable');
+          }
+          let reservation;
+          try {
+            reservation = await this.tokenBudget.reserve(
+              answer.session.userId,
+              randomUUID(),
+              estimatedTokens
+            );
+          } catch (error: unknown) {
+            budgetUnavailable = true;
+            throw error;
+          }
+          if (!reservation.allowed) {
+            budgetExceeded = true;
+            throw new Error('Daily AI token budget reached');
+          }
+          const response = await agent.generate(prompt, {
+            model: getModel(provider),
+            instructions: currentTheoryEvaluatorPrompt.instructions,
+            modelSettings: { maxOutputTokens: MAX_THEORY_EVALUATION_OUTPUT_TOKENS },
+            structuredOutput: {
+              schema: theoryAnswerEvalSchema,
+              jsonPromptInjection: true,
+              errorStrategy: 'fallback',
+              fallbackValue: theoryEvaluationFallback,
+            },
+          });
+          let actualTokens = estimatedTokens;
+          try {
+            const usage = await response.usage;
+            actualTokens = readTotalTokens(usage) ?? estimatedTokens;
+          } catch (error: unknown) {
+            this.logger.warn(
+              { answerId, error: error instanceof Error ? error.message : String(error) },
+              'Could not read provider token usage; keeping the reserved allowance'
+            );
+          }
+          try {
+            await this.tokenBudget.settle(reservation, actualTokens);
+          } catch (error: unknown) {
+            this.logger.warn(
+              { answerId, error: error instanceof Error ? error.message : String(error) },
+              'Could not settle AI token usage; keeping the reserved allowance'
+            );
+          }
+          return { provider, response };
+        },
+        (from, to) => this.metrics.recordProviderFailover(from, to)
+      );
     } catch (error: unknown) {
       if (budgetExceeded) {
         await this.withWorkerAnswer(answerId, (transaction) =>

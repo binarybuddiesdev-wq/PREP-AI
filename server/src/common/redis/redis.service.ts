@@ -156,6 +156,24 @@ export class RedisService implements OnModuleDestroy {
     return this.client.get(key);
   }
 
+  async incrementMetricCounter(key: string): Promise<number> {
+    const count = await this.client.incr(key);
+    if (!Number.isSafeInteger(count) || count < 1) {
+      throw new Error('Redis returned an invalid metrics counter value');
+    }
+    return count;
+  }
+
+  async getMetricCounter(key: string): Promise<number> {
+    const value = await this.client.get(key);
+    if (value === null) return 0;
+    const count = Number(value);
+    if (!Number.isSafeInteger(count) || count < 0) {
+      throw new Error('Redis returned an invalid metrics counter value');
+    }
+    return count;
+  }
+
   async setCacheValue(key: string, value: string, ttlSeconds: number): Promise<void> {
     await this.client.set(key, value, 'EX', ttlSeconds);
   }

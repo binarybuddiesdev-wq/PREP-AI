@@ -5,9 +5,10 @@ import { JobQueueModule } from '@/common/jobs/job-queue.module.js';
 import { TheoryEvaluationService } from './theory-evaluation.service.js';
 import { TheoryEvaluationWorker } from './theory-evaluation.worker.js';
 import { TheoryAiTokenBudgetService } from './theory-ai-token-budget.service.js';
+import { MetricsModule } from '../metrics/metrics.module.js';
 
 @Module({
-  imports: [JobQueueModule],
+  imports: [JobQueueModule, MetricsModule],
   providers: [
     TheoryService,
     TheoryEvaluationService,

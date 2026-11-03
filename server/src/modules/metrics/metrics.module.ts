@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MetricsController } from './metrics.controller.js';
 import { MetricsService } from './metrics.service.js';
+import { RedisModule } from '../../common/redis/redis.module.js';
 
 @Module({
+  imports: [RedisModule],
   controllers: [MetricsController],
   providers: [
     MetricsService,

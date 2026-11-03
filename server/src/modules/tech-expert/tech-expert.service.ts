@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { MetricsService } from '../metrics/metrics.service.js';
 import { mastra } from '../../mastra/mastra.config.js';
 import { chatWithFailover, getModel } from '../../mastra/providers.js';
 import {
@@ -11,6 +12,8 @@ import {
 @Injectable()
 export class TechExpertService {
   private readonly logger = new Logger(TechExpertService.name);
+
+  constructor(private readonly metrics: MetricsService) {}
 
   public async askQuestion(payload: ITechExpertRequest): Promise<ITechExpertResponse> {
     try {
@@ -25,16 +28,18 @@ export class TechExpertService {
         relatedTopics: [],
       };
 
-      const response = await chatWithFailover((provider) =>
-        agent.generate(payload.question, {
-          model: getModel(provider),
-          structuredOutput: {
-            schema: techAnswerSchema,
-            jsonPromptInjection: true,
-            errorStrategy: 'fallback',
-            fallbackValue: fallback,
-          },
-        })
+      const response = await chatWithFailover(
+        (provider) =>
+          agent.generate(payload.question, {
+            model: getModel(provider),
+            structuredOutput: {
+              schema: techAnswerSchema,
+              jsonPromptInjection: true,
+              errorStrategy: 'fallback',
+              fallbackValue: fallback,
+            },
+          }),
+        (from, to) => this.metrics.recordProviderFailover(from, to)
       );
 
       const answer = (response.object as TechAnswer) || fallback;

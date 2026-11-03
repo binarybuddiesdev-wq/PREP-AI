@@ -5,6 +5,7 @@ import { PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { THEORY_EVALUATOR_PROMPT_VERSION } from '../../mastra/agents/theory-evaluator-agent.js';
 import { TheoryEvaluationService } from './theory-evaluation.service.js';
 import { TheoryAiTokenBudgetService } from './theory-ai-token-budget.service.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 
 const mockGenerate = vi.fn();
 const mockTokenBudget = {
@@ -17,7 +18,14 @@ vi.mock('../../mastra/mastra.config.js', () => ({
 }));
 
 describe('TheoryEvaluationService', () => {
-  const createService = (postgres: unknown, logger: unknown) => {
+  const createService = (
+    postgres: unknown,
+    logger: unknown,
+    metrics = new MetricsService({
+      incrementMetricCounter: vi.fn().mockResolvedValue(1),
+      getMetricCounter: vi.fn().mockResolvedValue(1),
+    } as never)
+  ) => {
     const database = postgres as Record<string, unknown>;
     database['withWorkerJobContext'] ??= async (
       _jobId: string,
@@ -34,7 +42,8 @@ describe('TheoryEvaluationService', () => {
     return new TheoryEvaluationService(
       postgres as PrismaPostgresqlService,
       logger as never,
-      mockTokenBudget as unknown as TheoryAiTokenBudgetService
+      mockTokenBudget as unknown as TheoryAiTokenBudgetService,
+      metrics
     );
   };
 
@@ -170,7 +179,16 @@ describe('TheoryEvaluationService', () => {
       text: '{}',
       usage: Promise.resolve({ promptTokens: 500, completionTokens: 200 }),
     });
-    const service = createService(postgres, { info: vi.fn(), warn: vi.fn(), error: vi.fn() });
+    const redisMetrics = {
+      incrementMetricCounter: vi.fn().mockResolvedValue(1),
+      getMetricCounter: vi.fn().mockResolvedValue(1),
+    };
+    const metrics = new MetricsService(redisMetrics as never);
+    const service = createService(
+      postgres,
+      { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      metrics
+    );
 
     await service.evaluate('answer_001');
 
@@ -188,6 +206,12 @@ describe('TheoryEvaluationService', () => {
         evaluationPromptVersion: THEORY_EVALUATOR_PROMPT_VERSION,
       }),
     });
+    expect(await metrics.getMetrics()).toContain(
+      'mastra_provider_failovers_total{from="nvidia",to="groq"} 1'
+    );
+    expect(redisMetrics.incrementMetricCounter).toHaveBeenCalledWith(
+      'prepai:metrics:provider-failover:nvidia:groq'
+    );
   });
 
   it('keeps the conservative reservation when provider token usage is unavailable', async () => {

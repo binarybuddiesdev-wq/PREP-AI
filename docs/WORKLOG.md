@@ -1,5 +1,22 @@
 # Worklog
 
+## 2026-11-03 — AI provider failover metrics
+
+- Added the protected Prometheus counter `mastra_provider_failovers_total`.
+- Theory evaluation, PDF question generation, and tech-expert calls record a
+  provider transition only when the fallback call succeeds.
+- Counter labels are restricted to `from` and `to` provider names; prompt,
+  user, model, and failure-message data are not included.
+- Counter updates use atomic Redis increments so worker-process failovers appear
+  in the API scrape. Redis failures do not delay AI responses, and a Redis
+  scrape failure omits only the provider samples.
+- Focused verification: MetricsService, provider failover, theory evaluation,
+  PDF question generation, tech-expert, metrics hooks, and Redis specs passed
+  (73 tests).
+- Full server gate passed: 618 tests in 61 files; architecture viewer check and
+  `git diff --check` passed.
+- Fresh read-only review found no Critical, Important, or Minor findings.
+
 ## 2026-11-03 — PDF deletion retry safety
 
 - Repeated delete requests now return the owned source's `deleted` state after cleanup has completed instead of returning 404.

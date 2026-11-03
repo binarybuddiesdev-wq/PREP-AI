@@ -1,12 +1,12 @@
 import { EventEmitter } from 'node:events';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { registerMetricsHooks } from './metrics-hooks.js';
 
 describe('registerMetricsHooks', () => {
   it('clears in-flight metrics when a client disconnects before the response ends', async () => {
-    const metrics = new MetricsService();
+    const metrics = new MetricsService({ getMetricCounter: vi.fn().mockResolvedValue(0) } as never);
     const hooks = new Map<string, (...args: never[]) => unknown>();
     const fastify = {
       addHook: (name: string, handler: (...args: never[]) => unknown) => hooks.set(name, handler),
@@ -36,7 +36,7 @@ describe('registerMetricsHooks', () => {
   });
 
   it('records an errored response once even when onError and onResponse both run', async () => {
-    const metrics = new MetricsService();
+    const metrics = new MetricsService({ getMetricCounter: vi.fn().mockResolvedValue(0) } as never);
     const hooks = new Map<string, (...args: never[]) => unknown>();
     const fastify = {
       addHook: (name: string, handler: (...args: never[]) => unknown) => hooks.set(name, handler),

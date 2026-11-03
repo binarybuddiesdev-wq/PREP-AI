@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { RedisService } from '../../common/redis/redis.service.js';
 
 export interface IHttpMetricLabels {
   method: string;
@@ -8,12 +9,15 @@ export interface IHttpMetricLabels {
 
 @Injectable()
 export class MetricsService {
+  private readonly validProviderNames = new Set(['nvidia', 'groq']);
   private readonly buckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
   private readonly inFlight = new Map<string, number>();
   private readonly durations = new Map<
     string,
     { method: string; route: string; status: string; count: number; sum: number; buckets: number[] }
   >();
+
+  constructor(private readonly redis: RedisService) {}
 
   beginRequest(
     routeTemplate: string
@@ -54,6 +58,17 @@ export class MetricsService {
   }
 
   async getMetrics(): Promise<string> {
+    const providerTransitions = [
+      ['nvidia', 'groq'],
+      ['groq', 'nvidia'],
+    ] as const;
+    const providerFailovers = await Promise.all(
+      providerTransitions.map(async ([from, to]) => ({
+        from,
+        to,
+        count: await this.redis.getMetricCounter(this.providerFailoverKey(from, to)),
+      }))
+    ).catch(() => []);
     const lines = [
       '# HELP http_requests_in_flight Number of HTTP requests currently being handled.',
       '# TYPE http_requests_in_flight gauge',
@@ -64,6 +79,12 @@ export class MetricsService {
         ),
       '# HELP http_request_duration_seconds Duration of completed HTTP requests in seconds.',
       '# TYPE http_request_duration_seconds histogram',
+      '# HELP mastra_provider_failovers_total Number of successful LLM provider fallbacks.',
+      '# TYPE mastra_provider_failovers_total counter',
+      ...providerFailovers.map(
+        ({ from, to, count }) =>
+          `mastra_provider_failovers_total{from="${from}",to="${to}"} ${count}`
+      ),
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -83,6 +104,16 @@ export class MetricsService {
     }
 
     return `${lines.join('\n')}\n`;
+  }
+
+  async recordProviderFailover(from: string, to: string): Promise<void> {
+    if (!this.validProviderNames.has(from) || !this.validProviderNames.has(to) || from === to)
+      return;
+    await this.redis.incrementMetricCounter(this.providerFailoverKey(from, to));
+  }
+
+  private providerFailoverKey(from: string, to: string): string {
+    return `prepai:metrics:provider-failover:${from}:${to}`;
   }
 
   private normalizeRoute(route: string): string {

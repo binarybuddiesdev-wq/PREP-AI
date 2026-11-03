@@ -1,6 +1,7 @@
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import { TechExpertService } from './tech-expert.service.js';
 import { TechAnswer } from './tech-expert.types.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 
 // Setup mock behavior for Mastra Agent
 const mockAnswer: TechAnswer = {
@@ -23,9 +24,14 @@ vi.mock('../../mastra/mastra.config.js', () => ({
 
 describe('TechExpertService', () => {
   let service: TechExpertService;
+  let metrics: MetricsService;
 
   beforeEach(() => {
-    service = new TechExpertService();
+    metrics = new MetricsService({
+      incrementMetricCounter: vi.fn().mockResolvedValue(1),
+      getMetricCounter: vi.fn().mockResolvedValue(1),
+    } as never);
+    service = new TechExpertService(metrics);
     vi.stubEnv('LLM_PROVIDER', '');
     vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
     vi.stubEnv('GROQ_API_KEY', 'groq-test-key');
@@ -84,5 +90,8 @@ describe('TechExpertService', () => {
     expect(mockGenerate).toHaveBeenCalledTimes(2);
     expect(result.data?.answer).toEqual(mockAnswer);
     expect(result.error).toBeNull();
+    expect(await metrics.getMetrics()).toContain(
+      'mastra_provider_failovers_total{from="nvidia",to="groq"} 1'
+    );
   });
 });

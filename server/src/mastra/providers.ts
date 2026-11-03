@@ -99,8 +99,12 @@ export function getModel(
  * ad-hoc eval) when you want a result no matter what. For agents, prefer
  * `getModel()` so the agent keeps the same model across a conversation.
  */
-export async function chatWithFailover<T>(fn: (provider: ProviderName) => Promise<T>): Promise<T> {
+export async function chatWithFailover<T>(
+  fn: (provider: ProviderName) => Promise<T>,
+  onFailover?: (from: ProviderName, to: ProviderName) => void | Promise<void>
+): Promise<T> {
   const errors: unknown[] = [];
+  let previousProvider: ProviderName | undefined;
 
   const configuredOverride = process.env.LLM_PROVIDER;
   if (configuredOverride && configuredOverride !== 'nvidia' && configuredOverride !== 'groq') {
@@ -116,9 +120,18 @@ export async function chatWithFailover<T>(fn: (provider: ProviderName) => Promis
   for (const name of providerOrder) {
     if (!hasKey(name)) continue;
     try {
-      return await fn(name);
+      const result = await fn(name);
+      if (previousProvider && onFailover) {
+        try {
+          void Promise.resolve(onFailover(previousProvider, name)).catch(() => undefined);
+        } catch {
+          // Telemetry must not change the provider result or retry behavior.
+        }
+      }
+      return result;
     } catch (err) {
       errors.push({ provider: name, error: err });
+      previousProvider = name;
     }
   }
 
