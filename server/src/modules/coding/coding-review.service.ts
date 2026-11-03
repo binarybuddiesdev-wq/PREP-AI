@@ -106,7 +106,9 @@ export class CodingReviewService {
           ).object
         ),
       }),
-      (from, to) => this.metrics.recordProviderFailover(from, to)
+      (from, to) => this.metrics.recordProviderFailover(from, to),
+      (provider, fallback, duration) =>
+        this.metrics.recordMastraAgentDuration('coding_review', provider, fallback, duration)
     );
     await this.persistReview(executionId, context.answer.id, generated.result, generated.provider);
   }

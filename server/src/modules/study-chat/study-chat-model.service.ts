@@ -46,7 +46,9 @@ export class StudyChatModelService {
           modelSettings: { maxOutputTokens: 1_500 },
           ...(signal ? { abortSignal: signal } : {}),
         }),
-      (from, to) => this.metrics.recordProviderFailover(from, to)
+      (from, to) => this.metrics.recordProviderFailover(from, to),
+      (provider, fallback, duration) =>
+        this.metrics.recordMastraAgentDuration('study_chat', provider, fallback, duration)
     );
     const actualTokens = (await readTotalTokens(response.usage)) ?? estimatedTokens;
     try {

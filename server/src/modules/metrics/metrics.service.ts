@@ -16,6 +16,13 @@ export interface IHttpMetricLabels {
 @Injectable()
 export class MetricsService {
   private readonly validProviderNames = new Set(['nvidia', 'groq']);
+  private readonly validMastraAgentNames = new Set([
+    'tech_expert',
+    'study_chat',
+    'theory_evaluator',
+    'coding_review',
+    'pdf_question_generator',
+  ]);
   private readonly validWebhookProviders = new Set(['clerk']);
   private readonly validClerkAuthFailureReasons = new Set([
     'missing_header',
@@ -34,6 +41,17 @@ export class MetricsService {
   private readonly pistonExecutionDurations = new Map<
     string,
     { language: string; verdict: string; count: number; sum: number; buckets: number[] }
+  >();
+  private readonly mastraAgentDurations = new Map<
+    string,
+    {
+      agent: string;
+      provider: string;
+      fallback: string;
+      count: number;
+      sum: number;
+      buckets: number[];
+    }
   >();
 
   constructor(
@@ -140,6 +158,8 @@ export class MetricsService {
         .map(([reason, count]) => `clerk_auth_failures_total{reason="${reason}"} ${count}`),
       '# HELP piston_execution_duration_seconds Duration of code execution requests in seconds.',
       '# TYPE piston_execution_duration_seconds histogram',
+      '# HELP mastra_agent_duration_seconds Duration of individual Mastra provider attempts in seconds.',
+      '# TYPE mastra_agent_duration_seconds histogram',
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -172,6 +192,22 @@ export class MetricsService {
       lines.push(`piston_execution_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`);
       lines.push(`piston_execution_duration_seconds_sum{${labels}} ${metric.sum}`);
       lines.push(`piston_execution_duration_seconds_count{${labels}} ${metric.count}`);
+    }
+
+    for (const metric of [...this.mastraAgentDurations.values()].sort((left, right) =>
+      JSON.stringify([left.agent, left.provider, left.fallback]).localeCompare(
+        JSON.stringify([right.agent, right.provider, right.fallback])
+      )
+    )) {
+      const labels = `agent="${metric.agent}",provider="${metric.provider}",fallback="${metric.fallback}"`;
+      metric.buckets.forEach((count, index) => {
+        lines.push(
+          `mastra_agent_duration_seconds_bucket{${labels},le="${this.buckets[index]}"} ${count}`
+        );
+      });
+      lines.push(`mastra_agent_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`);
+      lines.push(`mastra_agent_duration_seconds_sum{${labels}} ${metric.sum}`);
+      lines.push(`mastra_agent_duration_seconds_count{${labels}} ${metric.count}`);
     }
 
     return `${lines.join('\n')}\n`;
@@ -220,6 +256,32 @@ export class MetricsService {
       if (duration <= bucket) metric.buckets[index] += 1;
     });
     this.pistonExecutionDurations.set(key, metric);
+  }
+
+  recordMastraAgentDuration(
+    agent: string,
+    provider: string,
+    fallback: boolean,
+    durationSeconds: number
+  ): void {
+    if (!this.validMastraAgentNames.has(agent) || !this.validProviderNames.has(provider)) return;
+    const fallbackLabel = String(fallback);
+    const key = JSON.stringify([agent, provider, fallbackLabel]);
+    const metric = this.mastraAgentDurations.get(key) ?? {
+      agent,
+      provider,
+      fallback: fallbackLabel,
+      count: 0,
+      sum: 0,
+      buckets: this.buckets.map(() => 0),
+    };
+    const duration = Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0;
+    metric.count += 1;
+    metric.sum += duration;
+    this.buckets.forEach((bucket, index) => {
+      if (duration <= bucket) metric.buckets[index] += 1;
+    });
+    this.mastraAgentDurations.set(key, metric);
   }
 
   private providerFailoverKey(from: string, to: string): string {

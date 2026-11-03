@@ -113,6 +113,33 @@ describe('chatWithFailover', () => {
     expect(failovers).toEqual([['nvidia', 'groq']]);
   });
 
+  it('records each provider attempt and marks only retry attempts as fallback', async () => {
+    vi.stubEnv('LLM_PROVIDER', '');
+    vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+    vi.stubEnv('GROQ_API_KEY', 'groq-test-key');
+    const attempts: Array<[string, boolean, number]> = [];
+
+    const result = await chatWithFailover(
+      async (provider) => {
+        if (provider === 'nvidia') throw new Error('NVIDIA unavailable');
+        return 'groq response';
+      },
+      undefined,
+      (provider, fallback, duration) => {
+        attempts.push([provider, fallback, duration]);
+      }
+    );
+
+    expect(result).toBe('groq response');
+    expect(attempts.map(([provider, fallback]) => [provider, fallback])).toEqual([
+      ['nvidia', false],
+      ['groq', true],
+    ]);
+    expect(attempts.every(([, , duration]) => Number.isFinite(duration) && duration >= 0)).toBe(
+      true
+    );
+  });
+
   it('does not report a failover when the fallback provider also fails', async () => {
     vi.stubEnv('LLM_PROVIDER', '');
     vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');

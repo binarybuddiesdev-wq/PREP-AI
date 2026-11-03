@@ -130,7 +130,9 @@ export class TheoryEvaluationService {
           }
           return { provider, response };
         },
-        (from, to) => this.metrics.recordProviderFailover(from, to)
+        (from, to) => this.metrics.recordProviderFailover(from, to),
+        (provider, fallback, duration) =>
+          this.metrics.recordMastraAgentDuration('theory_evaluator', provider, fallback, duration)
       );
     } catch (error: unknown) {
       if (budgetExceeded) {

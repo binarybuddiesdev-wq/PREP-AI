@@ -210,4 +210,27 @@ describe('MetricsService', () => {
     );
     expect(output).not.toContain('not-a-language');
   });
+
+  it('exports Mastra agent durations with bounded agent and provider labels', async () => {
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getMemoryStats: vi.fn().mockResolvedValue({ usedMemoryBytes: 0, maxMemoryBytes: 0 }),
+    } as never);
+
+    metrics.recordMastraAgentDuration('tech_expert', 'nvidia', false, 0.25);
+    metrics.recordMastraAgentDuration('study_chat', 'groq', true, 0.5);
+    metrics.recordMastraAgentDuration('private_agent', 'groq', false, 1);
+    metrics.recordMastraAgentDuration('tech_expert', 'unknown', false, 1);
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE mastra_agent_duration_seconds histogram');
+    expect(output).toContain(
+      'mastra_agent_duration_seconds_count{agent="tech_expert",provider="nvidia",fallback="false"} 1'
+    );
+    expect(output).toContain(
+      'mastra_agent_duration_seconds_count{agent="study_chat",provider="groq",fallback="true"} 1'
+    );
+    expect(output).not.toContain('private_agent');
+    expect(output).not.toContain('provider="unknown"');
+  });
 });

@@ -52,7 +52,14 @@ ${JSON.stringify(references)}
           },
         }),
       }),
-      (from, to) => this.metrics.recordProviderFailover(from, to)
+      (from, to) => this.metrics.recordProviderFailover(from, to),
+      (provider, fallback, duration) =>
+        this.metrics.recordMastraAgentDuration(
+          'pdf_question_generator',
+          provider,
+          fallback,
+          duration
+        )
     );
 
     const output = generatedQuestionsSchema.safeParse(response.object);

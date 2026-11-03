@@ -101,7 +101,12 @@ export function getModel(
  */
 export async function chatWithFailover<T>(
   fn: (provider: ProviderName) => Promise<T>,
-  onFailover?: (from: ProviderName, to: ProviderName) => void | Promise<void>
+  onFailover?: (from: ProviderName, to: ProviderName) => void | Promise<void>,
+  onAttempt?: (
+    provider: ProviderName,
+    fallback: boolean,
+    durationSeconds: number
+  ) => void | Promise<void>
 ): Promise<T> {
   const errors: unknown[] = [];
   let previousProvider: ProviderName | undefined;
@@ -117,8 +122,9 @@ export async function chatWithFailover<T>(
     ? [forcedProvider]
     : (['nvidia', 'groq'] as ProviderName[]).filter(hasKey);
 
-  for (const name of providerOrder) {
+  for (const [index, name] of providerOrder.entries()) {
     if (!hasKey(name)) continue;
+    const startedAt = performance.now();
     try {
       const result = await fn(name);
       if (previousProvider && onFailover) {
@@ -132,6 +138,16 @@ export async function chatWithFailover<T>(
     } catch (err) {
       errors.push({ provider: name, error: err });
       previousProvider = name;
+    } finally {
+      if (onAttempt) {
+        try {
+          void Promise.resolve(
+            onAttempt(name, index > 0, (performance.now() - startedAt) / 1_000)
+          ).catch(() => undefined);
+        } catch {
+          // Telemetry must not change provider results or retry behavior.
+        }
+      }
     }
   }
 

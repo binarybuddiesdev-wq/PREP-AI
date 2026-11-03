@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - Mastra agent duration metrics
+
+- Added `mastra_agent_duration_seconds` for each provider attempt across tech expert, Study Chat, theory evaluation, coding review, and PDF question generation. Fixed agent/provider/fallback labels are allowlisted, and telemetry failures do not affect provider calls.
+- Updated the observability guide and backend tracker; clarified that request IDs already propagate to BullMQ worker failure logs while OpenTelemetry tracing remains open.
+- Verification: focused metric/provider tests passed (27 tests), touched service tests passed (194 tests), `pnpm gate -- --stack server --level full` passed (791 tests, 90.3% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks), database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed.
+
 ## 2026-11-03 - Piston execution duration metrics
 
 - Added `piston_execution_duration_seconds` histogram with fixed language and verdict labels. It measures validated Piston execution requests, including service/timeout errors, without recording code or test data.

@@ -39,7 +39,9 @@ export class TechExpertService {
               fallbackValue: fallback,
             },
           }),
-        (from, to) => this.metrics.recordProviderFailover(from, to)
+        (from, to) => this.metrics.recordProviderFailover(from, to),
+        (provider, fallback, duration) =>
+          this.metrics.recordMastraAgentDuration('tech_expert', provider, fallback, duration)
       );
 
       const answer = (response.object as TechAnswer) || fallback;

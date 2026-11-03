@@ -45,10 +45,10 @@ Endpoints to expose:
 
 Current and planned metric families (Prometheus names):
 
-The HTTP histogram, in-flight gauge, provider failover counter, topic-cache
-hit/miss counter, BullMQ queue-count gauge, Redis used/max-memory gauges,
-webhook signature failure counter, Clerk authentication failure counter, and
-Piston execution duration histogram are emitted now. The HTTP histogram also
+The HTTP histogram, in-flight gauge, provider failover counter, Mastra agent
+duration histogram, topic-cache hit/miss counter, BullMQ queue-count gauge,
+Redis used/max-memory gauges, webhook signature failure counter, Clerk
+authentication failure counter, and Piston execution duration histogram are emitted now. The HTTP histogram also
 exposes a count by method, route, and status, which can be used to graph request
 rate and error rate. The remaining rows are future instrumentation.
 
@@ -59,7 +59,7 @@ rate and error rate. The remaining rows are future instrumentation.
 | `bullmq_job_count`                  | Gauge     | `queue`, `state`                | `JobQueueService.getJobCounts`             |
 | `redis_memory_used_bytes`           | Gauge     | none                            | Redis `INFO memory`                        |
 | `redis_memory_max_bytes`            | Gauge     | none                            | Redis `INFO memory`; 0 means unlimited     |
-| `mastra_agent_duration_seconds`     | Histogram | `agent`, `provider`, `fallback` | Agent timer in `mastra/providers.ts`       |
+| `mastra_agent_duration_seconds`     | Histogram | `agent`, `provider`, `fallback` | `chatWithFailover` provider-attempt timer  |
 | `mastra_provider_failovers_total`   | Counter   | `from`, `to`                    | `chatWithFailover` after fallback succeeds |
 | `prisma_query_duration_seconds`     | Histogram | `model`, `operation`            | Prisma `$on('query')` hook                 |
 | `topic_cache_requests_total`        | Counter   | `operation`, `result`           | Topic list/detail Redis cache reads        |
@@ -74,6 +74,14 @@ not labels. The counter is stored in shared Redis so successful calls from the
 separate worker process are visible to the API scrape. It resets when its Redis
 key or Redis data is removed. If Redis is unavailable during a scrape, provider
 samples are omitted while local HTTP metrics remain available.
+
+`mastra_agent_duration_seconds` records each provider attempt, including failed
+attempts and successful fallbacks, for the tech expert, Study Chat, theory
+evaluator, coding review, and PDF question generator agents. Agent, provider,
+and fallback labels are fixed allowlists; prompts, user identifiers, model
+names, and error text are never labels. Timing telemetry is fail-open and does
+not change provider retries or results. The `fallback` label is `true` when an
+attempt follows a failed earlier provider attempt.
 
 ### 3. Distributed tracing (TODO)
 
@@ -103,7 +111,8 @@ Fastify uses the `X-Request-Id` header as `request.id` when it is a single
 lowercase canonical UUID v4; otherwise it generates one. The same ID is set on
 the raw request for `nestjs-pino`, and an `onRequest` hook echoes it in the
 response. CORS exposes the response header to browser clients. BullMQ job
-propagation remains open.
+propagation is implemented for request IDs and worker failure logs;
+OpenTelemetry trace propagation remains open.
 
 ```
 GET /api/v1/theory/sessions/abc  -> reqId=8d2f…
