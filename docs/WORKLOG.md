@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 — Expanded real database data-isolation tests
+
+- Expanded the disposable two-user suites to cover Mongo profile/settings mutations, theory answer and session ownership, history and analytics, coding session/execution/history paths, and coding worker session updates based on persisted ownership.
+- Shared guarded Prisma setup between per-domain specs. No production service behavior or database schema changed; PostgreSQL RLS remains disabled.
+- Verification: `pnpm test:database:isolation` passed (17 tests across 3 files), `pnpm gate -- --stack server --level full` passed all checks, and backend architecture, QA-coverage, and correctness reviews found no issues.
+
 ## 2026-11-03 — Real database data-isolation tests
 
 - Added opt-in, disposable Podman databases and real Prisma service tests with two persisted users. Tests cover Clerk-to-Mongo settings ownership and PostgreSQL theory/coding session detail; foreign sessions return 404.
