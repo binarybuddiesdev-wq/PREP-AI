@@ -21,6 +21,7 @@
 | [0009](0009-frontend-layers.md)                     | Frontend layers (core, utils, service, data, logic, components, pages, app) | Accepted | 2026-10-22 |
 | [0010](0010-bullmq-piston-execution.md)             | Run coding executions through BullMQ                                        | Accepted | 2026-11-02 |
 | [0011](0011-isolated-database-integration-tests.md) | Isolated database integration tests                                         | Accepted | 2026-11-03 |
+| [0012](0012-postgresql-row-level-security.md)       | PostgreSQL RLS for tenant-owned records                                     | Accepted | 2026-11-03 |
 
 ---
 

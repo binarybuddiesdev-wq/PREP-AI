@@ -44,8 +44,11 @@ model and the checks that guard it.
 Current enforcement is in NestJS guards, role metadata, and service-level
 database predicates. PostgreSQL row-level security (RLS) is **not enabled**;
 these filters are application-enforced and must not be described as
-database-enforced. RLS needs a separate design for transaction-local identity,
-pooled connections, worker access, and database integration tests.
+database-enforced. [ADR-0012](../adr/0012-postgresql-row-level-security.md)
+records the decision to adopt RLS before public multi-tenant deployment and
+the staged design for transaction-local identity, pooled connections, worker
+access, runtime roles, and real-database tests. The ADR does not enable RLS;
+all rollout gates must pass first.
 
 ## Verification inventory
 
@@ -77,6 +80,5 @@ database-wide isolation or PostgreSQL RLS.
 - Internal theory evaluation and queue-dispatch worker paths, webhook signature
   handling, and public surfaces remain covered by their existing unit tests;
   they do not share the user-request ownership boundary tested here.
-- PostgreSQL RLS is not enabled. Design transaction-local identity, pooled
-  connections, and worker access separately before adopting database-enforced
-  tenant isolation.
+- PostgreSQL RLS is not enabled. Follow [ADR-0012](../adr/0012-postgresql-row-level-security.md)
+  before enabling database-enforced tenant isolation.

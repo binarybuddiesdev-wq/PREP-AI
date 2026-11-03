@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 — PostgreSQL RLS rollout decision
+
+- Selected PostgreSQL RLS as a defense-in-depth requirement before public multi-tenant deployment; documented the transaction-local Clerk identity model, connection-pool safety, shared catalog treatment, least-privilege API/worker roles, and narrow worker queue-claim functions in ADR-0012.
+- RLS remains disabled until every rollout gate is implemented and verified. The current runtime uses the `postgres` superuser and worker recovery scans across tenants, so enabling policies now would provide no protection and could break processing.
+- No application code, database schema, credentials, or runtime behavior changed in this decision.
+
 ## 2026-11-03 — Expanded real database data-isolation tests
 
 - Expanded the disposable two-user suites to cover Mongo profile/settings mutations, theory answer and session ownership, history and analytics, coding session/execution/history paths, and coding worker session updates based on persisted ownership.
