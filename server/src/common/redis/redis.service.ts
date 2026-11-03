@@ -152,6 +152,19 @@ export class RedisService implements OnModuleDestroy {
     await this.client.eval(RELEASE_QUOTA_SCRIPT, 1, key);
   }
 
+  getCacheValue(key: string): Promise<string | null> {
+    return this.client.get(key);
+  }
+
+  async setCacheValue(key: string, value: string, ttlSeconds: number): Promise<void> {
+    await this.client.set(key, value, 'EX', ttlSeconds);
+  }
+
+  async deleteCacheValues(...keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    await this.client.del(...keys);
+  }
+
   async reserveTokenQuota(
     quotaKey: string,
     reservationKey: string,

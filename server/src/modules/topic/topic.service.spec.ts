@@ -1,11 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TopicService } from './topic.service.js';
 import { PrismaService } from '@/prisma/prisma.service.js';
+import { RedisService } from '@/common/redis/redis.service.js';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('TopicService', () => {
   let service: TopicService;
+  let redis: {
+    getCacheValue: ReturnType<typeof vi.fn>;
+    setCacheValue: ReturnType<typeof vi.fn>;
+    deleteCacheValues: ReturnType<typeof vi.fn>;
+  };
   let prisma: {
     topic: {
       findFirst: ReturnType<typeof vi.fn>;
@@ -36,6 +42,11 @@ describe('TopicService', () => {
   };
 
   beforeEach(async () => {
+    redis = {
+      getCacheValue: vi.fn().mockResolvedValue(null),
+      setCacheValue: vi.fn().mockResolvedValue(undefined),
+      deleteCacheValues: vi.fn().mockResolvedValue(undefined),
+    };
     prisma = {
       topic: {
         findFirst: vi.fn(),
@@ -60,6 +71,7 @@ describe('TopicService', () => {
       providers: [
         TopicService,
         { provide: PrismaService, useValue: prisma },
+        { provide: RedisService, useValue: redis },
         { provide: 'PinoLogger:TopicService', useValue: mockPinoLogger },
       ],
     }).compile();
@@ -139,6 +151,24 @@ describe('TopicService', () => {
         },
       });
     });
+
+    it('invalidates topic lists and the new detail slug after creation', async () => {
+      prisma.topic.findFirst.mockResolvedValue(null);
+      prisma.topic.create.mockResolvedValue(mockTopic);
+
+      await service.createTopic({
+        name: 'React',
+        slug: 'react',
+        category: 'practice',
+      });
+
+      expect(redis.deleteCacheValues).toHaveBeenCalledWith(
+        'prepai:cache:topics:v1:list:all',
+        'prepai:cache:topics:v1:list:practice',
+        'prepai:cache:topics:v1:list:coding',
+        'prepai:cache:topics:v1:slug:react'
+      );
+    });
   });
 
   describe('getAllCategories', () => {
@@ -172,6 +202,66 @@ describe('TopicService', () => {
 
       expect(result).toEqual([]);
     });
+
+    it('returns a cached all-topic list without querying MongoDB', async () => {
+      redis.getCacheValue.mockResolvedValueOnce(JSON.stringify([mockTopic]));
+
+      await expect(service.getAllCategories({})).resolves.toEqual(
+        JSON.parse(JSON.stringify([mockTopic]))
+      );
+
+      expect(prisma.topic.findMany).not.toHaveBeenCalled();
+      expect(redis.setCacheValue).not.toHaveBeenCalled();
+    });
+
+    it('uses distinct keys for the supported categories', async () => {
+      prisma.topic.findMany.mockResolvedValue([]);
+
+      await service.getAllCategories({ category: 'practice' });
+      await service.getAllCategories({ category: 'coding' });
+
+      expect(redis.getCacheValue).toHaveBeenNthCalledWith(
+        1,
+        'prepai:cache:topics:v1:list:practice'
+      );
+      expect(redis.getCacheValue).toHaveBeenNthCalledWith(2, 'prepai:cache:topics:v1:list:coding');
+    });
+
+    it('refreshes malformed cached JSON from MongoDB', async () => {
+      redis.getCacheValue.mockResolvedValueOnce('{not-json');
+      prisma.topic.findMany.mockResolvedValueOnce([mockTopic]);
+
+      await expect(service.getAllCategories({})).resolves.toEqual([mockTopic]);
+
+      expect(prisma.topic.findMany).toHaveBeenCalledOnce();
+      expect(redis.setCacheValue).toHaveBeenCalledWith(
+        'prepai:cache:topics:v1:list:all',
+        JSON.stringify([mockTopic]),
+        60
+      );
+      expect(redis.deleteCacheValues).toHaveBeenCalledWith('prepai:cache:topics:v1:list:all');
+    });
+
+    it('refreshes a valid JSON cache entry with the wrong list shape', async () => {
+      redis.getCacheValue.mockResolvedValueOnce(JSON.stringify({ topics: [mockTopic] }));
+      prisma.topic.findMany.mockResolvedValueOnce([mockTopic]);
+
+      await expect(service.getAllCategories({})).resolves.toEqual([mockTopic]);
+
+      expect(prisma.topic.findMany).toHaveBeenCalledOnce();
+      expect(redis.deleteCacheValues).toHaveBeenCalledWith('prepai:cache:topics:v1:list:all');
+    });
+
+    it('falls back to MongoDB when cache reads and writes fail', async () => {
+      redis.getCacheValue.mockRejectedValueOnce(new Error('Redis unavailable'));
+      redis.setCacheValue.mockRejectedValueOnce(new Error('Redis unavailable'));
+      prisma.topic.findMany.mockResolvedValueOnce([mockTopic]);
+
+      await expect(service.getAllCategories({})).resolves.toEqual([mockTopic]);
+
+      expect(prisma.topic.findMany).toHaveBeenCalledOnce();
+      expect(mockPinoLogger.warn).toHaveBeenCalled();
+    });
   });
 
   describe('getTopicBySlug', () => {
@@ -188,6 +278,28 @@ describe('TopicService', () => {
       prisma.topic.findUnique.mockResolvedValue(null);
 
       await expect(service.getTopicBySlug('nonexistent')).rejects.toThrow(NotFoundException);
+      expect(redis.setCacheValue).not.toHaveBeenCalled();
+    });
+
+    it('returns cached topic detail without querying MongoDB', async () => {
+      redis.getCacheValue.mockResolvedValueOnce(JSON.stringify(mockTopic));
+
+      await expect(service.getTopicBySlug('react')).resolves.toEqual(
+        JSON.parse(JSON.stringify(mockTopic))
+      );
+
+      expect(prisma.topic.findUnique).not.toHaveBeenCalled();
+      expect(redis.setCacheValue).not.toHaveBeenCalled();
+    });
+
+    it('refreshes a valid JSON cache entry with the wrong detail shape', async () => {
+      redis.getCacheValue.mockResolvedValueOnce(JSON.stringify([mockTopic]));
+      prisma.topic.findUnique.mockResolvedValueOnce(mockTopic);
+
+      await expect(service.getTopicBySlug('react')).resolves.toEqual(mockTopic);
+
+      expect(prisma.topic.findUnique).toHaveBeenCalledOnce();
+      expect(redis.deleteCacheValues).toHaveBeenCalledWith('prepai:cache:topics:v1:slug:react');
     });
   });
 
@@ -203,6 +315,33 @@ describe('TopicService', () => {
         where: { id: 'topic_001' },
         data: { name: 'React.js' },
       });
+    });
+
+    it('invalidates all lists and both detail slugs after a successful rename', async () => {
+      const renamedTopic = { ...mockTopic, slug: 'react-js' };
+      prisma.topic.findUnique.mockResolvedValueOnce(mockTopic).mockResolvedValueOnce(null);
+      prisma.topic.update.mockResolvedValue(renamedTopic);
+
+      await service.updateTopic('topic_001', { slug: 'react-js' });
+
+      expect(redis.deleteCacheValues).toHaveBeenCalledWith(
+        'prepai:cache:topics:v1:list:all',
+        'prepai:cache:topics:v1:list:practice',
+        'prepai:cache:topics:v1:list:coding',
+        'prepai:cache:topics:v1:slug:react',
+        'prepai:cache:topics:v1:slug:react-js'
+      );
+    });
+
+    it('does not invalidate cache if MongoDB update fails', async () => {
+      prisma.topic.findUnique.mockResolvedValue(mockTopic);
+      prisma.topic.update.mockRejectedValueOnce(new Error('MongoDB unavailable'));
+
+      await expect(service.updateTopic('topic_001', { name: 'React.js' })).rejects.toThrow(
+        'MongoDB unavailable'
+      );
+
+      expect(redis.deleteCacheValues).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if topic not found', async () => {
@@ -271,6 +410,27 @@ describe('TopicService', () => {
       expect(prisma.topic.findUnique).toHaveBeenCalledWith({ where: { id: 'topic_001' } });
       expect(prisma.question.count).toHaveBeenCalledWith({ where: { topicId: 'topic_001' } });
       expect(prisma.topic.delete).toHaveBeenCalledWith({ where: { id: 'topic_001' } });
+      expect(redis.deleteCacheValues).toHaveBeenCalledWith(
+        'prepai:cache:topics:v1:list:all',
+        'prepai:cache:topics:v1:list:practice',
+        'prepai:cache:topics:v1:list:coding',
+        'prepai:cache:topics:v1:slug:react'
+      );
+    });
+
+    it('completes a successful delete when Redis invalidation is unavailable', async () => {
+      prisma.topic.findUnique.mockResolvedValue(mockTopic);
+      prisma.question.count.mockResolvedValue(0);
+      prisma.topic.delete.mockResolvedValue(mockTopic);
+      redis.deleteCacheValues.mockRejectedValueOnce(new Error('Redis unavailable'));
+
+      await expect(service.deleteTopic('topic_001')).resolves.toBeUndefined();
+
+      expect(prisma.topic.delete).toHaveBeenCalledOnce();
+      expect(mockPinoLogger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Topic cache invalidation failed'
+      );
     });
 
     it('should throw NotFoundException if topic not found', async () => {

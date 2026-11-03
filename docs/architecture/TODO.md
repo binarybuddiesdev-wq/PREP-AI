@@ -48,7 +48,7 @@ design decision that has to be made before the feature ships.
 
 | #   | Topic                          | Status                                                                                                         | Priority | Why it matters                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Caching strategy               | `[Missing]`                                                                                                    | High     | Redis currently stores atomic theory session quota counters; caching of application data, TTLs, and invalidation is undecided.                                                                                                                                                                                                                                                                                                                                                                       |
+| 1   | Caching strategy               | `[Partial]` ([design](../superpowers/specs/2026-11-03-topic-cache-design.md))                                  | Medium   | Topic list and detail reads use shared Redis caching with a 60-second TTL, exact write invalidation, and MongoDB fallback. User-specific and frequently changing data remain uncached. Cache hit/miss metrics and profiling before expanding coverage remain open.                                                                                                                                                                                                                                   |
 | 2   | Background jobs / queue design | `[Done]` ([background-jobs.md](background-jobs.md))                                                            | High     | Coding, theory evaluation, PDF ingestion, and PDF question generation consumers are implemented; code review, email, and payment consumers remain unimplemented.                                                                                                                                                                                                                                                                                                                                     |
 | 3   | AI evaluation pipeline         | `[Stub]` (provider failover and durable theory evaluation in place)                                            | High     | Provider failover (NVIDIA → Groq), structured theory evaluation, input bounds, untrusted-content handling, per-answer provider/model/prompt provenance, and role-based daily token budgets are in place. Prompt v2 locally redacts recognized email, phone, payment-card, Aadhaar, PAN, and US SSN patterns; names, free-form addresses, and unrecognized formats may remain. The Mastra comparison harness and 50-case synthetic baseline are implemented; labels still need subject-matter review. |
 | 4   | RAG pipeline                   | `[Implemented v1]` ([design](../superpowers/specs/2026-11-03-pdf-ingestion-rag-design.md))                     | Medium   | PDF.js extraction, private Cloudinary storage, BullMQ indexing/question generation, NVIDIA embeddings, pgvector retrieval, revisioned citations, and RLS SQL are implemented. OCR is out of scope. Validate provider availability, apply PostgreSQL schema/RLS scripts, and run the restricted-role integration suite before production rollout.                                                                                                                                                     |
@@ -64,18 +64,19 @@ design decision that has to be made before the feature ships.
 
 ---
 
-## Starter outlines for the missing docs
+## Open design and implementation notes
 
 Each missing doc should follow the same shape: **Context, Decision,
 Consequences, Open Questions**. Use the existing ADRs as a template.
 
-### 1. Caching strategy
+### 1. Caching strategy — initial policy implemented
 
-Redis currently stores theory-session quota counters with an atomic Lua
-reservation and UTC-day TTL. Decide separately whether derived data such as
-topics, settings, or weak-area rollups should be cached, including invalidation,
-memory budget, and hit-rate metrics. Do not treat Redis as the system of
-record for users, sessions, or answers.
+The initial shared Redis cache covers only topic lists and topic details, with
+known-key invalidation after admin writes and a 60-second TTL. MongoDB remains
+authoritative, and a Redis failure falls back to MongoDB. Do not extend caching
+to user-specific settings, weak-area rollups, questions, or session state
+without profiling the reads and defining invalidation. Cache hit/miss metrics
+and a memory budget remain open. See the [topic cache design](../superpowers/specs/2026-11-03-topic-cache-design.md).
 
 ### 2. Background jobs / queue design
 
@@ -139,16 +140,11 @@ mocked Prisma tests prove database enforcement.
 
 ### 7. Idempotency
 
-Coding executions use the execution UUID as their request and queue identity.
-Theory answer submissions require `Idempotency-Key` and derive a stable UUID
-from the session ID and key. Both persist state in PostgreSQL before queueing.
-These are endpoint-specific policies; the common key scope, payload mismatch,
-retention, and adoption rules below are still open.
-
-`Idempotency-Key` header on all mutating endpoints. Postgres table:
-`(userId, key, requestHash, responseJson, expiresAt)`, unique on
-`(userId, key)`. Middleware intercepts, returns cached response on
-replay. TTL 24h. Client SDKs send UUID by default on mutations.
+The implemented policy covers theory answer submission and coding run/submit:
+bounded keys, durable record replay, 409 on payload mismatch, and no duplicate
+queue or quota work for persisted replays. Theory answer IDs preserve their
+existing format; coding execution IDs are actor-scoped. Other mutations and
+key-retention policy remain open. See the [shared idempotency design](../superpowers/specs/2026-11-03-shared-idempotency-design.md).
 
 ### 8. Observability
 

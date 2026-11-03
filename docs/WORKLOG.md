@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — Topic catalog caching
+
+- Added a shared Redis cache for topic lists and slug details with a 60-second TTL. MongoDB remains authoritative; cache read/write failures fall back to MongoDB.
+- Topic create/update/delete invalidates the all-topic list, both supported category lists, and affected slug details. Invalid JSON or wrong-shape entries are refreshed from MongoDB. Failed invalidation is logged and stale data is bounded by the TTL.
+- Remaining work: cache hit/miss metrics, memory monitoring, and profiling before expanding cache coverage. PostgreSQL RLS staging rollout remains last in the backend sequence.
+- Verification: focused Redis/topic/controller specs passed (72 tests); full server gate passed (578 unit tests), architecture viewer check and relative-link checks passed.
+
 ## 2026-11-03 — PostgreSQL RLS rollout decision
 
 - Selected PostgreSQL RLS as a defense-in-depth requirement before public multi-tenant deployment; documented the transaction-local Clerk identity model, connection-pool safety, shared catalog treatment, least-privilege API/worker roles, and narrow worker queue-claim functions in ADR-0012.

@@ -6,6 +6,9 @@ import { RedisService } from './redis.service.js';
 const redisMocks = vi.hoisted(() => ({
   client: {
     eval: vi.fn(),
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
     on: vi.fn(),
     disconnect: vi.fn(),
     ping: vi.fn(),
@@ -34,6 +37,9 @@ describe('RedisService unique quota reservations', () => {
 
   beforeEach(async () => {
     redisMocks.client.eval.mockReset();
+    redisMocks.client.get.mockReset();
+    redisMocks.client.set.mockReset();
+    redisMocks.client.del.mockReset();
     redisMocks.client.on.mockReset();
     redisMocks.client.disconnect.mockReset();
     redisMocks.client.ping.mockReset();
@@ -75,6 +81,40 @@ describe('RedisService unique quota reservations', () => {
 
     await expect(service.reserveQuota(quotaKey, limit, ttlSeconds)).rejects.toThrow(
       'Redis returned an invalid quota reservation result'
+    );
+  });
+
+  it('reads a cache value from Redis', async () => {
+    redisMocks.client.get.mockResolvedValueOnce('{"items":[]}');
+
+    await expect(service.getCacheValue('prepai:cache:topics:v1:list:all')).resolves.toBe(
+      '{"items":[]}'
+    );
+    expect(redisMocks.client.get).toHaveBeenCalledWith('prepai:cache:topics:v1:list:all');
+  });
+
+  it('writes a cache value with the requested expiration', async () => {
+    redisMocks.client.set.mockResolvedValueOnce('OK');
+
+    await service.setCacheValue('prepai:cache:topics:v1:list:all', '[]', 60);
+
+    expect(redisMocks.client.set).toHaveBeenCalledWith(
+      'prepai:cache:topics:v1:list:all',
+      '[]',
+      'EX',
+      60
+    );
+  });
+
+  it('deletes the exact cache keys supplied by the caller', async () => {
+    redisMocks.client.del.mockResolvedValueOnce(3);
+
+    await service.deleteCacheValues('topic:list:all', 'topic:list:coding', 'topic:slug:react');
+
+    expect(redisMocks.client.del).toHaveBeenCalledWith(
+      'topic:list:all',
+      'topic:list:coding',
+      'topic:slug:react'
     );
   });
 
