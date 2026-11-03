@@ -75,14 +75,23 @@ export class CodingController {
   }
 
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @Post('session/start')
   @HttpCode(201)
   @ApiOperation({ summary: ApiOperationEnum.CODING_START_SESSION })
   @ApiResponse(CodingSessionStartedResponse)
-  async startSession(@Body() dto: StartCodingSessionDto, @CurrentUser('id') userId: string) {
+  async startSession(
+    @Body() dto: StartCodingSessionDto,
+    @CurrentUser('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined
+  ) {
     return {
       message: CODING_SESSION_STARTED,
-      data: await this.codingService.startSession(dto, userId),
+      data: await this.codingService.startSession(dto, userId, idempotencyKey),
     };
   }
 

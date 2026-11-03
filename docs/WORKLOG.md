@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — coding session start idempotency
+
+- Required `Idempotency-Key` for coding session start and derived actor-scoped deterministic PostgreSQL session UUIDs.
+- Matching retries return the stored problem assignment without querying the bank again. Explicit problem IDs are compared as an unordered set; changed selections return 409, and concurrent unique-ID losers replay the winner.
+- Updated the coding session contract, shared idempotency design, backend tracker, and architecture TODO/background-job notes.
+- Verification: focused coding service/controller tests passed (64); `pnpm gate -- --stack server --level full` passed (603 tests across 61 files, build, spec type-check, coverage, lint, formatting, Prisma generation, and agent-doc checks); architecture viewer check and `git diff --check` passed. Review found no Critical/Important issues; one minor error-mapping edge case during recovery lookup is deferred.
+
 ## 2026-11-03 — theory session start idempotency
 
 - Required `Idempotency-Key` for theory session start and derived an actor-scoped deterministic PostgreSQL UUID; matching retries replay before quota reservation or PDF question enqueue.

@@ -11,7 +11,7 @@ or enqueueing duplicate work.
 
 - Define one shared key-validation and request-fingerprint policy.
 - Require `Idempotency-Key` for theory session start and answer submission,
-  coding run/submit, and PDF upload.
+  coding session start and run/submit, and PDF upload.
 - Scope keys to the authenticated actor and operation resource.
 - Return the original persisted session, answer, execution, or PDF source for
   a matching replay.
@@ -65,6 +65,8 @@ or enqueueing duplicate work.
   from the actor and key; persisted file metadata acts as the request fingerprint.
 - Theory session IDs are deterministic PostgreSQL UUIDs derived from the actor
   and key; persisted session fields act as the request fingerprint.
+- Coding session IDs are deterministic PostgreSQL UUIDs derived from the actor
+  and key; the effective assigned problem IDs act as the request fingerprint.
 
 ## Verification
 
@@ -78,7 +80,8 @@ coverage, and docs after the focused tests.
 PDF uploads use a deterministic user-scoped Mongo ObjectId and the persisted
 content hash, display name, and byte size as their replay fingerprint. Theory
 session starts use deterministic PostgreSQL IDs and fingerprint mode,
-difficulty, question count, topic ID, and ordered PDF IDs. Reindex,
+difficulty, question count, topic ID, and ordered PDF IDs. Coding session starts
+fingerprint the effective assigned problem IDs as an unordered set. Reindex,
 delete, and other mutation types can adopt this policy when their durable
 resource and external side effects can be made replay-safe. The backend tracker
 must keep the policy partial until those routes are explicitly reviewed.

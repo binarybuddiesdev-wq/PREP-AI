@@ -91,9 +91,27 @@ export class CodingService {
     }
   }
 
-  async startSession(dto: StartCodingSessionDto, userId: string) {
+  async startSession(
+    dto: StartCodingSessionDto,
+    userId: string,
+    idempotencyKey: string | undefined
+  ) {
+    const validatedIdempotencyKey = requireIdempotencyKey(idempotencyKey);
     const pg = this.database();
+    const sessionId = createIdempotencyOperationId(
+      userId,
+      'coding-session',
+      validatedIdempotencyKey
+    );
+    const findExistingSession = () =>
+      this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingSession.findFirst({ where: { id: sessionId, userId } })
+      );
+
     try {
+      const existing = await findExistingSession();
+      if (existing) return this.replaySessionStart(existing, dto.problemIds);
+
       const selected = dto.problemIds?.length
         ? await pg.codingQuestion.findMany({
             where: { id: { in: dto.problemIds } },
@@ -106,12 +124,39 @@ export class CodingService {
       }
       if (problemIds.length === 0) throw new NotFoundException('No coding problems are available');
       return await this.postgres.withTenantContext(userId, (transaction) =>
-        transaction.codingSession.create({ data: { userId, problemIds } })
+        transaction.codingSession.create({ data: { id: sessionId, userId, problemIds } })
       );
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
+      if (this.isUniqueViolation(error)) {
+        const winner = await findExistingSession();
+        if (winner) return this.replaySessionStart(winner, dto.problemIds);
+      }
+      if (error instanceof ConflictException) throw error;
       throw this.databaseError(error);
     }
+  }
+
+  private replaySessionStart<T extends { problemIds: string[] }>(
+    session: T,
+    requestedProblemIds?: string[]
+  ): T {
+    if (!requestedProblemIds?.length) return session;
+
+    const persistedFingerprint = createIdempotencyRequestFingerprint('coding-session', {
+      problemIds: [...session.problemIds].sort(),
+    });
+    const requestFingerprint = createIdempotencyRequestFingerprint('coding-session', {
+      problemIds: [...requestedProblemIds].sort(),
+    });
+    if (persistedFingerprint !== requestFingerprint) {
+      throw new ConflictException(IDEMPOTENCY_KEY_REUSED);
+    }
+    return session;
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
   }
 
   async runCode(sessionId: string, userId: string, dto: ExecuteCodingDto, idempotencyKey: string) {

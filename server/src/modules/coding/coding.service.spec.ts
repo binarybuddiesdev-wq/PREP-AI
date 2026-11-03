@@ -12,6 +12,7 @@ import { PrismaService, PrismaPostgresqlService } from '@/prisma/prisma.service.
 import { RedisService } from '@/common/redis/redis.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
+import { createIdempotencyOperationId } from '@/common/idempotency/index.js';
 import type { CodingSessionHistoryDto, ExecuteCodingDto } from './dto/coding.dto.js';
 
 type TMockPrismaModel = Record<string, ReturnType<typeof vi.fn>>;
@@ -98,7 +99,9 @@ describe('CodingService', () => {
     mongo = { user: { findUnique: vi.fn().mockResolvedValue({ role: 'USER' }) } };
 
     const codingSession = {
-      create: vi.fn().mockResolvedValue(session),
+      create: vi.fn(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve({ ...session, ...data })
+      ),
       findFirst: vi.fn().mockResolvedValue(session),
       findMany: vi.fn().mockResolvedValue([session]),
       count: vi.fn().mockResolvedValue(1),
@@ -219,39 +222,122 @@ describe('CodingService', () => {
   });
 
   describe('session start', () => {
+    it('replays the original auto-selected assignment without querying problems again', async () => {
+      const idempotencyKey = 'retry-session-start';
+      const existing = {
+        ...session,
+        id: createIdempotencyOperationId(userId, 'coding-session', idempotencyKey),
+      };
+      pg().codingSession.findFirst.mockResolvedValueOnce(existing);
+
+      await expect(service.startSession({}, userId, idempotencyKey)).resolves.toEqual(existing);
+
+      expect(pg().codingQuestion.findMany).not.toHaveBeenCalled();
+      expect(pg().codingSession.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects reuse of a session key with a different problem selection', async () => {
+      const idempotencyKey = 'retry-session-start';
+      const existing = {
+        ...session,
+        id: createIdempotencyOperationId(userId, 'coding-session', idempotencyKey),
+      };
+      pg().codingSession.findFirst.mockResolvedValueOnce(existing);
+
+      await expect(
+        service.startSession({ problemIds: [secondProblemId] }, userId, idempotencyKey)
+      ).rejects.toThrow('Idempotency-Key was already used with a different request');
+
+      expect(pg().codingQuestion.findMany).not.toHaveBeenCalled();
+      expect(pg().codingSession.create).not.toHaveBeenCalled();
+    });
+
+    it('replays an explicit problem selection independent of input ordering', async () => {
+      const idempotencyKey = 'unordered-session-start';
+      const existing = {
+        ...session,
+        id: createIdempotencyOperationId(userId, 'coding-session', idempotencyKey),
+        problemIds: [problemId, secondProblemId],
+      };
+      pg().codingSession.findFirst.mockResolvedValueOnce(existing);
+
+      await expect(
+        service.startSession({ problemIds: [secondProblemId, problemId] }, userId, idempotencyKey)
+      ).resolves.toEqual(existing);
+
+      expect(pg().codingQuestion.findMany).not.toHaveBeenCalled();
+    });
+
+    it('replays the winning session when concurrent creation hits a unique constraint', async () => {
+      const idempotencyKey = 'concurrent-session-start';
+      const winner = {
+        ...session,
+        id: createIdempotencyOperationId(userId, 'coding-session', idempotencyKey),
+      };
+      pg().codingSession.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(winner);
+      pg().codingSession.create.mockRejectedValueOnce({ code: 'P2002' });
+
+      await expect(
+        service.startSession({ problemIds: [problemId] }, userId, idempotencyKey)
+      ).resolves.toEqual(winner);
+
+      expect(pg().codingSession.create).toHaveBeenCalledWith({
+        data: {
+          id: createIdempotencyOperationId(userId, 'coding-session', idempotencyKey),
+          userId,
+          problemIds: [problemId],
+        },
+      });
+    });
+
     it('creates a session with selected problem IDs from the authenticated user', async () => {
-      await expect(service.startSession({ problemIds: [problemId] }, userId)).resolves.toEqual(
-        session
-      );
+      pg().codingSession.findFirst.mockResolvedValueOnce(null);
+      await expect(
+        service.startSession({ problemIds: [problemId] }, userId, 'selected-session')
+      ).resolves.toMatchObject({
+        ...session,
+        id: createIdempotencyOperationId(userId, 'coding-session', 'selected-session'),
+      });
 
       expect(pg().codingQuestion.findMany).toHaveBeenCalledWith({
         where: { id: { in: [problemId] } },
         select: { id: true },
       });
       expect(pg().codingSession.create).toHaveBeenCalledWith({
-        data: { userId, problemIds: [problemId] },
+        data: {
+          id: createIdempotencyOperationId(userId, 'coding-session', 'selected-session'),
+          userId,
+          problemIds: [problemId],
+        },
       });
     });
 
     it('rejects unknown selected problems without creating a session', async () => {
+      pg().codingSession.findFirst.mockResolvedValueOnce(null);
       pg().codingQuestion.findMany.mockResolvedValueOnce([]);
-      await expect(service.startSession({ problemIds: [secondProblemId] }, userId)).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        service.startSession({ problemIds: [secondProblemId] }, userId, 'missing-problem')
+      ).rejects.toThrow(NotFoundException);
       expect(pg().codingSession.create).not.toHaveBeenCalled();
     });
 
     it('chooses existing problems when the request omits problem IDs', async () => {
-      await service.startSession({}, userId);
+      pg().codingSession.findFirst.mockResolvedValueOnce(null);
+      await service.startSession({}, userId, 'automatic-session');
       expect(pg().codingSession.create).toHaveBeenCalledWith({
-        data: { userId, problemIds: [problemId] },
+        data: {
+          id: createIdempotencyOperationId(userId, 'coding-session', 'automatic-session'),
+          userId,
+          problemIds: [problemId],
+        },
       });
     });
 
     it('returns 404 when there are no coding problems to start with', async () => {
       pg().codingQuestion.findMany.mockResolvedValueOnce([]);
 
-      await expect(service.startSession({}, userId)).rejects.toThrow(
+      pg().codingSession.findFirst.mockResolvedValueOnce(null);
+      await expect(service.startSession({}, userId, 'empty-session')).rejects.toThrow(
         'No coding problems are available'
       );
       expect(pg().codingSession.create).not.toHaveBeenCalled();
@@ -259,16 +345,17 @@ describe('CodingService', () => {
 
     it('fails with 503 when PostgreSQL is unavailable', async () => {
       (postgres as { client_: unknown }).client_ = undefined;
-      await expect(service.startSession({}, userId)).rejects.toBeInstanceOf(
+      await expect(service.startSession({}, userId, 'missing-database')).rejects.toBeInstanceOf(
         ServiceUnavailableException
       );
     });
 
     it('maps selected-problem query errors to 503', async () => {
       pg().codingQuestion.findMany.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+      pg().codingSession.findFirst.mockResolvedValueOnce(null);
 
       await expect(
-        service.startSession({ problemIds: [problemId] }, userId)
+        service.startSession({ problemIds: [problemId] }, userId, 'query-failure')
       ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
   });

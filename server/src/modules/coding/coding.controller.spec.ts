@@ -81,10 +81,10 @@ describe('CodingController', () => {
     codingService.startSession.mockResolvedValue(session);
     const dto = { problemIds: ['problem_001'] };
 
-    const result = await controller.startSession(dto, 'user_001');
+    const result = await controller.startSession(dto, 'user_001', 'request_001');
 
     expect(result).toEqual({ message: expect.any(String), data: session });
-    expect(codingService.startSession).toHaveBeenCalledWith(dto, 'user_001');
+    expect(codingService.startSession).toHaveBeenCalledWith(dto, 'user_001', 'request_001');
   });
 
   it('passes session and authenticated user IDs to run and submit', async () => {

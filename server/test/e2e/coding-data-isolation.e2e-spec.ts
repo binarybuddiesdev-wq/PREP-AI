@@ -230,7 +230,11 @@ describe('PostgreSQL coding data isolation', () => {
   });
 
   it('starts a coding session for the authenticated owner', async () => {
-    const created = await service.startSession({ problemIds: [problem.id] }, userA);
+    const created = await service.startSession(
+      { problemIds: [problem.id] },
+      userA,
+      'coding-isolation-session-start-a'
+    );
 
     expect(created.userId).toBe(userA);
     await expect(
