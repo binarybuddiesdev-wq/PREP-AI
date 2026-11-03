@@ -13,6 +13,7 @@ const redisMocks = vi.hoisted(() => ({
     disconnect: vi.fn(),
     ping: vi.fn(),
     incr: vi.fn(),
+    info: vi.fn(),
   },
   constructor: vi.fn(),
 }));
@@ -45,6 +46,7 @@ describe('RedisService unique quota reservations', () => {
     redisMocks.client.disconnect.mockReset();
     redisMocks.client.ping.mockReset();
     redisMocks.client.incr.mockReset();
+    redisMocks.client.info.mockReset();
 
     const config = {
       get: vi.fn((key: string) => (key === 'REDIS_HOST' ? '127.0.0.1' : 6379)),
@@ -93,6 +95,28 @@ describe('RedisService unique quota reservations', () => {
       '{"items":[]}'
     );
     expect(redisMocks.client.get).toHaveBeenCalledWith('prepai:cache:topics:v1:list:all');
+  });
+
+  it('reads validated Redis used and maximum memory bytes from INFO', async () => {
+    redisMocks.client.info.mockResolvedValueOnce(
+      '# Memory\r\nused_memory:4096\r\nmaxmemory:1048576\r\n'
+    );
+
+    await expect(service.getMemoryStats()).resolves.toEqual({
+      usedMemoryBytes: 4096,
+      maxMemoryBytes: 1_048_576,
+    });
+    expect(redisMocks.client.info).toHaveBeenCalledWith('memory');
+  });
+
+  it.each([
+    '# Memory\r\nused_memory:4096\r\n',
+    '# Memory\r\nused_memory:-1\r\nmaxmemory:0\r\n',
+    '# Memory\r\nused_memory:1.5\r\nmaxmemory:0\r\n',
+  ])('rejects malformed Redis memory INFO output', async (info) => {
+    redisMocks.client.info.mockResolvedValueOnce(info);
+
+    await expect(service.getMemoryStats()).rejects.toThrow('invalid Redis memory INFO response');
   });
 
   it('increments and reads a shared metrics counter in Redis', async () => {

@@ -128,4 +128,34 @@ describe('MetricsService', () => {
     expect(output).toContain('# TYPE http_request_duration_seconds histogram');
     expect(output).not.toContain('bullmq_job_count{');
   });
+
+  it('exports Redis memory gauges without labels', async () => {
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getMemoryStats: vi.fn().mockResolvedValue({
+        usedMemoryBytes: 4096,
+        maxMemoryBytes: 1_048_576,
+      }),
+    } as never);
+
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE redis_memory_used_bytes gauge');
+    expect(output).toContain('redis_memory_used_bytes 4096');
+    expect(output).toContain('# TYPE redis_memory_max_bytes gauge');
+    expect(output).toContain('redis_memory_max_bytes 1048576');
+    expect(output).not.toContain('redis_memory_used_bytes{');
+  });
+
+  it('keeps the scrape available when Redis memory information is unavailable', async () => {
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getMemoryStats: vi.fn().mockRejectedValue(new Error('Redis unavailable')),
+    } as never);
+
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE http_request_duration_seconds histogram');
+    expect(output).not.toMatch(/\nredis_memory_used_bytes \d/);
+  });
 });

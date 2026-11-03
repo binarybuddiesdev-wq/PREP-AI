@@ -80,6 +80,7 @@ export class MetricsService {
       }))
     ).catch(() => []);
     const jobCounts = await this.jobs?.getJobCounts().catch(() => undefined);
+    const redisMemory = await this.redis.getMemoryStats?.().catch(() => undefined);
     const lines = [
       '# HELP http_requests_in_flight Number of HTTP requests currently being handled.',
       '# TYPE http_requests_in_flight gauge',
@@ -107,6 +108,12 @@ export class MetricsService {
       '# HELP bullmq_job_count Number of jobs by queue and BullMQ state.',
       '# TYPE bullmq_job_count gauge',
       ...this.formatJobCounts(jobCounts),
+      '# HELP redis_memory_used_bytes Bytes of memory currently used by Redis.',
+      '# TYPE redis_memory_used_bytes gauge',
+      ...(redisMemory ? [`redis_memory_used_bytes ${redisMemory.usedMemoryBytes}`] : []),
+      '# HELP redis_memory_max_bytes Configured Redis maxmemory in bytes; zero means unlimited.',
+      '# TYPE redis_memory_max_bytes gauge',
+      ...(redisMemory ? [`redis_memory_max_bytes ${redisMemory.maxMemoryBytes}`] : []),
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>

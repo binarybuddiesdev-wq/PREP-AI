@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-03 - Redis memory metrics
+
+- Added `redis_memory_used_bytes` and `redis_memory_max_bytes` gauges from the existing Redis `INFO memory` command. The gauges have no labels, max memory `0` represents unlimited, and malformed/unavailable data omits the samples while other metrics remain available.
+- Updated observability and cache tracking docs; cache-specific memory attribution and performance profiling remain open.
+- Verification: focused Redis and metrics tests passed (44 tests); `pnpm gate -- --stack server --level full` passed (783 tests, 90.2% branch coverage, build, type-check, lint, format, Prisma generation, and agent-doc checks); database isolation passed (28 tests), architecture viewer check passed, and `git diff --check` passed.
+
 ## 2026-11-03 - Queue request correlation
 
 - Added request-scoped async context around Nest route execution. `JobQueueService` copies the existing UUID v4 request ID into BullMQ job data centrally; enqueue calls outside HTTP requests omit it.

@@ -114,6 +114,11 @@ export interface IQuotaReservation {
   count: number;
 }
 
+export interface IRedisMemoryStats {
+  usedMemoryBytes: number;
+  maxMemoryBytes: number;
+}
+
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly client: Redis;
@@ -172,6 +177,25 @@ export class RedisService implements OnModuleDestroy {
       throw new Error('Redis returned an invalid metrics counter value');
     }
     return count;
+  }
+
+  async getMemoryStats(): Promise<IRedisMemoryStats> {
+    const info = await this.client.info('memory');
+    const usedMemory = info.match(/^used_memory:(\d+)$/m)?.[1];
+    const maxMemory = info.match(/^maxmemory:(\d+)$/m)?.[1];
+    const usedMemoryBytes = Number(usedMemory);
+    const maxMemoryBytes = Number(maxMemory);
+
+    if (
+      !usedMemory ||
+      !maxMemory ||
+      !Number.isSafeInteger(usedMemoryBytes) ||
+      !Number.isSafeInteger(maxMemoryBytes)
+    ) {
+      throw new Error('invalid Redis memory INFO response');
+    }
+
+    return { usedMemoryBytes, maxMemoryBytes };
   }
 
   async setCacheValue(key: string, value: string, ttlSeconds: number): Promise<void> {

@@ -46,16 +46,18 @@ Endpoints to expose:
 Current and planned metric families (Prometheus names):
 
 The HTTP histogram, in-flight gauge, provider failover counter, topic-cache
-hit/miss counter, and BullMQ queue-count gauge are emitted now. The HTTP
-histogram also exposes a count by method, route, and status, which can be used
-to graph request rate and error rate. The remaining rows are future
-instrumentation.
+hit/miss counter, BullMQ queue-count gauge, and Redis used/max-memory gauges
+are emitted now. The HTTP histogram also exposes a count by method, route, and
+status, which can be used to graph request rate and error rate. The remaining
+rows are future instrumentation.
 
 | Name                                | Type      | Labels                          | Source                                     |
 | ----------------------------------- | --------- | ------------------------------- | ------------------------------------------ |
 | `http_request_duration_seconds`     | Histogram | `method`, `route`, `status`     | Fastify request lifecycle hooks            |
 | `http_requests_in_flight`           | Gauge     | `route`                         | Fastify request lifecycle hooks            |
 | `bullmq_job_count`                  | Gauge     | `queue`, `state`                | `JobQueueService.getJobCounts`             |
+| `redis_memory_used_bytes`           | Gauge     | none                            | Redis `INFO memory`                        |
+| `redis_memory_max_bytes`            | Gauge     | none                            | Redis `INFO memory`; 0 means unlimited     |
 | `mastra_agent_duration_seconds`     | Histogram | `agent`, `provider`, `fallback` | Agent timer in `mastra/providers.ts`       |
 | `mastra_provider_failovers_total`   | Counter   | `from`, `to`                    | `chatWithFailover` after fallback succeeds |
 | `prisma_query_duration_seconds`     | Histogram | `model`, `operation`            | Prisma `$on('query')` hook                 |
@@ -165,16 +167,17 @@ P1 incidents are reserved for full outages — see
   characters, restart the API, then scrape `/metrics` with
   `Authorization: Bearer <token>`. Without the token, `/metrics` returns 404.
   HTTP duration, in-flight requests, successful AI provider failovers,
-  topic-cache hits/misses, and BullMQ counts for each registered queue and
-  `waiting`, `active`, `completed`, `failed`, and `delayed` state are currently
-  collected. Queue and state labels come from fixed registries; job IDs and
+  topic-cache hits/misses, Redis used/max memory, and BullMQ counts for each
+  registered queue and `waiting`, `active`, `completed`, `failed`, and `delayed`
+  state are currently collected. Queue and state labels come from fixed registries; job IDs and
   user data are never labels. Queue samples are omitted if Redis is unavailable.
   Topic cache labels are
   limited to `operation=list|detail` and `result=hit|miss`; cache slugs,
   categories, and users are never labels. Route labels use Fastify route
   templates, and the scrape endpoint is excluded from collection. HTTP and
   topic-cache metrics are process-local; provider failovers are shared through
-  Redis. The scrape still returns local metrics if Redis is unavailable.
+  Redis. The scrape still returns local metrics if Redis is unavailable;
+  Redis-backed provider and memory samples are omitted for failed reads.
 - Traces: not exposed in dev yet.
 
 ## Open questions
