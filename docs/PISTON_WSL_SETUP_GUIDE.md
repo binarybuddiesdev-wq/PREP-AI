@@ -2,6 +2,12 @@
 
 This guide details how we successfully hosted and verified the **Piston Code Execution Engine** in a rootless **Podman** environment running on Windows (WSL2), and how you can manage, run, and interact with it.
 
+> **Security boundary:** this is a local development runner. Its API is
+> unauthenticated and must remain loopback-only. It uses `--privileged` for
+> Isolate/cgroup setup and is not a production tenant boundary. See the
+> [Piston runbook](runbooks/piston.md) for effective limits and the production
+> restriction.
+
 ---
 
 ## 1. Root Cause Analysis (Why it failed initially)
@@ -29,10 +35,10 @@ When running the standard Piston Docker image (`ghcr.io/engineer-man/piston`) un
 
 ## 2. The Solution Implemented
 
-We resolved these issues without modifying any application code by doing the following:
+The original startup issues were resolved with the following setup:
 
 1. **Created a Custom Entrypoint Script (`piston-entrypoint.sh`):**
-   We placed [piston-entrypoint.sh](file:///c:/antigravity-test/PrepAI/piston-entrypoint.sh) in the root of the workspace. This script:
+   We placed [piston-entrypoint.sh](../piston-entrypoint.sh) in the root of the workspace. This script:
    - Dynamically reads available controllers from `/sys/fs/cgroup/cgroup.controllers`.
    - Enables **only** the controllers that are supported (e.g. `cpu`, `io`, `memory`, `pids`), successfully filtering out unsupported ones like `cpuset`.
    - Mounts read-write cgroups and starts the application normally.
@@ -42,6 +48,11 @@ We resolved these issues without modifying any application code by doing the fol
 
 3. **Explicit IPv4 Port Binding:**
    We run the container with `-p 127.0.0.1:2000:2000` so that the port binds explicitly to IPv4 localhost, which routes perfectly from the Windows host.
+
+The launcher also sets explicit job network, process, file, output, time,
+CPU-time, memory and concurrency limits, plus aggregate Podman CPU, memory and
+process caps. See the [Piston runbook](runbooks/piston.md) for exact values
+and verification commands.
 
 ---
 
@@ -91,13 +102,13 @@ one-time step — after that just `pnpm piston:start` / `pnpm piston:stop`.
 
 ## 3. How to Run and Manage Piston
 
-We added a cross-platform TypeScript runner [piston.ts](file:///c:/antigravity-test/PrepAI/piston.ts) and utility scripts in the root [package.json](file:///c:/antigravity-test/PrepAI/package.json) to automate setup and management across Windows, macOS, and Linux shell environments.
+We added a cross-platform TypeScript runner [piston.ts](../types/piston.ts) and utility scripts in the root [package.json](../package.json) to automate setup and management across Windows, macOS, and Linux shell environments.
 
 ### Commands Reference
 
 | Script Command           | Under the Hood                  | Description                                                                                                                                                                                     |
 | :----------------------- | :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`pnpm piston:start`**  | `tsx ../piston.ts start`        | Boots up the Piston API container, automatically normalizing the workspace path, mounting the custom entrypoint, mapping the named volume, and binding port `127.0.0.1:2000`.                   |
+| **`pnpm piston:start`**  | `tsx ../types/piston.ts start`  | Boots up the bounded Piston API container, mounting the custom entrypoint, mapping the named volume, and binding port `127.0.0.1:2000`.                                                         |
 | **`pnpm piston:stop`**   | `tsx ../types/piston.ts stop`   | `podman stop` — stops the container but **keeps** it (shows as "Exited" in Podman Desktop). Restart with `piston:start`.                                                                        |
 | **`pnpm piston:remove`** | `tsx ../types/piston.ts remove` | `podman rm -f` — deletes the `piston_api` container entirely. Use to recreate it with changed `podman run` flags.                                                                               |
 | **`pnpm piston:status`** | `tsx ../types/piston.ts status` | Checks the container status (running or exited).                                                                                                                                                |
@@ -182,6 +193,9 @@ _Expected Output:_
 ---
 
 ## 5. How to Test Code Execution
+
+Use the following examples only against your local loopback Piston service;
+the API has no authentication. Do not expose it to clients or a public network.
 
 You can test executing code against the local API.
 

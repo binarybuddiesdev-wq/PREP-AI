@@ -3,6 +3,7 @@ import { spawnSync } from 'child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { IPistonScriptArgs } from './piston.types.js';
+import { buildPistonContainerArgs, PISTON_CONTAINER_NAME } from './piston-container.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,7 +11,7 @@ const __dirname = path.dirname(__filename);
 // Root of the project (one level up from types/)
 const ROOT_DIR = path.resolve(__dirname, '..');
 
-const CONTAINER_NAME = 'piston_api';
+const CONTAINER_NAME = PISTON_CONTAINER_NAME;
 
 const actionInput = process.argv[2];
 
@@ -57,33 +58,7 @@ if (argsObj.action === 'start') {
     }
   } else {
     const entrypointPath = path.resolve(ROOT_DIR, 'piston-entrypoint.sh');
-    // Normalize path backslashes to forward slashes for container mount compatibility on Windows
-    const normalizedPath = entrypointPath.replace(/\\/g, '/');
-
-    runCommand('podman', [
-      'run',
-      '-d',
-      '--name',
-      CONTAINER_NAME,
-      '-p',
-      '127.0.0.1:2000:2000',
-      '--privileged',
-      // Pin GitHub's release-asset CDN to a reachable anycast IP. `ppman install`
-      // downloads runtimes from release-assets/objects.githubusercontent.com; on
-      // some networks the 185.199.109.133 edge is unroutable and an unhandled
-      // fetch timeout crashes the whole Piston process. .108.133 is stable.
-      '--add-host',
-      'release-assets.githubusercontent.com:185.199.108.133',
-      '--add-host',
-      'objects.githubusercontent.com:185.199.108.133',
-      '--add-host',
-      'raw.githubusercontent.com:185.199.108.133',
-      '-v',
-      'piston_data:/piston',
-      '-v',
-      `"${normalizedPath}:/piston_api/src/docker-entrypoint.sh:ro"`,
-      'ghcr.io/engineer-man/piston',
-    ]);
+    runCommand('podman', buildPistonContainerArgs(entrypointPath));
   }
 } else if (argsObj.action === 'stop') {
   // Stop but keep the container (shows as "Exited" in Podman Desktop, restart

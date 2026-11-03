@@ -63,16 +63,16 @@ Each service has:
 
 ### `piston` — Code Execution Sandbox
 
-| Field                   | Value                                                |
-| ----------------------- | ---------------------------------------------------- |
-| **Owner**               | uday                                                 |
-| **Repo path**           | `piston-cli/`, `types/piston.ts`                     |
-| **Runtime**             | Podman container (`piston_api`), local today         |
-| **SLO — availability**  | 99% (single dev-machine host, best-effort)           |
-| **SLO — execution p95** | < 1s for short scripts                               |
-| **Dependencies**        | Podman Desktop running, `piston_data` volume mounted |
-| **Runbook**             | [docs/runbooks/piston.md](../runbooks/piston.md)     |
-| **Last incident**       | —                                                    |
+| Field                   | Value                                                                   |
+| ----------------------- | ----------------------------------------------------------------------- |
+| **Owner**               | uday                                                                    |
+| **Repo path**           | `piston-cli/`, `types/piston.ts`                                        |
+| **Runtime**             | Privileged Podman container (`piston_api`), local development only      |
+| **SLO — availability**  | 99% (single dev-machine host, best-effort)                              |
+| **SLO — execution p95** | < 1s for short scripts                                                  |
+| **Dependencies**        | Podman Desktop, WSL2 cgroup v2, custom entrypoint, `piston_data` volume |
+| **Runbook**             | [docs/runbooks/piston.md](../runbooks/piston.md)                        |
+| **Last incident**       | —                                                                       |
 
 ---
 

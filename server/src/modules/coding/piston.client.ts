@@ -10,6 +10,7 @@ const CODING_COMPILE_TIMEOUT_MS = 10_000;
 const CODING_RUN_TIMEOUT_MS = 3_000;
 const CODING_REQUEST_TIMEOUT_MS = 15_000;
 const CODING_MEMORY_LIMIT_BYTES = 256 * 1024 * 1024;
+const PISTON_MAX_RESPONSE_BYTES = 512 * 1024;
 const RESULT_LINE_PREFIX = '__PREPAI_RESULT__';
 
 export const codingLanguageSchema = z.enum(['javascript', 'typescript', 'python']);
@@ -140,7 +141,9 @@ export class PistonClient {
           version: '*',
           files: [{ name: fileName, content }],
           compile_timeout: CODING_COMPILE_TIMEOUT_MS,
+          compile_cpu_time: CODING_COMPILE_TIMEOUT_MS,
           run_timeout: CODING_RUN_TIMEOUT_MS,
+          run_cpu_time: CODING_RUN_TIMEOUT_MS,
           compile_memory_limit: CODING_MEMORY_LIMIT_BYTES,
           run_memory_limit: CODING_MEMORY_LIMIT_BYTES,
         }),
@@ -157,14 +160,14 @@ export class PistonClient {
 
     let result: IPistonResponse;
     try {
-      result = (await response.json()) as IPistonResponse;
+      result = await this.readPistonResponse(response);
     } catch (error: unknown) {
       throw new ServiceUnavailableException('Code execution service returned an invalid response', {
         cause: error,
       });
     }
 
-    if (!result || typeof result !== 'object') {
+    if (!result || typeof result !== 'object' || Array.isArray(result)) {
       throw new ServiceUnavailableException('Code execution service returned an invalid response');
     }
 
@@ -191,6 +194,42 @@ export class PistonClient {
       },
       isError: false,
     };
+  }
+
+  private async readPistonResponse(response: Response): Promise<IPistonResponse> {
+    const contentLength = Number(response.headers.get('content-length'));
+    if (Number.isFinite(contentLength) && contentLength > PISTON_MAX_RESPONSE_BYTES) {
+      await response.body?.cancel();
+      throw new Error('Piston response exceeded the configured byte limit');
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('Piston response did not include a body');
+
+    const chunks: Uint8Array[] = [];
+    let byteLength = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        byteLength += value.byteLength;
+        if (byteLength > PISTON_MAX_RESPONSE_BYTES) {
+          await reader.cancel();
+          throw new Error('Piston response exceeded the configured byte limit');
+        }
+        chunks.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const responseBytes = new Uint8Array(byteLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      responseBytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return JSON.parse(new TextDecoder().decode(responseBytes)) as IPistonResponse;
   }
 
   private buildHarness(code: string, language: TCodingLanguage, args: unknown[]) {

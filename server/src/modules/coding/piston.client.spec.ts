@@ -12,15 +12,15 @@ describe('PistonClient', () => {
     { input: [[3, 2, 4], 6], output: [1, 2] },
   ];
 
-  const pistonSuccess = (stdout: string) => ({
-    ok: true,
-    status: 200,
-    json: vi.fn().mockResolvedValue({
+  const pistonResponse = (body: unknown, status = 200) =>
+    new Response(typeof body === 'string' ? body : JSON.stringify(body), { status });
+
+  const pistonSuccess = (stdout: string) =>
+    pistonResponse({
       language: 'javascript',
       version: '22.0.0',
       run: { stdout, stderr: '', code: 0, signal: null, output: stdout },
-    }),
-  });
+    });
 
   beforeEach(() => {
     config.get.mockReset();
@@ -74,12 +74,12 @@ describe('PistonClient', () => {
         '(solution as (...args: unknown[]) => unknown)(...__prepai_args)'
       );
     }
-    expect(requestBody.run_timeout).toBeGreaterThan(0);
-    expect(requestBody.run_timeout).toBeLessThanOrEqual(3000);
-    expect(requestBody.compile_timeout).toBeGreaterThan(0);
-    expect(requestBody.compile_timeout).toBeLessThanOrEqual(10000);
-    expect(requestBody.run_memory_limit).toBeGreaterThan(0);
-    expect(requestBody.compile_memory_limit).toBeGreaterThan(0);
+    expect(requestBody.run_timeout).toBe(3000);
+    expect(requestBody.compile_timeout).toBe(10000);
+    expect(requestBody.run_cpu_time).toBe(3000);
+    expect(requestBody.compile_cpu_time).toBe(10000);
+    expect(requestBody.run_memory_limit).toBe(268_435_456);
+    expect(requestBody.compile_memory_limit).toBe(268_435_456);
     expect(requestBody).not.toHaveProperty('args');
     expect(requestBody).not.toHaveProperty('run_timeout', 999_999);
   });
@@ -136,11 +136,7 @@ describe('PistonClient', () => {
       'compile terminated',
     ],
   ])('reports %s as an execution error', async (_name, stages, output) => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue(stages),
-    });
+    fetchMock.mockResolvedValueOnce(pistonResponse(stages));
 
     await expect(
       client.execute('function solution() {}', 'javascript', [examples[0]])
@@ -155,28 +151,25 @@ describe('PistonClient', () => {
     ).resolves.toMatchObject({ status: 'accepted', testCasesPassed: 1 });
   });
 
-  it.each([null, 'invalid response'])('rejects a non-object Piston response: %s', async (body) => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue(body),
-    });
+  it.each([null, 'invalid response', [], 42])(
+    'rejects a non-object Piston response: %s',
+    async (body) => {
+      fetchMock.mockResolvedValueOnce(pistonResponse(body));
 
-    await expect(
-      client.execute('function solution() {}', 'javascript', [examples[0]])
-    ).rejects.toBeInstanceOf(ServiceUnavailableException);
-  });
+      await expect(
+        client.execute('function solution() {}', 'javascript', [examples[0]])
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    }
+  );
 
   it('reports compilation or runtime failure without marking the case accepted', async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue({
+    fetchMock.mockResolvedValue(
+      pistonResponse({
         language: 'typescript',
         version: '5.0.0',
         compile: { code: 1, signal: null, stderr: 'compile error', output: 'compile error' },
-      }),
-    });
+      })
+    );
 
     const result = await client.execute('invalid syntax', 'typescript', [examples[0]]);
 
@@ -208,7 +201,7 @@ describe('PistonClient', () => {
   });
 
   it('maps Piston HTTP, timeout, and malformed JSON failures to ServiceUnavailableException', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 503, json: vi.fn() });
+    fetchMock.mockResolvedValueOnce(pistonResponse('', 503));
     await expect(
       client.execute('function solution() {}', 'javascript', [examples[0]])
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
@@ -218,13 +211,50 @@ describe('PistonClient', () => {
       client.execute('function solution() {}', 'javascript', [examples[0]])
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockRejectedValue(new SyntaxError('bad json')),
-    });
+    fetchMock.mockResolvedValueOnce(pistonResponse('{'));
     await expect(
       client.execute('function solution() {}', 'javascript', [examples[0]])
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+
+  it('cancels a Piston response stream that exceeds the byte limit', async () => {
+    const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('x'.repeat(512 * 1024 + 1)));
+      },
+      cancel,
+    });
+    fetchMock.mockResolvedValue(new Response(body, { status: 200 }));
+
+    await expect(
+      client.execute('function solution() { return 1; }', 'javascript', [examples[0]])
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  it('rejects and cancels a response using an oversized content length before reading it', async () => {
+    const cancel = vi.fn();
+    const getReader = vi.fn();
+    const response = {
+      ok: true,
+      headers: { get: () => String(512 * 1024 + 1) },
+      body: { cancel, getReader },
+    } as unknown as Response;
+    fetchMock.mockResolvedValue(response);
+
+    await expect(
+      client.execute('function solution() { return 1; }', 'javascript', [examples[0]])
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(getReader).not.toHaveBeenCalled();
+  });
+
+  it('rejects a Piston response without a body', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+
+    await expect(
+      client.execute('function solution() { return 1; }', 'javascript', [examples[0]])
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 

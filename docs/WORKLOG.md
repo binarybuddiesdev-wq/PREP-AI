@@ -1,5 +1,13 @@
 # Worklog
 
+## 2026-11-03 — Piston isolation hardening
+
+- Made Piston's job network, process, file, output, wall-time, CPU-time, memory, and concurrency limits explicit; aligned the five-job Piston cap with the BullMQ worker concurrency.
+- Added Podman aggregate caps (4 CPUs, 2 GiB memory, 512 processes), kept the API bound to IPv4 loopback, and retained the WSL2 custom entrypoint and privileged mode required by the local Isolate/cgroup setup.
+- Added a 512 KiB streamed-response cap in the backend; oversized Piston bodies are cancelled before JSON parsing. CPU time is now explicitly bounded in requests, and malformed array responses fail as 503s.
+- Replaced the unsafe generic setup instructions with a local-only runbook and updated ADR-0006, the architecture tracker, the coding API contract, and backend guidance. The privileged local runner is not approved for public production traffic; stronger runtime isolation remains open.
+- Verification: Piston client spec passed (25 tests); three coding module specs passed (79 tests); Podman argument-builder test passed. The full server gate passed all checks. Recreated the idle local Piston container with limits, confirmed the runtime inventory, executed JavaScript successfully, confirmed output termination at the 16 KiB cap, and confirmed Piston rejects a request above the 3-second maximum.
+
 ## 2026-11-03 — Backend data isolation policy
 
 - Audited authenticated controllers, user/settings lookup, theory and coding session operations, analytics, webhook handling, and queue workers. Existing request paths use the verified Clerk subject for user scope; no production query change was needed.

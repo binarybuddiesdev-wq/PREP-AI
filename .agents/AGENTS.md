@@ -21,3 +21,8 @@ Use the following scripts defined in the root `package.json`:
 - `pnpm piston:remove` - Deletes the container entirely.
 - `pnpm piston:setup` - Installs JavaScript, TypeScript, and Python runtimes.
 - `pnpm piston:status` - Checks status of the container.
+
+This privileged Piston container is for local development only. The launcher
+binds its unauthenticated API to `127.0.0.1:2000` and sets explicit Piston and
+container limits. Do not enable public production code execution against this
+runner; see [`docs/runbooks/piston.md`](../docs/runbooks/piston.md).

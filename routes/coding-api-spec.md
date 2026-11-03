@@ -10,7 +10,7 @@ All endpoints require Bearer token authentication (Clerk).
 
 - Problem examples are executable structured JSON values: `{ "input": [arg1, arg2], "output": value, "explanation": "optional" }`. The server calls the user's `solution(...args)` function in JavaScript, TypeScript, or Python.
 - Run and submit accept only `problemId`, `language`, and `code`. They execute only examples stored on that problem; runtime, version, filename, harness, arguments, limits, and Piston URL are server-owned.
-- Source code is capped at 32,000 characters, examples at 20, each Piston process has a 3-second runtime and 256 MiB memory cap, and the complete example batch has a 15-second request deadline. Returned output is capped at 16 KiB.
+- Source code is capped at 32,000 characters, examples at 20, each Piston process has a 3-second wall-time and CPU-time limit and 256 MiB memory cap, and the complete example batch has a 15-second request deadline. Piston output and bytes read from its response are capped; surfaced output values are limited to 16 KiB.
 - Each run/submit requires an owned in-progress session and a problem assigned to it. A session owned by someone else and a problem outside that session both return 404. Completed sessions return 409.
 - Run and submit share a per-user Redis fixed-window throttle of 10 execution requests per 60 seconds. Exceeding it returns 429. If Redis cannot reserve capacity, execution fails closed with 503.
 - Run never saves an answer or consumes the daily solved quota. Submit saves accepted, wrong-answer, and runtime-error results. Only an accepted first solve reserves a daily solve count; a failed submission releases its reservation. A daily limit or same-problem submission already in progress returns 409.
@@ -19,7 +19,7 @@ All endpoints require Bearer token authentication (Clerk).
 - Run and submit create a durable PostgreSQL execution record, enqueue Piston work, and return `202 Accepted` with an execution ID. Poll `GET /coding/session/:sessionId/executions/:executionId` for its status and result.
 - Execution statuses are `queued`, `running`, `completed`, and `failed`. The result and submit answer are committed once, even if BullMQ retries the job. Terminal failure releases a reserved daily solve slot.
 - `PISTON_URL` defaults to `http://127.0.0.1:2000` on the host. The full Podman server uses `http://host.containers.internal:2000` to reach the host Piston service.
-- Code execution is enabled in development by default. In production it is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly configured. Review the Piston isolation model before enabling production execution; the current local launcher uses a privileged container.
+- Code execution is enabled in development by default. In production it is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly configured. That flag does not provide isolation: the local privileged Podman runner is for development only. Public production traffic requires a separately reviewed stronger runtime boundary; see the [Piston runbook](../docs/runbooks/piston.md).
 - A local-only Two Sum seed is available as `pnpm --filter server seed:coding:local`; it refuses non-loopback PostgreSQL hosts. Apply/validate schema as described in `server/README.md` before running it.
 
 ---
