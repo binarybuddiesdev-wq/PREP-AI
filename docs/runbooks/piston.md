@@ -125,3 +125,11 @@ test proves the Podman flags and Piston environment passed by the launcher.
 Neither proves that the WSL2 kernel enforces cgroups or that a container escape
 is impossible. A security review and live host-level isolation testing are
 required before using a runner for public production code execution.
+
+## Escalation
+
+Escalate repeated container startup failures, unexpected resource use, or a
+sandbox-boundary concern to the backend owner. Stop the local runner with
+`pnpm piston:stop` if a possible escape or unauthorized network access is
+suspected. Preserve container logs and the image identifier; do not expose the
+runner publicly while investigating.

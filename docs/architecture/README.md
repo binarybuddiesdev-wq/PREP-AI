@@ -62,6 +62,8 @@ See [../adr/](../adr/) for the full index. Highlights:
 ## Service catalog
 
 [services.md](services.md) — every service, its owner, SLO, dependencies, and runbook link.
+[threat-model.md](threat-model.md) — STRIDE risks, current controls, and open security gates.
+[../runbooks/](../runbooks/README.md) — service operations and disaster-recovery procedures.
 
 ## Glossary of Technical Terms
 
@@ -99,8 +101,6 @@ See [../adr/](../adr/) for the full index. Highlights:
   WRITTEN**. Read this before assuming the system design is complete.
 - [../observability.md](../observability.md) — logging, metrics, tracing,
   alerting, audit log. `/healthz` and `/readyz` reference.
-- [SYSTEM_DESIGN_REVIEW.md](../../SYSTEM_DESIGN_REVIEW.md) — the design
-  review that produced the action items in this folder
 - [../../Decisions/](../../Decisions/) — earlier product/UX decision docs
   (DECISIONS-1, DECISIONS-2) — keep these, they're the pre-ADR history
 - [../PISTON_WSL_SETUP_GUIDE.md](../PISTON_WSL_SETUP_GUIDE.md) — Piston

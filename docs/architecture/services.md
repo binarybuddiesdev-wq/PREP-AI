@@ -40,24 +40,24 @@ Each service has:
 | **SLO — latency p95**        | < 300ms (non-AI), < 5s (AI)                                                                          |
 | **SLO — error rate**         | < 0.5% 5xx over 1h                                                                                   |
 | **Implemented dependencies** | MongoDB, PostgreSQL, Redis, Clerk, NVIDIA NIM, Groq                                                  |
-| **Planned integrations**     | Cloudinary, Resend, Razorpay                                                                         |
-| **Runbook**                  | [docs/runbooks/api.md](../runbooks/api.md) _(TODO)_                                                  |
+| **Planned integrations**     | Resend, Razorpay                                                                                     |
+| **Runbook**                  | [API runbook](../runbooks/api.md)                                                                    |
 | **Last incident**            | —                                                                                                    |
 
 ---
 
 ### `web` — React 19 SPA
 
-| Field               | Value                                               |
-| ------------------- | --------------------------------------------------- |
-| **Owner**           | uday                                                |
-| **Repo path**       | `ui/`                                               |
-| **Hosting (prod)**  | Vercel / Cloudflare Pages / S3+CloudFront           |
-| **SLO — TTFB**      | < 200ms (cached), < 800ms (cold)                    |
-| **SLO — JS bundle** | < 200KB gzipped initial route                       |
-| **Dependencies**    | `api` (REST), Clerk (auth widget)                   |
-| **Runbook**         | [docs/runbooks/web.md](../runbooks/web.md) _(TODO)_ |
-| **Last incident**   | —                                                   |
+| Field               | Value                                     |
+| ------------------- | ----------------------------------------- |
+| **Owner**           | uday                                      |
+| **Repo path**       | `ui/`                                     |
+| **Hosting (prod)**  | Vercel / Cloudflare Pages / S3+CloudFront |
+| **SLO — TTFB**      | < 200ms (cached), < 800ms (cold)          |
+| **SLO — JS bundle** | < 200KB gzipped initial route             |
+| **Dependencies**    | `api` (REST), Clerk (auth widget)         |
+| **Runbook**         | [Web runbook](../runbooks/web.md)         |
+| **Last incident**   | —                                         |
 
 ---
 
@@ -99,7 +99,7 @@ Each service has:
 | **Models**             | `User`, `UserSettings`, `Topic`, `Question`, `PdfSource` |
 | **SLO — availability** | 99.95% (Atlas SLA)                                       |
 | **Backup**             | Daily snapshots, 7-day retention                         |
-| **Runbook**            | [docs/runbooks/mongo.md](../runbooks/mongo.md) _(TODO)_  |
+| **Runbook**            | [MongoDB runbook](../runbooks/mongo.md)                  |
 | **Last incident**      | —                                                        |
 
 ---
@@ -114,12 +114,12 @@ Each service has:
 | **Extensions**         | pgvector, enabled by the PDF RAG rollout script                                                |
 | **SLO — availability** | 99.9%                                                                                          |
 | **Backup**             | Daily `pg_dump` to S3 + WAL archiving, 7-day PITR                                              |
-| **Runbook**            | [docs/runbooks/postgres.md](../runbooks/postgres.md) _(TODO)_                                  |
+| **Runbook**            | [PostgreSQL runbook](../runbooks/postgres.md)                                                  |
 | **Last incident**      | —                                                                                              |
 
 ---
 
-### `redis` — Theory Quota Counters
+### `redis` — Quotas and Background Jobs
 
 | Field                | Value                                                                                     |
 | -------------------- | ----------------------------------------------------------------------------------------- |
@@ -128,7 +128,7 @@ Each service has:
 | **Used for**         | Theory quotas, coding/theory BullMQ queues, and readiness pings                           |
 | **Not used for yet** | API response caching or Fastify rate-limit storage                                        |
 | **Failure behavior** | Theory session creation returns 503 if Redis is unavailable; health reports Redis as down |
-| **Runbook**          | To be written                                                                             |
+| **Runbook**          | [Redis runbook](../runbooks/redis.md)                                                     |
 
 ---
 
@@ -160,4 +160,4 @@ Each service has:
 - [diagrams/](diagrams/) — C4 + sequence diagrams (`.mmd`)
 - [nfrs.md](nfrs.md) — non-functional requirements and SLO targets
 - [../adr/](../adr/) — architecture decision records
-- [../runbooks/](../runbooks/) — incident response runbooks _(TODO)_
+- [../runbooks/](../runbooks/README.md) — incident response and disaster-recovery runbooks.
