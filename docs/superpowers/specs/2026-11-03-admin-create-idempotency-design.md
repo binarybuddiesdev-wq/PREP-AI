@@ -41,9 +41,9 @@ different request returns HTTP 409.
 - After the 24-hour replay window, remove the old record and treat the key as a
   new operation. A cleanup scheduler deletes expired records hourly; the stored
   response may remain for up to one additional hour if the scheduler is late.
-- Existing sequential business duplicate checks remain in place. A database
-  uniqueness guarantee for identical question creates using different keys is
-  separate work; same-key concurrency is protected by the operation record.
+- Existing sequential business duplicate checks remain in place. Concurrent
+  duplicate question writes using different keys are protected by a separate
+  unique fingerprint claim; see the [question uniqueness design](2026-11-04-question-uniqueness-design.md).
 - Requests without a key retain the current create path and response shape.
 
 ## Privacy and retention

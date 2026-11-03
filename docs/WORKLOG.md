@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-04 - Concurrent duplicate question protection
+
+- Added a unique SHA-256 fingerprint claim for each `(canonical topicId, difficulty, exact question text)` tuple. Admin creates, edits, deletes, and seed upserts maintain claims in MongoDB transactions. Update attempts read current records inside the transaction and retry transient Mongo `P2034` write conflicts twice. Mongo ObjectId casing is canonicalized for fingerprinting and claim cleanup.
+- Added `pnpm --filter server prisma:questions:backfill-uniqueness` to detect existing duplicates before writes, recover safely after partial runs, and remove stale claims. Documented the schema-push, question-write pause, backfill, and API rollout sequence.
+- Verification: 36 focused question tests passed; the full server gate passed (846 tests, 90.08% branch coverage); database isolation passed (37 tests); architecture viewer and `git diff --check` passed.
+
 ## 2026-11-04 - Optional Sentry error tracking
 
 - Added optional Sentry reporting for unexpected API exceptions and API/worker bootstrap failures. Event request, user, breadcrumb, and extra fields are scrubbed; Sentry tracing remains disabled so OpenTelemetry stays the trace pipeline. Startup failures flush captured errors before the process exits.

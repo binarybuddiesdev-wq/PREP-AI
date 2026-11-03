@@ -94,8 +94,11 @@ the request fingerprint plus response snapshot are stored in MongoDB in the
 same transaction as the resource. Matching retries replay the original
 response for 24 hours; a changed payload returns 409. Expired snapshots are
 cleaned hourly. Requests without a key retain the original create behavior.
-Concurrent same-content question creates using different keys still need a
-database uniqueness constraint. See the [admin create design](2026-11-03-admin-create-idempotency-design.md).
+Concurrent same-content question creates using different keys use a unique
+fingerprint claim, maintained transactionally on create/update/delete. Apply
+the claim schema and backfill existing questions before enabling the updated
+API; see the [question uniqueness design](2026-11-04-question-uniqueness-design.md)
+and [admin create design](2026-11-03-admin-create-idempotency-design.md).
 
 ## Verification
 
@@ -106,9 +109,9 @@ coverage, and docs after the focused tests.
 
 ## Remaining work
 
-The remaining audit item is simultaneous duplicate question creation with
-different keys; that requires a database uniqueness constraint and safe
-existing-data rollout. Settings/setup writes, Clerk user synchronization,
+Question tuple uniqueness requires applying the claim schema and backfilling
+existing data with question writes paused before enabling the updated API.
+Settings/setup writes, Clerk user synchronization,
 notification state updates, and resource deletions use retry-safe state
 semantics. Durable response replay remains appropriate for operations whose
 retries repeat AI work, queue submissions, or external writes.

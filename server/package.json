@@ -18,6 +18,7 @@
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "prisma:generate": "prisma generate --schema=prisma/schema.prisma && prisma generate --schema=prisma/schema.postgresql.prisma",
     "prisma:push:mongodb": "prisma db push --schema=prisma/schema.prisma",
+    "prisma:questions:backfill-uniqueness": "tsx --env-file=../.env scripts/backfill-question-uniqueness.ts",
     "prisma:push:postgresql": "prisma db push --schema=prisma/schema.postgresql.prisma",
     "prisma:validate:postgresql": "prisma validate --schema=prisma/schema.postgresql.prisma",
     "seed:coding:local": "tsx --env-file=../.env prisma/seed-coding-local.ts",

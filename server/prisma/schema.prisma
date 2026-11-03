@@ -125,6 +125,11 @@ model Question {
   updatedAt       DateTime @updatedAt
 }
 
+model QuestionUniqueness {
+  fingerprint String @id @map("_id")
+  questionId  String @unique
+}
+
 model IdempotencyOperation {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   operationId        String   @unique

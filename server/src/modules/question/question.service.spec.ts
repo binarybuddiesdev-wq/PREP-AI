@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { QuestionService } from './question.service.js';
+import { createQuestionFingerprint } from './question-fingerprint.js';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import {
   QUESTION_ALREADY_EXISTS,
@@ -28,6 +29,11 @@ describe('QuestionService', () => {
     idempotencyOperation: {
       findUnique: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
+    };
+    questionUniqueness: {
+      findUnique: ReturnType<typeof vi.fn>;
+      create: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
     };
     $transaction: ReturnType<typeof vi.fn>;
   };
@@ -78,6 +84,11 @@ describe('QuestionService', () => {
         }
       ),
     };
+    const questionUniqueness = {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+    };
     prisma = {
       question: {
         findFirst: vi.fn(),
@@ -92,8 +103,9 @@ describe('QuestionService', () => {
         findUnique: vi.fn(),
       },
       idempotencyOperation,
+      questionUniqueness,
       $transaction: vi.fn(async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({ idempotencyOperation, question: prisma.question })
+        operation({ idempotencyOperation, questionUniqueness, question: prisma.question })
       ),
     };
 
@@ -178,6 +190,7 @@ describe('QuestionService', () => {
       });
       expect(prisma.question.create).toHaveBeenCalledWith({
         data: {
+          id: expect.any(String),
           question: dto.question,
           topicId: dto.topicId,
           difficulty: dto.difficulty,
@@ -185,6 +198,70 @@ describe('QuestionService', () => {
         },
       });
       expect(result).toEqual(mockQuestion);
+    });
+
+    it('stores a uniqueness claim in the same transaction as a question create', async () => {
+      prisma.question.findFirst.mockResolvedValue(null);
+      prisma.question.create.mockResolvedValue(mockQuestion);
+      prisma.questionUniqueness.create.mockResolvedValue({
+        fingerprint: expect.any(String),
+        questionId: mockQuestion.id,
+      });
+
+      await service.createQuestion({
+        question: mockQuestion.question,
+        topicId: mockQuestion.topicId,
+        difficulty: mockQuestion.difficulty,
+        referenceAnswer: mockQuestion.referenceAnswer,
+      });
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      const questionId = prisma.question.create.mock.calls[0]?.[0]?.data.id;
+      expect(prisma.questionUniqueness.create).toHaveBeenCalledWith({
+        data: { fingerprint: expect.any(String), questionId },
+      });
+    });
+
+    it('retries a Mongo transaction write conflict and resolves the duplicate state', async () => {
+      prisma.question.findFirst.mockResolvedValue(null);
+      prisma.question.create.mockResolvedValue(mockQuestion);
+      prisma.$transaction.mockRejectedValueOnce({ code: 'P2034' });
+
+      await expect(
+        service.createQuestion({
+          question: mockQuestion.question,
+          topicId: mockQuestion.topicId,
+          difficulty: mockQuestion.difficulty,
+        })
+      ).resolves.toEqual(mockQuestion);
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+    });
+
+    it('stops after two retries when Mongo transaction conflicts continue', async () => {
+      prisma.$transaction.mockRejectedValue({ code: 'P2034' });
+
+      await expect(
+        service.createQuestion({
+          question: mockQuestion.question,
+          topicId: mockQuestion.topicId,
+          difficulty: mockQuestion.difficulty,
+        })
+      ).rejects.toMatchObject({ code: 'P2034' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(3);
+    });
+
+    it('retries a write conflict during a question update', async () => {
+      prisma.question.findUnique.mockResolvedValue(mockQuestion);
+      prisma.$transaction.mockRejectedValueOnce({ code: 'P2034' });
+      prisma.question.update.mockResolvedValue({ ...mockQuestion, referenceAnswer: 'Updated' });
+
+      await expect(
+        service.updateQuestion(mockQuestion.id, { referenceAnswer: 'Updated' })
+      ).resolves.toMatchObject({ referenceAnswer: 'Updated' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(2);
     });
 
     it('should throw ConflictException if duplicate question exists in same topic/difficulty', async () => {
@@ -271,6 +348,109 @@ describe('QuestionService', () => {
       expect(result.question).toBe(dto.question);
     });
 
+    it('moves the fingerprint claim in the same transaction when duplicate fields change', async () => {
+      const dto = { question: 'What is React?' };
+      prisma.question.findUnique.mockResolvedValue(mockQuestion);
+      prisma.questionUniqueness.findUnique.mockResolvedValueOnce({
+        fingerprint: 'previous-fingerprint',
+        questionId: mockQuestion.id,
+      });
+      prisma.question.update.mockResolvedValue({ ...mockQuestion, ...dto });
+
+      await service.updateQuestion(mockQuestion.id, dto);
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(prisma.questionUniqueness.deleteMany).toHaveBeenCalledWith({
+        where: { fingerprint: expect.any(String), questionId: mockQuestion.id },
+      });
+      expect(prisma.questionUniqueness.create).toHaveBeenCalledWith({
+        data: { fingerprint: expect.any(String), questionId: mockQuestion.id },
+      });
+    });
+
+    it('rejects a duplicate tuple and does not update the question', async () => {
+      prisma.question.findUnique.mockResolvedValue(mockQuestion);
+      prisma.questionUniqueness.findUnique
+        .mockResolvedValueOnce({ fingerprint: 'previous-fingerprint', questionId: mockQuestion.id })
+        .mockResolvedValueOnce({
+          fingerprint: 'duplicate-fingerprint',
+          questionId: 'other-question',
+        });
+
+      await expect(
+        service.updateQuestion(mockQuestion.id, { question: 'What is React?' })
+      ).rejects.toThrow(ConflictException);
+
+      expect(prisma.question.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects an existing claim owned by another question', async () => {
+      prisma.question.findUnique.mockResolvedValue(mockQuestion);
+      prisma.questionUniqueness.findUnique.mockResolvedValueOnce({
+        fingerprint: 'previous-fingerprint',
+        questionId: 'other-question',
+      });
+
+      await expect(
+        service.updateQuestion(mockQuestion.id, { referenceAnswer: 'Updated answer' })
+      ).rejects.toThrow(ConflictException);
+
+      expect(prisma.question.update).not.toHaveBeenCalled();
+    });
+
+    it('uses the canonical database question ID when the route ID uses uppercase hex', async () => {
+      const existing = { ...mockQuestion, id: 'abcdef0123456789abcdef01' };
+      prisma.question.findUnique.mockResolvedValue(existing);
+      prisma.questionUniqueness.findUnique.mockResolvedValueOnce({
+        fingerprint: createQuestionFingerprint(existing),
+        questionId: existing.id,
+      });
+      prisma.question.update.mockResolvedValue({ ...existing, referenceAnswer: 'Updated' });
+
+      await expect(
+        service.updateQuestion(existing.id.toUpperCase(), { referenceAnswer: 'Updated' })
+      ).resolves.toMatchObject({ referenceAnswer: 'Updated' });
+
+      expect(prisma.questionUniqueness.findUnique).toHaveBeenCalledWith({
+        where: { fingerprint: createQuestionFingerprint(existing) },
+      });
+      expect(prisma.question.update).toHaveBeenCalledWith({
+        where: { id: existing.id },
+        data: { referenceAnswer: 'Updated' },
+      });
+    });
+
+    it('reads the current question after entering the edit transaction', async () => {
+      const stale = { ...mockQuestion, question: 'Before concurrent edit' };
+      const current = { ...mockQuestion, question: 'After concurrent edit' };
+      let transactionStarted = false;
+      prisma.$transaction.mockImplementation(
+        async (operation: (tx: unknown) => Promise<unknown>) => {
+          transactionStarted = true;
+          return operation({
+            idempotencyOperation: prisma.idempotencyOperation,
+            questionUniqueness: prisma.questionUniqueness,
+            question: prisma.question,
+          });
+        }
+      );
+      prisma.question.findUnique.mockImplementation(async () =>
+        transactionStarted ? current : stale
+      );
+      prisma.questionUniqueness.findUnique.mockResolvedValue({
+        fingerprint: createQuestionFingerprint(current),
+        questionId: current.id,
+      });
+      prisma.question.update.mockResolvedValue({ ...current, referenceAnswer: 'Updated' });
+
+      await service.updateQuestion(current.id, { referenceAnswer: 'Updated' });
+
+      expect(prisma.questionUniqueness.findUnique).toHaveBeenCalledWith({
+        where: { fingerprint: createQuestionFingerprint(current) },
+      });
+      expect(prisma.questionUniqueness.create).not.toHaveBeenCalled();
+    });
+
     it('should throw NotFoundException if question not found', async () => {
       prisma.question.findUnique.mockResolvedValue(null);
 
@@ -319,6 +499,16 @@ describe('QuestionService', () => {
 
       await expect(service.deleteQuestion('nonexistent')).resolves.toBeUndefined();
       expect(prisma.question.delete).not.toHaveBeenCalled();
+    });
+
+    it('removes the question claim in the delete transaction', async () => {
+      prisma.question.findUnique.mockResolvedValue(mockQuestion);
+      await service.deleteQuestion(mockQuestion.id);
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(prisma.questionUniqueness.deleteMany).toHaveBeenCalledWith({
+        where: { questionId: mockQuestion.id },
+      });
     });
   });
 });

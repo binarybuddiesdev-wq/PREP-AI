@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { seedTopicsBySlug } from './topics.data.js';
 import type { ISeedQuestion } from './seed.types.js';
+import { upsertQuestionWithUniquenessClaim } from '../../server/src/modules/question/question-seed.js';
 
 export const seedQuestions: ISeedQuestion[] = [
   {
@@ -96,19 +97,13 @@ export const upsertQuestions = async (prisma: PrismaClient): Promise<number> => 
     if (!topic) continue;
     const topicRow = await prisma.topic.findUnique({ where: { slug: topic.slug } });
     if (!topicRow) continue;
-    const existing = await prisma.question.findFirst({
-      where: { topicId: topicRow.id, question: item.question },
+    const created = await upsertQuestionWithUniquenessClaim(prisma, {
+      topicId: topicRow.id,
+      question: item.question,
+      difficulty: item.difficulty,
+      referenceAnswer: item.referenceAnswer,
     });
-    if (existing) continue;
-    await prisma.question.create({
-      data: {
-        topicId: topicRow.id,
-        question: item.question,
-        difficulty: item.difficulty,
-        referenceAnswer: item.referenceAnswer,
-      },
-    });
-    inserted++;
+    if (created) inserted++;
   }
   return inserted;
 };

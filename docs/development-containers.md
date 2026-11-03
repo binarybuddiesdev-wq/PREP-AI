@@ -124,8 +124,19 @@ pnpm --filter server prisma:push:mongodb
 ```
 
 For example, keyed admin topic/question creation needs the `IdempotencyOperation`
-collection and its unique operation index. Schema changes do not reset the
-MongoDB data volume.
+collection and its unique operation index. Question uniqueness also needs its
+fingerprint claim collection and the existing-question backfill before the
+claim-aware API is enabled. Pause admin question writes while running:
+
+```powershell
+pnpm --filter server prisma:questions:backfill-uniqueness
+```
+
+The backfill is safe to rerun after an interruption. It refuses to write if
+existing duplicate tuples are found and lists the conflicting question IDs for
+manual resolution. Apply the schema first, then run the backfill with question
+writes paused, and only then enable the claim-aware API. Schema changes do not
+reset the MongoDB data volume.
 
 ## Start all six services in Podman
 
