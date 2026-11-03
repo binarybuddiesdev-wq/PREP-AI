@@ -195,7 +195,7 @@ export class UserService {
       where: { userId: user.id },
     });
 
-    return settings;
+    return settings ? this.withReminderDefaults(settings) : null;
   }
 
   async upsertSettings(
@@ -223,6 +223,19 @@ export class UserService {
       createData.preferences = data.preferences as Prisma.InputJsonValue;
     if (data.notifications !== undefined)
       createData.notifications = data.notifications as Prisma.InputJsonValue;
+    const reminderPreferences = data.notifications;
+    if (reminderPreferences) {
+      if ('dailyReminder' in reminderPreferences || 'email' in reminderPreferences) {
+        createData.dailyReminderEnabled =
+          reminderPreferences.email !== false && reminderPreferences.dailyReminder === true;
+      }
+      if (typeof reminderPreferences.dailyReminderTime === 'string') {
+        createData.dailyReminderTime = reminderPreferences.dailyReminderTime;
+      }
+      if (typeof reminderPreferences.timezone === 'string') {
+        createData.timezone = reminderPreferences.timezone;
+      }
+    }
 
     const updateData: Prisma.UserSettingsUncheckedUpdateInput = {};
     if (data.profile !== undefined) updateData.profile = data.profile as Prisma.InputJsonValue;
@@ -230,6 +243,18 @@ export class UserService {
       updateData.preferences = data.preferences as Prisma.InputJsonValue;
     if (data.notifications !== undefined)
       updateData.notifications = data.notifications as Prisma.InputJsonValue;
+    if (reminderPreferences) {
+      if ('dailyReminder' in reminderPreferences || 'email' in reminderPreferences) {
+        updateData.dailyReminderEnabled =
+          reminderPreferences.email !== false && reminderPreferences.dailyReminder === true;
+      }
+      if (typeof reminderPreferences.dailyReminderTime === 'string') {
+        updateData.dailyReminderTime = reminderPreferences.dailyReminderTime;
+      }
+      if (typeof reminderPreferences.timezone === 'string') {
+        updateData.timezone = reminderPreferences.timezone;
+      }
+    }
 
     const settings = await this.prisma.userSettings.upsert({
       where: { userId: user.id },
@@ -238,6 +263,21 @@ export class UserService {
     });
 
     this.logger.info({ userId: user.id }, 'Settings upserted');
-    return settings;
+    return this.withReminderDefaults(settings);
+  }
+
+  private withReminderDefaults<
+    T extends {
+      dailyReminderEnabled: boolean | null;
+      dailyReminderTime: string | null;
+      timezone: string | null;
+    },
+  >(settings: T) {
+    return {
+      ...settings,
+      dailyReminderEnabled: settings.dailyReminderEnabled ?? false,
+      dailyReminderTime: settings.dailyReminderTime ?? '19:00',
+      timezone: settings.timezone ?? 'UTC',
+    };
   }
 }

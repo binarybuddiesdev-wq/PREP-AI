@@ -390,6 +390,9 @@ describe('UserService', () => {
         profile: { targetRole: 'Frontend' },
         preferences: { defaultDifficulty: 'Mid' },
         notifications: { dailyReminder: true },
+        dailyReminderEnabled: true,
+        dailyReminderTime: '19:00',
+        timezone: 'Asia/Kolkata',
       };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.userSettings.findUnique.mockResolvedValue(mockSettings);
@@ -397,6 +400,26 @@ describe('UserService', () => {
       const result = await service.getSettings('clerk_123');
 
       expect(result).toEqual(mockSettings);
+    });
+
+    it('returns safe reminder defaults for settings created before reminder fields existed', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.userSettings.findUnique.mockResolvedValue({
+        id: 'settings_legacy',
+        userId: 'user_001',
+        profile: null,
+        preferences: null,
+        notifications: null,
+        dailyReminderEnabled: false,
+        dailyReminderTime: '19:00',
+        timezone: 'UTC',
+      });
+
+      await expect(service.getSettings('clerk_123')).resolves.toMatchObject({
+        dailyReminderEnabled: false,
+        dailyReminderTime: '19:00',
+        timezone: 'UTC',
+      });
     });
 
     it('should return null if user not found', async () => {
@@ -425,6 +448,9 @@ describe('UserService', () => {
         profile: { targetRole: 'Frontend' },
         preferences: null,
         notifications: null,
+        dailyReminderEnabled: false,
+        dailyReminderTime: '19:00',
+        timezone: 'UTC',
       };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.userSettings.upsert.mockResolvedValue(mockSettings);
@@ -453,6 +479,9 @@ describe('UserService', () => {
         profile: { targetRole: 'Backend' },
         preferences: { defaultDifficulty: 'Junior' },
         notifications: null,
+        dailyReminderEnabled: false,
+        dailyReminderTime: '19:00',
+        timezone: 'UTC',
       };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.userSettings.upsert.mockResolvedValue(existingSettings);
@@ -486,11 +515,70 @@ describe('UserService', () => {
         create: {
           userId: 'user_001',
           notifications: { dailyReminder: false },
+          dailyReminderEnabled: false,
         },
         update: {
           notifications: { dailyReminder: false },
+          dailyReminderEnabled: false,
         },
       });
+    });
+
+    it('persists daily reminder opt-in, local time, and timezone alongside legacy settings JSON', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      await service.upsertSettings('clerk_123', {
+        notifications: {
+          email: true,
+          dailyReminder: true,
+          dailyReminderTime: '19:00',
+          timezone: 'Asia/Kolkata',
+        },
+      });
+
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+        where: { userId: 'user_001' },
+        create: {
+          userId: 'user_001',
+          notifications: {
+            email: true,
+            dailyReminder: true,
+            dailyReminderTime: '19:00',
+            timezone: 'Asia/Kolkata',
+          },
+          dailyReminderEnabled: true,
+          dailyReminderTime: '19:00',
+          timezone: 'Asia/Kolkata',
+        },
+        update: {
+          notifications: {
+            email: true,
+            dailyReminder: true,
+            dailyReminderTime: '19:00',
+            timezone: 'Asia/Kolkata',
+          },
+          dailyReminderEnabled: true,
+          dailyReminderTime: '19:00',
+          timezone: 'Asia/Kolkata',
+        },
+      });
+    });
+
+    it('disables reminders when the settings request opts out of email', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      await service.upsertSettings('clerk_123', {
+        notifications: { email: false, dailyReminder: true },
+      });
+
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ dailyReminderEnabled: false }),
+          update: expect.objectContaining({ dailyReminderEnabled: false }),
+        })
+      );
     });
 
     it('should handle empty data', async () => {

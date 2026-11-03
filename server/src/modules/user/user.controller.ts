@@ -32,6 +32,9 @@ import {
   ClerkAuthGuard,
   RolesGuard,
 } from '@/common/index.js';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe.js';
+import { updateUserSettingsSchema } from './dto/update-user-settings.schema.js';
+import type { UpdateUserSettingsInput } from './dto/update-user-settings.schema.js';
 
 @ApiTags(ApiTagsEnum.USERS)
 @Controller(ApiRoutes.USERS)
@@ -73,12 +76,7 @@ export class UserController {
   @ApiResponse(UpdateSettingsResponse)
   async updateSettings(
     @CurrentUser('id') userId: string,
-    @Body()
-    body: {
-      profile?: Record<string, unknown>;
-      preferences?: Record<string, unknown>;
-      notifications?: Record<string, unknown>;
-    }
+    @Body(new ZodValidationPipe(updateUserSettingsSchema)) body: UpdateUserSettingsInput
   ) {
     this.logger.debug({ userId }, 'Update settings request received');
     await this.userService.findOrCreateUser(userId);

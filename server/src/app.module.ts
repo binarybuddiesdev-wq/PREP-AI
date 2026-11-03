@@ -19,6 +19,8 @@ import { CodingModule } from './modules/coding/coding.module.js';
 import { PdfModule } from './modules/pdf/pdf.module.js';
 import { RedisModule } from './common/redis/redis.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
+import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,6 +33,7 @@ const __dirname = dirname(__filename);
       validate: validateEnv,
       envFilePath: join(__dirname, '..', '..', '.env'),
     }),
+    ScheduleModule.forRoot(),
     LoggerModule.forRoot(loggerConfig),
     RedisModule,
     PrismaModule,
@@ -43,6 +46,7 @@ const __dirname = dirname(__filename);
     TheoryModule,
     CodingModule,
     PdfModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [],

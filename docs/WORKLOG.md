@@ -1,5 +1,22 @@
 # Worklog
 
+## 2026-11-03 — Opt-in daily study reminder emails
+
+- Added validated user settings for reminder opt-in, local send time, and IANA
+  timezone. Missing legacy settings normalize to disabled, `19:00`, and `UTC`.
+- Added a minute scheduler and Resend email worker on `email-queue`. Jobs use a
+  deterministic user/local-date key; delivery reloads preferences and skips
+  opted-out or deleted users. Messages include provider idempotency and a
+  signed one-click unsubscribe endpoint with a confirmation page for browser
+  visits.
+- Updated API, queue, environment, and backend tracker docs. Live delivery
+  requires `RESEND_API_KEY`, a verified `RESEND_FROM_EMAIL`, a 32+ character
+  `EMAIL_UNSUBSCRIBE_SECRET`, and public `API_BASE_URL`.
+- Verification: full server gate passed (684 tests; 90.38% branch coverage),
+  restricted-role database isolation passed (25 tests), architecture viewer
+  check passed, and `git diff --check` passed. Fresh review found no remaining
+  merge blockers.
+
 ## 2026-11-03 — Asynchronous AI coding reviews
 
 - Added an authenticated endpoint to queue a review for a completed, owned

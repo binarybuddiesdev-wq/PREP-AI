@@ -67,7 +67,10 @@ Get settings for the authenticated user.
     "userId": "667f8a1b2c3d4e5f6a7b8c9d",
     "profile": { "title": "Software Engineer", "experience": "5 years" },
     "preferences": { "theme": "dark", "language": "en" },
-    "notifications": { "email": true, "push": false }
+    "notifications": { "email": true, "push": false, "dailyReminder": true },
+    "dailyReminderEnabled": true,
+    "dailyReminderTime": "19:00",
+    "timezone": "Asia/Kolkata"
   }
 }
 ```
@@ -90,7 +93,12 @@ All fields optional:
 {
   "profile": { "title": "Senior Engineer" },
   "preferences": { "theme": "light" },
-  "notifications": { "email": false }
+  "notifications": {
+    "email": true,
+    "dailyReminder": true,
+    "dailyReminderTime": "19:00",
+    "timezone": "Asia/Kolkata"
+  }
 }
 ```
 
@@ -105,10 +113,28 @@ All fields optional:
     "userId": "667f8a1b2c3d4e5f6a7b8c9d",
     "profile": { "title": "Senior Engineer" },
     "preferences": { "theme": "light" },
-    "notifications": { "email": false }
+    "notifications": {
+      "email": true,
+      "dailyReminder": true,
+      "dailyReminderTime": "19:00",
+      "timezone": "Asia/Kolkata"
+    },
+    "dailyReminderEnabled": true,
+    "dailyReminderTime": "19:00",
+    "timezone": "Asia/Kolkata"
   }
 }
 ```
+
+Daily reminder emails are opt-in and default to disabled. Set
+`notifications.dailyReminder` and `notifications.email` to `true`, along with
+an `HH:mm` local time and a valid IANA timezone. At delivery time, the worker
+rechecks the opt-in setting. Emails include a signed one-click unsubscribe
+header; `POST /api/v1/notifications/unsubscribe?token=...` disables only the
+daily reminder. Configure `RESEND_API_KEY`, `RESEND_FROM_EMAIL`,
+`EMAIL_UNSUBSCRIBE_SECRET` (at least 32 random characters), and `API_BASE_URL`
+to activate scheduling and delivery. A missing configuration leaves the API
+running and keeps the email worker disabled.
 
 ---
 

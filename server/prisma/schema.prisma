@@ -20,13 +20,18 @@ model User {
 }
 
 model UserSettings {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String   @unique
-  profile       Json?
-  preferences   Json?
-  notifications Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String   @unique
+  profile             Json?
+  preferences         Json?
+  notifications       Json?
+  dailyReminderEnabled Boolean?
+  dailyReminderTime    String?
+  timezone             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([dailyReminderEnabled])
 }
 
 model PdfSource {

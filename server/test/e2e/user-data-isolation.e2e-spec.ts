@@ -47,6 +47,30 @@ describe('MongoDB user data isolation', () => {
     expect(settingsB?.preferences).toEqual({ ownerMarker: 'user-b' });
   });
 
+  it('persists reminder preferences only on the setting owner document', async () => {
+    await service.upsertSettings(users!.userA.clerkUserId, {
+      notifications: {
+        email: true,
+        dailyReminder: true,
+        dailyReminderTime: '19:00',
+        timezone: 'Asia/Kolkata',
+      },
+    });
+    const settingsA = await service.getSettings(users!.userA.clerkUserId);
+    const settingsB = await service.getSettings(users!.userB.clerkUserId);
+
+    expect(settingsA).toMatchObject({
+      dailyReminderEnabled: true,
+      dailyReminderTime: '19:00',
+      timezone: 'Asia/Kolkata',
+    });
+    expect(settingsB).toMatchObject({
+      dailyReminderEnabled: false,
+      dailyReminderTime: '19:00',
+      timezone: 'UTC',
+    });
+  });
+
   it('updates, completes setup, and deletes one user without changing the other user', async () => {
     const updatedUser = await service.updateUser(users!.userA.clerkUserId, {
       name: 'Updated Isolation User A',

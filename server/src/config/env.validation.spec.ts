@@ -37,4 +37,19 @@ describe('background worker environment validation', () => {
     expect(configured.AI_DAILY_TOKENS_FREE).toBe(50);
     expect(configured.AI_DAILY_TOKENS_PREMIUM).toBe(500);
   });
+
+  it('allows valid optional Resend delivery configuration and rejects a weak unsubscribe secret', () => {
+    expect(() =>
+      envSchema.parse({
+        NODE_ENV: 'test',
+        RESEND_API_KEY: 're_test',
+        RESEND_FROM_EMAIL: 'PrepAI <hello@example.test>',
+        EMAIL_UNSUBSCRIBE_SECRET: 's'.repeat(32),
+        API_BASE_URL: 'https://api.example.test',
+      })
+    ).not.toThrow();
+    expect(() =>
+      envSchema.parse({ NODE_ENV: 'test', EMAIL_UNSUBSCRIBE_SECRET: 'short' })
+    ).toThrow();
+  });
 });
