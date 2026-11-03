@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RedisService } from './redis.service.js';
+import { JOB_QUEUE_NAMES } from '../jobs/job-queue.constants.js';
 
 const redisMocks = vi.hoisted(() => ({
   client: {
@@ -14,6 +15,7 @@ const redisMocks = vi.hoisted(() => ({
     ping: vi.fn(),
     incr: vi.fn(),
     info: vi.fn(),
+    hgetall: vi.fn(),
   },
   constructor: vi.fn(),
 }));
@@ -47,6 +49,7 @@ describe('RedisService unique quota reservations', () => {
     redisMocks.client.ping.mockReset();
     redisMocks.client.incr.mockReset();
     redisMocks.client.info.mockReset();
+    redisMocks.client.hgetall.mockReset();
 
     const config = {
       get: vi.fn((key: string) => (key === 'REDIS_HOST' ? '127.0.0.1' : 6379)),
@@ -107,6 +110,48 @@ describe('RedisService unique quota reservations', () => {
       maxMemoryBytes: 1_048_576,
     });
     expect(redisMocks.client.info).toHaveBeenCalledWith('memory');
+  });
+
+  it('records worker outcomes and fixed histogram buckets atomically in Redis', async () => {
+    redisMocks.client.eval.mockResolvedValueOnce(1);
+
+    await service.recordWorkerJobAttempt('theory-eval-queue', 'error', 0.25, [0.1, 0.5, 1]);
+
+    expect(redisMocks.client.eval).toHaveBeenCalledWith(
+      expect.stringContaining("HINCRBYFLOAT', KEYS[1], 'duration_sum'"),
+      1,
+      'prepai:metrics:worker-job:{theory-eval-queue}:error',
+      '0.25',
+      '0.1',
+      '0.5',
+      '1'
+    );
+  });
+
+  it('ignores unknown worker labels and invalid durations', async () => {
+    await service.recordWorkerJobAttempt('private-queue', 'error', 0.2, [1]);
+    await service.recordWorkerJobAttempt('theory-eval-queue', 'secret', 0.2, [1]);
+    await service.recordWorkerJobAttempt('theory-eval-queue', 'success', Number.NaN, [1]);
+
+    expect(redisMocks.client.eval).not.toHaveBeenCalled();
+  });
+
+  it('reads aggregate metrics for the registered worker queues and outcomes', async () => {
+    redisMocks.client.hgetall.mockImplementation(async (key: string) =>
+      key.endsWith(':success')
+        ? { attempts: '2', duration_sum: '0.75', bucket_1: '0', bucket_11: '2' }
+        : {}
+    );
+
+    const metrics = await service.getWorkerJobMetrics();
+
+    expect(metrics).toHaveLength(Object.keys(JOB_QUEUE_NAMES).length * 2);
+    expect(
+      metrics.find((metric) => metric.queue === 'theory-eval-queue' && metric.result === 'success')
+    ).toMatchObject({ count: 2, sum: 0.75, buckets: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2] });
+    expect(redisMocks.client.hgetall).toHaveBeenCalledWith(
+      'prepai:metrics:worker-job:{theory-eval-queue}:success'
+    );
   });
 
   it.each([

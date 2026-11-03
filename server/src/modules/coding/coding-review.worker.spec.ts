@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CodingReviewWorker } from './coding-review.worker.js';
 import { CodingReviewService } from './coding-review.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
+import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import type { ICodingReviewJobData } from './coding-review.types.js';
 
 const bullMocks = vi.hoisted(() => ({ on: vi.fn(), close: vi.fn() }));
@@ -48,12 +50,17 @@ describe('CodingReviewWorker', () => {
     logger = { warn: vi.fn(), error: vi.fn() };
   });
 
-  const createWorker = () =>
+  const createWorker = () => createWorkerWithMetrics(undefined);
+
+  const createWorkerWithMetrics = (
+    metrics: { recordWorkerJobAttempt: ReturnType<typeof vi.fn> } | undefined
+  ) =>
     new CodingReviewWorker(
       config as unknown as ConfigService,
       reviews as unknown as CodingReviewService,
       jobs as unknown as JobQueueService,
-      logger as never
+      logger as never,
+      metrics as unknown as MetricsService
     );
 
   it('consumes the bounded review queue and processes only the persisted execution ID', async () => {
@@ -71,6 +78,34 @@ describe('CodingReviewWorker', () => {
     await processJob({ data: reviewJob });
     expect(reviews.review).toHaveBeenCalledWith(reviewJob.executionId);
     expect(JSON.stringify(reviewJob)).not.toContain('sourceCode');
+    await worker.onModuleDestroy();
+  });
+
+  it('records successful and failed processing attempts through shared worker metrics', async () => {
+    const metrics = { recordWorkerJobAttempt: vi.fn().mockResolvedValue(undefined) };
+    const worker = createWorkerWithMetrics(metrics);
+    await worker.onModuleInit();
+    const processJob = vi.mocked(Worker).mock.calls[0]?.[1] as (job: {
+      data: ICodingReviewJobData;
+    }) => Promise<void>;
+
+    await processJob({ data: reviewJob });
+    reviews.review.mockRejectedValueOnce(new Error('provider failed'));
+    await expect(processJob({ data: reviewJob })).rejects.toThrow('provider failed');
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(metrics.recordWorkerJobAttempt).toHaveBeenNthCalledWith(
+      1,
+      JOB_QUEUE_NAMES.CODING_REVIEW,
+      'success',
+      expect.any(Number)
+    );
+    expect(metrics.recordWorkerJobAttempt).toHaveBeenNthCalledWith(
+      2,
+      JOB_QUEUE_NAMES.CODING_REVIEW,
+      'error',
+      expect.any(Number)
+    );
     await worker.onModuleDestroy();
   });
 

@@ -2,6 +2,34 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Redis } from 'ioredis';
+import { JOB_QUEUE_NAMES, type TJobQueueName } from '../jobs/job-queue.constants.js';
+
+const RECORD_WORKER_JOB_METRIC_SCRIPT = `
+local duration = tonumber(ARGV[1])
+if not duration or duration < 0 then
+  return redis.error_reply('invalid worker metric duration')
+end
+redis.call('HINCRBY', KEYS[1], 'attempts', 1)
+redis.call('HINCRBYFLOAT', KEYS[1], 'duration_sum', duration)
+for index = 2, #ARGV do
+  local bucket = tonumber(ARGV[index])
+  if duration <= bucket then
+    redis.call('HINCRBY', KEYS[1], 'bucket_' .. (index - 1), 1)
+  end
+end
+return 1
+`;
+
+const WORKER_JOB_METRIC_QUEUES = new Set(Object.values(JOB_QUEUE_NAMES));
+const WORKER_JOB_METRIC_RESULTS = ['success', 'error'] as const;
+
+export interface IWorkerJobMetric {
+  queue: TJobQueueName;
+  result: (typeof WORKER_JOB_METRIC_RESULTS)[number];
+  count: number;
+  sum: number;
+  buckets: number[];
+}
 
 const RESERVE_QUOTA_SCRIPT = `
 local current = tonumber(redis.call('GET', KEYS[1]) or '0')
@@ -179,6 +207,51 @@ export class RedisService implements OnModuleDestroy {
     return count;
   }
 
+  async recordWorkerJobAttempt(
+    queue: string,
+    result: string,
+    durationSeconds: number,
+    buckets: readonly number[]
+  ): Promise<void> {
+    if (
+      !WORKER_JOB_METRIC_QUEUES.has(queue as TJobQueueName) ||
+      !WORKER_JOB_METRIC_RESULTS.includes(result as (typeof WORKER_JOB_METRIC_RESULTS)[number]) ||
+      !Number.isFinite(durationSeconds) ||
+      durationSeconds < 0 ||
+      buckets.some((bucket) => !Number.isFinite(bucket) || bucket < 0)
+    ) {
+      return;
+    }
+
+    await this.client.eval(
+      RECORD_WORKER_JOB_METRIC_SCRIPT,
+      1,
+      this.workerJobMetricKey(queue, result),
+      String(durationSeconds),
+      ...buckets.map(String)
+    );
+  }
+
+  async getWorkerJobMetrics(): Promise<IWorkerJobMetric[]> {
+    const entries = await Promise.all(
+      Object.values(JOB_QUEUE_NAMES).flatMap((queue) =>
+        WORKER_JOB_METRIC_RESULTS.map(async (result) => {
+          const values = await this.client.hgetall(this.workerJobMetricKey(queue, result));
+          return {
+            queue,
+            result,
+            count: Number(values.attempts ?? 0),
+            sum: Number(values.duration_sum ?? 0),
+            buckets: Array.from({ length: 11 }, (_, index) =>
+              Number(values[`bucket_${index + 1}`] ?? 0)
+            ),
+          } satisfies IWorkerJobMetric;
+        })
+      )
+    );
+    return entries;
+  }
+
   async getMemoryStats(): Promise<IRedisMemoryStats> {
     const info = await this.client.info('memory');
     const usedMemory = info.match(/^used_memory:(\d+)$/m)?.[1];
@@ -196,6 +269,10 @@ export class RedisService implements OnModuleDestroy {
     }
 
     return { usedMemoryBytes, maxMemoryBytes };
+  }
+
+  private workerJobMetricKey(queue: string, result: string): string {
+    return `prepai:metrics:worker-job:{${queue}}:${result}`;
   }
 
   async setCacheValue(key: string, value: string, ttlSeconds: number): Promise<void> {

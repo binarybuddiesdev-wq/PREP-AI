@@ -47,16 +47,19 @@ Current and planned metric families (Prometheus names):
 
 The HTTP histogram, in-flight gauge, provider failover counter, Mastra agent
 duration histogram, topic-cache hit/miss counter, BullMQ queue-count gauge,
-Redis used/max-memory gauges, webhook signature failure counter, Clerk
-authentication failure counter, and Piston execution duration histogram are emitted now. The HTTP histogram also
+worker attempt counter and duration histogram, Redis used/max-memory gauges,
+webhook signature failure counter, Clerk authentication failure counter, and
+Piston execution duration histogram are emitted now. The HTTP histogram also
 exposes a count by method, route, and status, which can be used to graph request
-rate and error rate. The remaining rows are future instrumentation.
+rate and error rate.
 
 | Name                                | Type      | Labels                          | Source                                     |
 | ----------------------------------- | --------- | ------------------------------- | ------------------------------------------ |
 | `http_request_duration_seconds`     | Histogram | `method`, `route`, `status`     | Fastify request lifecycle hooks            |
 | `http_requests_in_flight`           | Gauge     | `route`                         | Fastify request lifecycle hooks            |
 | `bullmq_job_count`                  | Gauge     | `queue`, `state`                | `JobQueueService.getJobCounts`             |
+| `worker_job_attempts_total`         | Counter   | `queue`, `result`               | BullMQ worker processor                    |
+| `worker_job_duration_seconds`       | Histogram | `queue`, `result`               | BullMQ worker processor                    |
 | `redis_memory_used_bytes`           | Gauge     | none                            | Redis `INFO memory`                        |
 | `redis_memory_max_bytes`            | Gauge     | none                            | Redis `INFO memory`; 0 means unlimited     |
 | `mastra_agent_duration_seconds`     | Histogram | `agent`, `provider`, `fallback` | `chatWithFailover` provider-attempt timer  |
@@ -83,12 +86,19 @@ names, and error text are never labels. Timing telemetry is fail-open and does
 not change provider retries or results. The `fallback` label is `true` when an
 attempt follows a failed earlier provider attempt.
 
+`worker_job_attempts_total` and `worker_job_duration_seconds` include each
+processor attempt, including attempts BullMQ later retries. The result label is
+only `success` or `error`; queue names come from the fixed queue registry. Redis
+stores cumulative histogram buckets and totals so the API scrape includes work
+from separate worker processes. Redis telemetry failures are ignored and do not
+change job completion or retry behavior. Job names, payloads, user IDs, and
+error messages are never stored as metric labels.
+
 `prisma_query_duration_seconds` records successful and failed PostgreSQL model
 operations from the API client, which is the process exposing `/metrics`.
-Local worker operations sharing that client are included. A separate production
-worker client is not instrumented because worker metrics are not scraped here.
-Raw SQL operations without a model are excluded. Model and operation labels use
-fixed allowlists, and query text, parameters, and user data are never recorded.
+Local worker operations sharing that client are included. Raw SQL operations
+without a model are excluded. Model and operation labels use fixed allowlists,
+and query text, parameters, and user data are never recorded.
 
 ### 3. Distributed tracing
 

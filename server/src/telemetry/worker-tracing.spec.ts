@@ -75,4 +75,32 @@ describe('worker trace spans', () => {
 
     expect(exporter.getFinishedSpans()[0]?.status.code).toBe(SpanStatusCode.ERROR);
   });
+
+  it('records a successful worker attempt without adding job metadata to metrics', async () => {
+    const record = vi.fn().mockResolvedValue(undefined);
+
+    await traceWorkerJob('theory-eval-queue', {}, async () => 'done', record);
+
+    expect(record).toHaveBeenCalledWith('success', expect.any(Number));
+    expect(record.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0);
+  });
+
+  it('records failed attempts and ignores metrics errors without masking job errors', async () => {
+    const jobError = new Error('job failed');
+    const record = vi.fn().mockRejectedValue(new Error('redis unavailable'));
+
+    await expect(
+      traceWorkerJob(
+        'theory-eval-queue',
+        {},
+        async () => {
+          throw jobError;
+        },
+        record
+      )
+    ).rejects.toBe(jobError);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(record).toHaveBeenCalledWith('error', expect.any(Number));
+  });
 });

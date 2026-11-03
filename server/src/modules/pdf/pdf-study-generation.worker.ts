@@ -1,9 +1,10 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Job, Worker } from 'bullmq';
 import { JOB_QUEUE_NAMES, JOB_QUEUE_POLICIES } from '@/common/jobs/job-queue.constants.js';
 import { traceWorkerJob } from '@/telemetry/worker-tracing.js';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { PdfStudyGenerationService } from './pdf-study-generation.service.js';
@@ -19,7 +20,8 @@ export class PdfStudyGenerationWorker implements OnModuleInit, OnModuleDestroy {
     private readonly generation: PdfStudyGenerationService,
     private readonly postgres: PrismaPostgresqlService,
     private readonly jobs: JobQueueService,
-    @InjectPinoLogger(PdfStudyGenerationWorker.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(PdfStudyGenerationWorker.name) private readonly logger: PinoLogger,
+    @Optional() private readonly metrics?: MetricsService
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -27,7 +29,16 @@ export class PdfStudyGenerationWorker implements OnModuleInit, OnModuleDestroy {
     const queueName = JOB_QUEUE_NAMES.PDF_QUESTION_GENERATION;
     this.worker = new Worker<IPdfStudyGenerationJobData>(
       queueName,
-      (job) => traceWorkerJob(queueName, job.data.traceContext, () => this.processJob(job)),
+      (job) =>
+        traceWorkerJob(
+          queueName,
+          job.data.traceContext,
+          () => this.processJob(job),
+          this.metrics
+            ? (outcome, duration) =>
+                this.metrics!.recordWorkerJobAttempt(queueName, outcome, duration)
+            : undefined
+        ),
       {
         connection: {
           host: this.config.get<string>('REDIS_HOST', 'localhost'),

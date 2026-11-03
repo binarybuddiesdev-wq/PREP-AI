@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+  Optional,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Job, UnrecoverableError, Worker } from 'bullmq';
@@ -7,6 +13,7 @@ import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES, JOB_QUEUE_POLICIES } from '@/common/jobs/job-queue.constants.js';
 import { traceWorkerJob } from '@/telemetry/worker-tracing.js';
 import { RedisService } from '@/common/redis/redis.service.js';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { PistonClient } from './piston.client.js';
 import { CodingExecutionService } from './coding-execution.service.js';
 import type { ICodingExecutionJobData, TCodingExecutionResult } from './coding-execution.types.js';
@@ -22,7 +29,8 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
     private readonly executions: CodingExecutionService,
     private readonly jobs: JobQueueService,
     private readonly redis: RedisService,
-    @InjectPinoLogger(CodingExecutionWorker.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(CodingExecutionWorker.name) private readonly logger: PinoLogger,
+    @Optional() private readonly metrics?: MetricsService
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -36,7 +44,16 @@ export class CodingExecutionWorker implements OnModuleInit, OnModuleDestroy {
     const queueName = JOB_QUEUE_NAMES.CODING_EXECUTION;
     this.worker = new Worker<ICodingExecutionJobData, TCodingExecutionResult>(
       queueName,
-      (job) => traceWorkerJob(queueName, job.data.traceContext, () => this.processJob(job)),
+      (job) =>
+        traceWorkerJob(
+          queueName,
+          job.data.traceContext,
+          () => this.processJob(job),
+          this.metrics
+            ? (outcome, duration) =>
+                this.metrics!.recordWorkerJobAttempt(queueName, outcome, duration)
+            : undefined
+        ),
       {
         connection,
         concurrency: JOB_QUEUE_POLICIES[queueName].concurrency,

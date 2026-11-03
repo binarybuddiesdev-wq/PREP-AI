@@ -3,6 +3,59 @@ import { MetricsService } from './metrics.service.js';
 import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 
 describe('MetricsService', () => {
+  it('exports shared worker attempt counters and duration histograms', async () => {
+    const redis = {
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      recordWorkerJobAttempt: vi.fn().mockResolvedValue(undefined),
+      getWorkerJobMetrics: vi.fn().mockResolvedValue([
+        {
+          queue: JOB_QUEUE_NAMES.THEORY_EVALUATION,
+          result: 'success',
+          count: 2,
+          sum: 0.75,
+          buckets: [0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2],
+        },
+      ]),
+    };
+    const metrics = new MetricsService(redis as never);
+
+    metrics.recordWorkerJobAttempt(JOB_QUEUE_NAMES.THEORY_EVALUATION, 'success', 0.25);
+    await metrics.getMetrics();
+
+    expect(redis.recordWorkerJobAttempt).toHaveBeenCalledWith(
+      JOB_QUEUE_NAMES.THEORY_EVALUATION,
+      'success',
+      0.25,
+      expect.any(Array)
+    );
+    const output = await metrics.getMetrics();
+    expect(output).toContain('# TYPE worker_job_attempts_total counter');
+    expect(output).toContain(
+      `worker_job_attempts_total{queue="${JOB_QUEUE_NAMES.THEORY_EVALUATION}",result="success"} 2`
+    );
+    expect(output).toContain('# TYPE worker_job_duration_seconds histogram');
+    expect(output).toContain(
+      `worker_job_duration_seconds_count{queue="${JOB_QUEUE_NAMES.THEORY_EVALUATION}",result="success"} 2`
+    );
+  });
+
+  it('omits zero-valued worker samples from the scrape output', async () => {
+    const queue = JOB_QUEUE_NAMES.EMAIL;
+    const metrics = new MetricsService({
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+      getWorkerJobMetrics: vi
+        .fn()
+        .mockResolvedValue([
+          { queue, result: 'error', count: 0, sum: 0, buckets: Array(11).fill(0) },
+        ]),
+    } as never);
+
+    const output = await metrics.getMetrics();
+
+    expect(output).toContain('# TYPE worker_job_attempts_total counter');
+    expect(output).not.toContain(`worker_job_attempts_total{queue="${queue}"`);
+  });
+
   it('records request duration with bounded route labels and releases in-flight count', async () => {
     const metrics = new MetricsService({
       incrementMetricCounter: vi.fn(),

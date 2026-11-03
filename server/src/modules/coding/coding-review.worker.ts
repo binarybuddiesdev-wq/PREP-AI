@@ -1,10 +1,11 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Job, Worker } from 'bullmq';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES, JOB_QUEUE_POLICIES } from '@/common/jobs/job-queue.constants.js';
 import { traceWorkerJob } from '@/telemetry/worker-tracing.js';
+import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { CodingReviewService } from './coding-review.service.js';
 import type { ICodingReviewJobData } from './coding-review.types.js';
 
@@ -17,7 +18,8 @@ export class CodingReviewWorker implements OnModuleInit, OnModuleDestroy {
     private readonly config: ConfigService,
     private readonly reviews: CodingReviewService,
     private readonly jobs: JobQueueService,
-    @InjectPinoLogger(CodingReviewWorker.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(CodingReviewWorker.name) private readonly logger: PinoLogger,
+    @Optional() private readonly metrics?: MetricsService
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -25,7 +27,16 @@ export class CodingReviewWorker implements OnModuleInit, OnModuleDestroy {
     const queueName = JOB_QUEUE_NAMES.CODING_REVIEW;
     this.worker = new Worker<ICodingReviewJobData>(
       queueName,
-      (job) => traceWorkerJob(queueName, job.data.traceContext, () => this.processJob(job)),
+      (job) =>
+        traceWorkerJob(
+          queueName,
+          job.data.traceContext,
+          () => this.processJob(job),
+          this.metrics
+            ? (outcome, duration) =>
+                this.metrics!.recordWorkerJobAttempt(queueName, outcome, duration)
+            : undefined
+        ),
       {
         connection: {
           host: this.config.get<string>('REDIS_HOST', 'localhost'),

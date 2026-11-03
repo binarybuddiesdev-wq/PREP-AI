@@ -6,6 +6,12 @@
 - Added `pnpm --filter server prisma:questions:backfill-uniqueness` to detect existing duplicates before writes, recover safely after partial runs, and remove stale claims. Documented the schema-push, question-write pause, backfill, and API rollout sequence.
 - Verification: 36 focused question tests passed; the full server gate passed (846 tests, 90.08% branch coverage); database isolation passed (37 tests); architecture viewer and `git diff --check` passed.
 
+## 2026-11-04 - Shared worker job metrics
+
+- Added shared Redis counters and cumulative duration buckets for registered BullMQ processor attempts, emitted through the existing protected Prometheus endpoint. Retries appear as separate attempts; telemetry failures do not affect job outcomes.
+- Instrumented theory evaluation, coding execution/review, PDF ingestion/question generation, and email workers. Labels exclude job data, user identifiers, and errors.
+- Verification: the full server gate passed (854 tests, 90.00% branch coverage); database isolation passed (37 tests); architecture viewer and `git diff --check` passed.
+
 ## 2026-11-04 - Optional Sentry error tracking
 
 - Added optional Sentry reporting for unexpected API exceptions and API/worker bootstrap failures. Event request, user, breadcrumb, and extra fields are scrubbed; Sentry tracing remains disabled so OpenTelemetry stays the trace pipeline. Startup failures flush captured errors before the process exits.

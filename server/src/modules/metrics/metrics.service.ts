@@ -1,6 +1,8 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { RedisService } from '../../common/redis/redis.service.js';
 import { JOB_QUEUE_NAMES } from '../../common/jobs/job-queue.constants.js';
+import type { TJobQueueName } from '../../common/jobs/job-queue.constants.js';
+import type { TWorkerJobOutcome } from '../../telemetry/worker-tracing.js';
 import {
   JOB_QUEUE_COUNT_STATES,
   JobQueueService,
@@ -143,6 +145,7 @@ export class MetricsService {
     ).catch(() => []);
     const jobCounts = await this.jobs?.getJobCounts().catch(() => undefined);
     const redisMemory = await this.redis.getMemoryStats?.().catch(() => undefined);
+    const workerJobMetrics = await this.redis.getWorkerJobMetrics?.().catch(() => []);
     const lines = [
       '# HELP http_requests_in_flight Number of HTTP requests currently being handled.',
       '# TYPE http_requests_in_flight gauge',
@@ -194,6 +197,10 @@ export class MetricsService {
       '# TYPE mastra_agent_duration_seconds histogram',
       '# HELP prisma_query_duration_seconds Duration of PostgreSQL Prisma model operations in seconds.',
       '# TYPE prisma_query_duration_seconds histogram',
+      '# HELP worker_job_attempts_total Background worker job attempts by queue and result.',
+      '# TYPE worker_job_attempts_total counter',
+      '# HELP worker_job_duration_seconds Duration of background worker job attempts in seconds.',
+      '# TYPE worker_job_duration_seconds histogram',
     ];
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
@@ -260,6 +267,20 @@ export class MetricsService {
       lines.push(`prisma_query_duration_seconds_count{${labels}} ${metric.count}`);
     }
 
+    for (const metric of workerJobMetrics ?? []) {
+      if (metric.count <= 0) continue;
+      const labels = `queue="${this.escapeLabel(metric.queue)}",result="${metric.result}"`;
+      lines.push(`worker_job_attempts_total{${labels}} ${metric.count}`);
+      metric.buckets.forEach((count, index) => {
+        lines.push(
+          `worker_job_duration_seconds_bucket{${labels},le="${this.buckets[index]}"} ${count}`
+        );
+      });
+      lines.push(`worker_job_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`);
+      lines.push(`worker_job_duration_seconds_sum{${labels}} ${metric.sum}`);
+      lines.push(`worker_job_duration_seconds_count{${labels}} ${metric.count}`);
+    }
+
     return `${lines.join('\n')}\n`;
   }
 
@@ -267,6 +288,14 @@ export class MetricsService {
     if (!this.validProviderNames.has(from) || !this.validProviderNames.has(to) || from === to)
       return;
     await this.redis.incrementMetricCounter(this.providerFailoverKey(from, to));
+  }
+
+  async recordWorkerJobAttempt(
+    queue: TJobQueueName,
+    outcome: TWorkerJobOutcome,
+    durationSeconds: number
+  ): Promise<void> {
+    await this.redis.recordWorkerJobAttempt(queue, outcome, durationSeconds, this.buckets);
   }
 
   recordTopicCacheRequest(operation: string, result: string): void {
