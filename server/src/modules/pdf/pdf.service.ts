@@ -15,9 +15,26 @@ import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 import { PdfStorageService } from './pdf-storage.service.js';
 import { PdfTextExtractor } from './pdf-text-extractor.js';
 import { validatePdfUpload } from './pdf-upload.validation.js';
+import { requireIdempotencyKey } from '@/common/idempotency/index.js';
+import { createPdfUploadSourceId } from './pdf-upload-idempotency.js';
+import { IDEMPOTENCY_KEY_REUSED } from '@/common/constants/api.constants.js';
 
 const ACTIVE_STATUSES = ['uploading', 'queued', 'processing', 'ready', 'deleting'];
 const MAX_LIST_LIMIT = 50;
+
+interface IPdfUploadReplaySource {
+  id: string;
+  userId: string;
+  displayName: string;
+  byteSize: number;
+  contentHash: string;
+  pageCount: number | null;
+  status: string;
+  activeRevision: number;
+  failureCode: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 @Injectable()
 export class PdfService {
@@ -31,9 +48,22 @@ export class PdfService {
     @InjectPinoLogger(PdfService.name) private readonly logger: PinoLogger
   ) {}
 
-  async upload(buffer: Buffer, filename: string, mimetype: string, userId: string) {
+  async upload(
+    buffer: Buffer,
+    filename: string,
+    mimetype: string,
+    userId: string,
+    idempotencyKey: string
+  ) {
     const maxBytes = this.config.get<number>('PDF_MAX_FILE_BYTES', 10 * 1024 * 1024);
     const { displayName, byteSize } = validatePdfUpload(buffer, filename, mimetype, maxBytes);
+    const key = requireIdempotencyKey(idempotencyKey);
+    const contentHash = createHash('sha256').update(buffer).digest('hex');
+    const sourceId = createPdfUploadSourceId(userId, key);
+    const fingerprint = { displayName, byteSize, contentHash };
+    const existing = await this.findMatchingUpload(sourceId, userId, fingerprint);
+    if (existing) return existing;
+
     const maxPages = this.config.get<number>('PDF_MAX_PAGES', 100);
     let extraction;
     try {
@@ -63,7 +93,13 @@ export class PdfService {
       );
     }
 
-    await this.enforceStorageQuota(userId, byteSize);
+    try {
+      await this.enforceStorageQuota(userId, byteSize);
+    } catch (error) {
+      const concurrent = await this.findMatchingUpload(sourceId, userId, fingerprint);
+      if (concurrent) return concurrent;
+      throw error;
+    }
     const quotaKey = this.dailyUploadQuotaKey(userId);
     try {
       const quota = await this.redis.reserveQuota(
@@ -73,6 +109,8 @@ export class PdfService {
       );
       if (!quota.allowed) throw new ConflictException('Daily PDF upload limit reached');
     } catch (error) {
+      const concurrent = await this.findMatchingUpload(sourceId, userId, fingerprint);
+      if (concurrent) return concurrent;
       if (error instanceof ConflictException) throw error;
       throw new ServiceUnavailableException('PDF upload quota service is temporarily unavailable', {
         cause: error,
@@ -84,10 +122,11 @@ export class PdfService {
     try {
       source = await this.prisma.pdfSource.create({
         data: {
+          id: sourceId,
           userId,
           displayName,
           byteSize,
-          contentHash: createHash('sha256').update(buffer).digest('hex'),
+          contentHash,
           pageCount: extraction.pageCount,
           status: 'uploading',
           activeRevision: 0,
@@ -118,6 +157,12 @@ export class PdfService {
       }
       return this.toPublicSource(queued);
     } catch (error) {
+      if (!source && this.isDuplicateKeyError(error)) {
+        await this.redis.releaseQuota(quotaKey).catch(() => undefined);
+        const concurrent = await this.findMatchingUpload(sourceId, userId, fingerprint);
+        if (concurrent) return concurrent;
+        throw new ConflictException('PDF upload key conflicts with an existing source');
+      }
       if (source) {
         await this.prisma.pdfSource
           .update({
@@ -132,6 +177,35 @@ export class PdfService {
         ? error
         : new ServiceUnavailableException('PDF upload could not be completed', { cause: error });
     }
+  }
+
+  private replayUpload(
+    source: IPdfUploadReplaySource,
+    userId: string,
+    fingerprint: { displayName: string; byteSize: number; contentHash: string }
+  ) {
+    if (
+      source.userId !== userId ||
+      source.displayName !== fingerprint.displayName ||
+      source.byteSize !== fingerprint.byteSize ||
+      source.contentHash !== fingerprint.contentHash
+    ) {
+      throw new ConflictException(IDEMPOTENCY_KEY_REUSED);
+    }
+    return this.toPublicSource(source);
+  }
+
+  private async findMatchingUpload(
+    sourceId: string,
+    userId: string,
+    fingerprint: { displayName: string; byteSize: number; contentHash: string }
+  ) {
+    const source = await this.prisma.pdfSource.findFirst({ where: { id: sourceId, userId } });
+    return source ? this.replayUpload(source, userId, fingerprint) : undefined;
+  }
+
+  private isDuplicateKeyError(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
   }
 
   async list(userId: string, limit = 20) {

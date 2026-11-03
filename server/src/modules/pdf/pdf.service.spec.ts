@@ -13,6 +13,9 @@ import { PdfStorageService } from './pdf-storage.service.js';
 import { PdfTextExtractor } from './pdf-text-extractor.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { RedisService } from '@/common/redis/redis.service.js';
+import { createHash } from 'node:crypto';
+import { createPdfUploadSourceId } from './pdf-upload-idempotency.js';
+import { IDEMPOTENCY_KEY_REUSED } from '@/common/constants/api.constants.js';
 
 describe('PdfService', () => {
   let service: PdfService;
@@ -22,6 +25,7 @@ describe('PdfService', () => {
   let jobs: { enqueue: ReturnType<typeof vi.fn> };
   let redis: { reserveQuota: ReturnType<typeof vi.fn>; releaseQuota: ReturnType<typeof vi.fn> };
   let config: { get: ReturnType<typeof vi.fn> };
+  let uploadSequence = 0;
 
   beforeEach(async () => {
     prisma = {
@@ -65,9 +69,134 @@ describe('PdfService', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  const upload = (
+    buffer: Buffer,
+    filename: string,
+    mimetype: string,
+    userId: string,
+    idempotencyKey = `test-upload-${++uploadSequence}`
+  ) => service.upload(buffer, filename, mimetype, userId, idempotencyKey);
+
+  const uploadSource = (buffer: Buffer, overrides: Record<string, unknown> = {}) => ({
+    id: createPdfUploadSourceId('user_1', 'retry-key'),
+    userId: 'user_1',
+    displayName: 'notes.pdf',
+    byteSize: buffer.length,
+    contentHash: createHash('sha256').update(buffer).digest('hex'),
+    assetId: 'private-asset',
+    pageCount: 1,
+    status: 'queued',
+    activeRevision: 0,
+    requestedRevision: 1,
+    failureCode: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  });
+
+  it('replays a matching upload before parsing, quota, storage, or queue work', async () => {
+    const buffer = Buffer.from('%PDF-1.7\nbody');
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(uploadSource(buffer));
+
+    await expect(
+      upload(buffer, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
+    ).resolves.toMatchObject({
+      id: createPdfUploadSourceId('user_1', 'retry-key'),
+      status: 'queued',
+    });
+
+    expect(extractor.extract).not.toHaveBeenCalled();
+    expect(redis.reserveQuota).not.toHaveBeenCalled();
+    expect(storage.upload).not.toHaveBeenCalled();
+    expect(jobs.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reused upload key when its file fingerprint changes', async () => {
+    const original = Buffer.from('%PDF-1.7\noriginal');
+    const changed = Buffer.from('%PDF-1.7\nchanged');
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(uploadSource(original));
+
+    await expect(
+      upload(changed, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(extractor.extract).not.toHaveBeenCalled();
+    expect(redis.reserveQuota).not.toHaveBeenCalled();
+  });
+
+  it('returns the winner of a concurrent duplicate-key insert and releases its reserved quota', async () => {
+    const buffer = Buffer.from('%PDF-1.7\nbody');
+    prisma.pdfSource.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(uploadSource(buffer));
+    prisma.pdfSource.create.mockRejectedValueOnce(
+      Object.assign(new Error('duplicate key'), { code: 'P2002' })
+    );
+
+    await expect(
+      upload(buffer, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
+    ).resolves.toMatchObject({
+      id: createPdfUploadSourceId('user_1', 'retry-key'),
+      status: 'queued',
+    });
+
+    expect(redis.releaseQuota).toHaveBeenCalledOnce();
+    expect(storage.upload).not.toHaveBeenCalled();
+    expect(jobs.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('replays a matching request when a concurrent upload fills the file-count quota', async () => {
+    const buffer = Buffer.from('%PDF-1.7\nbody');
+    prisma.pdfSource.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(uploadSource(buffer));
+    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(5).fill({ byteSize: 1 }));
+
+    await expect(
+      upload(buffer, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
+    ).resolves.toMatchObject({
+      id: createPdfUploadSourceId('user_1', 'retry-key'),
+      status: 'queued',
+    });
+
+    expect(redis.reserveQuota).not.toHaveBeenCalled();
+    expect(storage.upload).not.toHaveBeenCalled();
+  });
+
+  it('returns the key-reuse conflict when a mismatched concurrent request hits a storage quota', async () => {
+    const original = Buffer.from('%PDF-1.7\noriginal');
+    const changed = Buffer.from('%PDF-1.7\nchanged');
+    prisma.pdfSource.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(uploadSource(original));
+    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(5).fill({ byteSize: 1 }));
+
+    await expect(
+      upload(changed, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
+    ).rejects.toThrow(IDEMPOTENCY_KEY_REUSED);
+  });
+
+  it('replays a matching request when its concurrent upload takes the final daily quota slot', async () => {
+    const buffer = Buffer.from('%PDF-1.7\nbody');
+    prisma.pdfSource.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(uploadSource(buffer));
+    redis.reserveQuota.mockResolvedValueOnce({ allowed: false });
+
+    await expect(
+      upload(buffer, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
+    ).resolves.toMatchObject({
+      id: createPdfUploadSourceId('user_1', 'retry-key'),
+      status: 'queued',
+    });
+
+    expect(prisma.pdfSource.create).not.toHaveBeenCalled();
+    expect(storage.upload).not.toHaveBeenCalled();
+  });
+
   it('rejects bad files before parsing, reserving quota, or uploading', async () => {
     await expect(
-      service.upload(Buffer.from('not pdf'), 'notes.pdf', 'application/pdf', 'user_1')
+      upload(Buffer.from('not pdf'), 'notes.pdf', 'application/pdf', 'user_1')
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(extractor.extract).not.toHaveBeenCalled();
     expect(redis.reserveQuota).not.toHaveBeenCalled();
@@ -76,48 +205,48 @@ describe('PdfService', () => {
 
   it('maps parser failures to safe client-facing messages', async () => {
     extractor.extract.mockRejectedValueOnce(new Error('PDF contains no extractable text'));
-    await expect(
-      service.upload(Buffer.from('%PDF-1'), 'scan.pdf', 'application/pdf', 'u')
-    ).rejects.toThrow('Scanned PDFs are not supported yet');
+    await expect(upload(Buffer.from('%PDF-1'), 'scan.pdf', 'application/pdf', 'u')).rejects.toThrow(
+      'Scanned PDFs are not supported yet'
+    );
     extractor.extract.mockRejectedValueOnce(new Error('PDF exceeds the extracted text limit'));
     await expect(
-      service.upload(Buffer.from('%PDF-1'), 'large.pdf', 'application/pdf', 'u')
+      upload(Buffer.from('%PDF-1'), 'large.pdf', 'application/pdf', 'u')
     ).rejects.toThrow('PDF contains too much extractable text');
     extractor.extract.mockRejectedValueOnce(new Error('PDF exceeds the 100 page limit'));
-    await expect(
-      service.upload(Buffer.from('%PDF-1'), 'many.pdf', 'application/pdf', 'u')
-    ).rejects.toThrow('PDF exceeds the 100 page limit');
+    await expect(upload(Buffer.from('%PDF-1'), 'many.pdf', 'application/pdf', 'u')).rejects.toThrow(
+      'PDF exceeds the 100 page limit'
+    );
     extractor.extract.mockRejectedValueOnce(new Error('PDF page limit must be a positive integer'));
-    await expect(
-      service.upload(Buffer.from('%PDF-1'), 'many.pdf', 'application/pdf', 'u')
-    ).rejects.toThrow('PDF page limit must be a positive integer');
+    await expect(upload(Buffer.from('%PDF-1'), 'many.pdf', 'application/pdf', 'u')).rejects.toThrow(
+      'PDF page limit must be a positive integer'
+    );
     extractor.extract.mockRejectedValueOnce(new Error('corrupt internals'));
-    await expect(
-      service.upload(Buffer.from('%PDF-1'), 'bad.pdf', 'application/pdf', 'u')
-    ).rejects.toThrow('PDF could not be parsed. Check that the file is a valid, unencrypted PDF.');
+    await expect(upload(Buffer.from('%PDF-1'), 'bad.pdf', 'application/pdf', 'u')).rejects.toThrow(
+      'PDF could not be parsed. Check that the file is a valid, unencrypted PDF.'
+    );
     expect(storage.upload).not.toHaveBeenCalled();
   });
 
   it('enforces file-count and storage-byte quotas before reserving daily uploads', async () => {
     prisma.pdfSource.findMany.mockResolvedValueOnce(Array(5).fill({ byteSize: 1 }));
     await expect(
-      service.upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
+      upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
     ).rejects.toBeInstanceOf(ConflictException);
     prisma.pdfSource.findMany.mockResolvedValueOnce([{ byteSize: 50 * 1024 * 1024 }]);
-    await expect(
-      service.upload(Buffer.from('%PDF-1'), 'b.pdf', 'application/pdf', 'u')
-    ).rejects.toThrow('PDF storage limit reached');
+    await expect(upload(Buffer.from('%PDF-1'), 'b.pdf', 'application/pdf', 'u')).rejects.toThrow(
+      'PDF storage limit reached'
+    );
     expect(redis.reserveQuota).not.toHaveBeenCalled();
   });
 
   it('rejects daily quota exhaustion and maps Redis failures to service unavailable', async () => {
     redis.reserveQuota.mockResolvedValueOnce({ allowed: false });
     await expect(
-      service.upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
+      upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
     ).rejects.toBeInstanceOf(ConflictException);
     redis.reserveQuota.mockRejectedValueOnce(new Error('redis offline'));
     await expect(
-      service.upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
+      upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
@@ -140,18 +269,23 @@ describe('PdfService', () => {
     prisma.pdfSource.create.mockResolvedValue({ ...source, status: 'uploading', assetId: null });
     prisma.pdfSource.update.mockResolvedValue(source);
 
-    const result = await service.upload(
+    const result = await upload(
       Buffer.from('%PDF-1.7\nbody'),
       'notes.pdf',
       'application/pdf',
-      'user_1'
+      'user_1',
+      'source-key'
     );
 
     expect(result).toMatchObject({ id: 'source_1', status: 'queued', displayName: 'notes.pdf' });
     expect(result).not.toHaveProperty('assetId');
     expect(prisma.pdfSource.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ userId: 'user_1', status: 'uploading' }),
+        data: expect.objectContaining({
+          id: createPdfUploadSourceId('user_1', 'source-key'),
+          userId: 'user_1',
+          status: 'uploading',
+        }),
       })
     );
     expect(jobs.enqueue).toHaveBeenCalledWith(
@@ -178,7 +312,7 @@ describe('PdfService', () => {
     jobs.enqueue.mockRejectedValue(new ServiceUnavailableException());
 
     await expect(
-      service.upload(Buffer.from('%PDF-1.7\nbody'), 'notes.pdf', 'application/pdf', 'user_1')
+      upload(Buffer.from('%PDF-1.7\nbody'), 'notes.pdf', 'application/pdf', 'user_1')
     ).resolves.toMatchObject({ status: 'queued' });
   });
 
@@ -189,7 +323,7 @@ describe('PdfService', () => {
       .mockResolvedValueOnce(undefined);
     storage.delete.mockResolvedValue(undefined);
     await expect(
-      service.upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
+      upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
     expect(storage.delete).toHaveBeenCalledWith('private-asset');
     expect(redis.releaseQuota).toHaveBeenCalled();
@@ -200,7 +334,7 @@ describe('PdfService', () => {
     prisma.pdfSource.update.mockResolvedValue(undefined);
     storage.upload.mockRejectedValueOnce(new Error('cloudinary offline'));
     await expect(
-      service.upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
+      upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
     expect(storage.delete).not.toHaveBeenCalled();
     expect(redis.releaseQuota).toHaveBeenCalledOnce();

@@ -2,7 +2,7 @@
 
 ## Intent
 
-Make retries of the existing asynchronous theory-answer and coding-execution
+Make retries of asynchronous theory-answer, coding-execution, and PDF-upload
 requests safe. A client that loses a response can repeat the same request and
 receive the original persisted operation without consuming another quota slot
 or enqueueing duplicate work.
@@ -10,7 +10,8 @@ or enqueueing duplicate work.
 ## Goals
 
 - Define one shared key-validation and request-fingerprint policy.
-- Require `Idempotency-Key` for theory answer submission and coding run/submit.
+- Require `Idempotency-Key` for theory answer submission, coding run/submit,
+  and PDF upload.
 - Scope keys to the authenticated actor and operation resource.
 - Return the original persisted answer/execution for a matching replay.
 - Return HTTP 409 when a key is reused with a different request body or scope.
@@ -22,8 +23,8 @@ or enqueueing duplicate work.
 
 - Add generic HTTP response-caching middleware or store arbitrary response
   bodies containing user data.
-- Make unrelated resource creation, admin writes, webhooks, or PDF multipart
-  uploads idempotent in this change.
+- Make unrelated resource creation, admin writes, webhooks, or PDF reindex/delete
+  operations idempotent in this change.
 - Claim a cross-database exactly-once guarantee. PostgreSQL operation records
   are authoritative for these two flows; external effects remain recoverable
   through their existing queue/state mechanisms.
@@ -59,6 +60,8 @@ or enqueueing duplicate work.
 - Theory answer IDs retain their current deterministic format for backward
   compatibility. Coding execution IDs become deterministic for a user's
   coding-execution key; queue IDs continue to derive from the execution ID.
+- PDF upload source IDs are deterministic 24-character Mongo ObjectIds derived
+  from the actor and key; persisted file metadata acts as the request fingerprint.
 
 ## Verification
 
@@ -69,6 +72,8 @@ coverage, and docs after the focused tests.
 
 ## Remaining work
 
-Other mutation types can adopt this policy when their durable resource and
-external side effects can be made replay-safe. The backend tracker must keep
-the policy partial until those routes are explicitly reviewed.
+PDF uploads use a deterministic user-scoped Mongo ObjectId and the persisted
+content hash, display name, and byte size as their replay fingerprint. Reindex,
+delete, and other mutation types can adopt this policy when their durable
+resource and external side effects can be made replay-safe. The backend tracker
+must keep the policy partial until those routes are explicitly reviewed.

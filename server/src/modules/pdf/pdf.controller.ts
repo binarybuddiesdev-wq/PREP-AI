@@ -1,9 +1,17 @@
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiHeader,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   BadRequestException,
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -16,6 +24,7 @@ import type { FastifyRequest } from 'fastify';
 import { ApiRoutes, ClerkAuthGuard, CurrentUser, RolesGuard } from '@/common/index.js';
 import { PdfService } from './pdf.service.js';
 import { PdfListDto } from './dto/pdf-list.dto.js';
+import { requireIdempotencyKey } from '@/common/idempotency/index.js';
 
 @ApiTags('PDF Study')
 @ApiBearerAuth()
@@ -27,9 +36,15 @@ export class PdfController {
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiConsumes('multipart/form-data')
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
   @ApiOperation({ summary: 'Upload a study PDF for asynchronous indexing' })
   @ApiResponse({ status: HttpStatus.ACCEPTED, description: 'PDF accepted for indexing' })
-  async upload(@Req() request: FastifyRequest, @CurrentUser('id') userId: string) {
+  async upload(
+    @Req() request: FastifyRequest,
+    @CurrentUser('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined
+  ) {
+    const key = requireIdempotencyKey(idempotencyKey);
     let file;
     try {
       file = await request.file();
@@ -38,7 +53,7 @@ export class PdfController {
         throw new BadRequestException('Upload the PDF using the multipart field named "file"');
       }
       const buffer = await file.toBuffer();
-      const data = await this.pdfs.upload(buffer, file.filename, file.mimetype, userId);
+      const data = await this.pdfs.upload(buffer, file.filename, file.mimetype, userId, key);
       return { message: 'PDF upload accepted', data };
     } catch (error) {
       if (error instanceof BadRequestException) throw error;

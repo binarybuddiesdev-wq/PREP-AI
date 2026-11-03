@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-03 — PDF upload idempotency
+
+- Required `Idempotency-Key` for PDF multipart uploads and derived a deterministic, user-scoped Mongo ObjectId without a schema change.
+- Matching retries return the existing source before extraction, quota reservation, Cloudinary, or queue work; a changed fingerprint returns 409. Concurrent duplicate inserts release the losing quota reservation and replay the winning source.
+- Updated the PDF API contract, shared idempotency design, backend tracker, and architecture TODO. Failed uploads require a new key to start another operation.
+- Verification: PDF suite passed (87 tests); `pnpm gate -- --stack server --level full` passed (594 tests across 61 files, plus build, type-check, coverage, lint, formatting, Prisma generation, and agent-doc checks); architecture viewer check and `git diff --check` passed.
+
 ## 2026-11-03 — protected HTTP metrics
 
 - Added authenticated Prometheus `/metrics` with HTTP duration histograms and in-flight gauges; disabled unless a dedicated 32+ character `METRICS_BEARER_TOKEN` is configured.

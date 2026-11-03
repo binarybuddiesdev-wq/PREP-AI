@@ -6,8 +6,13 @@ use the standard `{ message, data }` envelope.
 
 ## Upload
 
-`POST /api/v1/pdfs` accepts one `multipart/form-data` file field named `file`
-and returns `202 Accepted`. The upload must have a `.pdf` filename,
+`POST /api/v1/pdfs` requires an `Idempotency-Key` header and accepts one
+`multipart/form-data` file field named `file`; it returns `202 Accepted`. Reuse
+the same key only to retry the same file under the same filename. A matching
+retry returns the original source without another quota reservation, Cloudinary
+upload, or indexing job. Reusing the key with another file or filename returns
+`409 Conflict`. After a failed upload, use a new key to start a separate
+operation. The upload must have a `.pdf` filename,
 `application/pdf` MIME type, and a valid `%PDF-` signature. Defaults are 10
 MiB, 100 pages, five active files / 50 MiB per account, and three uploads per
 UTC day. Limits can be adjusted with `PDF_*` environment settings.

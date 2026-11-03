@@ -16,14 +16,16 @@ describe('PdfController', () => {
     const file = makeFile();
     const result = await controller.upload(
       { file: vi.fn().mockResolvedValue(file) } as never,
-      'user_1'
+      'user_1',
+      'request-1'
     );
     expect(file.toBuffer).toHaveBeenCalledOnce();
     expect(pdfs.upload).toHaveBeenCalledWith(
       expect.any(Buffer),
       'study.pdf',
       'application/pdf',
-      'user_1'
+      'user_1',
+      'request-1'
     );
     expect(result).toEqual({
       message: 'PDF upload accepted',
@@ -34,11 +36,25 @@ describe('PdfController', () => {
   it('rejects missing files and unexpected multipart field names', async () => {
     const controller = new PdfController({ upload: vi.fn() } as never);
     await expect(
-      controller.upload({ file: vi.fn().mockResolvedValue(undefined) } as never, 'u')
+      controller.upload({ file: vi.fn().mockResolvedValue(undefined) } as never, 'u', 'request-1')
     ).rejects.toBeInstanceOf(BadRequestException);
     await expect(
-      controller.upload({ file: vi.fn().mockResolvedValue(makeFile('attachment')) } as never, 'u')
+      controller.upload(
+        { file: vi.fn().mockResolvedValue(makeFile('attachment')) } as never,
+        'u',
+        'request-1'
+      )
     ).rejects.toThrow('multipart field named "file"');
+  });
+
+  it('requires an idempotency key before reading the multipart file', async () => {
+    const controller = new PdfController({ upload: vi.fn() } as never);
+    const request = { file: vi.fn() };
+
+    await expect(controller.upload(request as never, 'u', undefined)).rejects.toThrow(
+      'Idempotency-Key'
+    );
+    expect(request.file).not.toHaveBeenCalled();
   });
 
   it('maps Fastify file size errors and propagates unrelated failures', async () => {
@@ -47,17 +63,21 @@ describe('PdfController', () => {
     } as never);
     const oversized = Object.assign(new Error('too big'), { code: 'FST_REQ_FILE_TOO_LARGE' });
     await expect(
-      controller.upload({ file: vi.fn().mockRejectedValue(oversized) } as never, 'u')
+      controller.upload({ file: vi.fn().mockRejectedValue(oversized) } as never, 'u', 'request-1')
     ).rejects.toThrow('PDF exceeds the configured file size limit');
     await expect(
-      controller.upload({ file: vi.fn().mockResolvedValue(makeFile()) } as never, 'u')
+      controller.upload({ file: vi.fn().mockResolvedValue(makeFile()) } as never, 'u', 'request-1')
     ).rejects.toThrow('service error');
     const badRequest = new BadRequestException('invalid');
     const badRequestController = new PdfController({
       upload: vi.fn().mockRejectedValue(badRequest),
     } as never);
     await expect(
-      badRequestController.upload({ file: vi.fn().mockResolvedValue(makeFile()) } as never, 'u')
+      badRequestController.upload(
+        { file: vi.fn().mockResolvedValue(makeFile()) } as never,
+        'u',
+        'request-1'
+      )
     ).rejects.toBe(badRequest);
   });
 
