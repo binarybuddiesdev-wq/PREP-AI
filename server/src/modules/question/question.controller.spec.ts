@@ -4,6 +4,9 @@ import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { QuestionController } from './question.controller.js';
 import { QuestionService } from './question.service.js';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+const GUARDS_METADATA = '__guards__';
+import { Reflector } from '@nestjs/core';
+import { ROLES_KEY } from '@/common/decorators/roles.decorator.js';
 import {
   CREATE_QUESTION_SUCCESS,
   GET_QUESTIONS_SUCCESS,
@@ -19,6 +22,26 @@ class MockAuthGuard implements CanActivate {
 }
 
 describe('QuestionController', () => {
+  it('protects question routes with Clerk authentication and role checks', () => {
+    expect(new Reflector().get(GUARDS_METADATA, QuestionController)).toEqual([
+      ClerkAuthGuard,
+      RolesGuard,
+    ]);
+  });
+
+  it('restricts question mutations to admins', () => {
+    const reflector = new Reflector();
+    expect(reflector.get(ROLES_KEY, QuestionController.prototype.createQuestion)).toEqual([
+      'ADMIN',
+    ]);
+    expect(reflector.get(ROLES_KEY, QuestionController.prototype.updateQuestion)).toEqual([
+      'ADMIN',
+    ]);
+    expect(reflector.get(ROLES_KEY, QuestionController.prototype.deleteQuestion)).toEqual([
+      'ADMIN',
+    ]);
+  });
+
   let controller: QuestionController;
   let service: {
     createQuestion: ReturnType<typeof vi.fn>;

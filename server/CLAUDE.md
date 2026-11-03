@@ -52,6 +52,11 @@ The quality gate (lint, format check, build, spec type-check, tests, coverage) i
 
 ## Architecture
 
+User-owned data queries and access-control checks follow
+[`docs/architecture/data-isolation.md`](../docs/architecture/data-isolation.md).
+It describes application-level ownership filters; PostgreSQL RLS is not
+currently enabled.
+
 ### Two databases, two Prisma clients
 
 `server/prisma/schema.prisma` (MongoDB, default-generated client) holds `User`, `UserSettings`, `Topic`, `Question`. `server/prisma/schema.postgresql.prisma` generates a _separate_ client into `src/generated/postgresql-client` (for Sessions/Answers-type relational data — see `server/README.md` planned modules). `PrismaService` (Mongo) is the default injectable everywhere; `PrismaPostgresqlService` wraps the Postgres client and **no-ops gracefully** if `POSTGRESQL_URL` is unset or the client hasn't been generated yet (checked at `onModuleInit`). When adding a feature, check which store it belongs in before assuming `PrismaService` is the only one.

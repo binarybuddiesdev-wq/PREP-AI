@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CodingController } from './coding.controller.js';
 import { CodingService } from './coding.service.js';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+const GUARDS_METADATA = '__guards__';
+import { Reflector } from '@nestjs/core';
 import type { ExecuteCodingDto } from './dto/coding.dto.js';
 
 class MockAuthGuard implements CanActivate {
@@ -13,6 +15,13 @@ class MockAuthGuard implements CanActivate {
 }
 
 describe('CodingController', () => {
+  it('requires Clerk authentication and role checks for coding routes', () => {
+    expect(new Reflector().get(GUARDS_METADATA, CodingController)).toEqual([
+      ClerkAuthGuard,
+      RolesGuard,
+    ]);
+  });
+
   let controller: CodingController;
   let codingService: Record<string, ReturnType<typeof vi.fn>>;
 

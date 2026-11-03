@@ -5,6 +5,8 @@ import { TheoryService } from './theory.service.js';
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+const GUARDS_METADATA = '__guards__';
+import { Reflector } from '@nestjs/core';
 import {
   THEORY_SESSION_STARTED,
   THEORY_QUESTIONS_FETCHED,
@@ -24,6 +26,13 @@ class MockAuthGuard implements CanActivate {
 }
 
 describe('TheoryController', () => {
+  it('requires Clerk authentication and role checks for theory routes', () => {
+    expect(new Reflector().get(GUARDS_METADATA, TheoryController)).toEqual([
+      ClerkAuthGuard,
+      RolesGuard,
+    ]);
+  });
+
   let controller: TheoryController;
   let theoryService: {
     startSession: ReturnType<typeof vi.fn>;

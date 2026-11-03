@@ -1,5 +1,13 @@
 # Worklog
 
+## 2026-11-03 — Backend data isolation policy
+
+- Audited authenticated controllers, user/settings lookup, theory and coding session operations, analytics, webhook handling, and queue workers. Existing request paths use the verified Clerk subject for user scope; no production query change was needed.
+- Added regression assertions for theory session ownership at creation and for weak-area/score-trend query filters. Added controller metadata checks for Clerk/role guards and ADMIN-only user lookup and catalog mutations.
+- Documented the application-level ownership policy, 404 behavior, audited test inventory, and limits of mocked Prisma tests. PostgreSQL RLS remains disabled; two-user database integration coverage is follow-up work.
+- Focused verification: six affected spec files passed (114 tests). A temporary removal of the weak-area owner filter made the new assertion fail as expected; the production filter was restored.
+- Remaining backend work includes Piston isolation hardening, real-database isolation coverage/RLS decision, and RAG/PDF ingestion design.
+
 ## 2026-11-03 — Theory evaluation PII redaction
 
 - Added deterministic local redaction of recognized emails, phone numbers, Luhn-valid payment cards, Aadhaar, PAN and US SSNs to theory evaluator prompt v2. Prompt v1 remains available for historical comparison.

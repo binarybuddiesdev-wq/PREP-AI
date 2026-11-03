@@ -9,6 +9,9 @@ import {
 } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+const GUARDS_METADATA = '__guards__';
+import { Reflector } from '@nestjs/core';
+import { ROLES_KEY } from '@/common/decorators/roles.decorator.js';
 import {
   CREATE_TOPIC_SUCCESS,
   GET_TOPICS_SUCCESS,
@@ -24,6 +27,20 @@ class MockAuthGuard implements CanActivate {
 }
 
 describe('TopicController', () => {
+  it('protects topic routes with Clerk authentication and role checks', () => {
+    expect(new Reflector().get(GUARDS_METADATA, TopicController)).toEqual([
+      ClerkAuthGuard,
+      RolesGuard,
+    ]);
+  });
+
+  it('restricts topic mutations to admins', () => {
+    const reflector = new Reflector();
+    expect(reflector.get(ROLES_KEY, TopicController.prototype.createTopic)).toEqual(['ADMIN']);
+    expect(reflector.get(ROLES_KEY, TopicController.prototype.updateTopic)).toEqual(['ADMIN']);
+    expect(reflector.get(ROLES_KEY, TopicController.prototype.deleteTopic)).toEqual(['ADMIN']);
+  });
+
   let controller: TopicController;
   let topicService: {
     createTopic: ReturnType<typeof vi.fn>;

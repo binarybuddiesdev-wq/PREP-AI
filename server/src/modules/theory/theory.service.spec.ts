@@ -239,7 +239,9 @@ describe('TheoryService', () => {
         expect.any(Number)
       );
       expect(postgres.client_.theorySession.count).not.toHaveBeenCalled();
-      expect(postgres.client_.theorySession.create).toHaveBeenCalled();
+      expect(postgres.client_.theorySession.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ userId: 'user_001' }),
+      });
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -966,6 +968,9 @@ describe('TheoryService', () => {
       expect(result[0].topicName).toBe('React');
       expect(result[0].avgScore).toBe(5.5);
       expect(result[0].sessionsCount).toBe(2);
+      expect(postgres.client_.theorySession.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user_001', status: 'completed', topicId: { not: null } },
+      });
     });
 
     it('should return empty array when no weak areas', async () => {
@@ -1041,6 +1046,12 @@ describe('TheoryService', () => {
       expect(result[0].avgScore).toBe(6.5);
       expect(result[1].date).toBe('2026-07-25');
       expect(result[1].avgScore).toBe(8.0);
+      expect(postgres.client_.theorySession.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user_001', status: 'completed' },
+        orderBy: { startedAt: 'desc' },
+        take: 7,
+        select: { startedAt: true, avgScore: true },
+      });
     });
 
     it('should return empty array when no completed sessions', async () => {

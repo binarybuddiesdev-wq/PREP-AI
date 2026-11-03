@@ -4,6 +4,9 @@ import { UserService } from './user.service.js';
 import { CanActivate, ExecutionContext, NotFoundException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+const GUARDS_METADATA = '__guards__';
+import { Reflector } from '@nestjs/core';
+import { ROLES_KEY } from '@/common/decorators/roles.decorator.js';
 
 class MockAuthGuard implements CanActivate {
   canActivate(_context: ExecutionContext): boolean {
@@ -12,6 +15,19 @@ class MockAuthGuard implements CanActivate {
 }
 
 describe('UserController', () => {
+  it('protects user routes with Clerk authentication and role checks', () => {
+    expect(new Reflector().get(GUARDS_METADATA, UserController)).toEqual([
+      ClerkAuthGuard,
+      RolesGuard,
+    ]);
+  });
+
+  it('restricts cross-user lookup to admins', () => {
+    expect(new Reflector().get(ROLES_KEY, UserController.prototype.getUserByClerkId)).toEqual([
+      'ADMIN',
+    ]);
+  });
+
   let controller: UserController;
   let userService: {
     findByClerkId: ReturnType<typeof vi.fn>;
