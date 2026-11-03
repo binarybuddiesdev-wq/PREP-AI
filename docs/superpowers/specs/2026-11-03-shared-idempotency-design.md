@@ -3,20 +3,23 @@
 ## Intent
 
 Make retries of theory/coding sessions, asynchronous theory answers, coding
-executions, and PDF upload/reindex requests safe. A client that loses a
-response can repeat the same request and receive the original persisted
-operation without consuming another quota slot or enqueueing duplicate work.
+executions, PDF upload/reindex requests, and Study Chat create/send requests
+safe. A client that loses a response can repeat the same request and receive
+the original persisted operation without consuming another quota slot or
+enqueueing duplicate work.
 
 ## Goals
 
 - Define one shared key-validation and request-fingerprint policy.
 - Require `Idempotency-Key` for theory session start and answer submission,
-  coding session start and run/submit, and PDF upload/reindex.
+  coding session start and run/submit, PDF upload/reindex, and Study Chat
+  conversation create/message send.
 - Scope keys to the authenticated actor and operation resource.
 - Return the original persisted session, answer, execution, or PDF source for
   a matching replay.
 - Return HTTP 409 when a key is reused with a different request body or scope.
-- Avoid charging quotas or enqueueing duplicate jobs on a matching replay.
+- Avoid charging quotas, calling a model again, or enqueueing duplicate jobs on
+  a matching completed replay.
 - Preserve existing persisted IDs for theory answers so in-flight and historical
   rows remain addressable.
 
@@ -30,7 +33,8 @@ operation without consuming another quota slot or enqueueing duplicate work.
   are authoritative for theory and coding operations; external effects remain
   recoverable through their existing queue/state mechanisms.
 - Add relational schema changes or touch a user's database. PDF reindex adds
-  one optional MongoDB source field; existing documents remain valid.
+  one optional MongoDB source field, and Study Chat adds an operation
+  collection; existing Mongo documents remain valid.
 
 ## Approaches
 
@@ -76,6 +80,11 @@ operation without consuming another quota slot or enqueueing duplicate work.
   the persisted completed session without another transition.
 - PDF deletion is naturally retry-safe: pending retries reuse the deterministic
   cleanup job, and completed retries return the owned tombstone.
+- Study Chat keys use a durable Mongo operation claim with a five-minute lease,
+  unique per user and deterministic operation ID. Active duplicate requests
+  return 409; completed requests replay their safe response snapshot. A
+  transcript operation marker recovers turns committed before a process stops.
+  Operation snapshots are deleted with the conversation or user.
 
 ## Verification
 
@@ -86,6 +95,6 @@ coverage, and docs after the focused tests.
 
 ## Remaining work
 
-PDF deletion and other mutations can adopt this policy when their durable
-resource and external side effects can be made replay-safe. The backend tracker
-must keep the policy partial until those routes are explicitly reviewed.
+Other mutations can adopt this policy when their durable resource and external
+side effects can be made replay-safe. The backend tracker must keep the policy
+partial until those routes are explicitly reviewed.

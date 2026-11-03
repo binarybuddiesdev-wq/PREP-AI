@@ -25,23 +25,27 @@ describe('StudyChatController', () => {
   });
 
   it('creates and lists conversations for the signed-in Clerk subject', async () => {
-    await expect(controller.create('clerk-user-1', { message: 'Explain arrays' })).resolves.toEqual(
-      {
-        message: 'Conversation created',
-        data: { id: 'conversation-1' },
-      }
-    );
+    await expect(
+      controller.create('clerk-user-1', { message: 'Explain arrays' }, 'create-key-1')
+    ).resolves.toEqual({ message: 'Conversation created', data: { id: 'conversation-1' } });
     await controller.list('clerk-user-1', { cursor: undefined, limit: 20 });
 
-    expect(studyChat.createConversation).toHaveBeenCalledWith('clerk-user-1', 'Explain arrays');
+    expect(studyChat.createConversation).toHaveBeenCalledWith(
+      'clerk-user-1',
+      'Explain arrays',
+      'create-key-1'
+    );
     expect(studyChat.listConversations).toHaveBeenCalledWith('clerk-user-1', undefined, 20);
   });
 
   it('gets, continues, and deletes the conversation using the route ID and actor', async () => {
     await controller.get('507f1f77bcf86cd799439011', 'clerk-user-1');
-    await controller.sendMessage('507f1f77bcf86cd799439011', 'clerk-user-1', {
-      message: 'What is the complexity?',
-    });
+    await controller.sendMessage(
+      '507f1f77bcf86cd799439011',
+      'clerk-user-1',
+      { message: 'What is the complexity?' },
+      'turn-key-1'
+    );
     await controller.delete('507f1f77bcf86cd799439011', 'clerk-user-1');
 
     expect(studyChat.getConversation).toHaveBeenCalledWith(
@@ -51,7 +55,8 @@ describe('StudyChatController', () => {
     expect(studyChat.sendMessage).toHaveBeenCalledWith(
       'clerk-user-1',
       '507f1f77bcf86cd799439011',
-      'What is the complexity?'
+      'What is the complexity?',
+      'turn-key-1'
     );
     expect(studyChat.deleteConversation).toHaveBeenCalledWith(
       'clerk-user-1',
@@ -61,5 +66,21 @@ describe('StudyChatController', () => {
 
   it('requires Clerk authentication for the entire conversation controller', () => {
     expect(Reflect.getMetadata('__guards__', StudyChatController)).toContain(ClerkAuthGuard);
+  });
+
+  it('rejects create and send requests when the idempotency key is missing', async () => {
+    await expect(
+      controller.create('clerk-user-1', { message: 'Explain arrays' }, undefined)
+    ).rejects.toThrow('A valid Idempotency-Key header is required');
+    await expect(
+      controller.sendMessage(
+        '507f1f77bcf86cd799439011',
+        'clerk-user-1',
+        { message: 'Explain arrays' },
+        undefined
+      )
+    ).rejects.toThrow('A valid Idempotency-Key header is required');
+    expect(studyChat.createConversation).not.toHaveBeenCalled();
+    expect(studyChat.sendMessage).not.toHaveBeenCalled();
   });
 });

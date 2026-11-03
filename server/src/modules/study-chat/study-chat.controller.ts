@@ -1,8 +1,19 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '@/common/guards/clerk-auth.guard.js';
 import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe.js';
+import { requireIdempotencyKey } from '@/common/idempotency/index.js';
 import { StudyChatService } from './study-chat.service.js';
 import {
   studyChatConversationIdSchema,
@@ -19,12 +30,19 @@ export class StudyChatController {
   constructor(private readonly studyChat: StudyChatService) {}
 
   @Post()
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @ApiOperation({ summary: 'Start an interview study chat' })
   async create(
     @CurrentUser('id') clerkUserId: string,
-    @Body(new ZodValidationPipe(studyChatMessageSchema)) body: StudyChatMessageInput
+    @Body(new ZodValidationPipe(studyChatMessageSchema)) body: StudyChatMessageInput,
+    @Headers('idempotency-key') idempotencyKey: string | undefined
   ) {
-    const data = await this.studyChat.createConversation(clerkUserId, body.message);
+    const key = requireIdempotencyKey(idempotencyKey);
+    const data = await this.studyChat.createConversation(clerkUserId, body.message, key);
     return { message: 'Conversation created', data };
   }
 
@@ -50,14 +68,21 @@ export class StudyChatController {
   }
 
   @Post(':conversationId/messages')
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
   @ApiOperation({ summary: 'Send a message in an owned study chat' })
   async sendMessage(
     @Param('conversationId', new ZodValidationPipe(studyChatConversationIdSchema))
     conversationId: string,
     @CurrentUser('id') clerkUserId: string,
-    @Body(new ZodValidationPipe(studyChatMessageSchema)) body: StudyChatMessageInput
+    @Body(new ZodValidationPipe(studyChatMessageSchema)) body: StudyChatMessageInput,
+    @Headers('idempotency-key') idempotencyKey: string | undefined
   ) {
-    const data = await this.studyChat.sendMessage(clerkUserId, conversationId, body.message);
+    const key = requireIdempotencyKey(idempotencyKey);
+    const data = await this.studyChat.sendMessage(clerkUserId, conversationId, body.message, key);
     return { message: 'Study chat reply created', data };
   }
 

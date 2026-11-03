@@ -1,5 +1,21 @@
 # Worklog
 
+## 2026-11-03 - Study Chat retry safety
+
+- Added required `Idempotency-Key` handling to conversation creation and message
+  sends. MongoDB operation claims use actor and operation scope, request
+  fingerprints, five-minute leases, safe response replay, and transcript markers
+  for recovery after an interrupted request. Internal markers are removed from
+  API responses and operation records are removed with conversations/users.
+- Documented retry behavior, conflict responses, lease recovery, and Mongo
+  schema setup in the Study Chat API and backend tracker.
+- Verification: full server gate passed (758 tests, 90.08% branch coverage);
+  real Mongo database isolation passed (28 tests), including concurrent
+  unique-claim and user-data cleanup checks. Architecture viewer check and
+  `git diff --check` passed. Review found a lease-expiry overlap risk; claims
+  now renew while model generation runs and abort on a lost lease. Follow-up
+  review found no remaining Critical or Important issues.
+
 ## 2026-11-03 - Persistent Study Chat
 
 - Added a dedicated authenticated Mastra study-coach API for persistent,

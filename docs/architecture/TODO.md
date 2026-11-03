@@ -1,4 +1,4 @@
-# Architecture Documentation — TODO
+# Architecture Documentation â€” TODO
 
 > **Purpose:** explicit list of every architecture doc / artifact that is
 > **NOT YET WRITTEN**. Created because the system design folder currently
@@ -7,7 +7,7 @@
 > implementation, and rollout work that needs dedicated documentation.
 >
 > **If you're an AI agent reading this repo:** do not assume the architecture
-> is fully designed. Check this list before recommending any change — the
+> is fully designed. Check this list before recommending any change â€” the
 > missing docs are where the real complexity lives.
 >
 > **If you're a contributor:** pick any item with a `[Stub]` or `[Missing]`
@@ -18,10 +18,10 @@
 
 ## Status legend
 
-- `[Done]` — written and reviewed
-- `[Stub]` — placeholder exists, needs to be filled in
-- `[Missing]` — not started, outline below
-- `[Designed]` — baseline design is documented; implementation and any listed open decisions remain.
+- `[Done]` â€” written and reviewed
+- `[Stub]` â€” placeholder exists, needs to be filled in
+- `[Missing]` â€” not started, outline below
+- `[Designed]` â€” baseline design is documented; implementation and any listed open decisions remain.
 
 ---
 
@@ -29,38 +29,38 @@
 
 The following are present and reasonably complete:
 
-- C4 diagrams (context, container, component) — `diagrams/c4-*.mmd`
-- 3 sequence diagrams (auth, theory AI, coding) — `diagrams/seq-*.mmd`
+- C4 diagrams (context, container, component) â€” `diagrams/c4-*.mmd`
+- 3 sequence diagrams (auth, theory AI, coding) â€” `diagrams/seq-*.mmd`
 - 6 ADRs (polyglot, webhook, pgvector, bullmq, redis quota, defer firecracker)
-- Service catalog — `services.md`
-- Non-functional requirements — `nfrs.md`
-- Plain-English glossary — `terms-glossary.md`
-- Build script + viewer — `viewer.html` + `scripts/build-architecture-viewer.ts`
-- Operator manual for the docs themselves — `BUILDING.md`
+- Service catalog â€” `services.md`
+- Non-functional requirements â€” `nfrs.md`
+- Plain-English glossary â€” `terms-glossary.md`
+- Build script + viewer â€” `viewer.html` + `scripts/build-architecture-viewer.ts`
+- Operator manual for the docs themselves â€” `BUILDING.md`
 
 ---
 
-## What is NOT done — the gap
+## What is NOT done â€” the gap
 
 These topics describe open design, implementation, and rollout work. They are
-**not optional polish** — each one describes a real
+**not optional polish** â€” each one describes a real
 design decision that has to be made before the feature ships.
 
-| #   | Topic                          | Status                                                                                                         | Priority | Why it matters                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Caching strategy               | `[Partial]` ([design](../superpowers/specs/2026-11-03-topic-cache-design.md))                                  | Medium   | Topic list and detail reads use shared Redis caching with a 60-second TTL, exact write invalidation, and MongoDB fallback. User-specific and frequently changing data remain uncached. Cache hit/miss metrics and profiling before expanding coverage remain open.                                                                                                                                                                                                                                   |
-| 2   | Background jobs / queue design | `[Done]` ([background-jobs.md](background-jobs.md))                                                            | High     | Coding, theory evaluation, PDF ingestion, PDF question generation, and coding review consumers are implemented; email and payment consumers remain unimplemented.                                                                                                                                                                                                                                                                                                                                    |
-| 3   | AI evaluation pipeline         | `[Stub]` (provider failover and durable theory evaluation in place)                                            | High     | Provider failover (NVIDIA → Groq), structured theory evaluation, input bounds, untrusted-content handling, per-answer provider/model/prompt provenance, and role-based daily token budgets are in place. Prompt v2 locally redacts recognized email, phone, payment-card, Aadhaar, PAN, and US SSN patterns; names, free-form addresses, and unrecognized formats may remain. The Mastra comparison harness and 50-case synthetic baseline are implemented; labels still need subject-matter review. |
-| 4   | RAG pipeline                   | `[Implemented v1]` ([design](../superpowers/specs/2026-11-03-pdf-ingestion-rag-design.md))                     | Medium   | PDF.js extraction, private Cloudinary storage, BullMQ indexing/question generation, NVIDIA embeddings, pgvector retrieval, revisioned citations, and RLS SQL are implemented. OCR is out of scope. Validate provider availability, apply PostgreSQL schema/RLS scripts, and run the restricted-role integration suite before production rollout.                                                                                                                                                     |
-| 5   | Piston isolation               | `[Done]` ([runbook](../runbooks/piston.md), [ADR-0006](../adr/0006-defer-firecracker-isolation.md))            | High     | The local runner applies explicit Piston and Podman resource limits and has an operator runbook. The privileged local container is not a production tenant boundary; stronger isolation and live host-level validation remain required before public production execution.                                                                                                                                                                                                                           |
-| 6   | Multi-tenancy / data isolation | `[Partial]` ([data-isolation.md](data-isolation.md), [ADR-0012](../adr/0012-postgresql-row-level-security.md)) | High     | Application ownership policy and real two-user coverage for Mongo user/settings mutations, PostgreSQL theory/coding queries, PDF vector owner/source/revision policies, coding worker session updates, and queued coding-review dispatch claims are in place in the disposable restricted-role harness. Applying policies, configuring runtime roles, and verifying them in staging remain rollout requirements. Internal worker evaluation remains unit-tested.                                     |
-| 7   | Idempotency                    | `[Partial]` (theory session start/answers, coding session start/run/submit, PDF upload/reindex covered)        | High     | These operations require bounded `Idempotency-Key` values, scope them to the actor and operation, and replay matching durable records without repeating queue/quota work. Theory/coding completion and PDF deletion are naturally retry-safe. PDF reindex retains the latest 100 operations per source. Other mutations and retention policy remain open. See [shared idempotency design](../superpowers/specs/2026-11-03-shared-idempotency-design.md).                                             |
-| 8   | Observability                  | `[Partial]` ([observability.md](../observability.md))                                                          | Medium   | Pino logging, health endpoints, authenticated Prometheus HTTP metrics, and successful AI provider failover counts exist. Correlation IDs, additional application metrics, tracing, error tracking, and audit-log implementation remain open.                                                                                                                                                                                                                                                         |
-| 9   | Payment state machine          | `[Missing]`                                                                                                    | Medium   | Razorpay flow has no doc covering state machine, webhook idempotency, reconciliation, subscription handling.                                                                                                                                                                                                                                                                                                                                                                                         |
-| 10  | Notifications                  | `[Partial]` ([API](../../routes/notifications-api-spec.md), [background jobs](background-jobs.md))             | Low      | Authenticated in-app inbox, per-user pagination/read/delete, 90-day retention cleanup, and idempotent in-app daily reminders are implemented alongside Resend email reminders. Live sender/domain validation and frontend inbox UI remain open.                                                                                                                                                                                                                                                      |
-| 11  | Disaster recovery              | `[Partial]` ([runbook](../runbooks/disaster-recovery.md))                                                      | Medium   | Restore sequence and provider prerequisites are documented. Backup-provider setup, retention verification, and a successful isolated restore drill remain required before production.                                                                                                                                                                                                                                                                                                                |
-| 12  | Per-service runbooks           | `[Done]` ([runbooks](../runbooks/))                                                                            | High     | API, web, Piston, worker, MongoDB, PostgreSQL, and Redis have operator guides. Provider-specific production rollback and alert procedures must be filled in when providers are selected.                                                                                                                                                                                                                                                                                                             |
-| 13  | Threat model                   | `[Done]` ([STRIDE model](threat-model.md))                                                                     | High     | The model records current controls and residual risks. Review it when routes, stores, queues, providers, or privilege boundaries change; it is not a penetration test or security certification.                                                                                                                                                                                                                                                                                                     |
+| #   | Topic                          | Status                                                                                                         | Priority | Why it matters                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Caching strategy               | `[Partial]` ([design](../superpowers/specs/2026-11-03-topic-cache-design.md))                                  | Medium   | Topic list and detail reads use shared Redis caching with a 60-second TTL, exact write invalidation, and MongoDB fallback. User-specific and frequently changing data remain uncached. Cache hit/miss metrics and profiling before expanding coverage remain open.                                                                                                                                                                                                                                                                            |
+| 2   | Background jobs / queue design | `[Done]` ([background-jobs.md](background-jobs.md))                                                            | High     | Coding, theory evaluation, PDF ingestion, PDF question generation, and coding review consumers are implemented; email and payment consumers remain unimplemented.                                                                                                                                                                                                                                                                                                                                                                             |
+| 3   | AI evaluation pipeline         | `[Stub]` (provider failover and durable theory evaluation in place)                                            | High     | Provider failover (NVIDIA â†’ Groq), structured theory evaluation, input bounds, untrusted-content handling, per-answer provider/model/prompt provenance, and role-based daily token budgets are in place. Prompt v2 locally redacts recognized email, phone, payment-card, Aadhaar, PAN, and US SSN patterns; names, free-form addresses, and unrecognized formats may remain. The Mastra comparison harness and 50-case synthetic baseline are implemented; labels still need subject-matter review.                                        |
+| 4   | RAG pipeline                   | `[Implemented v1]` ([design](../superpowers/specs/2026-11-03-pdf-ingestion-rag-design.md))                     | Medium   | PDF.js extraction, private Cloudinary storage, BullMQ indexing/question generation, NVIDIA embeddings, pgvector retrieval, revisioned citations, and RLS SQL are implemented. OCR is out of scope. Validate provider availability, apply PostgreSQL schema/RLS scripts, and run the restricted-role integration suite before production rollout.                                                                                                                                                                                              |
+| 5   | Piston isolation               | `[Done]` ([runbook](../runbooks/piston.md), [ADR-0006](../adr/0006-defer-firecracker-isolation.md))            | High     | The local runner applies explicit Piston and Podman resource limits and has an operator runbook. The privileged local container is not a production tenant boundary; stronger isolation and live host-level validation remain required before public production execution.                                                                                                                                                                                                                                                                    |
+| 6   | Multi-tenancy / data isolation | `[Partial]` ([data-isolation.md](data-isolation.md), [ADR-0012](../adr/0012-postgresql-row-level-security.md)) | High     | Application ownership policy and real two-user coverage for Mongo user/settings mutations, PostgreSQL theory/coding queries, PDF vector owner/source/revision policies, coding worker session updates, and queued coding-review dispatch claims are in place in the disposable restricted-role harness. Applying policies, configuring runtime roles, and verifying them in staging remain rollout requirements. Internal worker evaluation remains unit-tested.                                                                              |
+| 7   | Idempotency                    | `[Partial]` (theory, coding, PDF, and Study Chat create/send covered)                                          | High     | These operations require bounded `Idempotency-Key` values, scope them to the actor and operation, and replay matching durable records without repeating queue/quota work. Theory/coding completion and PDF deletion are naturally retry-safe. PDF reindex retains the latest 100 operations per source; Study Chat uses a five-minute Mongo claim lease renewed while model generation runs. Other mutations and retention policy remain open. See [shared idempotency design](../superpowers/specs/2026-11-03-shared-idempotency-design.md). |
+| 8   | Observability                  | `[Partial]` ([observability.md](../observability.md))                                                          | Medium   | Pino logging, health endpoints, authenticated Prometheus HTTP metrics, and successful AI provider failover counts exist. Correlation IDs, additional application metrics, tracing, error tracking, and audit-log implementation remain open.                                                                                                                                                                                                                                                                                                  |
+| 9   | Payment state machine          | `[Missing]`                                                                                                    | Medium   | Razorpay flow has no doc covering state machine, webhook idempotency, reconciliation, subscription handling.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 10  | Notifications                  | `[Partial]` ([API](../../routes/notifications-api-spec.md), [background jobs](background-jobs.md))             | Low      | Authenticated in-app inbox, per-user pagination/read/delete, 90-day retention cleanup, and idempotent in-app daily reminders are implemented alongside Resend email reminders. Live sender/domain validation and frontend inbox UI remain open.                                                                                                                                                                                                                                                                                               |
+| 11  | Disaster recovery              | `[Partial]` ([runbook](../runbooks/disaster-recovery.md))                                                      | Medium   | Restore sequence and provider prerequisites are documented. Backup-provider setup, retention verification, and a successful isolated restore drill remain required before production.                                                                                                                                                                                                                                                                                                                                                         |
+| 12  | Per-service runbooks           | `[Done]` ([runbooks](../runbooks/))                                                                            | High     | API, web, Piston, worker, MongoDB, PostgreSQL, and Redis have operator guides. Provider-specific production rollback and alert procedures must be filled in when providers are selected.                                                                                                                                                                                                                                                                                                                                                      |
+| 13  | Threat model                   | `[Done]` ([STRIDE model](threat-model.md))                                                                     | High     | The model records current controls and residual risks. Review it when routes, stores, queues, providers, or privilege boundaries change; it is not a penetration test or security certification.                                                                                                                                                                                                                                                                                                                                              |
 
 ---
 
@@ -69,7 +69,7 @@ design decision that has to be made before the feature ships.
 Each missing doc should follow the same shape: **Context, Decision,
 Consequences, Open Questions**. Use the existing ADRs as a template.
 
-### 1. Caching strategy — initial policy implemented
+### 1. Caching strategy â€” initial policy implemented
 
 The initial shared Redis cache covers only topic lists and topic details, with
 known-key invalidation after admin writes and a 60-second TTL. MongoDB remains
@@ -141,20 +141,22 @@ mocked Prisma tests prove database enforcement.
 
 ### 7. Idempotency
 
-The implemented policy covers theory session/answer creation and coding
-session creation/run/submit:
+The implemented policy covers theory session/answer creation, coding session
+creation/run/submit, PDF upload/reindex, and Study Chat create/send:
 bounded keys, durable record replay, 409 on payload mismatch, and no duplicate
 queue or quota work for persisted replays. Theory and coding completion also
 return the durable completed state on retries. Theory answer IDs preserve their
 existing format; theory session, coding session, and coding execution IDs are
-actor-scoped. PDF reindex retains its 100 latest operations per source; other
-mutations remain open. See the
+actor-scoped. PDF reindex retains its 100 latest operations per source.
+Study Chat uses owner-scoped Mongo operation claims with five-minute leases
+renewed during model generation, safe response snapshots, and transcript
+markers for recovery after process interruption. Other mutations remain open. See the
 [shared idempotency design](../superpowers/specs/2026-11-03-shared-idempotency-design.md).
 
 ### 8. Observability
 
 Structured logging via pino with `X-Request-Id` propagated through
-webhook → service → AI → DB. HTTP duration and in-flight metrics via
+webhook â†’ service â†’ AI â†’ DB. HTTP duration and in-flight metrics via
 Prometheus; application-specific metrics remain open. OpenTelemetry traces.
 Sentry for unhandled
 exceptions. External uptime probe (BetterStack / Cronitor) every 60s.
@@ -163,7 +165,7 @@ Audit log for payments, role changes, erasure requests (append-only,
 
 ### 9. Payment state machine
 
-`Payment.status`: CREATED → PENDING → COMPLETED / FAILED / REFUNDED /
+`Payment.status`: CREATED â†’ PENDING â†’ COMPLETED / FAILED / REFUNDED /
 EXPIRED. Webhook: HMAC verify Razorpay signature, idempotent on
 `paymentId`. Server-side order creation (client never trusts price).
 Subscription vs one-time (Razorpay Subscriptions API for monthly/yearly).
@@ -230,7 +232,7 @@ When asked to "add a feature" or "make an architecture change":
 1. Read this file first to see if a relevant design doc already exists
    or is missing.
 2. If the doc is `[Missing]`, you may need to write it as part of the
-   feature work — do that before coding.
+   feature work â€” do that before coding.
 3. If the doc is `[Stub]`, fill it in.
 4. If the doc is `[Done]`, read it and follow it.
 5. Never assume "the architecture is done" without checking this list.

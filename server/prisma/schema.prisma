@@ -63,6 +63,24 @@ model StudyChatConversation {
   @@index([userId, updatedAt, id])
 }
 
+model StudyChatOperation {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String
+  operationId        String
+  scope              String
+  requestFingerprint String
+  status             String   @default("PROCESSING")
+  leaseToken         String
+  leaseExpiresAt     DateTime
+  conversationId     String?  @db.ObjectId
+  response           Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([userId, operationId])
+  @@index([userId, conversationId])
+}
+
 model PdfSource {
   id                String    @id @default(auto()) @map("_id") @db.ObjectId
   userId            String

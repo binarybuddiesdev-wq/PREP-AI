@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../src/modules/user/user.service.js';
 import { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
 import { StudyChatService } from '../../src/modules/study-chat/study-chat.service.js';
+import { StudyChatIdempotencyService } from '../../src/modules/study-chat/study-chat-idempotency.service.js';
 import {
   connectIsolationTestDatabases,
   createIntegrationLogger,
@@ -17,6 +18,7 @@ describe('MongoDB user data isolation', () => {
   let service: UserService;
   let notifications: NotificationsService;
   let studyChat: StudyChatService;
+  let studyChatIdempotency: StudyChatIdempotencyService;
 
   beforeAll(async () => {
     database = await connectIsolationTestDatabases();
@@ -29,9 +31,11 @@ describe('MongoDB user data isolation', () => {
       createIntegrationLogger() as never,
       null
     );
+    studyChatIdempotency = new StudyChatIdempotencyService(database.mongo);
     studyChat = new StudyChatService(
       database.mongo,
       { generateReply: vi.fn().mockResolvedValue('A study coach response.') } as never,
+      studyChatIdempotency,
       createIntegrationLogger() as never
     );
 
@@ -49,6 +53,7 @@ describe('MongoDB user data isolation', () => {
     if (!database) return;
     if (users) {
       const userIds = [users.userA.id, users.userB.id];
+      await database.mongo.studyChatOperation.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.studyChatConversation.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.inAppNotification.deleteMany({ where: { userId: { in: userIds } } });
       await database.mongo.userSettings.deleteMany({ where: { userId: { in: userIds } } });
@@ -124,9 +129,16 @@ describe('MongoDB user data isolation', () => {
 
   it('isolates study chat conversations and turns between two users', async () => {
     const [conversationA, conversationB] = await Promise.all([
-      studyChat.createConversation(users!.userA.clerkUserId, 'Explain binary search'),
-      studyChat.createConversation(users!.userB.clerkUserId, 'Explain hash maps'),
+      studyChat.createConversation(users!.userA.clerkUserId, 'Explain binary search', 'same-key'),
+      studyChat.createConversation(users!.userB.clerkUserId, 'Explain hash maps', 'same-key'),
     ]);
+    const replayedA = await studyChat.createConversation(
+      users!.userA.clerkUserId,
+      'Explain binary search',
+      'same-key'
+    );
+    expect(replayedA.id).toBe(conversationA.id);
+    expect(replayedA.turnCount).toBe(1);
     const pageA = await studyChat.listConversations(users!.userA.clerkUserId);
     const pageB = await studyChat.listConversations(users!.userB.clerkUserId);
 
@@ -136,7 +148,7 @@ describe('MongoDB user data isolation', () => {
       studyChat.getConversation(users!.userB.clerkUserId, conversationA.id)
     ).rejects.toThrow('Conversation not found');
     await expect(
-      studyChat.sendMessage(users!.userB.clerkUserId, conversationA.id, 'Follow up')
+      studyChat.sendMessage(users!.userB.clerkUserId, conversationA.id, 'Follow up', 'foreign-key')
     ).rejects.toThrow('Conversation not found');
     await expect(
       studyChat.deleteConversation(users!.userB.clerkUserId, conversationA.id)
@@ -145,10 +157,43 @@ describe('MongoDB user data isolation', () => {
     const continued = await studyChat.sendMessage(
       users!.userA.clerkUserId,
       conversationA.id,
-      'What is its time complexity?'
+      'What is its time complexity?',
+      'turn-key-a'
     );
     expect(continued.turnCount).toBe(2);
     expect(continued.messages).toHaveLength(4);
+    await expect(
+      database!.mongo.studyChatOperation.findMany({ where: { userId: users!.userA.id } })
+    ).resolves.toHaveLength(2);
+    await expect(
+      database!.mongo.studyChatOperation.findMany({ where: { userId: users!.userB.id } })
+    ).resolves.toHaveLength(1);
+  });
+
+  it('allows only one concurrent Mongo operation claim for the same user/key', async () => {
+    const input = {
+      clerkUserId: users!.userA.clerkUserId,
+      userId: users!.userA.id,
+      scope: 'study-chat:test-claim-race',
+      key: 'same-concurrent-key',
+      requestFingerprint: 'same-request-fingerprint',
+    };
+    const results = await Promise.allSettled([
+      studyChatIdempotency.claim(input),
+      studyChatIdempotency.claim(input),
+    ]);
+    const winner = results.find((result) => result.status === 'fulfilled');
+
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
+    expect(winner?.status).toBe('fulfilled');
+    if (winner?.status !== 'fulfilled' || winner.value.kind !== 'claimed') return;
+    await studyChatIdempotency.release(winner.value.claim);
+    await expect(
+      database!.mongo.studyChatOperation.findMany({
+        where: { userId: users!.userA.id, operationId: winner.value.claim.operationId },
+      })
+    ).resolves.toEqual([]);
   });
 
   it('updates, completes setup, and deletes one user without changing the other user', async () => {
@@ -173,11 +218,17 @@ describe('MongoDB user data isolation', () => {
     await expect(
       database!.mongo.studyChatConversation.findMany({ where: { userId: users!.userA.id } })
     ).resolves.toEqual([]);
+    await expect(
+      database!.mongo.studyChatOperation.findMany({ where: { userId: users!.userA.id } })
+    ).resolves.toEqual([]);
     await expect(service.findByClerkId(users!.userB.clerkUserId)).resolves.toMatchObject({
       clerkUserId: users!.userB.clerkUserId,
     });
     await expect(
       database!.mongo.studyChatConversation.findMany({ where: { userId: users!.userB.id } })
+    ).resolves.toHaveLength(1);
+    await expect(
+      database!.mongo.studyChatOperation.findMany({ where: { userId: users!.userB.id } })
     ).resolves.toHaveLength(1);
     await expect(service.getSettings(users!.userB.clerkUserId)).resolves.toMatchObject({
       preferences: { ownerMarker: 'user-b' },

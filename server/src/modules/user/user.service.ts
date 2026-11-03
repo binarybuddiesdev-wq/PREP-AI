@@ -159,6 +159,9 @@ export class UserService {
     await this.prisma.studyChatConversation.deleteMany({
       where: { userId: user.id },
     });
+    await this.prisma.studyChatOperation.deleteMany({
+      where: { userId: user.id },
+    });
 
     await this.prisma.user.delete({
       where: { clerkUserId },

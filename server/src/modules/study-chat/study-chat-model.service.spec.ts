@@ -74,6 +74,21 @@ describe('StudyChatModelService', () => {
     );
   });
 
+  it('passes lease-loss cancellation through to the active provider request', async () => {
+    const controller = new AbortController();
+
+    await service.generateReply(
+      'clerk-user-1',
+      [{ role: 'user', content: 'Explain queues' }],
+      controller.signal
+    );
+
+    expect(agent.generate).toHaveBeenCalledWith(
+      [{ role: 'user', content: 'Explain queues' }],
+      expect.objectContaining({ abortSignal: controller.signal })
+    );
+  });
+
   it('fails when the model returns an empty response', async () => {
     agent.generate.mockResolvedValueOnce({ text: '  ' });
 

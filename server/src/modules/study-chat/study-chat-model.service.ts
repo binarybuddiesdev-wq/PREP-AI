@@ -19,7 +19,11 @@ export class StudyChatModelService {
     @InjectPinoLogger(StudyChatModelService.name) private readonly logger: PinoLogger
   ) {}
 
-  async generateReply(clerkUserId: string, messages: StudyChatPromptMessage[]): Promise<string> {
+  async generateReply(
+    clerkUserId: string,
+    messages: StudyChatPromptMessage[],
+    signal?: AbortSignal
+  ): Promise<string> {
     const estimatedTokens =
       messages.reduce((total, message) => {
         const content =
@@ -40,6 +44,7 @@ export class StudyChatModelService {
         this.agent.generate(messages, {
           model: getModel(provider),
           modelSettings: { maxOutputTokens: 1_500 },
+          ...(signal ? { abortSignal: signal } : {}),
         }),
       (from, to) => this.metrics.recordProviderFailover(from, to)
     );

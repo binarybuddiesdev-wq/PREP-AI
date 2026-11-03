@@ -10,6 +10,7 @@ every database operation.
 
 ```http
 POST /study-chat/conversations
+Idempotency-Key: 9dc7e1f4-create-1
 Content-Type: application/json
 
 {"message":"Explain binary search and give me a practice question."}
@@ -45,12 +46,12 @@ the first message and truncated to 80 characters.
 
 ## List, read, continue, and delete
 
-| Method   | Route                                                | Behavior                                                                     |
-| -------- | ---------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `GET`    | `/study-chat/conversations?cursor=<id>&limit=20`     | Newest-updated conversations, default 20 per page, maximum 50.               |
-| `GET`    | `/study-chat/conversations/:conversationId`          | Owned transcript and conversation metadata.                                  |
-| `POST`   | `/study-chat/conversations/:conversationId/messages` | Body `{ "message": "..." }`; returns updated transcript and assistant reply. |
-| `DELETE` | `/study-chat/conversations/:conversationId`          | Deletes the owned conversation.                                              |
+| Method   | Route                                                | Behavior                                                                                                 |
+| -------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/study-chat/conversations?cursor=<id>&limit=20`     | Newest-updated conversations, default 20 per page, maximum 50.                                           |
+| `GET`    | `/study-chat/conversations/:conversationId`          | Owned transcript and conversation metadata.                                                              |
+| `POST`   | `/study-chat/conversations/:conversationId/messages` | Requires `Idempotency-Key`; body `{ "message": "..." }`; returns updated transcript and assistant reply. |
+| `DELETE` | `/study-chat/conversations/:conversationId`          | Deletes the owned conversation.                                                                          |
 
 Message text is trimmed and must contain 1 to 4,000 characters. Each
 conversation allows 30 user turns. The stored transcript holds up to 60
@@ -58,19 +59,33 @@ messages; at most the latest 20 messages are included in the next Mastra call.
 Start a new conversation after the turn limit. Concurrent updates use a
 revision check; a request that loses the race receives 409 and must be retried.
 
-Invalid body, cursor, or Mongo ObjectId returns 400. Missing and foreign
-conversation IDs both return 404. If both AI providers fail, the API returns a
-safe 503 response; provider details remain in server logs. Users may delete
+Both POST routes require an `Idempotency-Key` containing 1-128 visible ASCII
+characters. Generate a new key for each distinct action and reuse it for
+retries. A matching completed request returns its saved response without
+another model call or token reservation. Reusing a key with different message
+content returns 409. A duplicate that arrives while its matching request is
+still running also returns 409; retry with the same key using backoff. The
+processing claim expires after five minutes and is renewed every minute while
+the provider request runs. If renewal fails, the model request is aborted and
+the API returns a retryable conflict. If the process stops, the next retry can
+recover any transcript turn already saved after the remaining lease expires.
+
+Invalid body, missing/invalid key, cursor, or Mongo ObjectId returns 400.
+Missing and foreign conversation IDs both return 404. If both AI providers
+fail, the API returns a safe 503 response; provider details remain in server
+logs and the operation claim is released for retry. Users may delete
 conversations at any time, and account deletion removes that user's stored
-conversations. Each model call reserves against the same role-based daily AI
-token quota used by theory evaluation (`AI_DAILY_TOKENS_FREE` and
-`AI_DAILY_TOKENS_PREMIUM`). Requests over quota return 429; successful calls
-settle the reservation using provider-reported token usage when available.
+conversations and operation records. Each model call reserves against the same
+role-based daily AI token quota used by theory evaluation
+(`AI_DAILY_TOKENS_FREE` and `AI_DAILY_TOKENS_PREMIUM`). Requests over quota
+return 429; successful calls settle the reservation using provider-reported
+token usage when available.
 
 ## Storage rollout
 
-The Mongo schema creates the conversation collection and owner/update-time
-index. Apply it to the intended database before deploying the API:
+The Mongo schema creates the conversation and operation collections. It adds a
+unique user/operation index for claims and an owner/conversation lookup index.
+Apply it to the intended database before deploying the API:
 
 ```bash
 pnpm --filter server prisma:push:mongodb
@@ -81,4 +96,5 @@ Set `DATABASE_URL` to the target MongoDB database when running the command.
 The Study Chat module uses the registered Mastra study-coach agent and the
 existing NVIDIA/Groq provider failover path. It stores bounded application
 conversation history in Mongo; it does not enable Mastra's optional semantic or
-observational memory features.
+observational memory features. Operation response snapshots live as long as the
+conversation and are removed with it.
