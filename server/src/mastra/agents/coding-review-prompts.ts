@@ -1,4 +1,4 @@
-export const CODING_REVIEW_PROMPT_VERSION = 'coding-review-v1';
+export const CODING_REVIEW_PROMPT_VERSION = 'coding-review-v2';
 
 export interface ICodingReviewPromptInput {
   title: string;

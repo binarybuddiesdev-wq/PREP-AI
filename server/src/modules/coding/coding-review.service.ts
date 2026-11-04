@@ -3,9 +3,16 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { z } from 'zod';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { CODING_DATABASE_UNAVAILABLE } from '@/common/constants/api.constants.js';
+import { TheoryAiTokenBudgetService } from '@/modules/theory/theory-ai-token-budget.service.js';
 import { PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { mastra } from '../../mastra/mastra.config.js';
 import { chatWithFailover, defaultModel, getModel } from '../../mastra/providers.js';
+import {
+  createPromptInjectionGuard,
+  estimatePromptInjectionGuardTokens,
+  isPromptInjectionGuardFailure,
+  PromptInjectionBlockedError,
+} from '../../mastra/prompt-injection-guard.js';
 import {
   buildCodingReviewPrompt,
   CODING_REVIEW_PROMPT_VERSION,
@@ -28,7 +35,8 @@ export class CodingReviewService {
   constructor(
     private readonly postgres: PrismaPostgresqlService,
     @InjectPinoLogger(CodingReviewService.name) private readonly logger: PinoLogger,
-    private readonly metrics: MetricsService
+    private readonly metrics: MetricsService,
+    private readonly tokenBudget: TheoryAiTokenBudgetService
   ) {}
 
   async review(executionId: string): Promise<void> {
@@ -60,6 +68,7 @@ export class CodingReviewService {
       if (!problem) return null;
       const runResult = (execution.result ?? {}) as Record<string, unknown>;
       return {
+        ownerId: owner.owner_id,
         answer,
         problem,
         language: execution.language,
@@ -93,23 +102,58 @@ export class CodingReviewService {
       testCasesPassed: context.testCasesPassed,
       testCasesTotal: context.testCasesTotal,
     });
-    const generated = await chatWithFailover(
-      async (provider) => ({
-        provider,
-        result: codingReviewSchema.parse(
-          (
-            await agent.generate(prompt, {
-              model: getModel(provider),
-              modelSettings: { maxOutputTokens: 1_024 },
-              structuredOutput: { schema: codingReviewSchema, jsonPromptInjection: true },
-            })
-          ).object
-        ),
-      }),
-      (from, to) => this.metrics.recordProviderFailover(from, to),
-      (provider, fallback, duration) =>
-        this.metrics.recordMastraAgentDuration('coding_review', provider, fallback, duration)
+    const guardTokens = estimatePromptInjectionGuardTokens(prompt);
+    const perProviderTokens =
+      Math.ceil(Buffer.byteLength(prompt, 'utf8') / 4) + 1_024 + guardTokens;
+    const reservedTokens = perProviderTokens * 2;
+    const reservation = await this.tokenBudget.reserve(
+      context.ownerId,
+      executionId,
+      reservedTokens
     );
+    if (!reservation.allowed) {
+      await this.markFailed(executionId);
+      return;
+    }
+
+    let injectionDetected = false;
+    let generated: { result: ICodingReviewResult; provider: 'nvidia' | 'groq' };
+    try {
+      generated = await chatWithFailover(
+        async (provider) => {
+          if (injectionDetected) throw new PromptInjectionBlockedError();
+          const response = await agent.generate(prompt, {
+            model: getModel(provider),
+            inputProcessors: [
+              createPromptInjectionGuard(provider, ({ flagged }) => {
+                if (flagged) injectionDetected = true;
+              }),
+            ],
+            modelSettings: { maxOutputTokens: 1_024 },
+            structuredOutput: { schema: codingReviewSchema, jsonPromptInjection: true },
+          });
+          if (injectionDetected) throw new PromptInjectionBlockedError();
+          return { provider, result: codingReviewSchema.parse(response.object) };
+        },
+        (from, to) => this.metrics.recordProviderFailover(from, to),
+        (provider, fallback, duration) =>
+          this.metrics.recordMastraAgentDuration('coding_review', provider, fallback, duration)
+      );
+    } catch (error) {
+      if (injectionDetected || error instanceof PromptInjectionBlockedError) {
+        await this.markFailed(executionId);
+        return;
+      }
+      if (isPromptInjectionGuardFailure(error)) {
+        this.logger.warn({ executionId }, 'Coding review prompt-injection check failed closed');
+      }
+      throw error;
+    }
+    try {
+      await this.tokenBudget.settle(reservation, reservedTokens);
+    } catch (error) {
+      this.logger.warn({ executionId, err: error }, 'Could not settle coding review token usage');
+    }
     await this.persistReview(executionId, context.answer.id, generated.result, generated.provider);
   }
 

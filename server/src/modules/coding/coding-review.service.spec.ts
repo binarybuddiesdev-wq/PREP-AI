@@ -2,7 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/postgresql-client/index.js';
 
-const mocks = vi.hoisted(() => ({ generate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ generate: vi.fn(), onDetection: undefined as unknown }));
 
 vi.mock('../../mastra/mastra.config.js', () => ({
   mastra: { getAgent: () => ({ generate: mocks.generate }) },
@@ -10,14 +10,39 @@ vi.mock('../../mastra/mastra.config.js', () => ({
 vi.mock('../../mastra/providers.js', () => ({
   chatWithFailover: async (
     run: (provider: 'nvidia' | 'groq') => Promise<unknown>,
-    onFailover?: (from: 'nvidia' | 'groq', to: 'nvidia' | 'groq') => unknown
+    onFailover?: (from: 'nvidia' | 'groq', to: 'nvidia' | 'groq') => unknown,
+    onAttempt?: (provider: 'nvidia' | 'groq', fallback: boolean, duration: number) => unknown
   ) => {
-    const value = await run('nvidia');
-    void onFailover;
-    return value;
+    try {
+      const result = await run('nvidia');
+      void onAttempt?.('nvidia', false, 0);
+      return result;
+    } catch (error) {
+      void onAttempt?.('nvidia', false, 0);
+      try {
+        const result = await run('groq');
+        void onFailover?.('nvidia', 'groq');
+        void onAttempt?.('groq', true, 0);
+        return result;
+      } catch (fallbackError) {
+        void onAttempt?.('groq', true, 0);
+        throw fallbackError ?? error;
+      }
+    }
   },
   defaultModel: { nvidia: () => 'model/nvidia', groq: () => 'model/groq' },
   getModel: (provider: string) => `${provider}-model`,
+}));
+vi.mock('../../mastra/prompt-injection-guard.js', () => ({
+  createPromptInjectionGuard: vi.fn((_provider, onDetection) => {
+    mocks.onDetection = onDetection;
+    return { id: 'prompt-injection-detector' };
+  }),
+  estimatePromptInjectionGuardTokens: (input: string) =>
+    Math.ceil(Buffer.byteLength(input, 'utf8') / 4) + 512,
+  isPromptInjectionGuardFailure: (error: unknown) =>
+    error instanceof Error && error.message.includes('Prompt injection detection failed'),
+  PromptInjectionBlockedError: class PromptInjectionBlockedError extends Error {},
 }));
 
 describe('CodingReviewService', () => {
@@ -50,11 +75,20 @@ describe('CodingReviewService', () => {
     warn: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
   };
-  let metrics: { recordProviderFailover: ReturnType<typeof vi.fn> };
+  let metrics: {
+    recordProviderFailover: ReturnType<typeof vi.fn>;
+    recordMastraAgentDuration: ReturnType<typeof vi.fn>;
+  };
+  let tokenBudget: { reserve: ReturnType<typeof vi.fn>; settle: ReturnType<typeof vi.fn> };
 
   const createService = async () => {
     const { CodingReviewService } = await import('./coding-review.service.js');
-    return new CodingReviewService(postgres as never, logger as never, metrics as never);
+    return new CodingReviewService(
+      postgres as never,
+      logger as never,
+      metrics as never,
+      tokenBudget as never
+    );
   };
 
   beforeEach(() => {
@@ -92,7 +126,20 @@ describe('CodingReviewService', () => {
       setWorkerSessionContext: vi.fn(),
     };
     logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
-    metrics = { recordProviderFailover: vi.fn().mockResolvedValue(undefined) };
+    metrics = {
+      recordProviderFailover: vi.fn().mockResolvedValue(undefined),
+      recordMastraAgentDuration: vi.fn().mockResolvedValue(undefined),
+    };
+    tokenBudget = {
+      reserve: vi.fn().mockResolvedValue({
+        allowed: true,
+        quotaKey: 'quota-key',
+        reservationKey: 'review-reservation',
+        ttlSeconds: 100,
+      }),
+      settle: vi.fn().mockResolvedValue(undefined),
+    };
+    mocks.onDetection = undefined;
     mocks.generate.mockResolvedValue({ object: review });
   });
 
@@ -118,6 +165,23 @@ describe('CodingReviewService', () => {
       })
     );
     expect(mocks.generate.mock.calls[0]?.[0]).toContain(execution.sourceCode);
+    expect(mocks.generate.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        inputProcessors: [expect.objectContaining({ id: 'prompt-injection-detector' })],
+      })
+    );
+    const prompt = mocks.generate.mock.calls[0]?.[0] as string;
+    const promptTokens = Math.ceil(Buffer.byteLength(prompt, 'utf8') / 4);
+    const oneProviderAttempt = promptTokens + 1_024 + promptTokens + 512;
+    expect(tokenBudget.reserve).toHaveBeenCalledWith(
+      'user_001',
+      executionId,
+      oneProviderAttempt * 2
+    );
+    expect(tokenBudget.settle).toHaveBeenCalledWith(
+      expect.objectContaining({ reservationKey: 'review-reservation' }),
+      expect.any(Number)
+    );
     const codingAnswer = transaction.codingAnswer as {
       updateMany: ReturnType<typeof vi.fn>;
     };
@@ -128,9 +192,63 @@ describe('CodingReviewService', () => {
         aiReviewJson: review as unknown as Prisma.InputJsonValue,
         aiReviewProvider: 'nvidia',
         aiReviewModel: 'model/nvidia',
-        aiReviewPromptVersion: 'coding-review-v1',
+        aiReviewPromptVersion: 'coding-review-v2',
       }),
     });
+  });
+
+  it('marks detected prompt injection terminal without calling a fallback provider', async () => {
+    mocks.generate.mockImplementationOnce(async () => {
+      (mocks.onDetection as (event: { flagged: boolean }) => void)({ flagged: true });
+      return { object: review };
+    });
+    const service = await createService();
+
+    await expect(service.review(executionId)).resolves.toBeUndefined();
+
+    expect(mocks.generate).toHaveBeenCalledOnce();
+    expect(tokenBudget.settle).not.toHaveBeenCalled();
+    expect(transaction.codingAnswer).toMatchObject({
+      updateMany: expect.any(Function),
+    });
+    expect(
+      (transaction.codingAnswer as { updateMany: ReturnType<typeof vi.fn> }).updateMany
+    ).toHaveBeenLastCalledWith({
+      where: { id: answer.id, userId: 'user_001', aiReviewStatus: { in: ['queued', 'running'] } },
+      data: { aiReviewStatus: 'failed', aiReviewFailureMessage: 'review_unavailable' },
+    });
+  });
+
+  it('does not call the model when the daily token budget is exhausted', async () => {
+    tokenBudget.reserve.mockResolvedValueOnce({ allowed: false });
+    const service = await createService();
+
+    await expect(service.review(executionId)).resolves.toBeUndefined();
+
+    expect(mocks.generate).not.toHaveBeenCalled();
+    expect(
+      (transaction.codingAnswer as { updateMany: ReturnType<typeof vi.fn> }).updateMany
+    ).toHaveBeenLastCalledWith({
+      where: { id: answer.id, userId: 'user_001', aiReviewStatus: { in: ['queued', 'running'] } },
+      data: { aiReviewStatus: 'failed', aiReviewFailureMessage: 'review_unavailable' },
+    });
+  });
+
+  it('leaves detector failures retryable and fails closed across providers', async () => {
+    mocks.generate.mockRejectedValue(new Error('Prompt injection detection failed'));
+    const service = await createService();
+
+    await expect(service.review(executionId)).rejects.toThrow('Prompt injection detection failed');
+
+    expect(mocks.generate).toHaveBeenCalledTimes(2);
+    expect(tokenBudget.settle).not.toHaveBeenCalled();
+    expect(
+      (transaction.codingAnswer as { updateMany: ReturnType<typeof vi.fn> }).updateMany
+    ).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { aiReviewStatus: 'completed', aiReviewFailureMessage: null },
+      })
+    );
   });
 
   it('does not call the provider for an already completed review', async () => {
