@@ -49,9 +49,9 @@
 
 **Interfaces:** typed source/list/upload/content contracts; API methods for list, detail, upload progress, content bytes, reindex, and delete; user-scoped TanStack Query keys; terminal-aware list/detail polling.
 
-- [ ] Add failing API and query tests for envelope mapping, upload progress, headers, retry identity, and poll stop states.
-- [ ] Implement service and logic layers following current API patterns.
-- [ ] Run focused UI tests, lint, and TypeScript; commit.
+- [x] Add failing API and query tests for envelope mapping, upload progress, headers, retry identity, and poll stop states.
+- [x] Implement service and logic layers following current API patterns.
+- [x] Run focused UI tests, lint, and TypeScript; commit.
 
 ### Task 3: Settings > Documents manager
 

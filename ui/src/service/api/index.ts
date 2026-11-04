@@ -3,6 +3,14 @@ export { createApiClient } from './apiClient';
 export { getHttpStatus } from './getHttpStatus';
 export { getCodingSessionHistory } from './coding.api';
 export {
+  deletePdfSource,
+  getPdfContent,
+  getPdfSource,
+  getPdfSources,
+  reindexPdfSource,
+  uploadPdfSource,
+} from './pdf.api';
+export {
   completeTheorySession,
   getPracticeTopics,
   getTheoryAnswerEvaluation,
