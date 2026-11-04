@@ -1,11 +1,22 @@
 import { Select } from '@base-ui/react/select';
 import { Check, ChevronDown } from 'lucide-react';
 
+import { cn } from '@/utils';
 import type { ISelectFieldProps } from './SelectField.types';
 import './SelectField.css';
 
 export const SelectField = (props: ISelectFieldProps) => {
-  const { id, label, value, placeholder, options, onChange, disabled = false } = props;
+  const {
+    id,
+    label,
+    value,
+    placeholder,
+    options,
+    onChange,
+    disabled = false,
+    density = 'default',
+  } = props;
+  const isCompact = density === 'compact';
 
   return (
     <div className="space-y-1.5">
@@ -18,7 +29,13 @@ export const SelectField = (props: ISelectFieldProps) => {
         onValueChange={(nextValue) => onChange(nextValue ?? '')}
         disabled={disabled}
       >
-        <Select.Trigger id={id} className="settings-select-trigger h-9">
+        <Select.Trigger
+          id={id}
+          className={cn(
+            'settings-select-trigger h-9',
+            isCompact && 'settings-select-trigger--dense'
+          )}
+        >
           <Select.Value placeholder={placeholder} />
           <Select.Icon className="settings-select-icon">
             <ChevronDown aria-hidden="true" className="size-4" />
@@ -33,13 +50,21 @@ export const SelectField = (props: ISelectFieldProps) => {
             collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'start' }}
             sideOffset={4}
           >
-            <Select.Popup className="settings-select-popup settings-select-popup--compact">
+            <Select.Popup
+              className={cn(
+                'settings-select-popup settings-select-popup--compact',
+                isCompact && 'settings-select-popup--dense'
+              )}
+            >
               <Select.List>
                 {options.map((option) => (
                   <Select.Item
                     key={option.value}
                     value={option.value}
-                    className="settings-select-item min-h-8"
+                    className={cn(
+                      'settings-select-item min-h-8',
+                      isCompact && 'settings-select-item--dense'
+                    )}
                   >
                     <Select.ItemText>{option.label}</Select.ItemText>
                     <Select.ItemIndicator className="settings-select-indicator">

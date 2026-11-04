@@ -8,4 +8,5 @@ export interface ISelectFieldProps {
   options: readonly ISelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  density?: 'default' | 'compact';
 }

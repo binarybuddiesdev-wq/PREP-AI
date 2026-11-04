@@ -57,7 +57,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card onboarding-card--compact relative w-full min-w-0 max-w-[calc(100vw-1.5rem)] overflow-visible rounded-2xl border border-white/[0.08] bg-[#18181b] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:max-w-[480px] sm:p-4"
+        className="onboarding-card onboarding-card--compact onboarding-card--viewport-fit relative w-full min-w-0 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#18181b] shadow-[0_24px_80px_rgba(0,0,0,0.38)]"
       >
         <header className="onboarding-header mb-3 text-center">
           <div className="mb-1 flex justify-center">{brand}</div>
@@ -124,6 +124,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   label="Target Role"
                   placeholder="Select your target role"
                   options={ONBOARDING_ROLE_OPTIONS}
+                  density="compact"
                   value={values.targetRole}
                   disabled={isSaving}
                   onChange={(targetRole) =>
@@ -135,6 +136,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   label="Experience Level"
                   placeholder="Select your experience level"
                   options={ONBOARDING_EXPERIENCE_OPTIONS}
+                  density="compact"
                   value={values.experienceLevel}
                   disabled={isSaving}
                   onChange={(experienceLevel) =>
@@ -260,6 +262,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   label="Default Difficulty"
                   placeholder="Select difficulty"
                   options={ONBOARDING_DIFFICULTY_OPTIONS}
+                  density="compact"
                   value={values.defaultDifficulty}
                   disabled={isSaving}
                   onChange={(defaultDifficulty) =>

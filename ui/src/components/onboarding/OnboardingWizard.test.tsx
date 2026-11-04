@@ -37,7 +37,10 @@ describe('OnboardingWizard', () => {
 
     expect(screen.getByRole('main', { name: 'Profile setup' })).toBeInTheDocument();
     expect(container.querySelector('.onboarding-screen')).toHaveClass('h-dvh', 'overflow-clip');
-    expect(container.querySelector('.onboarding-card')).toHaveClass('overflow-visible');
+    expect(container.querySelector('.onboarding-card')).toHaveClass(
+      'onboarding-card--viewport-fit',
+      'overflow-hidden'
+    );
     expect(container.querySelector('.onboarding-card')).toHaveClass('onboarding-card--compact');
     expect(container.querySelector('.onboarding-card')).not.toHaveClass('overflow-y-auto');
     expect(screen.getByRole('heading', { name: 'Tell us about your target role' })).toBeVisible();
@@ -122,6 +125,8 @@ describe('OnboardingWizard', () => {
     await user.click(roleDropdown);
     const option = await screen.findByRole('option', { name: 'Frontend Engineer' });
     expect(option.closest('.settings-select-popup')).toBeInTheDocument();
+    expect(option.closest('.settings-select-popup')).toHaveClass('settings-select-popup--dense');
+    expect(option).toHaveClass('settings-select-item--dense');
     expect(option).toBeVisible();
   });
 });

@@ -92,6 +92,13 @@
   padding: 0.3rem;
 }
 
+.settings-select-popup--dense {
+  max-height: min(var(--available-height, 10rem), 10rem);
+  border-radius: 0.65rem;
+  padding: 0.25rem;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 38%);
+}
+
 .settings-select-popup::-webkit-scrollbar {
   width: 0.375rem;
 }
@@ -119,6 +126,14 @@
   transition:
     background-color 120ms ease,
     color 120ms ease;
+}
+
+.settings-select-item--dense {
+  min-height: 1.75rem;
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
 }
 
 .settings-select-item[data-highlighted] {
