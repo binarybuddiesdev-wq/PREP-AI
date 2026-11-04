@@ -24,4 +24,4 @@
 
 - [x] Update observability/backend tracker and worklog.
 - [x] Run the full server gate and review.
-- [ ] Commit and push to `main`.
+- [x] Commit and push to `main`.
