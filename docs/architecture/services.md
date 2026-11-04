@@ -131,15 +131,15 @@ Each service has:
 
 ## External Services (no SLA from us, but tracked)
 
-| Service                  | Used for                                                  | Failure mode if down                                                                                                     |
-| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Clerk**                | Auth, user webhook                                        | Login fails for new users; existing sessions still work until token expires (~60s). Webhook backlog replays on recovery. |
-| **NVIDIA NIM** (primary) | LLM (theory evaluation, tech answers)                     | Calls retry with Groq when configured; if both fail, endpoints return their documented error/fallback.                   |
-| **Groq** (fallback)      | LLM (theory evaluation, tech answers)                     | Used after NVIDIA fails unless `LLM_PROVIDER` explicitly selects one provider.                                           |
-| **Cloudinary**           | Private PDF source storage                                | PDF module stores authenticated raw assets; configure account credentials and allow authenticated PDF delivery.          |
-| **Resend**               | Opt-in study reminders and idempotent email delivery      | Email reminders retry through BullMQ; live sends require verified sender and credentials.                                |
-| **Razorpay**             | Subscription billing, cancellation, webhooks, and refunds | Webhook inbox reconciliation retries; live billing requires provider plans and credentials.                              |
-| **Podman / Piston**      | Local code execution                                      | Coding API sends bounded execution jobs through BullMQ to the Piston worker.                                             |
+| Service                  | Used for                                                                       | Failure mode if down                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **Clerk**                | Auth, user webhook                                                             | Login fails for new users; existing sessions still work until token expires (~60s). Webhook backlog replays on recovery. |
+| **NVIDIA NIM** (primary) | LLM (theory evaluation, Study Chat, coding review, PDF questions, Tech Expert) | Calls retry with Groq when configured; if both fail, endpoints/workers return their documented error/fallback.           |
+| **Groq** (fallback)      | LLM (theory evaluation, Study Chat, coding review, PDF questions, Tech Expert) | Used after NVIDIA fails unless `LLM_PROVIDER` explicitly selects one provider.                                           |
+| **Cloudinary**           | Private PDF source storage                                                     | PDF module stores authenticated raw assets; configure account credentials and allow authenticated PDF delivery.          |
+| **Resend**               | Opt-in study reminders and idempotent email delivery                           | Email reminders retry through BullMQ; live sends require verified sender and credentials.                                |
+| **Razorpay**             | Subscription billing, cancellation, webhooks, and refunds                      | Webhook inbox reconciliation retries; live billing requires provider plans and credentials.                              |
+| **Podman / Piston**      | Local code execution                                                           | Coding API sends bounded execution jobs through BullMQ to the Piston worker.                                             |
 
 ---
 

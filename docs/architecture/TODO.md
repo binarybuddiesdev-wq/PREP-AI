@@ -92,33 +92,24 @@ Job ID returned to client; `GET /jobs/:id` for status. Bull-Board UI.
 
 ### 3. AI evaluation pipeline
 
-Prompt versioning (every eval stores `modelName + promptVersion + result`).
-Baseline and comparison harness: `server/evaluation/README.md`, a 50-case
-synthetic dataset, Mastra deterministic scorers and an explicit `--run` CLI.
-Have the labels reviewed by a subject-matter expert; re-run after prompt/model
-changes and investigate aggregate drops greater than 5%. Role-based daily AI
-token budget now uses atomic Redis reservations (`AI_DAILY_TOKENS_FREE` and
-`AI_DAILY_TOKENS_PREMIUM`). Fallback: when NIM down > 5 min,
-queue the job, return 503 with retry-after. Prompt injection defenses.
-Pattern-based PII redaction is in the current theory prompt builder. It covers
-recognized emails, phone numbers, Luhn-valid cards, Aadhaar, PAN and US SSNs;
-it is not full anonymization. Tech-expert answers also stream over SSE; the
-structured one-shot endpoint remains available for clients that need the
-existing response envelope.
+`server/src/mastra/providers.ts` implements per-request NVIDIA-primary /
+Groq-fallback. Durable theory evaluation, coding review, PDF question
+generation, and email/payment consumers use BullMQ; Study Chat and public Tech
+Expert JSON/SSE requests run in the request lifecycle. Provider and prompt
+provenance are stored for durable theory and coding review results. Mastra's
+strict prompt-injection detector protects Tech Expert, Study Chat, theory
+evaluation, coding review, and PDF question generation. Learner flows account
+for detector/model costs through role-based daily token reservations for each
+provider attempt; public Tech Expert is outside user-scoped token quotas.
 
-**In place:** `server/src/mastra/providers.ts` implements NVIDIA-primary /
-Groq-failover. The production evaluation stores answer provenance. The
-offline comparison harness and synthetic baseline are documented in
-`server/evaluation/README.md`; role-based daily token budgets are enforced for
-theory evaluations and shared with Study Chat. Public Tech Expert routes use
-Mastra's prompt-injection input detector with fail-closed behavior. Study Chat
-and theory evaluation use the same provider-specific detector and include a
-conservative detector-token allowance in their existing daily quota. Coding
-review and PDF generation retain explicit untrusted-content instructions but
-are not model-detected because their input sizes and quota policies need
-separate analysis. Broader adversarial evaluation, subject-matter review of
-synthetic labels, and repeated evaluation after model or prompt changes remain
-open.
+Theory evaluator prompt v2 locally redacts recognized email, phone,
+payment-card, Aadhaar, PAN, and US SSN patterns. It is pattern-based, covers
+only theory evaluation, and is not full anonymization. Other AI inputs may
+still contain personal information. The comparison harness, 50-case theory
+baseline, and separate 40-case synthetic injection corpus are implemented;
+dataset labels remain provisional and need independent subject-matter review.
+Repeat evaluation after model/prompt changes and investigate aggregate drops
+greater than 5%. These quality-review tasks remain open.
 
 ### 4. RAG pipeline
 

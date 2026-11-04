@@ -504,4 +504,5 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Replaced stale planned integrations/queues with the implemented Resend, Razorpay, code-review, email, and payment-reconciliation flows.
 - Updated Redis use and failure behavior for quotas, topic caching, shared rate limits, queues, and health checks.
 - Removed the obsolete runbook TODO; linked the existing service-specific and disaster-recovery runbooks and left only production-specific provider tuning open.
+- Synchronized the AI pipeline details with the new coding/PDF prompt guards and documented that PII redaction currently applies only to theory evaluation.
 - Verification: compared each catalog entry with the queue constants, runbooks, and backend tracker; formatting and diff checks passed.
