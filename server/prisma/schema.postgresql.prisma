@@ -202,7 +202,6 @@ model PaymentSubscription {
   status                 String    @default("creating")
   currentStart           DateTime?
   currentEnd             DateTime?
-  providerUpdatedAt      DateTime?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 

@@ -11,7 +11,6 @@ export interface IRazorpaySubscription {
   short_url?: string | null;
   current_start?: number | null;
   current_end?: number | null;
-  updated_at?: number;
   notes?: Record<string, string | number>;
 }
 
@@ -47,7 +46,7 @@ export class RazorpayProvider {
   }
 
   get isCheckoutConfigured(): boolean {
-    return Boolean(this.client && this.monthlyPlanId && this.yearlyPlanId);
+    return Boolean(this.client && this.monthlyPlanId && this.yearlyPlanId && this.webhookSecret);
   }
 
   get isWebhookConfigured(): boolean {

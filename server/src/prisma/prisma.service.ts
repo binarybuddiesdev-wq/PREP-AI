@@ -72,7 +72,8 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
 
   async withTenantContext<T>(
     userId: string,
-    operation: (transaction: Prisma.TransactionClient) => Promise<T>
+    operation: (transaction: Prisma.TransactionClient) => Promise<T>,
+    options?: { maxWait?: number; timeout?: number }
   ): Promise<T> {
     this.assertIdentity(userId, 'Tenant identity is required');
     const client = this.client;
@@ -81,7 +82,7 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     return client.$transaction(async (transaction) => {
       await this.setTenantContext(transaction, userId);
       return operation(transaction);
-    });
+    }, options);
   }
 
   async withWorkerJobContext<T>(

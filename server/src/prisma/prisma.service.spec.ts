@@ -48,8 +48,8 @@ vi.mock('../generated/postgresql-client/index.js', () => ({
       return prismaMocks.postgresQueryRaw();
     }
 
-    $transaction(callback: (transaction: unknown) => unknown) {
-      return prismaMocks.postgresTransaction(callback);
+    $transaction(callback: (transaction: unknown) => unknown, options?: unknown) {
+      return prismaMocks.postgresTransaction(callback, options);
     }
   },
 }));
@@ -186,6 +186,23 @@ describe('Prisma services', () => {
     expect(prismaMocks.postgresTransaction).toHaveBeenCalledOnce();
     expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledOnce();
     expect(operation).toHaveBeenCalledOnce();
+    await service.onModuleDestroy();
+  });
+
+  it('passes explicit transaction limits for tenant work that performs provider requests', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await service.withTenantContext('user_123', async () => 'done', {
+      maxWait: 10_000,
+      timeout: 45_000,
+    });
+
+    expect(prismaMocks.postgresTransaction).toHaveBeenCalledWith(expect.any(Function), {
+      maxWait: 10_000,
+      timeout: 45_000,
+    });
     await service.onModuleDestroy();
   });
 

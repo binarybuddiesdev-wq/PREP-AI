@@ -19,7 +19,6 @@ import { parseRazorpaySubscriptionEvent } from './razorpay-webhook-event.js';
 import { verifyRazorpayWebhookSignature } from './razorpay-webhook-signature.js';
 import { decideSubscriptionRequest } from './subscription-request.js';
 import { hasPaidAccess, normalizeProviderStatus } from './payment-state.js';
-import { isNewerProviderSnapshot } from './provider-snapshot.js';
 
 const IN_PROGRESS_STATUSES = [
   'creating',
@@ -86,19 +85,27 @@ export class PaymentsService {
 
     try {
       const remote = await this.provider.createSubscription(userId, input.plan, idempotencyKey);
-      const saved = await this.postgres.withTenantContext(userId, (tx) =>
-        tx.paymentSubscription.update({
+      const saved = await this.postgres.withTenantContext(userId, async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+        const current = await tx.paymentSubscription.findUnique({ where: { id: local.row.id } });
+        if (!current) throw new NotFoundException('Payment subscription was not found');
+        return tx.paymentSubscription.update({
           where: { id: local.row.id },
-          data: {
-            razorpaySubscriptionId: remote.id,
-            shortUrl: remote.short_url ?? null,
-            status: normalizeProviderStatus(remote.status),
-            currentStart: epochDate(remote.current_start),
-            currentEnd: epochDate(remote.current_end),
-            providerUpdatedAt: epochDate(remote.updated_at),
-          },
-        })
-      );
+          data:
+            current.status === 'creating' && !current.razorpaySubscriptionId
+              ? {
+                  razorpaySubscriptionId: remote.id,
+                  shortUrl: remote.short_url ?? null,
+                  status: normalizeProviderStatus(remote.status),
+                  currentStart: epochDate(remote.current_start),
+                  currentEnd: epochDate(remote.current_end),
+                }
+              : {
+                  ...(current.razorpaySubscriptionId ? {} : { razorpaySubscriptionId: remote.id }),
+                  ...(current.shortUrl ? {} : { shortUrl: remote.short_url ?? null }),
+                },
+        });
+      });
       return this.toSubscriptionResponse(saved);
     } catch (error) {
       this.logger.error(
@@ -151,6 +158,7 @@ export class PaymentsService {
     let eventRow;
     try {
       eventRow = await this.postgres.withTenantContext(event.userId, async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${event.userId}, 0))`;
         const subscription = await tx.paymentSubscription.findUnique({
           where: {
             userId_idempotencyKey: { userId: event.userId, idempotencyKey: event.idempotencyKey },
@@ -214,7 +222,8 @@ export class PaymentsService {
           idempotencyKey: eventId,
           userId: eventRow.userId,
         },
-        'reconcile-subscription'
+        'reconcile-subscription',
+        true
       );
       await this.postgres.withTenantContext(eventRow.userId, (tx) =>
         tx.paymentWebhookEvent.update({
@@ -249,9 +258,7 @@ export class PaymentsService {
       throw new Error('Payment webhook does not match a persisted provider subscription');
     }
 
-    const remote = await this.provider.fetchSubscription(event.subscriptionId);
-    this.assertProviderSubscriptionIdentity(remote, local, userId);
-    await this.applyProviderState(userId, local.id, remote);
+    await this.fetchAndApplyProviderState(userId, local.id);
 
     await this.postgres.withTenantContext(userId, (tx) =>
       tx.paymentWebhookEvent.update({
@@ -285,7 +292,8 @@ export class PaymentsService {
             idempotencyKey: event.eventId,
             userId: event.userId,
           },
-          'reconcile-subscription'
+          'reconcile-subscription',
+          true
         );
         await this.postgres.withTenantContext(event.userId, (tx) =>
           tx.paymentWebhookEvent.update({
@@ -315,10 +323,9 @@ export class PaymentsService {
     for (const subscription of expired) {
       if (!subscription.razorpaySubscriptionId) continue;
       try {
-        const remote = await this.provider.fetchSubscription(subscription.razorpaySubscriptionId);
-        this.assertProviderSubscriptionIdentity(remote, subscription, subscription.userId);
-        await this.applyProviderState(subscription.userId, subscription.id, remote);
+        await this.fetchAndApplyProviderState(subscription.userId, subscription.id);
       } catch (error) {
+        await this.projectUserEntitlement(subscription.userId);
         this.logger.warn(
           { subscriptionId: subscription.id, err: error },
           'Expired payment reconciliation failed'
@@ -327,65 +334,85 @@ export class PaymentsService {
     }
   }
 
-  private async applyProviderState(
-    userId: string,
-    localId: string,
-    remote: IRazorpaySubscription
-  ): Promise<void> {
-    const currentStart = epochDate(remote.current_start);
-    const currentEnd = epochDate(remote.current_end);
-    const providerUpdatedAt = epochDate(remote.updated_at);
-    const status = normalizeProviderStatus(remote.status);
-    await this.postgres.withTenantContext(userId, async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
-      const subscription = await tx.paymentSubscription.findUnique({ where: { id: localId } });
-      if (!subscription) throw new NotFoundException('Payment subscription was not found');
-      let current = subscription;
-      if (isNewerProviderSnapshot(subscription.providerUpdatedAt, providerUpdatedAt)) {
-        current = await tx.paymentSubscription.update({
+  private async fetchAndApplyProviderState(userId: string, localId: string): Promise<void> {
+    await this.postgres.withTenantContext(
+      userId,
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+        const subscription = await tx.paymentSubscription.findUnique({ where: { id: localId } });
+        if (!subscription) throw new NotFoundException('Payment subscription was not found');
+        if (!subscription.razorpaySubscriptionId)
+          throw new Error('Payment subscription has no provider subscription ID');
+        const remote = await this.provider.fetchSubscription(subscription.razorpaySubscriptionId);
+        this.assertProviderSubscriptionIdentity(remote, subscription, userId);
+        await tx.paymentSubscription.update({
           where: { id: localId },
           data: {
-            status,
-            currentStart,
-            currentEnd,
-            providerUpdatedAt: providerUpdatedAt ?? subscription.providerUpdatedAt,
+            status: normalizeProviderStatus(remote.status),
+            currentStart: epochDate(remote.current_start),
+            currentEnd: epochDate(remote.current_end),
           },
         });
-      }
+        await this.projectUserEntitlementInTransaction(userId, tx);
+      },
+      { maxWait: 10_000, timeout: 45_000 }
+    );
+  }
 
-      const user = await this.mongo.user.findUnique({
-        where: { clerkUserId: userId },
-        select: { role: true },
-      });
-      if (!user) throw new Error('Subscription owner profile is not available for role projection');
-      const paid = hasPaidAccess(current.status, current.currentStart, current.currentEnd);
-      const nextRole = paid
-        ? user.role === 'ADMIN'
-          ? 'ADMIN'
-          : 'PREMIUM'
-        : user.role === 'PREMIUM'
-          ? 'USER'
-          : user.role;
-      if (nextRole === user.role) return;
-
-      try {
-        await this.mongo.inAppNotification.create({
-          data: {
-            userId,
-            idempotencyKey: `subscription-role:${localId}:${nextRole}`,
-            category: 'billing',
-            title: nextRole === 'PREMIUM' ? 'Premium is active' : 'Premium access ended',
-            body:
-              nextRole === 'PREMIUM'
-                ? 'Your subscription is active. Premium features are now available.'
-                : 'Your paid subscription period has ended.',
-          },
-        });
-      } catch (error) {
-        if (!isUniqueConstraintError(error)) throw error;
-      }
-      await this.mongo.user.update({ where: { clerkUserId: userId }, data: { role: nextRole } });
+  private async projectUserEntitlement(userId: string): Promise<void> {
+    await this.postgres.withTenantContext(userId, async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+      await this.projectUserEntitlementInTransaction(userId, tx);
     });
+  }
+
+  private async projectUserEntitlementInTransaction(
+    userId: string,
+    tx: Prisma.TransactionClient
+  ): Promise<void> {
+    const subscriptions = await tx.paymentSubscription.findMany({
+      where: { userId },
+      select: { status: true, currentStart: true, currentEnd: true },
+    });
+    const paid = subscriptions.some((subscription) =>
+      hasPaidAccess(subscription.status, subscription.currentStart, subscription.currentEnd)
+    );
+    const latestPeriodEnd = subscriptions
+      .map(({ currentEnd }) => currentEnd?.toISOString() ?? '')
+      .sort()
+      .at(-1);
+
+    const user = await this.mongo.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { role: true },
+    });
+    if (!user) throw new Error('Subscription owner profile is not available for role projection');
+    const nextRole = paid
+      ? user.role === 'ADMIN'
+        ? 'ADMIN'
+        : 'PREMIUM'
+      : user.role === 'PREMIUM'
+        ? 'USER'
+        : user.role;
+    if (nextRole === user.role) return;
+
+    try {
+      await this.mongo.inAppNotification.create({
+        data: {
+          userId,
+          idempotencyKey: `subscription-role:${userId}:${nextRole}:${latestPeriodEnd ?? 'unknown'}`,
+          category: 'billing',
+          title: nextRole === 'PREMIUM' ? 'Premium is active' : 'Premium access ended',
+          body:
+            nextRole === 'PREMIUM'
+              ? 'Your subscription is active. Premium features are now available.'
+              : 'Your paid subscription period has ended.',
+        },
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+    }
+    await this.mongo.user.update({ where: { clerkUserId: userId }, data: { role: nextRole } });
   }
 
   private assertProviderSubscriptionIdentity(
@@ -435,5 +462,5 @@ function epochDate(value: number | null | undefined): Date | null {
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 }

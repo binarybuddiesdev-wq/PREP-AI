@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ConflictException,
   ServiceUnavailableException,
@@ -70,17 +70,21 @@ const createWebhookRequest = (eventId = 'evt_1') => {
 describe('PaymentsService webhook intake', () => {
   it('creates one provider subscription after persisting the local idempotent request', async () => {
     const row = subscriptionRow();
+    const webhookProcessedRow = subscriptionRow({
+      status: 'active',
+      razorpaySubscriptionId: 'sub_123',
+      currentStart: new Date(Date.now() - 1_000),
+      currentEnd: new Date(Date.now() + 60_000),
+    });
     const tx = {
       $executeRaw: vi.fn(),
       paymentSubscription: {
-        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValue(row),
+        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(webhookProcessedRow),
         findFirst: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue(row),
         update: vi
           .fn()
-          .mockResolvedValue(
-            subscriptionRow({ status: 'created', shortUrl: 'https://rzp.io/i/1' })
-          ),
+          .mockResolvedValue({ ...webhookProcessedRow, shortUrl: 'https://rzp.io/i/1' }),
       },
     };
     const postgres = postgresFor(tx);
@@ -97,6 +101,10 @@ describe('PaymentsService webhook intake', () => {
 
     expect(create).toHaveBeenCalledWith('user_1', 'monthly', 'request-1');
     expect(tx.paymentSubscription.create).toHaveBeenCalledOnce();
+    expect(tx.paymentSubscription.update).toHaveBeenCalledWith({
+      where: { id: row.id },
+      data: { shortUrl: 'https://rzp.io/i/1' },
+    });
     expect(result).toMatchObject({ plan: 'monthly', checkoutUrl: 'https://rzp.io/i/1' });
   });
 
@@ -200,6 +208,7 @@ describe('PaymentsService webhook intake', () => {
   it('returns the current non-terminal subscription or null', async () => {
     const row = subscriptionRow();
     const tx = {
+      $executeRaw: vi.fn(),
       paymentSubscription: {
         findFirst: vi.fn().mockResolvedValueOnce(row).mockResolvedValueOnce(null),
       },
@@ -251,6 +260,7 @@ describe('PaymentsService webhook intake', () => {
   it('rejects validly signed events that do not match a saved subscription', async () => {
     const request = createWebhookRequest();
     const tx = {
+      $executeRaw: vi.fn(),
       paymentSubscription: { findUnique: vi.fn().mockResolvedValue(null) },
       paymentWebhookEvent: { findUnique: vi.fn() },
     };
@@ -282,6 +292,7 @@ describe('PaymentsService webhook intake', () => {
       subscriptionId: 'sub_123',
     };
     const tx = {
+      $executeRaw: vi.fn(),
       paymentSubscription: { findUnique: vi.fn().mockResolvedValue(subscription), update: vi.fn() },
       paymentWebhookEvent: {
         findUnique: vi.fn().mockResolvedValue(prior),
@@ -323,6 +334,7 @@ describe('PaymentsService webhook intake', () => {
     );
     const signature = createHmac('sha256', 'webhook_secret').update(rawBody).digest('hex');
     const tx = {
+      $executeRaw: vi.fn(),
       paymentSubscription: {
         findUnique: vi.fn().mockResolvedValue({
           id: 'local_1',
@@ -358,7 +370,8 @@ describe('PaymentsService webhook intake', () => {
         idempotencyKey: 'evt_1',
         userId: 'user_1',
       },
-      'reconcile-subscription'
+      'reconcile-subscription',
+      true
     );
   });
 
@@ -373,7 +386,6 @@ describe('PaymentsService webhook intake', () => {
       status: 'created',
       currentStart: null,
       currentEnd: null,
-      providerUpdatedAt: null,
     };
     const event = {
       id: 'event_1',
@@ -388,6 +400,13 @@ describe('PaymentsService webhook intake', () => {
       paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(event), update: vi.fn() },
       paymentSubscription: {
         findUnique: vi.fn().mockResolvedValue(local),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            status: 'active',
+            currentStart: new Date(Date.now() - 1_000),
+            currentEnd: new Date(Date.now() + 60_000),
+          },
+        ]),
         update: vi.fn().mockResolvedValue({
           ...local,
           status: 'active',
@@ -487,7 +506,6 @@ describe('PaymentsService webhook intake', () => {
       status: 'active',
       currentStart: new Date(Date.now() - 60_000),
       currentEnd: new Date(Date.now() + 60_000),
-      providerUpdatedAt: new Date(Date.now() - 120_000),
     };
     const event = {
       id: 'event_1',
@@ -502,11 +520,11 @@ describe('PaymentsService webhook intake', () => {
       paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(event), update: vi.fn() },
       paymentSubscription: {
         findUnique: vi.fn().mockResolvedValue(local),
+        findMany: vi.fn().mockResolvedValue([]),
         update: vi.fn().mockResolvedValue({
           ...local,
           status: 'cancelled',
           currentEnd: null,
-          providerUpdatedAt: new Date(Date.now() + 10_000),
         }),
       },
     };
@@ -545,6 +563,65 @@ describe('PaymentsService webhook intake', () => {
     );
   });
 
+  it('keeps Premium when a delayed terminal event belongs to an old subscription', async () => {
+    const oldSubscription = {
+      id: 'old_local',
+      userId: 'user_1',
+      idempotencyKey: 'old_request',
+      razorpayPlanId: 'plan_monthly',
+      razorpaySubscriptionId: 'sub_old',
+      status: 'active',
+      currentStart: new Date(Date.now() - 60_000),
+      currentEnd: new Date(Date.now() + 60_000),
+    };
+    const event = {
+      id: 'event_old',
+      userId: 'user_1',
+      eventId: 'evt_old',
+      idempotencyKey: 'old_request',
+      subscriptionId: 'sub_old',
+      processedAt: null,
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(event), update: vi.fn() },
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue(oldSubscription),
+        update: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([
+          { status: 'cancelled', currentStart: null, currentEnd: null },
+          {
+            status: 'active',
+            currentStart: new Date(Date.now() - 1_000),
+            currentEnd: new Date(Date.now() + 60_000),
+          },
+        ]),
+      },
+    };
+    const mongo = {
+      user: { findUnique: vi.fn().mockResolvedValue({ role: 'PREMIUM' }), update: vi.fn() },
+      inAppNotification: { create: vi.fn() },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'fetchSubscription').mockResolvedValue({
+      id: 'sub_old',
+      plan_id: 'plan_monthly',
+      status: 'cancelled',
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'old_request' },
+    });
+    const service = new PaymentsService(
+      mongo as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await service.processWebhookEvent('user_1', 'evt_old');
+
+    expect(mongo.user.update).not.toHaveBeenCalled();
+    expect(mongo.inAppNotification.create).not.toHaveBeenCalled();
+  });
+
   it('preserves the admin role for a valid active subscription', async () => {
     const local = {
       id: 'local_1',
@@ -555,7 +632,6 @@ describe('PaymentsService webhook intake', () => {
       status: 'active',
       currentStart: new Date(Date.now() - 60_000),
       currentEnd: new Date(Date.now() + 60_000),
-      providerUpdatedAt: new Date(),
     };
     const event = {
       id: 'event_1',
@@ -568,7 +644,17 @@ describe('PaymentsService webhook intake', () => {
     const tx = {
       $executeRaw: vi.fn(),
       paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(event), update: vi.fn() },
-      paymentSubscription: { findUnique: vi.fn().mockResolvedValue(local), update: vi.fn() },
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue(local),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            status: 'active',
+            currentStart: local.currentStart,
+            currentEnd: local.currentEnd,
+          },
+        ]),
+        update: vi.fn(),
+      },
     };
     const mongo = {
       user: { findUnique: vi.fn().mockResolvedValue({ role: 'ADMIN' }), update: vi.fn() },
@@ -591,7 +677,7 @@ describe('PaymentsService webhook intake', () => {
     await service.processWebhookEvent('user_1', 'evt_1');
     expect(mongo.user.update).not.toHaveBeenCalled();
     expect(mongo.inAppNotification.create).not.toHaveBeenCalled();
-    expect(tx.paymentSubscription.update).not.toHaveBeenCalled();
+    expect(tx.paymentSubscription.update).toHaveBeenCalledOnce();
   });
 
   it('reconciles queued inbox events after a missed dispatch', async () => {
@@ -620,7 +706,8 @@ describe('PaymentsService webhook intake', () => {
         idempotencyKey: 'evt_1',
         userId: 'user_1',
       },
-      'reconcile-subscription'
+      'reconcile-subscription',
+      true
     );
     expect(tx.paymentWebhookEvent.update).toHaveBeenCalledOnce();
   });
@@ -654,9 +741,26 @@ describe('PaymentsService webhook intake', () => {
     const fetch = vi
       .spyOn(provider, 'fetchSubscription')
       .mockRejectedValue(new Error('Razorpay unavailable'));
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue(expired[1]),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            status: 'active',
+            currentStart: new Date(Date.now() - 120_000),
+            currentEnd: new Date(Date.now() - 60_000),
+          },
+        ]),
+      },
+    };
+    const mongo = {
+      user: { findUnique: vi.fn().mockResolvedValue({ role: 'PREMIUM' }), update: vi.fn() },
+      inAppNotification: { create: vi.fn() },
+    };
     const service = new PaymentsService(
-      {} as never,
-      { ...postgresFor({}), client_: client } as never,
+      mongo as never,
+      { ...postgresFor(tx), client_: client } as never,
       provider,
       jobs as never
     );
@@ -664,6 +768,10 @@ describe('PaymentsService webhook intake', () => {
     await expect(service.reconcilePendingPayments()).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledWith('sub_2');
+    expect(mongo.user.update).toHaveBeenCalledWith({
+      where: { clerkUserId: 'user_2' },
+      data: { role: 'USER' },
+    });
   });
 
   it('handles duplicate event inserts caused by concurrent webhook deliveries', async () => {
@@ -686,6 +794,7 @@ describe('PaymentsService webhook intake', () => {
       { code: 'P2002' }
     );
     const tx = {
+      $executeRaw: vi.fn(),
       paymentSubscription: { findUnique: vi.fn().mockResolvedValue(subscription) },
       paymentWebhookEvent: {
         findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(prior),

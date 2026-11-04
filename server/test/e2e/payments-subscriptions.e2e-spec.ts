@@ -107,9 +107,12 @@ describe('Razorpay subscription persistence and role projection', () => {
       ).resolves.toMatchObject({ role: 'PREMIUM' });
       await expect(
         database!.mongo.inAppNotification.findFirst({
-          where: { userId, idempotencyKey: `subscription-role:${started.id}:PREMIUM` },
+          where: { userId, category: 'billing' },
         })
-      ).resolves.toMatchObject({ category: 'billing' });
+      ).resolves.toMatchObject({
+        category: 'billing',
+        idempotencyKey: expect.stringContaining(`subscription-role:${userId}:PREMIUM:`),
+      });
       const saved = await database!.postgresProvider.withTenantContext(userId, async (tx) => {
         const subscription = await tx.paymentSubscription.findFirst({
           where: { userId, idempotencyKey },
@@ -123,6 +126,26 @@ describe('Razorpay subscription persistence and role projection', () => {
       });
       expect(saved.inbox).toMatchObject({ status: 'processed', attempts: 2 });
 
+      await database!.postgresProvider.withTenantContext(userId, (tx) =>
+        tx.paymentSubscription.update({
+          where: { id: started.id },
+          data: { currentEnd: new Date(Date.now() - 60_000) },
+        })
+      );
+      fetchSubscription.mockRejectedValueOnce(new Error('Razorpay unavailable'));
+      await service.reconcilePendingPayments();
+      await expect(
+        database!.mongo.user.findUnique({ where: { clerkUserId: userId } })
+      ).resolves.toMatchObject({ role: 'USER' });
+      fetchSubscription.mockResolvedValue({
+        ...remote,
+        current_start: now - 60,
+        current_end: now + 3_600,
+      });
+      await service.reconcilePendingPayments();
+      await expect(
+        database!.mongo.user.findUnique({ where: { clerkUserId: userId } })
+      ).resolves.toMatchObject({ role: 'PREMIUM' });
       await database!.postgresProvider.withTenantContext(userId, (tx) =>
         tx.paymentSubscription.update({
           where: { id: started.id },

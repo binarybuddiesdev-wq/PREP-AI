@@ -58,7 +58,8 @@ export class JobQueueService implements OnModuleDestroy {
   async enqueue<TData extends { idempotencyKey: string }>(
     queueName: TJobQueueName,
     data: TData,
-    jobName = JOB_QUEUE_DEFAULT_NAME
+    jobName = JOB_QUEUE_DEFAULT_NAME,
+    retryFailedJob = false
   ): Promise<string> {
     const queue = this.queues.get(queueName);
     if (!queue) {
@@ -73,9 +74,15 @@ export class JobQueueService implements OnModuleDestroy {
         ...(requestId ? { requestId } : {}),
         ...(traceContext.traceparent ? { traceContext } : {}),
       };
-      const job = await queue.add(jobName, jobData, {
-        jobId: this.getJobId(queueName, data.idempotencyKey),
-      });
+      const jobId = this.getJobId(queueName, data.idempotencyKey);
+      if (retryFailedJob) {
+        const existing = await queue.getJob(jobId);
+        if (existing && (await existing.getState()) === 'failed') {
+          await existing.retry('failed');
+          return existing.id ?? jobId;
+        }
+      }
+      const job = await queue.add(jobName, jobData, { jobId });
       return job.id ?? this.getJobId(queueName, data.idempotencyKey);
     } catch (error) {
       throw new ServiceUnavailableException(CODING_QUEUE_UNAVAILABLE, { cause: error });

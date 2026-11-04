@@ -49,7 +49,11 @@ Subscribe to `subscription.authenticated`, `subscription.activated`,
 `subscription.charged`, `subscription.pending`, `subscription.halted`,
 `subscription.paused`, `subscription.resumed`, `subscription.cancelled`, and
 `subscription.completed`. The worker fetches current state from Razorpay before
-updating PostgreSQL or mirroring the user's role to MongoDB. Premium is granted
+updating PostgreSQL or mirroring the user's role to MongoDB. Provider reads and
+state application are serialized per user. Entitlement is computed across all
+subscriptions. A locally expired paid period removes Premium even during a
+Razorpay outage; reconciliation can restore it after the provider confirms a
+renewal. Premium is granted
 only while the provider says `active` and the paid period contains the current
 time. `ADMIN` is preserved. Missed event dispatches and expired active periods
 are reconciled every minute.

@@ -57,6 +57,7 @@ describe('RazorpayProvider', () => {
       RAZORPAY_KEY_SECRET: 'secret_test',
       RAZORPAY_PLAN_ID_MONTHLY: 'plan_monthly',
       RAZORPAY_PLAN_ID_YEARLY: 'plan_yearly',
+      RAZORPAY_WEBHOOK_SECRET: 'webhook_secret',
     });
 
     await provider.createSubscription('user_1', 'monthly', 'request_1');
@@ -76,6 +77,7 @@ describe('RazorpayProvider', () => {
       RAZORPAY_KEY_SECRET: 'secret_test',
       RAZORPAY_PLAN_ID_MONTHLY: 'plan_monthly',
       RAZORPAY_PLAN_ID_YEARLY: 'plan_yearly',
+      RAZORPAY_WEBHOOK_SECRET: 'webhook_secret',
     });
 
     await provider.createSubscription('user_1', 'yearly', 'request_2');
@@ -97,5 +99,17 @@ describe('RazorpayProvider', () => {
     });
 
     expect(provider.webhookSecret).toBe('webhook_secret');
+  });
+
+  it('does not enable checkout until webhook processing can be verified', () => {
+    const provider = createProvider({
+      RAZORPAY_KEY_ID: 'key_test',
+      RAZORPAY_KEY_SECRET: 'secret_test',
+      RAZORPAY_PLAN_ID_MONTHLY: 'plan_monthly',
+      RAZORPAY_PLAN_ID_YEARLY: 'plan_yearly',
+    });
+
+    expect(provider.isCheckoutConfigured).toBe(false);
+    expect(provider.isWebhookConfigured).toBe(false);
   });
 });

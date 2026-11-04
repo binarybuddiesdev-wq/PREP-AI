@@ -52,6 +52,10 @@
 - [x] Add failing tests for provider-current-state fetch, transition rules, Premium role mirroring, retries, and expiry reconciliation.
 - [x] Process inbox events idempotently; update Mongo role and notification state, then mark the event complete.
 - [x] Re-dispatch pending inbox events on startup and periodic reconciliation; expire subscriptions past their paid period.
+- [x] Retry deterministic BullMQ jobs that reached the failed state during inbox redispatch.
+- [x] Serialize provider fetch and state application; compute Premium across all user subscriptions.
+- [x] Remove locally expired access during provider outages and restore it only after provider confirmation.
+- [x] Prevent delayed create responses from overwriting webhook-processed subscription state.
 - [x] Verify real Mongo/PostgreSQL integration tests.
 
 ### Task 4: Documentation and delivery

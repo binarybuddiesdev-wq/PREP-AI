@@ -15,6 +15,7 @@ const bullMocks = vi.hoisted(() => ({
   queueClose: vi.fn(),
   queueOn: vi.fn(),
   getJobs: vi.fn(),
+  getJob: vi.fn(),
   getJobCounts: vi.fn(),
 }));
 
@@ -25,6 +26,7 @@ vi.mock('bullmq', () => ({
       close: bullMocks.queueClose,
       on: bullMocks.queueOn,
       getJobs: bullMocks.getJobs,
+      getJob: bullMocks.getJob,
       getJobCounts: bullMocks.getJobCounts,
     };
   }),
@@ -155,6 +157,22 @@ describe('JobQueueService', () => {
       failedJobs
     );
     expect(bullMocks.getJobs).toHaveBeenCalledWith(['failed'], 0, 24);
+  });
+
+  it('retries an existing failed deterministic job during reconciliation', async () => {
+    const retry = vi.fn().mockResolvedValue(undefined);
+    bullMocks.getJob.mockResolvedValueOnce({
+      getState: vi.fn().mockResolvedValue('failed'),
+      retry,
+      id: 'existing-job',
+    });
+
+    await expect(
+      service.enqueue(JOB_QUEUE_NAMES.PAYMENT_RECONCILIATION, executionData, 'reconcile', true)
+    ).resolves.toBe('existing-job');
+
+    expect(retry).toHaveBeenCalledWith('failed');
+    expect(bullMocks.add).not.toHaveBeenCalled();
   });
 
   it('reads fixed state counts for every registered queue', async () => {
