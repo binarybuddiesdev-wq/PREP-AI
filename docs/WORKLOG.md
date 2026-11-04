@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-04 - Stream tech-expert answers with Mastra
+
+- Added `POST /api/v1/tech-expert/stream` as an SSE endpoint while preserving the existing structured JSON route. Provider failover is limited to before the first emitted chunk; mid-stream failures produce a safe error event, and client disconnects abort the Mastra run.
+- Updated the backend tracker, architecture docs, route catalog, and server README. Corrected stale queue-consumer, Sentry source-map, and Mastra-capability descriptions.
+- Verification: focused stream/provider tests and the full server gate.
+
 ## 2026-11-04 - Optional Sentry server source maps
 
 - Added a main-branch CI step that uploads compiled server source maps only when the configured Sentry token and project variables are present. Sentry's runtime release now consistently uses `prepai+<GIT_SHA>` unless `SENTRY_RELEASE` is explicitly set, matching the CI upload release.

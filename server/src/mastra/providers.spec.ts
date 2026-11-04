@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { chatWithFailover, getModel, pickProvider } from './providers.js';
+import { chatWithFailover, getModel, pickProvider, streamWithFailover } from './providers.js';
+
+async function* chunks(...values: string[]) {
+  yield* values;
+}
 
 describe('chatWithFailover', () => {
   afterEach(() => vi.unstubAllEnvs());
@@ -171,5 +175,111 @@ describe('chatWithFailover', () => {
         }
       )
     ).resolves.toBe('groq response');
+  });
+});
+
+describe('streamWithFailover', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('retries on the fallback provider when the first provider fails before output', async () => {
+    vi.stubEnv('LLM_PROVIDER', '');
+    vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+    vi.stubEnv('GROQ_API_KEY', 'groq-test-key');
+    const calls: string[] = [];
+    const failovers: string[] = [];
+    const output: string[] = [];
+
+    for await (const chunk of streamWithFailover<string>(
+      async (provider) => {
+        calls.push(provider);
+        if (provider === 'nvidia') throw new Error('NVIDIA unavailable');
+        return chunks('fallback');
+      },
+      (from, to) => {
+        failovers.push(`${from}:${to}`);
+      }
+    )) {
+      output.push(chunk);
+    }
+
+    expect(calls).toEqual(['nvidia', 'groq']);
+    expect(failovers).toEqual(['nvidia:groq']);
+    expect(output).toEqual(['fallback']);
+  });
+
+  it('does not retry after yielding output from a provider', async () => {
+    vi.stubEnv('LLM_PROVIDER', '');
+    vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+    vi.stubEnv('GROQ_API_KEY', 'groq-test-key');
+    const calls: string[] = [];
+    const output: string[] = [];
+
+    await expect(async () => {
+      for await (const chunk of streamWithFailover(async (provider) => {
+        calls.push(provider);
+        return (async function* () {
+          yield 'partial';
+          throw new Error('connection lost');
+        })();
+      })) {
+        output.push(chunk);
+      }
+    }).rejects.toThrow('failed after output');
+
+    expect(calls).toEqual(['nvidia']);
+    expect(output).toEqual(['partial']);
+  });
+
+  it('fails clearly when no provider key is configured', async () => {
+    vi.stubEnv('LLM_PROVIDER', '');
+    vi.stubEnv('NVIDIA_API_KEY', '');
+    vi.stubEnv('GROQ_API_KEY', '');
+
+    await expect(async () => {
+      for await (const _chunk of streamWithFailover(async () => chunks('unused'))) {
+        // consume the stream to trigger provider selection
+      }
+    }).rejects.toThrow('No LLM provider configured');
+  });
+
+  it('rejects an unsupported provider override before opening a stream', async () => {
+    vi.stubEnv('LLM_PROVIDER', 'openai');
+    vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+    const openStream = vi.fn(async () => chunks('unused'));
+
+    await expect(async () => {
+      for await (const _chunk of streamWithFailover(openStream)) {
+        // consume the stream to trigger provider validation
+      }
+    }).rejects.toThrow('Unsupported LLM_PROVIDER');
+    expect(openStream).not.toHaveBeenCalled();
+  });
+
+  it('records an empty fallback and keeps telemetry failures out of the stream result', async () => {
+    vi.stubEnv('LLM_PROVIDER', '');
+    vi.stubEnv('NVIDIA_API_KEY', 'nvidia-test-key');
+    vi.stubEnv('GROQ_API_KEY', 'groq-test-key');
+    const failover = vi.fn(() => {
+      throw new Error('telemetry failed');
+    });
+    const attempt = vi.fn(() => {
+      throw new Error('telemetry failed');
+    });
+    const output: string[] = [];
+
+    for await (const chunk of streamWithFailover<string>(
+      async (provider) => {
+        if (provider === 'nvidia') throw new Error('NVIDIA unavailable');
+        return chunks();
+      },
+      failover,
+      attempt
+    )) {
+      output.push(chunk);
+    }
+
+    expect(output).toEqual([]);
+    expect(failover).toHaveBeenCalledWith('nvidia', 'groq');
+    expect(attempt).toHaveBeenCalledTimes(2);
   });
 });

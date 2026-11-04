@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { mastra } from '../../mastra/mastra.config.js';
-import { chatWithFailover, getModel } from '../../mastra/providers.js';
+import { chatWithFailover, getModel, streamWithFailover } from '../../mastra/providers.js';
 import {
   ITechExpertRequest,
   ITechExpertResponse,
@@ -63,6 +63,36 @@ export class TechExpertService {
         error: errorMessage,
         meta: {},
       };
+    }
+  }
+
+  public async *streamQuestion(
+    payload: ITechExpertRequest,
+    abortSignal?: AbortSignal
+  ): AsyncGenerator<string> {
+    this.logger.log(`Streaming question: "${payload.question}"`);
+    const agent = mastra.getAgent('techExpertAgent');
+
+    try {
+      yield* streamWithFailover(
+        async (provider) =>
+          (
+            await agent.stream(payload.question, {
+              model: getModel(provider),
+              ...(abortSignal ? { abortSignal } : {}),
+            })
+          ).textStream,
+        (from, to) => this.metrics.recordProviderFailover(from, to),
+        (provider, fallback, duration) =>
+          this.metrics.recordMastraAgentDuration('tech_expert', provider, fallback, duration)
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Streaming error: ${errorMessage}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
     }
   }
 }

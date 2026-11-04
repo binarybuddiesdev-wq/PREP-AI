@@ -13,11 +13,17 @@ const mockAnswer: TechAnswer = {
 };
 
 const mockGenerate = vi.fn();
+const mockStream = vi.fn();
+
+async function* streamChunks(...values: string[]) {
+  yield* values;
+}
 
 vi.mock('../../mastra/mastra.config.js', () => ({
   mastra: {
     getAgent: () => ({
       generate: mockGenerate,
+      stream: mockStream,
     }),
   },
 }));
@@ -93,5 +99,36 @@ describe('TechExpertService', () => {
     expect(await metrics.getMetrics()).toContain(
       'mastra_provider_failovers_total{from="nvidia",to="groq"} 1'
     );
+  });
+
+  it('streams text chunks through Mastra and records successful provider metrics', async () => {
+    mockStream.mockImplementation(async () => ({
+      textStream: streamChunks('A useful ', 'answer.'),
+    }));
+    const chunks: string[] = [];
+    const abortSignal = new AbortController().signal;
+
+    for await (const chunk of service.streamQuestion({ question: 'Explain REST' }, abortSignal)) {
+      chunks.push(chunk);
+    }
+
+    expect(mockStream).toHaveBeenCalledWith(
+      'Explain REST',
+      expect.objectContaining({ model: expect.any(Object), abortSignal })
+    );
+    expect(chunks).toEqual(['A useful ', 'answer.']);
+    expect(await metrics.getMetrics()).toContain(
+      'mastra_agent_duration_seconds_count{agent="tech_expert",provider="nvidia",fallback="false"} 1'
+    );
+  });
+
+  it('preserves provider errors before output so the controller can return an HTTP error', async () => {
+    mockStream.mockRejectedValue(new Error('provider unavailable'));
+
+    await expect(async () => {
+      for await (const _chunk of service.streamQuestion({ question: 'Explain REST' })) {
+        // consume to start the provider request
+      }
+    }).rejects.toThrow('All LLM providers failed');
   });
 });

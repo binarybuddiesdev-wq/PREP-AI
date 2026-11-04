@@ -164,6 +164,98 @@ export async function chatWithFailover<T>(
   throw new Error(`All LLM providers failed. ${summary}`);
 }
 
+/**
+ * Stream provider output with fallback only until the first chunk is emitted.
+ * Once output is visible to a client, changing providers would splice two
+ * different model responses together, so a later failure is terminal.
+ */
+export async function* streamWithFailover<T>(
+  fn: (provider: ProviderName) => Promise<AsyncIterable<T>>,
+  onFailover?: (from: ProviderName, to: ProviderName) => void | Promise<void>,
+  onAttempt?: (
+    provider: ProviderName,
+    fallback: boolean,
+    durationSeconds: number
+  ) => void | Promise<void>
+): AsyncGenerator<T> {
+  const errors: unknown[] = [];
+  let previousProvider: ProviderName | undefined;
+  const configuredOverride = process.env.LLM_PROVIDER;
+
+  if (configuredOverride && configuredOverride !== 'nvidia' && configuredOverride !== 'groq') {
+    throw new Error(
+      `Unsupported LLM_PROVIDER "${configuredOverride}". Expected "nvidia" or "groq".`
+    );
+  }
+
+  const forcedProvider = configuredOverride as ProviderName | undefined;
+  const providerOrder: ProviderName[] = forcedProvider
+    ? [forcedProvider]
+    : (['nvidia', 'groq'] as ProviderName[]).filter(hasKey);
+
+  for (const [index, name] of providerOrder.entries()) {
+    if (!hasKey(name)) continue;
+
+    const startedAt = performance.now();
+    let emitted = false;
+    let failoverRecorded = false;
+
+    try {
+      const stream = await fn(name);
+      for await (const chunk of stream) {
+        emitted = true;
+        if (previousProvider && onFailover && !failoverRecorded) {
+          failoverRecorded = true;
+          try {
+            void Promise.resolve(onFailover(previousProvider, name)).catch(() => undefined);
+          } catch {
+            // Telemetry must not change the stream result or retry behavior.
+          }
+        }
+        yield chunk;
+      }
+
+      if (previousProvider && onFailover && !failoverRecorded) {
+        try {
+          void Promise.resolve(onFailover(previousProvider, name)).catch(() => undefined);
+        } catch {
+          // Telemetry must not change the stream result or retry behavior.
+        }
+      }
+      return;
+    } catch (error) {
+      if (emitted) {
+        throw new Error(`LLM provider ${name} stream failed after output`, { cause: error });
+      }
+
+      errors.push({ provider: name, error });
+      previousProvider = name;
+    } finally {
+      if (onAttempt) {
+        try {
+          void Promise.resolve(
+            onAttempt(name, index > 0, (performance.now() - startedAt) / 1_000)
+          ).catch(() => undefined);
+        } catch {
+          // Telemetry must not change the stream result or retry behavior.
+        }
+      }
+    }
+  }
+
+  if (errors.length === 0) {
+    throw new Error('No LLM provider configured. Set NVIDIA_API_KEY or GROQ_API_KEY in .env');
+  }
+
+  const summary = errors
+    .map(
+      (entry) =>
+        `${(entry as { provider: string }).provider}: ${(entry as { error: unknown }).error instanceof Error ? (entry as { error: Error }).error.message : String((entry as { error: unknown }).error)}`
+    )
+    .join(' | ');
+  throw new Error(`All LLM providers failed. ${summary}`);
+}
+
 function hasKey(name: ProviderName): boolean {
   if (name === 'nvidia') return Boolean(process.env.NVIDIA_API_KEY);
   return Boolean(process.env.GROQ_API_KEY);

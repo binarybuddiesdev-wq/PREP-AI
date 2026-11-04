@@ -19,6 +19,8 @@ Each module has its own detailed spec file in the `routes/` directory:
 | **Coding**        | [`routes/coding-api-spec.md`](routes/coding-api-spec.md)               | Coding problems, sessions, code execution, AI review, daily stats        |
 | **Notifications** | [`routes/notifications-api-spec.md`](routes/notifications-api-spec.md) | In-app inbox, daily reminders, preferences, and unsubscribe              |
 | **Study Chat**    | [`routes/study-chat-api-spec.md`](routes/study-chat-api-spec.md)       | Authenticated, retry-safe interview-prep conversations powered by Mastra |
+| **Tech Expert**   | [`routes/tech-expert-api-spec.md`](routes/tech-expert-api-spec.md)     | Public structured Q&A and SSE streaming powered by Mastra                |
+| **Tech Expert**   | [`routes/tech-expert-api-spec.md`](routes/tech-expert-api-spec.md)     | Public structured Q&A and SSE streaming powered by Mastra                |
 
 ---
 

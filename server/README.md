@@ -65,7 +65,7 @@ The API prefix is `/api/v1`, except for the unprefixed health probes. Successful
 ### Implemented modules
 
 - **Health:** `GET /health` is a simple process response; `GET /healthz` reports liveness; `GET /readyz` checks MongoDB, PostgreSQL, and Redis.
-- **Tech expert:** `POST /api/v1/tech-expert` asks the public technology assistant.
+- **Tech expert:** `POST /api/v1/tech-expert` returns a structured answer; `POST /api/v1/tech-expert/stream` streams text deltas using Server-Sent Events. See the [tech expert API contract](../routes/tech-expert-api-spec.md).
 - **Users:** `GET /api/v1/users/me`, settings read/update, setup completion, and an admin-only user lookup. Clerk login/logout is handled by Clerk; this API has no local login or logout endpoints.
 - **Clerk webhook:** `POST /api/v1/webhooks/clerk` synchronizes user create/update/delete events. Profile and settings requests can also lazily synchronize a missing local user from Clerk.
 - **Topics and questions:** authenticated reads with admin-only create/update/delete operations.
