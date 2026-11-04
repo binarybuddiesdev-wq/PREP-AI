@@ -68,4 +68,4 @@
 - [x] Include provider/model, dataset version/digest, case counts, confusion metrics, and per-case outcomes in the report.
 - [x] Document the command, cost behavior, corpus limitations, and pending human label review.
 - [x] Run the full server gate and review the final diff.
-- [ ] Commit and push the completed feature to `main`.
+- [x] Commit and push the completed feature to `main`.
