@@ -39,8 +39,7 @@ Each service has:
 | **SLO — availability**       | 99.5% (free tier), 99.9% (premium)                                                                   |
 | **SLO — latency p95**        | < 300ms (non-AI), < 5s (AI)                                                                          |
 | **SLO — error rate**         | < 0.5% 5xx over 1h                                                                                   |
-| **Implemented dependencies** | MongoDB, PostgreSQL, Redis, Clerk, NVIDIA NIM, Groq                                                  |
-| **Planned integrations**     | Resend, Razorpay                                                                                     |
+| **Implemented dependencies** | MongoDB, PostgreSQL, Redis, Clerk, NVIDIA NIM, Groq, Cloudinary, Resend, Razorpay                    |
 | **Runbook**                  | [API runbook](../runbooks/api.md)                                                                    |
 | **Last incident**            | —                                                                                                    |
 
@@ -78,15 +77,14 @@ Each service has:
 
 ### `worker` — BullMQ job worker
 
-| Field                  | Value                                                                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | uday                                                                                                                                           |
-| **Status**             | Coding execution, theory evaluation, PDF ingestion, and PDF question consumers implemented                                                     |
-| **Implemented queues** | `coding-execution`, `theory-eval`, `pdf-ingest-queue` (2 concurrency, 5 attempts), `pdf-question-generation-queue` (3 concurrency, 3 attempts) |
-| **Planned queues**     | Code review, email, payments                                                                                                                   |
-| **Runtime**            | In-process with host API by default; separate Podman process in full profile                                                                   |
-| **Dependencies**       | Redis, Piston                                                                                                                                  |
-| **Runbook**            | [Background jobs](background-jobs.md)                                                                                                          |
+| Field                  | Value                                                                                                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**              | uday                                                                                                                                                              |
+| **Status**             | Coding execution, theory evaluation, PDF ingestion/question generation, code review, email, and payment reconciliation consumers implemented                      |
+| **Implemented queues** | `coding-execution-queue`, `theory-eval-queue`, `code-review-queue`, `pdf-ingest-queue`, `pdf-question-generation-queue`, `email-queue`, `payment-reconcile-queue` |
+| **Runtime**            | In-process with host API by default; separate Podman process in full profile                                                                                      |
+| **Dependencies**       | Redis, Piston                                                                                                                                                     |
+| **Runbook**            | [Background jobs](background-jobs.md)                                                                                                                             |
 
 ---
 
@@ -121,28 +119,27 @@ Each service has:
 
 ### `redis` — Quotas and Background Jobs
 
-| Field                | Value                                                                                     |
-| -------------------- | ----------------------------------------------------------------------------------------- |
-| **Owner**            | uday                                                                                      |
-| **Hosting (prod)**   | Upstash / ElastiCache                                                                     |
-| **Used for**         | Theory quotas, coding/theory BullMQ queues, and readiness pings                           |
-| **Not used for yet** | API response caching or Fastify rate-limit storage                                        |
-| **Failure behavior** | Theory session creation returns 503 if Redis is unavailable; health reports Redis as down |
-| **Runbook**          | [Redis runbook](../runbooks/redis.md)                                                     |
+| Field                | Value                                                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**            | uday                                                                                                                                                      |
+| **Hosting (prod)**   | Upstash / ElastiCache                                                                                                                                     |
+| **Used for**         | Role-based AI quotas, coding quotas, topic caching, shared Fastify rate limits, BullMQ queues, and readiness pings                                        |
+| **Failure behavior** | Quota and queue operations fail safely when Redis is unavailable; topic reads fall back to MongoDB; rate limits fail closed; health reports Redis as down |
+| **Runbook**          | [Redis runbook](../runbooks/redis.md)                                                                                                                     |
 
 ---
 
 ## External Services (no SLA from us, but tracked)
 
-| Service                  | Used for                              | Failure mode if down                                                                                                     |
-| ------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Clerk**                | Auth, user webhook                    | Login fails for new users; existing sessions still work until token expires (~60s). Webhook backlog replays on recovery. |
-| **NVIDIA NIM** (primary) | LLM (theory evaluation, tech answers) | Calls retry with Groq when configured; if both fail, endpoints return their documented error/fallback.                   |
-| **Groq** (fallback)      | LLM (theory evaluation, tech answers) | Used after NVIDIA fails unless `LLM_PROVIDER` explicitly selects one provider.                                           |
-| **Cloudinary**           | Private PDF source storage            | PDF module stores authenticated raw assets; configure account credentials and allow authenticated PDF delivery.          |
-| **Resend**               | Planned email delivery                | No email module or queue exists yet.                                                                                     |
-| **Razorpay**             | Planned payments                      | No payment API or webhook module exists yet.                                                                             |
-| **Podman / Piston**      | Local code execution                  | Coding API sends bounded execution jobs through BullMQ to the Piston worker.                                             |
+| Service                  | Used for                                                  | Failure mode if down                                                                                                     |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Clerk**                | Auth, user webhook                                        | Login fails for new users; existing sessions still work until token expires (~60s). Webhook backlog replays on recovery. |
+| **NVIDIA NIM** (primary) | LLM (theory evaluation, tech answers)                     | Calls retry with Groq when configured; if both fail, endpoints return their documented error/fallback.                   |
+| **Groq** (fallback)      | LLM (theory evaluation, tech answers)                     | Used after NVIDIA fails unless `LLM_PROVIDER` explicitly selects one provider.                                           |
+| **Cloudinary**           | Private PDF source storage                                | PDF module stores authenticated raw assets; configure account credentials and allow authenticated PDF delivery.          |
+| **Resend**               | Opt-in study reminders and idempotent email delivery      | Email reminders retry through BullMQ; live sends require verified sender and credentials.                                |
+| **Razorpay**             | Subscription billing, cancellation, webhooks, and refunds | Webhook inbox reconciliation retries; live billing requires provider plans and credentials.                              |
+| **Podman / Piston**      | Local code execution                                      | Coding API sends bounded execution jobs through BullMQ to the Piston worker.                                             |
 
 ---
 

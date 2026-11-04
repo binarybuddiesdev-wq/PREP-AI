@@ -498,3 +498,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Token exhaustion and unsafe source detections now persist safe terminal generation codes, and the questions endpoint returns a specific safe message. Transient provider, detector, and budget-service failures remain retryable.
 - Updated PDF API, RAG design, backend, and architecture trackers.
 - Verification: focused PDF/theory tests (89 passed); full server gate passed.
+
+## 2026-11-04 - Synchronize backend service catalog
+
+- Replaced stale planned integrations/queues with the implemented Resend, Razorpay, code-review, email, and payment-reconciliation flows.
+- Updated Redis use and failure behavior for quotas, topic caching, shared rate limits, queues, and health checks.
+- Removed the obsolete runbook TODO; linked the existing service-specific and disaster-recovery runbooks and left only production-specific provider tuning open.
+- Verification: compared each catalog entry with the queue constants, runbooks, and backend tracker; formatting and diff checks passed.

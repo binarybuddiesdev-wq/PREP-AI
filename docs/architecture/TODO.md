@@ -221,9 +221,12 @@ Restore drill quarterly. Runbook per failure mode in `docs/runbooks/`.
 
 ### 12. Per-service runbooks
 
-One per service: `api`, `web`, `piston`, `worker`, `mongo`, `postgres`,
-`redis`. Each follows: detection, mitigation, escalation, post-mortem
-template. Linked from `services.md`. Currently `*(TODO)*` on every row.
+Implemented: [API](../runbooks/api.md), [web](../runbooks/web.md),
+[Piston](../runbooks/piston.md), [worker](../runbooks/worker.md),
+[MongoDB](../runbooks/mongo.md), [PostgreSQL](../runbooks/postgres.md),
+[Redis](../runbooks/redis.md), and [disaster recovery](../runbooks/disaster-recovery.md).
+Provider-specific rollback and alert steps remain to be added when production
+providers and alert delivery are configured. See the [service catalog](services.md).
 
 ### 13. Threat model
 
