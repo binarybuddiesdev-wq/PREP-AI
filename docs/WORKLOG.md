@@ -470,3 +470,9 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Added a balanced, versioned 40-case synthetic detector corpus with stable digest validation, a runner using the production Mastra processor, and a dry-run-by-default CLI. Opt-in runs report confusion-matrix counts, precision/recall, detector details, and per-case failures to ignored local reports; no answer-generation model or Mastra persistence is involved.
 - Documented the command, provider/model selection, cost behavior, provisional labels, and requirement for independent subject-matter review before release decisions.
 - Verification: focused dataset/runner/CLI tests and full server gate.
+
+## 2026-11-04 - Count rate-limit rejections in Prometheus
+
+- Added `http_rate_limit_exceeded_total` with fixed `auth` and `general` labels, wired from Fastify's `onExceeded` hook. No IP, rate-limit key, or raw route is recorded; enforcement behavior is unchanged.
+- Updated the backend and observability trackers.
+- Verification: focused metrics/Fastify tests and full server gate.

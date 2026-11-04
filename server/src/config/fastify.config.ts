@@ -4,8 +4,13 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import type { Redis } from 'ioredis';
+import type { MetricsService } from '@/modules/metrics/metrics.service.js';
 
-export const registerFastifyPlugins = async (app: NestFastifyApplication, redis: Redis) => {
+export const registerFastifyPlugins = async (
+  app: NestFastifyApplication,
+  redis: Redis,
+  metrics?: Pick<MetricsService, 'recordRateLimitExceeded'>
+) => {
   const nodeEnv = process.env.NODE_ENV ?? 'development';
 
   // Security Headers via Helmet
@@ -37,6 +42,10 @@ export const registerFastifyPlugins = async (app: NestFastifyApplication, redis:
       return 100;
     },
     timeWindow: '1 minute',
+    onExceeded: (request) => {
+      const routeClass = request.url.startsWith('/api/v1/auth/') ? 'auth' : 'general';
+      metrics?.recordRateLimitExceeded(routeClass);
+    },
   });
 
   // Fastify native multipart parsing

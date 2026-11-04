@@ -7,6 +7,25 @@ import multipart from '@fastify/multipart';
 import { registerFastifyPlugins } from './fastify.config.js';
 
 describe('registerFastifyPlugins', () => {
+  it('records exceeded limits by bounded auth/general route class', async () => {
+    const app = {
+      register: vi.fn().mockResolvedValue(undefined),
+    } as unknown as NestFastifyApplication;
+    const metrics = { recordRateLimitExceeded: vi.fn() };
+
+    await registerFastifyPlugins(app, { status: 'ready' } as never, metrics as never);
+
+    const rateLimitOptions = vi
+      .mocked(app.register)
+      .mock.calls.find(([plugin]) => plugin === fastifyRateLimit)?.[1] as
+      { onExceeded?: (request: { url: string }, key: string) => void } | undefined;
+    rateLimitOptions?.onExceeded?.({ url: '/api/v1/auth/sign-in' }, 'private-key-1');
+    rateLimitOptions?.onExceeded?.({ url: '/api/v1/users/me' }, 'private-key-2');
+
+    expect(metrics.recordRateLimitExceeded).toHaveBeenNthCalledWith(1, 'auth');
+    expect(metrics.recordRateLimitExceeded).toHaveBeenNthCalledWith(2, 'general');
+  });
+
   it('exposes the request correlation ID header to browser clients', async () => {
     const app = {
       register: vi.fn().mockResolvedValue(undefined),

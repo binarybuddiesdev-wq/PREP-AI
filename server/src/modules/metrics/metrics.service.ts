@@ -72,6 +72,7 @@ export class MetricsService {
   >();
   private readonly webhookSignatureFailures = new Map<string, number>();
   private readonly clerkAuthFailures = new Map<string, number>();
+  private readonly rateLimitRejections = new Map<string, number>();
   private readonly pistonExecutionDurations = new Map<
     string,
     { language: string; verdict: string; count: number; sum: number; buckets: number[] }
@@ -160,6 +161,14 @@ export class MetricsService {
         ),
       '# HELP http_request_duration_seconds Duration of completed HTTP requests in seconds.',
       '# TYPE http_request_duration_seconds histogram',
+      '# HELP http_rate_limit_exceeded_total HTTP requests rejected by the shared rate limiter.',
+      '# TYPE http_rate_limit_exceeded_total counter',
+      ...[...this.rateLimitRejections.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(
+          ([routeClass, count]) =>
+            `http_rate_limit_exceeded_total{route_class="${routeClass}"} ${count}`
+        ),
       '# HELP mastra_provider_failovers_total Number of successful LLM provider fallbacks.',
       '# TYPE mastra_provider_failovers_total counter',
       ...providerFailovers.map(
@@ -358,6 +367,11 @@ export class MetricsService {
   recordClerkAuthFailure(reason: string): void {
     if (!this.validClerkAuthFailureReasons.has(reason)) return;
     this.clerkAuthFailures.set(reason, (this.clerkAuthFailures.get(reason) ?? 0) + 1);
+  }
+
+  recordRateLimitExceeded(routeClass: string): void {
+    if (routeClass !== 'auth' && routeClass !== 'general') return;
+    this.rateLimitRejections.set(routeClass, (this.rateLimitRejections.get(routeClass) ?? 0) + 1);
   }
 
   recordPistonExecutionDuration(language: string, verdict: string, durationSeconds: number): void {

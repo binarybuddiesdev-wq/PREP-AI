@@ -90,6 +90,21 @@ describe('MetricsService', () => {
     expect(await metrics.getMetrics()).not.toContain('route="/metrics"');
   });
 
+  it('exports rate-limit rejections with only auth and general route classes', async () => {
+    const metrics = new MetricsService({ getMetricCounter: vi.fn().mockResolvedValue(0) } as never);
+
+    metrics.recordRateLimitExceeded('auth');
+    metrics.recordRateLimitExceeded('general');
+    metrics.recordRateLimitExceeded('auth');
+    metrics.recordRateLimitExceeded('admin');
+
+    const output = await metrics.getMetrics();
+    expect(output).toContain('# TYPE http_rate_limit_exceeded_total counter');
+    expect(output).toContain('http_rate_limit_exceeded_total{route_class="auth"} 2');
+    expect(output).toContain('http_rate_limit_exceeded_total{route_class="general"} 1');
+    expect(output).not.toContain('route_class="admin"');
+  });
+
   it('counts provider failovers with only bounded provider labels', async () => {
     const redis = {
       incrementMetricCounter: vi.fn().mockResolvedValue(1),

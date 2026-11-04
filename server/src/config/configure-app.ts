@@ -17,10 +17,10 @@ export const configureApp = async (app: NestFastifyApplication) => {
 
   // Register Fastify plugins (Cors, Helmet, Redis-backed Rate Limiting, Multipart parsing)
   const redis = app.get(RedisService);
-  await registerFastifyPlugins(app, redis.getRateLimitClient());
+  const metrics = app.get(MetricsService);
+  await registerFastifyPlugins(app, redis.getRateLimitClient(), metrics);
 
   registerRequestIdHook(app.getHttpAdapter().getInstance());
-  const metrics = app.get(MetricsService);
   registerMetricsHooks(app.getHttpAdapter().getInstance(), metrics);
 
   // Set base path prefix. Health probes (`/health`, `/healthz`, `/readyz`)
