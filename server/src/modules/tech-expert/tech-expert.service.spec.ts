@@ -80,6 +80,18 @@ describe('TechExpertService', () => {
     });
   });
 
+  it('redacts recognized personal information before both safety detection and generation', async () => {
+    const question = 'My email is learner@example.com. Explain REST.';
+    mockGenerate.mockResolvedValue({ object: mockAnswer, text: JSON.stringify(mockAnswer) });
+
+    await service.askQuestion({ question });
+
+    expect(mockGenerate.mock.calls[0]?.[0]).toBe(
+      JSON.stringify({ question: 'My email is [REDACTED_EMAIL]. Explain REST.' })
+    );
+    expect(question).toContain('learner@example.com');
+  });
+
   it('should return error response when Mastra agent generate throws an error', async () => {
     // Arrange
     const question = 'Explain REST vs GraphQL';
@@ -145,6 +157,20 @@ describe('TechExpertService', () => {
     expect(await metrics.getMetrics()).toContain(
       'mastra_agent_duration_seconds_count{agent="tech_expert",provider="nvidia",fallback="false"} 1'
     );
+  });
+
+  it('redacts recognized personal information before streaming safety detection and generation', async () => {
+    const question = 'My email is learner@example.com. Explain REST.';
+    mockStream.mockImplementation(async () => ({ textStream: streamChunks('A useful answer.') }));
+
+    for await (const _chunk of service.streamQuestion({ question })) {
+      // consume the stream
+    }
+
+    expect(mockStream.mock.calls[0]?.[0]).toBe(
+      JSON.stringify({ question: 'My email is [REDACTED_EMAIL]. Explain REST.' })
+    );
+    expect(question).toContain('learner@example.com');
   });
 
   it('preserves provider errors before output so the controller can return an HTTP error', async () => {

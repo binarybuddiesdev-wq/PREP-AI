@@ -56,6 +56,8 @@ and queues question generation asynchronously. `GET
 response once generation finishes; while it is queued/running, the API reports
 that generation is still in progress. Generated questions include citations
 to the source PDF and page used by the model.
+Recognized personal-information patterns in retrieved excerpt text are masked
+in the provider prompt; stored source chunks and citations are not modified.
 
 If generation fails, the questions endpoint returns `503`. Daily AI token
 budget exhaustion returns a retry-tomorrow message. If the safety detector

@@ -130,6 +130,70 @@ describe('PdfQuestionGeneratorService', () => {
     ).rejects.toThrow('Question generator returned an invalid response');
   });
 
+  it('redacts excerpt identifiers in provider prompts while leaving source chunks unchanged', async () => {
+    mocks.generate.mockResolvedValue({
+      object: {
+        questions: [
+          {
+            question: 'What does the source explain?',
+            referenceAnswer: 'It explains X.',
+            citationChunkIds: ['chunk_1'],
+          },
+        ],
+      },
+    });
+    const sourceInput = {
+      ...input,
+      chunks: [
+        {
+          id: 'chunk_1',
+          page: 2,
+          text: 'Contact learner@example.com to discuss the topic X.',
+        },
+      ],
+    };
+    const service = new PdfQuestionGeneratorService(
+      { recordProviderFailover: vi.fn(), recordMastraAgentDuration: vi.fn() } as never,
+      tokenBudget() as never,
+      { warn: vi.fn() } as never
+    );
+
+    await expect(service.generate(sourceInput)).resolves.toMatchObject({
+      questions: [{ citationChunkIds: ['chunk_1'] }],
+    });
+
+    const providerPrompt = mocks.generate.mock.calls[0]?.[0] as string;
+    expect(providerPrompt).toContain('[REDACTED_EMAIL]');
+    expect(providerPrompt).not.toContain('learner@example.com');
+    expect(sourceInput.chunks[0]?.text).toContain('learner@example.com');
+  });
+
+  it('redacts identifiers before truncating an excerpt at the provider input limit', async () => {
+    mocks.generate.mockResolvedValue({
+      object: {
+        questions: [
+          {
+            question: 'What is the source about?',
+            referenceAnswer: 'It is about X.',
+            citationChunkIds: ['chunk_1'],
+          },
+        ],
+      },
+    });
+    const longChunk = 'x'.repeat(7_990) + 'learner@example.com and additional source text';
+    const service = new PdfQuestionGeneratorService(
+      { recordProviderFailover: vi.fn(), recordMastraAgentDuration: vi.fn() } as never,
+      tokenBudget() as never,
+      { warn: vi.fn() } as never
+    );
+
+    await service.generate({ ...input, chunks: [{ id: 'chunk_1', page: 2, text: longChunk }] });
+
+    const prompt = mocks.generate.mock.calls[0]?.[0] as string;
+    expect(prompt).not.toContain('learner@');
+    expect(prompt).toContain('[REDACTED_EMAIL]');
+  });
+
   it('does not call a provider when the daily token budget is exhausted', async () => {
     const budget = tokenBudget();
     budget.reserve.mockResolvedValueOnce({ allowed: false });

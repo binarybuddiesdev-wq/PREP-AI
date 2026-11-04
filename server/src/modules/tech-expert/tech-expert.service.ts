@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { redactPersonalInformation } from '@/common/utils/personal-information-redaction.js';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { mastra } from '../../mastra/mastra.config.js';
 import { chatWithFailover, getModel, streamWithFailover } from '../../mastra/providers.js';
@@ -24,6 +25,7 @@ export class TechExpertService {
 
   public async askQuestion(payload: ITechExpertRequest): Promise<ITechExpertResponse> {
     let injectionDetected = false;
+    const providerQuestion = redactPersonalInformation(payload.question);
     try {
       this.logger.log('Tech Expert question received');
 
@@ -40,7 +42,7 @@ export class TechExpertService {
         async (provider) => {
           if (injectionDetected) throw new PromptInjectionBlockedError();
           try {
-            return await agent.generate(JSON.stringify({ question: payload.question }), {
+            return await agent.generate(JSON.stringify({ question: providerQuestion }), {
               model: getModel(provider),
               inputProcessors: [
                 createPromptInjectionGuard(provider, ({ flagged }) => {
@@ -104,6 +106,7 @@ export class TechExpertService {
     this.logger.log('Tech Expert streaming question received');
     const agent = mastra.getAgent('techExpertAgent');
     let injectionDetected = false;
+    const providerQuestion = redactPersonalInformation(payload.question);
 
     try {
       yield* streamWithFailover(
@@ -111,7 +114,7 @@ export class TechExpertService {
           if (injectionDetected) throw new PromptInjectionBlockedError();
           try {
             return (
-              await agent.stream(JSON.stringify({ question: payload.question }), {
+              await agent.stream(JSON.stringify({ question: providerQuestion }), {
                 model: getModel(provider),
                 inputProcessors: [
                   createPromptInjectionGuard(provider, ({ flagged }) => {

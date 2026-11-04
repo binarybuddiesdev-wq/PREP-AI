@@ -506,3 +506,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Removed the obsolete runbook TODO; linked the existing service-specific and disaster-recovery runbooks and left only production-specific provider tuning open.
 - Synchronized the AI pipeline details with the new coding/PDF prompt guards and documented that PII redaction currently applies only to theory evaluation.
 - Verification: compared each catalog entry with the queue constants, runbooks, and backend tracker; formatting and diff checks passed.
+
+## 2026-11-04 - Redact known PII before natural-language AI calls
+
+- Extended the existing local redactor to provider-only copies in Study Chat, Tech Expert JSON/SSE, and PDF excerpt prompts. Both detector and answer model receive the sanitized text.
+- Preserved caller transcript/source content and citation identity; coding review source remains unchanged to preserve semantics.
+- Corrected the tracker to describe coverage as partial and spell out pattern-matching limitations.
+- Verification: focused provider-surface suites passed (45 tests); server build and full server gate passed, including coverage. Independent review found no blocking issues.

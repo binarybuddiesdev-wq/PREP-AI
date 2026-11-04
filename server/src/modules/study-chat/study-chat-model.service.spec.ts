@@ -97,6 +97,46 @@ describe('StudyChatModelService', () => {
     );
   });
 
+  it('redacts known personal identifiers in provider copies without mutating transcript messages', async () => {
+    const messages: StudyChatPromptMessage[] = [
+      { role: 'user', content: 'My email is learner@example.com and phone is 9876543210.' },
+    ];
+    const original = structuredClone(messages);
+
+    await service.generateReply('clerk-user-1', messages);
+
+    expect(agent.generate).toHaveBeenCalledWith(
+      [
+        {
+          role: 'user',
+          content: 'My email is [REDACTED_EMAIL] and phone is [REDACTED_PHONE].',
+        },
+      ],
+      expect.any(Object)
+    );
+    expect(guardMocks.estimatePromptInjectionGuardTokens).toHaveBeenCalledWith(
+      'My email is [REDACTED_EMAIL] and phone is [REDACTED_PHONE].'
+    );
+    expect(messages).toEqual(original);
+  });
+
+  it('redacts text parts in structured message content', async () => {
+    const messages = [
+      {
+        role: 'user',
+        content: [{ type: 'text', text: 'Contact learner@example.com.' }],
+      },
+    ] as unknown as StudyChatPromptMessage[];
+
+    await service.generateReply('clerk-user-1', messages);
+
+    const providerMessages = agent.generate.mock.calls[0]?.[0] as StudyChatPromptMessage[];
+    expect(providerMessages[0]?.content).toEqual([
+      { type: 'text', text: 'Contact [REDACTED_EMAIL].' },
+    ]);
+    expect(messages[0]?.content).toEqual([{ type: 'text', text: 'Contact learner@example.com.' }]);
+  });
+
   it('blocks a flagged turn and stops provider failover from generating an answer', async () => {
     chatWithFailover.mockImplementationOnce(async (call) => {
       await expect(call('nvidia')).rejects.toThrow('Blocked by safety check');

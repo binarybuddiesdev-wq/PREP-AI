@@ -6,6 +6,7 @@ import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { TheoryAiTokenBudgetService } from '@/modules/theory/theory-ai-token-budget.service.js';
 import type { TheoryAiTokenReservation } from '@/modules/theory/theory-ai-token-budget.service.js';
 import { chatWithFailover, getModel } from '@/mastra/providers.js';
+import { redactPersonalInformation } from '@/common/utils/personal-information-redaction.js';
 import {
   createPromptInjectionGuard,
   estimatePromptInjectionGuardTokens,
@@ -32,7 +33,14 @@ export class StudyChatModelService {
     messages: StudyChatPromptMessage[],
     signal?: AbortSignal
   ): Promise<string> {
-    const latestMessage = messages.at(-1);
+    const providerMessages: StudyChatPromptMessage[] = messages.map(
+      (message) =>
+        ({
+          ...message,
+          content: redactPromptValue(message.content),
+        }) as StudyChatPromptMessage
+    );
+    const latestMessage = providerMessages.at(-1);
     const latestContent = latestMessage
       ? typeof latestMessage.content === 'string'
         ? latestMessage.content
@@ -40,7 +48,7 @@ export class StudyChatModelService {
       : '';
     const guardTokenAllowance = estimatePromptInjectionGuardTokens(latestContent);
     const estimatedTokens =
-      messages.reduce((total, message) => {
+      providerMessages.reduce((total, message) => {
         const content =
           typeof message.content === 'string'
             ? message.content
@@ -61,7 +69,7 @@ export class StudyChatModelService {
       response = await chatWithFailover(
         async (provider) => {
           if (injectionDetected) throw new PromptInjectionBlockedError();
-          const generated = await this.agent.generate(messages, {
+          const generated = await this.agent.generate(providerMessages, {
             model: getModel(provider),
             inputProcessors: [
               createPromptInjectionGuard(provider, ({ flagged }) => {
@@ -108,6 +116,19 @@ export class StudyChatModelService {
     }
     return reply;
   }
+}
+
+function redactPromptValue(value: unknown): unknown {
+  if (typeof value === 'string') return redactPersonalInformation(value);
+  if (Array.isArray(value)) return value.map(redactPromptValue);
+  if (value && typeof value === 'object') {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) return value;
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, redactPromptValue(nested)])
+    );
+  }
+  return value;
 }
 
 async function readTotalTokens(usage: unknown): Promise<number | undefined> {
