@@ -1,4 +1,5 @@
 import { PrismaService } from '@/prisma/prisma.service.js';
+import { performance } from 'node:perf_hooks';
 import {
   ConflictException,
   Injectable,
@@ -81,46 +82,68 @@ export class TopicService {
   }
 
   async getAllCategories(dto: GetTopicsDto) {
+    const startedAt = performance.now();
+    let cacheResult: 'hit' | 'miss' = 'miss';
     const { category } = dto;
     const cacheKey = `${TOPIC_CACHE_PREFIX}:list:${category ?? 'all'}`;
-    const cachedTopics = await this.readTopicCache<
-      Awaited<ReturnType<typeof this.prisma.topic.findMany>>
-    >(cacheKey, (value) => Array.isArray(value) && value.every(isTopicCacheEntry));
-    if (cachedTopics !== null) {
-      this.metrics.recordTopicCacheRequest('list', 'hit');
-      return cachedTopics;
+    try {
+      const cachedTopics = await this.readTopicCache<
+        Awaited<ReturnType<typeof this.prisma.topic.findMany>>
+      >(cacheKey, (value) => Array.isArray(value) && value.every(isTopicCacheEntry));
+      if (cachedTopics !== null) {
+        cacheResult = 'hit';
+        this.metrics.recordTopicCacheRequest('list', 'hit');
+        return cachedTopics;
+      }
+      this.metrics.recordTopicCacheRequest('list', 'miss');
+      const where = category ? { category } : {};
+
+      const topics = await this.prisma.topic.findMany({ where });
+      await this.writeTopicCache(cacheKey, topics);
+
+      this.logger.info({ count: topics.length, category }, 'Topics fetched successfully');
+
+      return topics;
+    } finally {
+      this.metrics.recordTopicCacheDuration(
+        'list',
+        cacheResult,
+        Math.max(0, performance.now() - startedAt) / 1_000
+      );
     }
-    this.metrics.recordTopicCacheRequest('list', 'miss');
-    const where = category ? { category } : {};
-
-    const topics = await this.prisma.topic.findMany({ where });
-    await this.writeTopicCache(cacheKey, topics);
-
-    this.logger.info({ count: topics.length, category }, 'Topics fetched successfully');
-
-    return topics;
   }
 
   async getTopicBySlug(slug: string) {
+    const startedAt = performance.now();
+    let cacheResult: 'hit' | 'miss' = 'miss';
     const cacheKey = this.topicDetailCacheKey(slug);
-    const cachedTopic = await this.readTopicCache<
-      Awaited<ReturnType<typeof this.prisma.topic.findUnique>>
-    >(cacheKey, isTopicCacheEntry);
-    if (cachedTopic !== null) {
-      this.metrics.recordTopicCacheRequest('detail', 'hit');
-      return cachedTopic;
+    try {
+      const cachedTopic = await this.readTopicCache<
+        Awaited<ReturnType<typeof this.prisma.topic.findUnique>>
+      >(cacheKey, isTopicCacheEntry);
+      if (cachedTopic !== null) {
+        cacheResult = 'hit';
+        this.metrics.recordTopicCacheRequest('detail', 'hit');
+        return cachedTopic;
+      }
+      this.metrics.recordTopicCacheRequest('detail', 'miss');
+      const topic = await this.prisma.topic.findUnique({ where: { slug } });
+
+      if (!topic) {
+        throw new NotFoundException(TOPIC_NOT_FOUND);
+      }
+
+      await this.writeTopicCache(cacheKey, topic);
+      this.logger.info({ slug }, 'Topic fetched successfully');
+
+      return topic;
+    } finally {
+      this.metrics.recordTopicCacheDuration(
+        'detail',
+        cacheResult,
+        Math.max(0, performance.now() - startedAt) / 1_000
+      );
     }
-    this.metrics.recordTopicCacheRequest('detail', 'miss');
-    const topic = await this.prisma.topic.findUnique({ where: { slug } });
-
-    if (!topic) {
-      throw new NotFoundException(TOPIC_NOT_FOUND);
-    }
-
-    await this.writeTopicCache(cacheKey, topic);
-    this.logger.info({ slug }, 'Topic fetched successfully');
-
-    return topic;
   }
 
   async updateTopic(id: string, dto: UpdateTopicDto) {

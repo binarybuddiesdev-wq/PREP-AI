@@ -89,6 +89,7 @@ test('Grafana dashboard is portable and has panels for the service signals', asy
   assert.equal(dashboard.timezone, 'browser');
   for (const metric of [
     'probe_success',
+    'topic_cache_operation_duration_seconds',
     'http_request_duration_seconds',
     'worker_job_attempts_total',
     'bullmq_job_count',

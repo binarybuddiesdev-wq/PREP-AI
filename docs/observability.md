@@ -46,29 +46,30 @@ Endpoints to expose:
 Current and planned metric families (Prometheus names):
 
 The HTTP histogram, in-flight gauge, provider failover counter, Mastra agent
-duration histogram, topic-cache hit/miss counter, BullMQ queue-count gauge,
+duration histogram, topic-cache hit/miss counter and latency histogram, BullMQ queue-count gauge,
 worker attempt counter and duration histogram, Redis used/max-memory gauges,
 webhook signature failure counter, Clerk authentication failure counter, and
 Piston execution duration histogram are emitted now. The HTTP histogram also
 exposes a count by method, route, and status, which can be used to graph request
 rate and error rate.
 
-| Name                                | Type      | Labels                          | Source                                     |
-| ----------------------------------- | --------- | ------------------------------- | ------------------------------------------ |
-| `http_request_duration_seconds`     | Histogram | `method`, `route`, `status`     | Fastify request lifecycle hooks            |
-| `http_requests_in_flight`           | Gauge     | `route`                         | Fastify request lifecycle hooks            |
-| `bullmq_job_count`                  | Gauge     | `queue`, `state`                | `JobQueueService.getJobCounts`             |
-| `worker_job_attempts_total`         | Counter   | `queue`, `result`               | BullMQ worker processor                    |
-| `worker_job_duration_seconds`       | Histogram | `queue`, `result`               | BullMQ worker processor                    |
-| `redis_memory_used_bytes`           | Gauge     | none                            | Redis `INFO memory`                        |
-| `redis_memory_max_bytes`            | Gauge     | none                            | Redis `INFO memory`; 0 means unlimited     |
-| `mastra_agent_duration_seconds`     | Histogram | `agent`, `provider`, `fallback` | `chatWithFailover` provider-attempt timer  |
-| `mastra_provider_failovers_total`   | Counter   | `from`, `to`                    | `chatWithFailover` after fallback succeeds |
-| `prisma_query_duration_seconds`     | Histogram | `model`, `operation`            | API PostgreSQL Prisma query extension      |
-| `topic_cache_requests_total`        | Counter   | `operation`, `result`           | Topic list/detail Redis cache reads        |
-| `piston_execution_duration_seconds` | Histogram | `language`, `verdict`           | Piston module                              |
-| `webhook_signature_failures_total`  | Counter   | `provider`                      | Svix header and verification checks        |
-| `clerk_auth_failures_total`         | Counter   | `reason`                        | `ClerkAuthGuard`                           |
+| Name                                     | Type      | Labels                          | Source                                            |
+| ---------------------------------------- | --------- | ------------------------------- | ------------------------------------------------- |
+| `http_request_duration_seconds`          | Histogram | `method`, `route`, `status`     | Fastify request lifecycle hooks                   |
+| `http_requests_in_flight`                | Gauge     | `route`                         | Fastify request lifecycle hooks                   |
+| `bullmq_job_count`                       | Gauge     | `queue`, `state`                | `JobQueueService.getJobCounts`                    |
+| `worker_job_attempts_total`              | Counter   | `queue`, `result`               | BullMQ worker processor                           |
+| `worker_job_duration_seconds`            | Histogram | `queue`, `result`               | BullMQ worker processor                           |
+| `redis_memory_used_bytes`                | Gauge     | none                            | Redis `INFO memory`                               |
+| `redis_memory_max_bytes`                 | Gauge     | none                            | Redis `INFO memory`; 0 means unlimited            |
+| `mastra_agent_duration_seconds`          | Histogram | `agent`, `provider`, `fallback` | `chatWithFailover` provider-attempt timer         |
+| `mastra_provider_failovers_total`        | Counter   | `from`, `to`                    | `chatWithFailover` after fallback succeeds        |
+| `prisma_query_duration_seconds`          | Histogram | `model`, `operation`            | API PostgreSQL Prisma query extension             |
+| `topic_cache_requests_total`             | Counter   | `operation`, `result`           | Topic list/detail Redis cache reads               |
+| `topic_cache_operation_duration_seconds` | Histogram | `operation`, `result`           | Topic list/detail read latency, split by hit/miss |
+| `piston_execution_duration_seconds`      | Histogram | `language`, `verdict`           | Piston module                                     |
+| `webhook_signature_failures_total`       | Counter   | `provider`                      | Svix header and verification checks               |
+| `clerk_auth_failures_total`              | Counter   | `reason`                        | `ClerkAuthGuard`                                  |
 
 `mastra_provider_failovers_total` increments once when a fallback succeeds
 after another configured provider failed. Provider labels are limited to
@@ -276,7 +277,7 @@ verify the probe exporter is reachable from Prometheus.
   `Authorization: Bearer <token>`. Without the token, `/metrics` returns 404.
   HTTP duration, in-flight requests, Piston duration by fixed language/verdict,
   successful AI provider failovers,
-  topic-cache hits/misses, Redis used/max memory, and BullMQ counts for each
+  topic-cache hits/misses and read latency, Redis used/max memory, and BullMQ counts for each
   registered queue and `waiting`, `active`, `completed`, `failed`, and `delayed`
   state are currently collected. Queue and state labels come from fixed registries; job IDs and
   user data are never labels. Queue samples are omitted if Redis is unavailable.

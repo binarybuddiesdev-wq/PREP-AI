@@ -1,5 +1,10 @@
 # Worklog
 
+## 2026-11-04 - Topic cache latency histograms
+
+- Added `topic_cache_operation_duration_seconds` for topic list and detail reads, split by cache hit/miss. Durations include the complete path (cache lookup and, on misses, MongoDB retrieval), with fixed labels and existing bounded histogram buckets. Added a Grafana p95 panel and updated cache/observability trackers. This provides measurements before expanding caching to other read paths.
+- Verification: metrics/topic-service focused tests passed; Prometheus configuration and alert rules remain valid; full server gate passed.
+
 ## 2026-11-04 - Blackbox probes for API health endpoints
 
 - Added a bounded Blackbox Exporter HTTP module and Prometheus probes/alerts for `/healthz` and `/readyz`, plus a Grafana health status panel. Documented the optional Podman exporter and updated the backend/architecture trackers.

@@ -66,6 +66,10 @@ export class MetricsService {
     { method: string; route: string; status: string; count: number; sum: number; buckets: number[] }
   >();
   private readonly topicCacheRequests = new Map<string, number>();
+  private readonly topicCacheDurations = new Map<
+    string,
+    { operation: string; result: string; count: number; sum: number; buckets: number[] }
+  >();
   private readonly webhookSignatureFailures = new Map<string, number>();
   private readonly clerkAuthFailures = new Map<string, number>();
   private readonly pistonExecutionDurations = new Map<
@@ -170,6 +174,8 @@ export class MetricsService {
           const [operation, result] = key.split(':');
           return `topic_cache_requests_total{operation="${operation}",result="${result}"} ${count}`;
         }),
+      '# HELP topic_cache_operation_duration_seconds Duration of topic list and detail reads split by cache outcome.',
+      '# TYPE topic_cache_operation_duration_seconds histogram',
       '# HELP bullmq_job_count Number of jobs by queue and BullMQ state.',
       '# TYPE bullmq_job_count gauge',
       ...this.formatJobCounts(jobCounts),
@@ -202,6 +208,24 @@ export class MetricsService {
       '# HELP worker_job_duration_seconds Duration of background worker job attempts in seconds.',
       '# TYPE worker_job_duration_seconds histogram',
     ];
+
+    for (const metric of [...this.topicCacheDurations.values()].sort((left, right) =>
+      JSON.stringify([left.operation, left.result]).localeCompare(
+        JSON.stringify([right.operation, right.result])
+      )
+    )) {
+      const labels = `operation="${metric.operation}",result="${metric.result}"`;
+      metric.buckets.forEach((count, index) => {
+        lines.push(
+          `topic_cache_operation_duration_seconds_bucket{${labels},le="${this.buckets[index]}"} ${count}`
+        );
+      });
+      lines.push(
+        `topic_cache_operation_duration_seconds_bucket{${labels},le="+Inf"} ${metric.count}`
+      );
+      lines.push(`topic_cache_operation_duration_seconds_sum{${labels}} ${metric.sum}`);
+      lines.push(`topic_cache_operation_duration_seconds_count{${labels}} ${metric.count}`);
+    }
 
     for (const metric of [...this.durations.values()].sort((left, right) =>
       JSON.stringify([left.method, left.route, left.status]).localeCompare(
@@ -302,6 +326,25 @@ export class MetricsService {
     if (!['list', 'detail'].includes(operation) || !['hit', 'miss'].includes(result)) return;
     const key = `${operation}:${result}`;
     this.topicCacheRequests.set(key, (this.topicCacheRequests.get(key) ?? 0) + 1);
+  }
+
+  recordTopicCacheDuration(operation: string, result: string, durationSeconds: number): void {
+    if (!['list', 'detail'].includes(operation) || !['hit', 'miss'].includes(result)) return;
+    const key = JSON.stringify([operation, result]);
+    const metric = this.topicCacheDurations.get(key) ?? {
+      operation,
+      result,
+      count: 0,
+      sum: 0,
+      buckets: this.buckets.map(() => 0),
+    };
+    const duration = Number.isFinite(durationSeconds) ? Math.max(0, durationSeconds) : 0;
+    metric.count += 1;
+    metric.sum += duration;
+    this.buckets.forEach((bucket, index) => {
+      if (duration <= bucket) metric.buckets[index] += 1;
+    });
+    this.topicCacheDurations.set(key, metric);
   }
 
   recordWebhookSignatureFailure(provider: string): void {

@@ -130,6 +130,30 @@ describe('MetricsService', () => {
     expect(output).not.toContain('slug:react');
   });
 
+  it('records topic cache operation duration histograms with bounded labels', async () => {
+    const metrics = new MetricsService({
+      incrementMetricCounter: vi.fn(),
+      getMetricCounter: vi.fn().mockResolvedValue(0),
+    } as never);
+
+    metrics.recordTopicCacheDuration('list', 'hit', 0.025);
+    metrics.recordTopicCacheDuration('detail', 'miss', 0.5);
+    metrics.recordTopicCacheDuration('slug:react', 'hit', 1);
+
+    const output = await metrics.getMetrics();
+    expect(output).toContain('# TYPE topic_cache_operation_duration_seconds histogram');
+    expect(output).toContain(
+      '# HELP topic_cache_operation_duration_seconds Duration of topic list and detail reads split by cache outcome.'
+    );
+    expect(output).toContain(
+      'topic_cache_operation_duration_seconds_bucket{operation="list",result="hit",le="0.025"} 1'
+    );
+    expect(output).toContain(
+      'topic_cache_operation_duration_seconds_count{operation="detail",result="miss"} 1'
+    );
+    expect(output).not.toContain('slug:react');
+  });
+
   it('keeps the scrape available when Redis cannot provide the counter', async () => {
     const metrics = new MetricsService({
       incrementMetricCounter: vi.fn(),

@@ -186,6 +186,21 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 12,
+      "title": "Topic read p95 by cache outcome",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (operation, result, le) (rate(topic_cache_operation_duration_seconds_bucket{job=\"prepai-api\"}[5m])))",
+          "legendFormat": "{{operation}} · {{result}}",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "templating": {

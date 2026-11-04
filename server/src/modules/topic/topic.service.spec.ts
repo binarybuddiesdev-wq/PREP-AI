@@ -37,7 +37,10 @@ describe('TopicService', () => {
     warn: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
   };
-  let metrics: { recordTopicCacheRequest: ReturnType<typeof vi.fn> };
+  let metrics: {
+    recordTopicCacheRequest: ReturnType<typeof vi.fn>;
+    recordTopicCacheDuration: ReturnType<typeof vi.fn>;
+  };
 
   const mockTopic = {
     id: 'topic_001',
@@ -99,7 +102,10 @@ describe('TopicService', () => {
       warn: vi.fn(),
       error: vi.fn(),
     };
-    metrics = { recordTopicCacheRequest: vi.fn() };
+    metrics = {
+      recordTopicCacheRequest: vi.fn(),
+      recordTopicCacheDuration: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -300,6 +306,11 @@ describe('TopicService', () => {
       expect(prisma.topic.findMany).not.toHaveBeenCalled();
       expect(redis.setCacheValue).not.toHaveBeenCalled();
       expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('list', 'hit');
+      expect(metrics.recordTopicCacheDuration).toHaveBeenCalledWith(
+        'list',
+        'hit',
+        expect.any(Number)
+      );
     });
 
     it('uses distinct keys for the supported categories', async () => {
@@ -329,6 +340,11 @@ describe('TopicService', () => {
       );
       expect(redis.deleteCacheValues).toHaveBeenCalledWith('prepai:cache:topics:v1:list:all');
       expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('list', 'miss');
+      expect(metrics.recordTopicCacheDuration).toHaveBeenCalledWith(
+        'list',
+        'miss',
+        expect.any(Number)
+      );
     });
 
     it('refreshes a valid JSON cache entry with the wrong list shape', async () => {
@@ -382,6 +398,11 @@ describe('TopicService', () => {
       expect(prisma.topic.findUnique).not.toHaveBeenCalled();
       expect(redis.setCacheValue).not.toHaveBeenCalled();
       expect(metrics.recordTopicCacheRequest).toHaveBeenCalledWith('detail', 'hit');
+      expect(metrics.recordTopicCacheDuration).toHaveBeenCalledWith(
+        'detail',
+        'hit',
+        expect.any(Number)
+      );
     });
 
     it('refreshes a valid JSON cache entry with the wrong detail shape', async () => {
