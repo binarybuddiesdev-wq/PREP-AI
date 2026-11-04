@@ -36,7 +36,7 @@ describe('OnboardingWizard', () => {
     const { container } = render(<OnboardingWizard {...createWizardProps()} />);
 
     expect(screen.getByRole('main', { name: 'Profile setup' })).toBeInTheDocument();
-    expect(container.querySelector('.onboarding-screen')).toHaveClass('h-dvh', 'overflow-hidden');
+    expect(container.querySelector('.onboarding-screen')).toHaveClass('h-dvh', 'overflow-clip');
     expect(container.querySelector('.onboarding-card')).toHaveClass('overflow-visible');
     expect(container.querySelector('.onboarding-card')).toHaveClass('onboarding-card--compact');
     expect(container.querySelector('.onboarding-card')).not.toHaveClass('overflow-y-auto');

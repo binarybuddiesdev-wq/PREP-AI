@@ -49,7 +49,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   return (
     <main
       aria-label="Profile setup"
-      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-hidden bg-[#09090b] px-3 py-2 font-['DM_Sans',sans-serif] text-zinc-100 sm:px-4"
+      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-clip bg-[#09090b] px-3 py-2 font-['DM_Sans',sans-serif] text-zinc-100 sm:px-4"
     >
       <div
         aria-hidden="true"

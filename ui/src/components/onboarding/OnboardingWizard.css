@@ -26,7 +26,7 @@ body:has(.onboarding-screen) {
 .onboarding-screen .onboarding-card {
   max-height: calc(100dvh - 1.5rem);
   overflow: visible;
-  padding: 0.625rem 1rem;
+  padding: 0.625rem 0.875rem;
 }
 
 .onboarding-header {
@@ -35,6 +35,8 @@ body:has(.onboarding-screen) {
 
 .onboarding-header > div:first-child {
   margin-bottom: 0;
+  transform: scale(0.88);
+  transform-origin: center bottom;
 }
 
 .onboarding-header h1 {
@@ -63,7 +65,11 @@ body:has(.onboarding-screen) {
 .onboarding-content-section,
 .onboarding-difficulty,
 .onboarding-actions {
-  margin-top: 0.375rem;
+  margin-top: 0.3rem;
+}
+
+.onboarding-fields {
+  gap: 0.375rem;
 }
 
 .onboarding-skip {
@@ -89,10 +95,36 @@ body:has(.onboarding-screen) {
 }
 
 .onboarding-screen .settings-select-item {
-  min-height: 1.875rem;
-  border-radius: 0.45rem;
-  padding: 0.3rem 0.55rem;
+  min-height: 2rem;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.625rem;
   font-size: 0.8125rem;
+}
+
+@media (max-height: 700px) {
+  .onboarding-screen .onboarding-card {
+    max-height: calc(100dvh - 1rem);
+    padding-block: 0.5rem;
+  }
+
+  .onboarding-header {
+    margin-bottom: 0.375rem;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 0.25rem;
+  }
+
+  .onboarding-fields,
+  .onboarding-content-section,
+  .onboarding-difficulty,
+  .onboarding-actions {
+    margin-top: 0.25rem;
+  }
+
+  .onboarding-screen #onboarding-step-title + p {
+    margin-top: 0.125rem;
+  }
 }
 
 @media (max-height: 480px) {
@@ -180,12 +212,47 @@ body:has(.onboarding-screen) {
 
 @media (max-height: 320px) {
   .onboarding-screen {
-    align-items: flex-start;
-    overflow-y: auto;
+    align-items: center;
+    overflow: clip;
   }
 
   .onboarding-screen .onboarding-card {
-    max-height: none;
+    max-height: calc(100dvh - 0.5rem);
     overflow: visible;
+    padding: 0.25rem 0.625rem;
+  }
+
+  .onboarding-header > div:first-child,
+  .onboarding-header > p {
+    display: none;
+  }
+
+  .onboarding-header {
+    margin-bottom: 0.125rem;
+  }
+
+  .onboarding-screen #onboarding-step-title + p {
+    font-size: 0.7rem;
+    line-height: 0.9rem;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 0.125rem;
+  }
+
+  .onboarding-screen .settings-select-trigger {
+    height: 1.875rem;
+    min-height: 1.875rem;
+    padding-block: 0.2rem;
+  }
+
+  .onboarding-actions button {
+    min-height: 1.875rem;
+    padding-block: 0.2rem;
+  }
+
+  .onboarding-skip {
+    margin-top: 0;
+    line-height: 1rem;
   }
 }
