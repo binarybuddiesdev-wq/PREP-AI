@@ -4,6 +4,7 @@ import { registerFastifyPlugins, registerGlobalMiddleware, setupSwagger } from '
 import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { registerMetricsHooks } from './metrics-hooks.js';
 import { registerRequestIdHook } from './request-id.js';
+import { RedisService } from '@/common/redis/redis.service.js';
 
 export const configureApp = async (app: NestFastifyApplication) => {
   const nodeEnv = process.env.NODE_ENV ?? 'development';
@@ -14,8 +15,9 @@ export const configureApp = async (app: NestFastifyApplication) => {
   // Register Global Interceptors, ValidationPipes, Global Exception Filters
   registerGlobalMiddleware(app);
 
-  // Register Fastify plugins (Cors, Helmet, Rate Limiting, Multipart parsing)
-  await registerFastifyPlugins(app);
+  // Register Fastify plugins (Cors, Helmet, Redis-backed Rate Limiting, Multipart parsing)
+  const redis = app.get(RedisService);
+  await registerFastifyPlugins(app, redis.getRateLimitClient());
 
   registerRequestIdHook(app.getHttpAdapter().getInstance());
   const metrics = app.get(MetricsService);

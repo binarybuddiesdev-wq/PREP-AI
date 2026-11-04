@@ -66,6 +66,10 @@ describe('RedisService unique quota reservations', () => {
     service = module.get<RedisService>(RedisService);
   });
 
+  it('exposes the managed Redis connection for shared Fastify rate limiting', () => {
+    expect(service.getRateLimitClient()).toBe(redisMocks.client);
+  });
+
   it.each([
     [[1, 2], { allowed: true, count: 2 }],
     [[0, 5], { allowed: false, count: 5 }],

@@ -412,6 +412,10 @@ export class RedisService implements OnModuleDestroy {
     return this.client.ping();
   }
 
+  getRateLimitClient(): Redis {
+    return this.client;
+  }
+
   onModuleDestroy(): void {
     this.client.disconnect();
   }

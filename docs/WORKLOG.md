@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-11-04 - Share Fastify rate limits through Redis
+
+- Reused the managed `RedisService` client for Fastify rate-limit storage so request counters are shared across API replicas. Preserved the 10/minute auth and 100/minute general limits and fail-closed behavior when Redis storage is unavailable.
+- Updated the backend status and observability guide. Rate-limit decisions remain absent from Prometheus metrics.
+- Verification: full server gate.
+
 ## 2026-11-04 - Stream tech-expert answers with Mastra
 
 - Added `POST /api/v1/tech-expert/stream` as an SSE endpoint while preserving the existing structured JSON route. Provider failover is limited to before the first emitted chunk; mid-stream failures produce a safe error event, and client disconnects abort the Mastra run.

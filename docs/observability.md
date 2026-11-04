@@ -309,8 +309,9 @@ verify the probe exporter is reachable from Prometheus.
 - [ ] Decide whether Sentry owns `console.error` and uncaught rejections or
       we install a `Logger.error` interceptor in `app.module.ts`.
 - [ ] Pin correlation-id format (UUIDv4 vs ULID vs nanoid).
-- [ ] Decide rate-limit backplane (in-memory vs Redis token bucket) — affects
-      whether the limiter shows up in metrics.
+- [x] Use the existing Redis client as the shared Fastify rate-limit store.
+      Storage failures are fail-closed; limiter decisions are not exposed as
+      Prometheus metrics.
 
 ## References
 
