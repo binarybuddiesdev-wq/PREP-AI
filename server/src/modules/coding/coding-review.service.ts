@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { z } from 'zod';
 import { MetricsService } from '../metrics/metrics.service.js';
@@ -105,23 +106,32 @@ export class CodingReviewService {
     const guardTokens = estimatePromptInjectionGuardTokens(prompt);
     const perProviderTokens =
       Math.ceil(Buffer.byteLength(prompt, 'utf8') / 4) + 1_024 + guardTokens;
-    const reservedTokens = perProviderTokens * 2;
-    const reservation = await this.tokenBudget.reserve(
-      context.ownerId,
-      executionId,
-      reservedTokens
-    );
-    if (!reservation.allowed) {
-      await this.markFailed(executionId);
-      return;
-    }
-
+    let budgetExceeded = false;
+    let budgetUnavailable = false;
     let injectionDetected = false;
     let generated: { result: ICodingReviewResult; provider: 'nvidia' | 'groq' };
     try {
       generated = await chatWithFailover(
         async (provider) => {
           if (injectionDetected) throw new PromptInjectionBlockedError();
+          if (budgetExceeded || budgetUnavailable) {
+            throw new Error('Coding review AI token budget reservation unavailable');
+          }
+          let reservation;
+          try {
+            reservation = await this.tokenBudget.reserve(
+              context.ownerId,
+              randomUUID(),
+              perProviderTokens
+            );
+          } catch (error) {
+            budgetUnavailable = true;
+            throw error;
+          }
+          if (!reservation.allowed) {
+            budgetExceeded = true;
+            throw new Error('Daily AI token budget reached');
+          }
           const response = await agent.generate(prompt, {
             model: getModel(provider),
             inputProcessors: [
@@ -133,6 +143,14 @@ export class CodingReviewService {
             structuredOutput: { schema: codingReviewSchema, jsonPromptInjection: true },
           });
           if (injectionDetected) throw new PromptInjectionBlockedError();
+          try {
+            await this.tokenBudget.settle(reservation, perProviderTokens);
+          } catch (error) {
+            this.logger.warn(
+              { executionId, err: error },
+              'Could not settle coding review token usage'
+            );
+          }
           return { provider, result: codingReviewSchema.parse(response.object) };
         },
         (from, to) => this.metrics.recordProviderFailover(from, to),
@@ -140,19 +158,26 @@ export class CodingReviewService {
           this.metrics.recordMastraAgentDuration('coding_review', provider, fallback, duration)
       );
     } catch (error) {
+      if (budgetExceeded) {
+        await this.markFailed(executionId);
+        return;
+      }
       if (injectionDetected || error instanceof PromptInjectionBlockedError) {
         await this.markFailed(executionId);
         return;
+      }
+      if (budgetUnavailable) {
+        throw new ServiceUnavailableException(
+          'AI token budget service is temporarily unavailable',
+          {
+            cause: error,
+          }
+        );
       }
       if (isPromptInjectionGuardFailure(error)) {
         this.logger.warn({ executionId }, 'Coding review prompt-injection check failed closed');
       }
       throw error;
-    }
-    try {
-      await this.tokenBudget.settle(reservation, reservedTokens);
-    } catch (error) {
-      this.logger.warn({ executionId, err: error }, 'Could not settle coding review token usage');
     }
     await this.persistReview(executionId, context.answer.id, generated.result, generated.provider);
   }

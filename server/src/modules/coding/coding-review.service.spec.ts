@@ -175,8 +175,8 @@ describe('CodingReviewService', () => {
     const oneProviderAttempt = promptTokens + 1_024 + promptTokens + 512;
     expect(tokenBudget.reserve).toHaveBeenCalledWith(
       'user_001',
-      executionId,
-      oneProviderAttempt * 2
+      expect.stringMatching(/^[0-9a-f-]{36}$/),
+      oneProviderAttempt
     );
     expect(tokenBudget.settle).toHaveBeenCalledWith(
       expect.objectContaining({ reservationKey: 'review-reservation' }),
@@ -232,6 +232,38 @@ describe('CodingReviewService', () => {
       where: { id: answer.id, userId: 'user_001', aiReviewStatus: { in: ['queued', 'running'] } },
       data: { aiReviewStatus: 'failed', aiReviewFailureMessage: 'review_unavailable' },
     });
+  });
+
+  it('reserves and settles separate token allowance for every provider attempt', async () => {
+    mocks.generate
+      .mockRejectedValueOnce(new Error('primary provider unavailable'))
+      .mockResolvedValueOnce({ object: review });
+    tokenBudget.reserve
+      .mockResolvedValueOnce({
+        allowed: true,
+        quotaKey: 'quota-key',
+        reservationKey: 'attempt-1',
+        ttlSeconds: 100,
+      })
+      .mockResolvedValueOnce({
+        allowed: true,
+        quotaKey: 'quota-key',
+        reservationKey: 'attempt-2',
+        ttlSeconds: 100,
+      });
+    const service = await createService();
+
+    await expect(service.review(executionId)).resolves.toBeUndefined();
+
+    expect(tokenBudget.reserve).toHaveBeenCalledTimes(2);
+    expect(tokenBudget.reserve.mock.calls[0]?.[0]).toBe('user_001');
+    expect(tokenBudget.reserve.mock.calls[1]?.[0]).toBe('user_001');
+    expect(tokenBudget.reserve.mock.calls[0]?.[1]).not.toBe(tokenBudget.reserve.mock.calls[1]?.[1]);
+    expect(tokenBudget.reserve.mock.calls[0]?.[2]).toBe(tokenBudget.reserve.mock.calls[1]?.[2]);
+    expect(tokenBudget.settle).toHaveBeenCalledWith(
+      expect.objectContaining({ reservationKey: 'attempt-2' }),
+      tokenBudget.reserve.mock.calls[1]?.[2]
+    );
   });
 
   it('leaves detector failures retryable and fails closed across providers', async () => {

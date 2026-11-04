@@ -486,7 +486,7 @@ New layout, one folder per purpose. A layer may import only from the layers list
 ## 2026-11-04 - Guard and budget AI coding review
 
 - Added provider-matched fail-closed prompt-injection detection to asynchronous coding review.
-- Reused role-based daily AI token quotas with an execution-ID reservation and conservative bounded prompt, detector, and output estimate; successful requests settle the reserved estimate, while failed and detected requests retain it.
+- Reused role-based daily AI token quotas with a fresh reservation for every provider attempt and a conservative bounded prompt, detector, and output estimate; successful attempts settle the estimate, while failed and detected attempts retain it.
 - Prompt detections now transition to the existing safe terminal `review_unavailable` state and do not invoke provider fallback. Bumped prompt provenance to `coding-review-v2`.
 - Updated backend and architecture trackers. PDF question generation remains pending a separately designed quota policy.
-- Verification: focused coding-review and worker/token-budget suites (30 tests passed); full server gate passed.
+- Verification: focused coding-review and worker/token-budget suites (31 tests passed); full server gate passed.
