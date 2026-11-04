@@ -3,23 +3,18 @@
   scrollbar-width: none;
 }
 
-.onboarding-card {
-  box-sizing: border-box;
-  max-height: calc(100svh - 1.5rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-color: rgb(161 161 170 / 28%) transparent;
-  scrollbar-width: thin;
-}
-
 .onboarding-actions button {
   padding-inline: 0.75rem;
   white-space: nowrap;
 }
 
-@media (max-height: 600px) {
+@media (max-height: 700px) {
+  .onboarding-screen {
+    padding-block: 0.5rem;
+  }
+
   .onboarding-card {
-    padding: 0.5rem 0.75rem;
+    padding: 0.75rem 1rem;
   }
 
   .onboarding-header {
@@ -28,6 +23,15 @@
 
   .onboarding-header > div:first-child {
     margin-bottom: 0;
+  }
+
+  .onboarding-header h1 {
+    font-size: 1.15rem;
+  }
+
+  .onboarding-header p,
+  #onboarding-step-title + p {
+    font-size: 0.8rem;
   }
 
   .onboarding-progress {
@@ -47,5 +51,14 @@
 
   .onboarding-topic {
     padding: 0.2rem 0.5rem;
+  }
+
+  .onboarding-actions button {
+    min-height: 2.5rem;
+    padding-block: 0.5rem;
+  }
+
+  .onboarding-skip {
+    font-size: 0.75rem;
   }
 }

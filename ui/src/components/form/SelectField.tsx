@@ -18,21 +18,27 @@ export const SelectField = (props: ISelectFieldProps) => {
         onValueChange={(nextValue) => onChange(nextValue ?? '')}
         disabled={disabled}
       >
-        <Select.Trigger id={id} className="settings-select-trigger">
+        <Select.Trigger id={id} className="settings-select-trigger h-10">
           <Select.Value placeholder={placeholder} />
           <Select.Icon className="settings-select-icon">
             <ChevronDown aria-hidden="true" className="size-4" />
           </Select.Icon>
         </Select.Trigger>
         <Select.Portal>
-          <Select.Positioner className="settings-select-positioner" sideOffset={6}>
+          <Select.Positioner
+            className="settings-select-positioner"
+            alignItemWithTrigger={false}
+            align="start"
+            side="bottom"
+            sideOffset={4}
+          >
             <Select.Popup className="settings-select-popup">
               <Select.List>
                 {options.map((option) => (
                   <Select.Item
                     key={option.value}
                     value={option.value}
-                    className="settings-select-item"
+                    className="settings-select-item min-h-9"
                   >
                     <Select.ItemText>{option.label}</Select.ItemText>
                     <Select.ItemIndicator className="settings-select-indicator">

@@ -16,12 +16,12 @@ const STEPS = [
 ] as const;
 
 const fieldClassName =
-  'mt-1.5 w-full rounded-lg border border-white/10 bg-[#09090b] px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15';
+  'mt-1.5 w-full rounded-lg border border-white/10 bg-[#09090b] px-4 py-2 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15';
 const primaryButtonClassName =
-  'inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
+  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
 
 const secondaryButtonClassName =
-  'inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
+  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-5 py-2 text-sm font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
 
 export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   const {
@@ -57,7 +57,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card relative w-full max-w-[520px] rounded-2xl border border-white/[0.08] bg-[#18181b] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6"
+        className="onboarding-card relative w-full max-w-[520px] overflow-visible rounded-2xl border border-white/[0.08] bg-[#18181b] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6"
       >
         <header className="onboarding-header mb-4 text-center">
           <div className="mb-1 flex justify-center">{brand}</div>

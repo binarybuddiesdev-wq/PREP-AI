@@ -582,3 +582,9 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Dashboard totals page through all session history because the current APIs do not expose aggregate completed-session counts; a server summary endpoint can reduce this cost if history volume makes dashboard loading slow.
 - Browser measurements for onboarding confirmed no document or card scrolling at 390×844, 390×640, 320×568, and 1366×768. The dropdown was opened at 320×568 and 390×844; both remained within the viewport. Dashboard coding-history retry was inspected at mobile and desktop widths; the topic-name error/retry was inspected at 390×844 without horizontal overflow. The layout detector returned no findings.
 - Verification: UI lint, `tsc -b`, production build, and UI tests passed (35 files, 100 tests). Changed-file Prettier passed. Root lint still reports 14 `no-undef` errors in the unrelated untracked `types/piston.js`; root format still reports 12 unrelated untracked e2e, Piston, seed, and tooling files. Those files were not modified. Build reports the existing Vite config and large-chunk warnings.
+
+## 2026-11-05 - Remove onboarding scroll and refine select menus
+
+- Removed the onboarding card's internal scrolling, which remained enabled in its stylesheet despite the earlier component class check. Tightened spacing and controls for short viewports.
+- Disabled Base UI's default selected-item alignment for shared selects so the option menu opens beside the trigger instead of overlapping its label or selected value; aligned options with the trigger and reduced their height.
+- Verified Chrome at 320×568, 390×640, 390×844, and 1366×768. Onboarding had no document or card scrolling; the opened 320×568 dropdown stayed in the viewport and did not overlap its trigger.
