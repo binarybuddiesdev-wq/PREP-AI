@@ -1,0 +1,108 @@
+groups:
+  - name: prepai-api-availability
+    rules:
+      - alert: PrepAIApiTargetDown
+        expr: absent(up{job="prepai-api"}) or up{job="prepai-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: PrepAI API metrics target is unavailable
+          description: Prometheus cannot scrape the PrepAI API. Check API health, networking, and the metrics bearer token.
+
+      - alert: PrepAIApiServerErrorRateHigh
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_count{job="prepai-api",status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_request_duration_seconds_count{job="prepai-api"}[5m])), 0.001)
+          ) > 0.01
+          and sum(rate(http_request_duration_seconds_count{job="prepai-api"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: PrepAI API server error rate exceeds 1%
+          description: More than 1% of API requests returned 5xx responses for five minutes with sufficient traffic. Inspect API logs and dependency health.
+
+      - alert: PrepAIApiP95LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{job="prepai-api"}[10m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI API p95 latency exceeds one second
+          description: API request p95 has exceeded one second for ten minutes. Break down latency by route and inspect database and provider dependencies.
+
+  - name: prepai-workers-and-dependencies
+    rules:
+      - alert: PrepAIWorkerFailureRateHigh
+        expr: |
+          (
+            sum(rate(worker_job_attempts_total{job="prepai-api",result="error"}[10m]))
+            /
+            clamp_min(sum(rate(worker_job_attempts_total{job="prepai-api"}[10m])), 0.001)
+          ) > 0.1
+          and sum(rate(worker_job_attempts_total{job="prepai-api"}[10m])) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI worker failure rate exceeds 10%
+          description: More than 10% of observed worker attempts failed for ten minutes. Inspect queue and worker logs for the affected queue.
+
+      - alert: PrepAIWaitingJobBacklog
+        expr: sum(bullmq_job_count{job="prepai-api",state="waiting"}) > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI has more than 100 waiting jobs
+          description: Waiting jobs have exceeded 100 for ten minutes. Check worker availability and queue processing latency.
+
+      - alert: PrepAIRedisMemoryHigh
+        expr: |
+          redis_memory_max_bytes{job="prepai-api"} > 0
+          and redis_memory_used_bytes{job="prepai-api"}
+            / redis_memory_max_bytes{job="prepai-api"} > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis memory usage exceeds 85% of its configured limit
+          description: Redis memory has remained above 85% of maxmemory for ten minutes. Check key growth and configured capacity.
+
+      - alert: PrepAIProviderFailoversHigh
+        expr: sum(increase(mastra_provider_failovers_total{job="prepai-api"}[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI AI provider failovers are elevated
+          description: More than ten successful provider failovers occurred in five minutes. Check primary and fallback provider health.
+
+      - alert: PrepAIPostgresQueryP95High
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(prisma_query_duration_seconds_bucket{job="prepai-api"}[10m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI PostgreSQL query p95 exceeds one second
+          description: Observed Prisma query p95 has exceeded one second for ten minutes. Inspect database load and slow model operations.
+
+      - alert: PrepAIWebhookSignatureFailuresHigh
+        expr: sum(increase(webhook_signature_failures_total{job="prepai-api"}[5m])) > 25
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI webhook signature failures are elevated
+          description: More than 25 webhook signature failures occurred in five minutes. Check provider configuration and investigate unexpected traffic.

@@ -12,6 +12,7 @@
     "test:ui": "playwright test --ui --project=ui",
     "test:server": "playwright test --project=server",
     "test:database:isolation": "node scripts/test-database-isolation.mjs",
+    "test:observability-config": "node --test scripts/observability-config.test.mjs",
     "test:chromium": "playwright test --project=ui-chromium --project=server-chromium",
     "report": "playwright show-report",
     "piston:start": "pnpm --filter server exec tsx ../types/piston.ts start",
@@ -65,7 +66,8 @@
     "prettier": "^3.9.10",
     "release-it": "^17.11.0",
     "typescript": "5.8.3",
-    "typescript-eslint": "^8.72.1"
+    "typescript-eslint": "^8.72.1",
+    "yaml": "2.9.1"
   },
   "pnpm": {
     "overrides": {

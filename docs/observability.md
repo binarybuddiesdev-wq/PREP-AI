@@ -204,20 +204,40 @@ that calls its append function. Required audit writes
 can block payment or account mutations if this SQL is missing. RLS remains
 part of the final isolation rollout.
 
-## Alerting
+## Prometheus and Grafana setup
 
-Alert rules (PagerDuty / Opsgenie):
+Portable starter files are in [`deploy/observability`](../deploy/observability/):
 
-| Trigger                                              | Severity | Page            |
-| ---------------------------------------------------- | -------- | --------------- |
-| `readyz.status == "not-ready"` for 3 minutes         | P3       | Backend on-call |
-| 5xx rate > 1% over 5 minutes                         | P2       | Backend on-call |
-| `increase(mastra_provider_failovers_total[5m]) > 10` | P3       | Backend on-call |
-| Sentry issue > 100 events in 10 minutes (new)        | P2       | Backend on-call |
-| Pod restarts > 3 in 10 minutes                       | P2       | Infra on-call   |
+- `prometheus/prometheus.yml` scrapes the API's authenticated `/metrics`
+  endpoint every 15 seconds and loads the included alert rules.
+- `prometheus/alerts.yml` defines API availability/error/latency, worker
+  failures and backlog, Redis memory, provider failovers, PostgreSQL query
+  latency, and webhook signature failure alerts.
+- `grafana/prepai-overview.json` is an importable dashboard for API traffic,
+  latency, in-flight requests, worker queues, Redis, provider failovers,
+  database latency, and webhook failures.
 
-P1 incidents are reserved for full outages — see
-[runbooks/api.md](../runbooks/api.md) (planned).
+Run Prometheus on the same Podman network as the API and keep `server:3000` as
+the target (the Compose service name). If Prometheus runs outside that network,
+replace the target with an address it can reach. Provide the exact same value as
+`METRICS_BEARER_TOKEN` in the file mounted at
+`/etc/prometheus/secrets/prepai-metrics-token`; do not put the token directly in
+the scrape configuration. Mount `alerts.yml` at
+`/etc/prometheus/rules/prepai-alerts.yml`. Prometheus must be configured with
+Alertmanager separately to deliver notifications; the rule file alone only
+evaluates and exposes firing alerts.
+
+Import the Grafana JSON and select the Prometheus data source when prompted.
+The dashboard uses the `DS_PROMETHEUS` data source variable and a `prepai-api`
+Prometheus job. Alert thresholds are starter operational defaults; tune them
+against observed production traffic and route-specific SLOs. The server's
+`/readyz` and `/healthz` return JSON rather than Prometheus samples, so use an
+external HTTP probe/blackbox exporter for dependency readiness and liveness.
+The included `up` alert only detects scrape target availability.
+
+Validate the YAML structure and dashboard metric coverage locally with
+`pnpm test:observability-config`. This check does not replace `promtool check
+rules` or review against the deployed Prometheus/Grafana versions.
 
 ## Local development
 

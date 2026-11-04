@@ -67,6 +67,7 @@ const step = (name, cwd, command) => ({ name, cwd, command });
 const plan = [
   step('root lint', '.', 'pnpm lint'),
   step('root format check', '.', 'pnpm format:check'),
+  step('observability config', '.', 'pnpm test:observability-config'),
 ];
 
 if (stacks.includes('server')) {
