@@ -126,6 +126,82 @@ describe('Razorpay subscription persistence and role projection', () => {
       });
       expect(saved.inbox).toMatchObject({ status: 'processed', attempts: 2 });
 
+      const chargeBody = Buffer.from(
+        JSON.stringify({
+          event: 'subscription.charged',
+          created_at: now + 20,
+          payload: {
+            subscription: {
+              entity: {
+                id: providerSubscriptionId,
+                plan_id: 'plan_test_monthly',
+                status: 'active',
+                notes: { prepai_user_id: userId, prepai_request_id: idempotencyKey },
+              },
+            },
+            payment: {
+              entity: {
+                id: `pay_${suffix.replaceAll('-', '')}`,
+                invoice_id: `inv_${suffix.replaceAll('-', '')}`,
+                amount: 49900,
+                currency: 'INR',
+                status: 'captured',
+                captured: '1',
+                created_at: now + 19,
+                method: 'card',
+                card_id: 'must-not-be-stored',
+              },
+            },
+          },
+        })
+      );
+      const chargeSignature = createHmac('sha256', webhookSecret).update(chargeBody).digest('hex');
+      const chargeEventId = `evt-charge-${suffix}`;
+      await service.acceptWebhook(chargeBody, chargeSignature, chargeEventId);
+      await service.acceptWebhook(chargeBody, chargeSignature, chargeEventId);
+      const charge = await database!.postgresProvider.client_!.paymentCharge.findUnique({
+        where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
+      });
+      expect(charge).toMatchObject({
+        userId,
+        subscriptionId: started.id,
+        razorpaySubscriptionId: providerSubscriptionId,
+        amountMinor: 49900,
+        currency: 'INR',
+        invoiceId: `inv_${suffix.replaceAll('-', '')}`,
+      });
+      expect(charge?.createdAt).toBeInstanceOf(Date);
+      await expect(
+        database!.postgresProvider.client_!.paymentCharge.count({
+          where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
+        })
+      ).resolves.toBe(1);
+      const expiredPaymentId = `pay-old-${suffix.replaceAll('-', '')}`;
+      await database!.postgresProvider.client_!.paymentCharge.create({
+        data: {
+          userId,
+          subscriptionId: started.id,
+          razorpaySubscriptionId: providerSubscriptionId,
+          razorpayPaymentId: expiredPaymentId,
+          invoiceId: null,
+          amountMinor: 49900,
+          currency: 'INR',
+          chargedAt: new Date('2018-01-01T00:00:00Z'),
+          createdAt: new Date('2018-01-01T00:00:00Z'),
+        },
+      });
+      await service.cleanupExpiredPaymentCharges();
+      await expect(
+        database!.postgresProvider.client_!.paymentCharge.findUnique({
+          where: { razorpayPaymentId: expiredPaymentId },
+        })
+      ).resolves.toBeNull();
+      await expect(
+        database!.postgresProvider.client_!.paymentCharge.findUnique({
+          where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
+        })
+      ).resolves.toMatchObject({ razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` });
+
       await database!.postgresProvider.withTenantContext(userId, (tx) =>
         tx.paymentSubscription.update({
           where: { id: started.id },
@@ -170,6 +246,7 @@ describe('Razorpay subscription persistence and role projection', () => {
     } finally {
       await database!.postgresProvider.withTenantContext(userId, async (tx) => {
         await tx.paymentWebhookEvent.deleteMany({ where: { userId } });
+        await tx.paymentCharge.deleteMany({ where: { userId } });
         await tx.paymentSubscription.deleteMany({ where: { userId } });
       });
       await database!.mongo.inAppNotification.deleteMany({ where: { userId } });

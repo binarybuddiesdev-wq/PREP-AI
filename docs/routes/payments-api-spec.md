@@ -58,6 +58,15 @@ only while the provider says `active` and the paid period contains the current
 time. `ADMIN` is preserved. Missed event dispatches and expired active periods
 are reconciled every minute.
 
+For verified `subscription.charged` events, the API stores a minimal captured
+charge record keyed by Razorpay payment ID. It includes the owner, local and
+provider subscription IDs, optional invoice ID, amount in currency subunits,
+currency, and charge timestamp. Card, payment method, customer contact, and raw
+webhook fields are discarded. Charge rows are retained for seven years from
+record creation and removed by a daily cleanup job. Duplicate events and
+payment IDs are idempotent; a payment ID that conflicts with another owner or
+subscription is rejected.
+
 Return codes: `200` after durable persistence and queue dispatch; `400` for a
 missing event ID, invalid signature, malformed/unsupported event, or event that
 does not match a saved subscription; `503` when configuration, database, or
@@ -72,9 +81,7 @@ server environment. Apply the additive PostgreSQL schema with
 `pnpm --filter server prisma:push:postgresql` before enabling this API. The
 PostgreSQL RLS production rollout remains separate and is still pending.
 
-The v1 stores subscription state and normalized webhook lifecycle records; it
-does not yet store an individual charge ledger or implement refunds. The
-seven-year payment retention target in the NFRs still needs a charge-ledger
-retention policy before those records are introduced. Configure production keys
-and webhook secret through the deployment secret manager; do not commit live
-credentials.
+The v1 stores subscription state, normalized webhook lifecycle records, and
+captured subscription charges. Refunds and in-app cancellation are not yet
+implemented. Configure production keys and webhook secret through the
+deployment secret manager; do not commit live credentials.

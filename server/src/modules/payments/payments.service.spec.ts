@@ -375,6 +375,98 @@ describe('PaymentsService webhook intake', () => {
     );
   });
 
+  it('persists only captured payment fields for a verified subscription charge', async () => {
+    const rawBody = Buffer.from(
+      JSON.stringify({
+        event: 'subscription.charged',
+        created_at: 1793793600,
+        payload: {
+          subscription: {
+            entity: {
+              id: 'sub_123',
+              plan_id: 'plan_monthly',
+              status: 'active',
+              notes: { prepai_user_id: 'user_1', prepai_request_id: 'req_1' },
+            },
+          },
+          payment: {
+            entity: {
+              id: 'pay_123',
+              invoice_id: 'inv_123',
+              amount: 49900,
+              currency: 'INR',
+              status: 'captured',
+              captured: '1',
+              created_at: 1793793500,
+              method: 'card',
+              card_id: 'sensitive_card_id',
+              contact: '+919999999999',
+            },
+          },
+        },
+      })
+    );
+    const signature = createHmac('sha256', 'webhook_secret').update(rawBody).digest('hex');
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'local_1',
+          userId: 'user_1',
+          idempotencyKey: 'req_1',
+          razorpayPlanId: 'plan_monthly',
+          razorpaySubscriptionId: 'sub_123',
+        }),
+      },
+      paymentCharge: {
+        upsert: vi.fn().mockImplementation(({ create }) => Promise.resolve(create)),
+      },
+      paymentWebhookEvent: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: 'event_1', userId: 'user_1' }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      configuredProvider(),
+      { enqueue: vi.fn().mockResolvedValue('job_1') } as never
+    );
+
+    await expect(service.acceptWebhook(rawBody, signature, 'evt_charge')).resolves.toEqual({
+      received: true,
+    });
+
+    expect(tx.paymentCharge.upsert).toHaveBeenCalledWith({
+      where: { razorpayPaymentId: 'pay_123' },
+      create: {
+        userId: 'user_1',
+        subscriptionId: 'local_1',
+        razorpaySubscriptionId: 'sub_123',
+        razorpayPaymentId: 'pay_123',
+        invoiceId: 'inv_123',
+        amountMinor: 49900,
+        currency: 'INR',
+        chargedAt: new Date(1793793500 * 1000),
+      },
+      update: {},
+    });
+    expect(JSON.stringify(tx.paymentCharge.upsert.mock.calls[0])).not.toContain(
+      'sensitive_card_id'
+    );
+    expect(JSON.stringify(tx.paymentCharge.upsert.mock.calls[0])).not.toContain('+919999999999');
+
+    tx.paymentCharge.upsert.mockResolvedValueOnce({
+      ...tx.paymentCharge.upsert.mock.calls[0][0].create,
+      userId: 'user_2',
+    });
+    await expect(service.acceptWebhook(rawBody, signature, 'evt_charge_collision')).rejects.toThrow(
+      BadRequestException
+    );
+    expect(tx.paymentWebhookEvent.create).toHaveBeenCalledOnce();
+  });
+
   it('fetches current provider state and projects Premium before completing the inbox event', async () => {
     const local = {
       id: 'local_1',
@@ -895,5 +987,39 @@ describe('PaymentsService webhook intake', () => {
       {} as never
     );
     await expect(service.reconcilePendingPayments()).resolves.toBeUndefined();
+  });
+
+  it('deletes charge records strictly older than seven years', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2033-01-02T03:00:00.000Z'));
+    const deleteMany = vi.fn().mockResolvedValue({ count: 2 });
+    const service = new PaymentsService(
+      {} as never,
+      { client_: { paymentCharge: { deleteMany } } } as never,
+      configuredProvider(),
+      {} as never
+    );
+
+    await service.cleanupExpiredPaymentCharges();
+
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: { createdAt: { lt: new Date('2026-01-02T03:00:00.000Z') } },
+    });
+    vi.useRealTimers();
+  });
+
+  it('does not crash when charge retention cleanup fails', async () => {
+    const service = new PaymentsService(
+      {} as never,
+      {
+        client_: {
+          paymentCharge: { deleteMany: vi.fn().mockRejectedValue(new Error('PostgreSQL down')) },
+        },
+      } as never,
+      configuredProvider(),
+      {} as never
+    );
+
+    await expect(service.cleanupExpiredPaymentCharges()).resolves.toBeUndefined();
   });
 });

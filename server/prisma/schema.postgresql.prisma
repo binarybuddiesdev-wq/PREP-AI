@@ -229,3 +229,20 @@ model PaymentWebhookEvent {
   @@index([status, dispatchClaimedAt, createdAt])
   @@index([subscriptionId, occurredAt])
 }
+
+model PaymentCharge {
+  id                    String   @id @default(uuid())
+  userId                String
+  subscriptionId        String
+  razorpaySubscriptionId String
+  razorpayPaymentId     String   @unique
+  invoiceId             String?
+  amountMinor           Int
+  currency              String
+  chargedAt             DateTime
+  createdAt             DateTime @default(now())
+
+  @@index([userId, chargedAt])
+  @@index([subscriptionId, chargedAt])
+  @@index([createdAt])
+}

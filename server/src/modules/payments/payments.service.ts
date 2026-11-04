@@ -19,6 +19,7 @@ import { parseRazorpaySubscriptionEvent } from './razorpay-webhook-event.js';
 import { verifyRazorpayWebhookSignature } from './razorpay-webhook-signature.js';
 import { decideSubscriptionRequest } from './subscription-request.js';
 import { hasPaidAccess, normalizeProviderStatus } from './payment-state.js';
+import { getPaymentChargeRetentionCutoff } from './payment-retention.js';
 
 const IN_PROGRESS_STATUSES = [
   'creating',
@@ -181,6 +182,35 @@ export class PaymentsService {
             data: { razorpaySubscriptionId: event.subscriptionId },
           });
         }
+        if (event.charge) {
+          const charge = await tx.paymentCharge.upsert({
+            where: { razorpayPaymentId: event.charge.paymentId },
+            create: {
+              userId: event.userId,
+              subscriptionId: subscription.id,
+              razorpaySubscriptionId: event.subscriptionId,
+              razorpayPaymentId: event.charge.paymentId,
+              invoiceId: event.charge.invoiceId,
+              amountMinor: event.charge.amountMinor,
+              currency: event.charge.currency,
+              chargedAt: event.charge.chargedAt,
+            },
+            update: {},
+          });
+          if (
+            charge.userId !== event.userId ||
+            charge.subscriptionId !== subscription.id ||
+            charge.razorpaySubscriptionId !== event.subscriptionId ||
+            charge.amountMinor !== event.charge.amountMinor ||
+            charge.currency !== event.charge.currency ||
+            charge.chargedAt.getTime() !== event.charge.chargedAt.getTime() ||
+            charge.invoiceId !== event.charge.invoiceId
+          ) {
+            throw new BadRequestException(
+              'Razorpay payment ID was already used for a different charge'
+            );
+          }
+        }
         const prior = await tx.paymentWebhookEvent.findUnique({ where: { eventId } });
         if (prior) {
           if (prior.userId !== event.userId || prior.subscriptionId !== event.subscriptionId) {
@@ -338,6 +368,20 @@ export class PaymentsService {
           'Expired payment reconciliation failed'
         );
       }
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupExpiredPaymentCharges(): Promise<void> {
+    const client = this.postgres.client_;
+    if (!client) return;
+    try {
+      const result = await client.paymentCharge.deleteMany({
+        where: { createdAt: { lt: getPaymentChargeRetentionCutoff(new Date()) } },
+      });
+      this.logger.log({ deletedCount: result.count }, 'Expired payment charge records removed');
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Expired payment charge cleanup failed');
     }
   }
 

@@ -11,6 +11,15 @@ export interface IRazorpaySubscriptionEvent {
   idempotencyKey: string;
   currentStart: Date | null;
   currentEnd: Date | null;
+  charge: IRazorpayCapturedCharge | null;
+}
+
+export interface IRazorpayCapturedCharge {
+  paymentId: string;
+  invoiceId: string | null;
+  amountMinor: number;
+  currency: string;
+  chargedAt: Date;
 }
 
 const SUPPORTED_EVENTS = new Set([
@@ -49,6 +58,8 @@ export function parseRazorpaySubscriptionEvent(input: unknown): IRazorpaySubscri
   const status = entity['status'];
   const userId = notes['prepai_user_id'];
   const idempotencyKey = notes['prepai_request_id'];
+  const payment = asRecord(asRecord(asRecord(root['payload'])['payment'])['entity']);
+  const charge = eventType === 'subscription.charged' ? parseCapturedCharge(payment) : null;
 
   if (
     !SUPPORTED_EVENTS.has(eventType) ||
@@ -79,5 +90,38 @@ export function parseRazorpaySubscriptionEvent(input: unknown): IRazorpaySubscri
     idempotencyKey,
     currentStart: epochDate(entity['current_start']),
     currentEnd: epochDate(entity['current_end']),
+    charge,
+  };
+}
+
+function parseCapturedCharge(payment: Record<string, unknown>): IRazorpayCapturedCharge {
+  const paymentId = payment['id'];
+  const amount = payment['amount'];
+  const currency = payment['currency'];
+  const status = payment['status'];
+  const captured = payment['captured'];
+  const chargedAt = epochDate(payment['created_at']);
+  if (
+    typeof paymentId !== 'string' ||
+    !paymentId ||
+    typeof amount !== 'number' ||
+    !Number.isSafeInteger(amount) ||
+    amount <= 0 ||
+    amount > 2_147_483_647 ||
+    typeof currency !== 'string' ||
+    !/^[A-Z]{3}$/.test(currency) ||
+    status !== 'captured' ||
+    !(captured === true || captured === 1 || captured === '1') ||
+    !chargedAt
+  ) {
+    throw new BadRequestException('Invalid captured Razorpay subscription payment');
+  }
+
+  return {
+    paymentId,
+    invoiceId: typeof payment['invoice_id'] === 'string' ? payment['invoice_id'] : null,
+    amountMinor: amount,
+    currency,
+    chargedAt,
   };
 }
