@@ -62,3 +62,10 @@
     font-size: 0.75rem;
   }
 }
+
+@media (max-height: 480px) {
+  .onboarding-screen {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+}

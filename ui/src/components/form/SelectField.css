@@ -5,9 +5,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.625rem;
-  border: 1px solid #34343a;
+  border: 1px solid #3f3f46;
   border-radius: 0.625rem;
-  background: #111113;
+  background: #101012;
   padding: 0.5rem 0.75rem;
   color: #fafafa;
   text-align: left;
@@ -22,7 +22,7 @@
 }
 
 .settings-select-trigger:hover:not(:disabled) {
-  border-color: rgb(245 158 11 / 48%);
+  border-color: rgb(245 158 11 / 58%);
   background: #18181b;
 }
 
@@ -66,14 +66,14 @@
 }
 
 .settings-select-popup {
-  max-height: min(var(--available-height, 13rem), 13rem);
+  max-height: min(var(--available-height, 15rem), 15rem);
   min-width: var(--anchor-width);
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid rgb(161 161 170 / 28%);
+  border: 1px solid rgb(161 161 170 / 34%);
   border-radius: 0.75rem;
   background: #1c1c20;
-  padding: 0.25rem;
+  padding: 0.3rem;
   color: #f4f4f5;
   box-shadow: 0 18px 44px rgb(0 0 0 / 48%);
   outline: none;
@@ -84,12 +84,12 @@
 .settings-select-item {
   position: relative;
   display: flex;
-  min-height: 2.25rem;
+  min-height: 2.4rem;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-radius: 0.5rem;
-  padding: 0.375rem 0.5rem;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.6rem;
   color: #e4e4e7;
   font-size: 0.875rem;
   line-height: 1.25rem;
@@ -102,12 +102,12 @@
 }
 
 .settings-select-item[data-highlighted] {
-  background: rgb(245 158 11 / 12%);
+  background: rgb(245 158 11 / 16%);
   color: #fef3c7;
 }
 
 .settings-select-item[data-selected] {
-  background: rgb(245 158 11 / 14%);
+  background: rgb(245 158 11 / 11%);
   color: #fde68a;
 }
 
@@ -115,6 +115,11 @@
   display: flex;
   flex: none;
   color: #fbbf24;
+  opacity: 0;
+}
+
+.settings-select-item[data-selected] .settings-select-indicator {
+  opacity: 1;
 }
 
 :root:has(.app-shell[data-theme='light']) .settings-select-trigger {
