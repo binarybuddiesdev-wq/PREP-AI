@@ -6,6 +6,14 @@ import { MetricsService } from '@/modules/metrics/metrics.service.js';
 import { TheoryAiTokenBudgetService } from '@/modules/theory/theory-ai-token-budget.service.js';
 import type { TheoryAiTokenReservation } from '@/modules/theory/theory-ai-token-budget.service.js';
 import { chatWithFailover, getModel } from '@/mastra/providers.js';
+import {
+  createPromptInjectionGuard,
+  estimatePromptInjectionGuardTokens,
+  isPromptInjectionGuardFailure,
+  PROMPT_INJECTION_BLOCKED_MESSAGE,
+  PROMPT_INJECTION_GUARD_UNAVAILABLE_MESSAGE,
+  PromptInjectionBlockedError,
+} from '@/mastra/prompt-injection-guard.js';
 import type { StudyChatPromptMessage } from './study-chat.types.js';
 
 export const STUDY_COACH_AGENT = Symbol('STUDY_COACH_AGENT');
@@ -24,6 +32,13 @@ export class StudyChatModelService {
     messages: StudyChatPromptMessage[],
     signal?: AbortSignal
   ): Promise<string> {
+    const latestMessage = messages.at(-1);
+    const latestContent = latestMessage
+      ? typeof latestMessage.content === 'string'
+        ? latestMessage.content
+        : JSON.stringify(latestMessage.content ?? '')
+      : '';
+    const guardTokenAllowance = estimatePromptInjectionGuardTokens(latestContent);
     const estimatedTokens =
       messages.reduce((total, message) => {
         const content =
@@ -33,24 +48,51 @@ export class StudyChatModelService {
         return total + Buffer.byteLength(content, 'utf8');
       }, 0) +
       1_500 +
-      256;
+      256 +
+      guardTokenAllowance;
     const reservation = await this.tokenBudget.reserve(clerkUserId, randomUUID(), estimatedTokens);
     if (!reservation.allowed) {
       throw new HttpException('Daily AI token budget reached', HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    const response = await chatWithFailover(
-      (provider) =>
-        this.agent.generate(messages, {
-          model: getModel(provider),
-          modelSettings: { maxOutputTokens: 1_500 },
-          ...(signal ? { abortSignal: signal } : {}),
-        }),
-      (from, to) => this.metrics.recordProviderFailover(from, to),
-      (provider, fallback, duration) =>
-        this.metrics.recordMastraAgentDuration('study_chat', provider, fallback, duration)
-    );
-    const actualTokens = (await readTotalTokens(response.usage)) ?? estimatedTokens;
+    let injectionDetected = false;
+    let response: Awaited<ReturnType<typeof this.agent.generate>>;
+    try {
+      response = await chatWithFailover(
+        async (provider) => {
+          if (injectionDetected) throw new PromptInjectionBlockedError();
+          const generated = await this.agent.generate(messages, {
+            model: getModel(provider),
+            inputProcessors: [
+              createPromptInjectionGuard(provider, ({ flagged }) => {
+                if (flagged) injectionDetected = true;
+              }),
+            ],
+            modelSettings: { maxOutputTokens: 1_500 },
+            ...(signal ? { abortSignal: signal } : {}),
+          });
+          if (injectionDetected) throw new PromptInjectionBlockedError();
+          return generated;
+        },
+        (from, to) => this.metrics.recordProviderFailover(from, to),
+        (provider, fallback, duration) =>
+          this.metrics.recordMastraAgentDuration('study_chat', provider, fallback, duration)
+      );
+    } catch (error) {
+      if (injectionDetected || error instanceof PromptInjectionBlockedError) {
+        throw new HttpException(PROMPT_INJECTION_BLOCKED_MESSAGE, HttpStatus.BAD_REQUEST);
+      }
+      if (isPromptInjectionGuardFailure(error)) {
+        throw new HttpException(
+          PROMPT_INJECTION_GUARD_UNAVAILABLE_MESSAGE,
+          HttpStatus.SERVICE_UNAVAILABLE
+        );
+      }
+      throw error;
+    }
+    const actualTokens =
+      ((await readTotalTokens(response.usage)) ?? estimatedTokens - guardTokenAllowance) +
+      guardTokenAllowance;
     try {
       await this.tokenBudget.settle(reservation, actualTokens);
     } catch (error) {

@@ -18,7 +18,11 @@ vi.mock('@mastra/core/processors', () => ({
   },
 }));
 
-import { createPromptInjectionGuard } from './prompt-injection-guard.js';
+import {
+  createPromptInjectionGuard,
+  estimatePromptInjectionGuardTokens,
+  isPromptInjectionGuardFailure,
+} from './prompt-injection-guard.js';
 
 describe('createPromptInjectionGuard', () => {
   afterEach(() => vi.clearAllMocks());
@@ -38,5 +42,25 @@ describe('createPromptInjectionGuard', () => {
       onDetection,
     });
     expect(guard).toMatchObject({ id: 'prompt-injection-detector' });
+  });
+
+  it('conservatively reserves UTF-8 input tokens and fixed detector overhead', () => {
+    expect(estimatePromptInjectionGuardTokens('abcd')).toBe(513);
+    expect(estimatePromptInjectionGuardTokens('😀😀')).toBe(514);
+  });
+
+  it('supports an optional callback and recognizes strict detector failures', () => {
+    createPromptInjectionGuard('nvidia');
+    expect(mocks.constructor).toHaveBeenCalledWith({
+      model: { provider: 'nvidia' },
+      strategy: 'block',
+      errorStrategy: 'strict',
+      threshold: 0.7,
+      lastMessageOnly: true,
+    });
+    expect(isPromptInjectionGuardFailure(new Error('Prompt injection detection failed'))).toBe(
+      true
+    );
+    expect(isPromptInjectionGuardFailure(new Error('provider unavailable'))).toBe(false);
   });
 });

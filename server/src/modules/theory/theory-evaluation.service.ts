@@ -11,6 +11,12 @@ import { PrismaPostgresqlService } from '@/prisma/prisma.service.js';
 import { mastra } from '../../mastra/mastra.config.js';
 import { chatWithFailover, defaultModel, getModel } from '../../mastra/providers.js';
 import {
+  createPromptInjectionGuard,
+  estimatePromptInjectionGuardTokens,
+  isPromptInjectionGuardFailure,
+  PromptInjectionBlockedError,
+} from '../../mastra/prompt-injection-guard.js';
+import {
   currentTheoryEvaluatorPrompt,
   THEORY_EVALUATOR_PROMPT_VERSION,
 } from '../../mastra/agents/theory-evaluator-prompts.js';
@@ -72,8 +78,11 @@ export class TheoryEvaluationService {
       prompt,
       currentTheoryEvaluatorPrompt.instructions
     );
+    const guardTokenAllowance = estimatePromptInjectionGuardTokens(prompt);
+    const reservedTokens = estimatedTokens + guardTokenAllowance;
     let budgetExceeded = false;
     let budgetUnavailable = false;
+    let injectionDetected = false;
     let providerResult: {
       provider: 'nvidia' | 'groq';
       response: Awaited<ReturnType<typeof agent.generate>>;
@@ -81,7 +90,8 @@ export class TheoryEvaluationService {
     try {
       providerResult = await chatWithFailover(
         async (provider) => {
-          if (budgetExceeded || budgetUnavailable) {
+          if (budgetExceeded || budgetUnavailable || injectionDetected) {
+            if (injectionDetected) throw new PromptInjectionBlockedError();
             throw new Error('Theory AI token budget reservation is unavailable');
           }
           let reservation;
@@ -89,7 +99,7 @@ export class TheoryEvaluationService {
             reservation = await this.tokenBudget.reserve(
               answer.session.userId,
               randomUUID(),
-              estimatedTokens
+              reservedTokens
             );
           } catch (error: unknown) {
             budgetUnavailable = true;
@@ -102,6 +112,11 @@ export class TheoryEvaluationService {
           const response = await agent.generate(prompt, {
             model: getModel(provider),
             instructions: currentTheoryEvaluatorPrompt.instructions,
+            inputProcessors: [
+              createPromptInjectionGuard(provider, ({ flagged }) => {
+                if (flagged) injectionDetected = true;
+              }),
+            ],
             modelSettings: { maxOutputTokens: MAX_THEORY_EVALUATION_OUTPUT_TOKENS },
             structuredOutput: {
               schema: theoryAnswerEvalSchema,
@@ -110,10 +125,11 @@ export class TheoryEvaluationService {
               fallbackValue: theoryEvaluationFallback,
             },
           });
-          let actualTokens = estimatedTokens;
+          if (injectionDetected) throw new PromptInjectionBlockedError();
+          let actualTokens = reservedTokens;
           try {
             const usage = await response.usage;
-            actualTokens = readTotalTokens(usage) ?? estimatedTokens;
+            actualTokens = (readTotalTokens(usage) ?? estimatedTokens) + guardTokenAllowance;
           } catch (error: unknown) {
             this.logger.warn(
               { answerId, error: error instanceof Error ? error.message : String(error) },
@@ -149,6 +165,20 @@ export class TheoryEvaluationService {
         this.logger.warn({ answerId }, 'Theory evaluation stopped at the daily AI token budget');
         return;
       }
+      if (injectionDetected) {
+        await this.withWorkerAnswer(answerId, (transaction) =>
+          transaction.theoryAnswer.updateMany({
+            where: { id: answerId, status: 'running' },
+            data: {
+              status: 'failed',
+              failureMessage: THEORY_EVALUATION_UNAVAILABLE,
+              completedAt: new Date(),
+            },
+          })
+        );
+        this.logger.warn({ answerId }, 'Theory evaluation blocked a prompt-injection attempt');
+        return;
+      }
       if (budgetUnavailable) {
         throw new ServiceUnavailableException(
           'AI token budget service is temporarily unavailable',
@@ -156,6 +186,11 @@ export class TheoryEvaluationService {
             cause: error,
           }
         );
+      }
+      if (isPromptInjectionGuardFailure(error)) {
+        throw new ServiceUnavailableException('AI safety check is temporarily unavailable', {
+          cause: error,
+        });
       }
       throw error;
     }

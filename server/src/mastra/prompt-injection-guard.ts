@@ -7,6 +7,14 @@ export const PROMPT_INJECTION_BLOCKED_MESSAGE =
 export const PROMPT_INJECTION_GUARD_UNAVAILABLE_MESSAGE =
   'The question could not be checked safely. Please try again later.';
 
+const PROMPT_INJECTION_DETECTOR_OVERHEAD_TOKENS = 512;
+
+export function estimatePromptInjectionGuardTokens(input: string): number {
+  return (
+    Math.ceil(Buffer.byteLength(input, 'utf8') / 4) + PROMPT_INJECTION_DETECTOR_OVERHEAD_TOKENS
+  );
+}
+
 export class PromptInjectionBlockedError extends Error {
   constructor() {
     super(PROMPT_INJECTION_BLOCKED_MESSAGE);

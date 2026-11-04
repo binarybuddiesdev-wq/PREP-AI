@@ -111,11 +111,14 @@ Groq-failover. The production evaluation stores answer provenance. The
 offline comparison harness and synthetic baseline are documented in
 `server/evaluation/README.md`; role-based daily token budgets are enforced for
 theory evaluations and shared with Study Chat. Public Tech Expert routes use
-Mastra's prompt-injection input detector with fail-closed behavior. Theory
-evaluation, coding review, PDF generation, and Study Chat have explicit
-untrusted-content instructions but do not yet run the detector. Broader
-adversarial evaluation, subject-matter review of synthetic labels, and repeated
-evaluation after model or prompt changes remain open.
+Mastra's prompt-injection input detector with fail-closed behavior. Study Chat
+and theory evaluation use the same provider-specific detector and include a
+conservative detector-token allowance in their existing daily quota. Coding
+review and PDF generation retain explicit untrusted-content instructions but
+are not model-detected because their input sizes and quota policies need
+separate analysis. Broader adversarial evaluation, subject-matter review of
+synthetic labels, and repeated evaluation after model or prompt changes remain
+open.
 
 ### 4. RAG pipeline
 

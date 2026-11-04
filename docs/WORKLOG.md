@@ -1,3 +1,9 @@
+## 2026-11-04 - Guard budgeted learner AI prompts with Mastra
+
+- Added the provider-matched Mastra prompt-injection detector to Study Chat and theory answer evaluation. A detected Study Chat turn returns a safe client error and follows existing idempotency cleanup; a detected theory answer is marked failed without retrying the worker job. Provider failover stops after detection.
+- Added a conservative detector-token allowance to Study Chat and theory quota reservations and settlements. Coding review and PDF question generation remain excluded pending separate input-size and quota analysis.
+- Verification: focused guard, Study Chat, and theory tests plus the full server gate.
+
 ## 2026-11-04 - Validate production PostgreSQL RLS readiness
 
 - Production `/readyz` now checks API/worker role names and RLS-bypass attributes, forced RLS on tenant tables, required policy names, and worker-only function grants. Development remains connectivity-only; the check is read-only and does not apply SQL.
