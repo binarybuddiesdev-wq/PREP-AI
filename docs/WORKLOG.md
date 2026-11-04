@@ -458,3 +458,15 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - ESLint reports 33 warnings (mostly `no-console` in server code).
 - Commit headers are limited to 72 characters by commitlint.
 - Gotcha: this shell tool failed to parse some long heredocs containing apostrophes; use the Write tool for large files.
+
+## 2026-11-04 - Add prompt-injection detector evaluation corpus
+
+- Added a balanced, versioned 40-case synthetic detector corpus with stable digest validation, a runner using the production Mastra processor, and a dry-run-by-default CLI. Opt-in runs report confusion-matrix counts, precision/recall, detector details, and per-case failures to ignored local reports; no answer-generation model or Mastra persistence is involved.
+- Documented the command, provider/model selection, cost behavior, provisional labels, and requirement for independent subject-matter review before release decisions.
+- Verification: focused dataset/runner/CLI tests and full server gate.
+
+## 2026-11-04 - Add prompt-injection detector evaluation corpus
+
+- Added a balanced, versioned 40-case synthetic detector corpus with stable digest validation, a runner using the production Mastra processor, and a dry-run-by-default CLI. Opt-in runs report confusion-matrix counts, precision/recall, detector details, and per-case failures to ignored local reports; no answer-generation model or Mastra persistence is involved.
+- Documented the command, provider/model selection, cost behavior, provisional labels, and requirement for independent subject-matter review before release decisions.
+- Verification: focused dataset/runner/CLI tests and full server gate.

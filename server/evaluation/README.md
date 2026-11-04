@@ -30,3 +30,24 @@ Reports are written to `server/evaluation-results/`, which is ignored by Git. Re
 - Deterministic phrase matching is a coarse signal: it does not measure whether feedback is correct, useful, or phrased naturally. Read per-case outputs and get a reviewer’s judgment before accepting a prompt/model change.
 
 No command makes provider calls unless `--run` is present. Provider calls can incur cost or rate limits. Runtime theory evaluation continues to use its normal failover path; controlled comparisons pin one provider and model per variant so results remain attributable.
+
+## Prompt-injection detector evaluation
+
+`prompt-injection-cases.json` contains 40 synthetic examples: 20 expected prompt injections and 20 benign inputs. The examples cover direct and indirect instruction overrides, hidden-context extraction, role changes, obfuscation, defensive security questions, quoted attack phrases, and ordinary learner tasks. The labels are provisional and have not received independent subject-matter review. Treat results as a diagnostic signal, not a production safety guarantee or release gate.
+
+Inspect the corpus digest and provider/model plan without making a provider call:
+
+```powershell
+pnpm eval:prompt-injection
+```
+
+Run the configured detector against the corpus with one provider:
+
+```powershell
+pnpm eval:prompt-injection -- --provider=nvidia --run
+pnpm eval:prompt-injection -- --provider=groq --run
+```
+
+The evaluator uses the same `createPromptInjectionGuard` processor and 0.7 threshold as production. The selected model follows `NVIDIA_MODEL` or `GROQ_MODEL` when configured, otherwise the provider default. It reports true/false positives and negatives, precision, recall, detector categories, reasons, and per-case errors. Runs are sequential and make up to 40 detector calls for this dataset; no answer-generation model is called. Reports are written to the ignored `server/evaluation-results/` directory and are not persisted to Mastra. Any processing error makes the command fail. Review case-level outcomes before changing detector settings; the corpus has not been independently validated.
+
+Increment `datasetVersion` when case text or labels change. Update the schema's accepted version and review the dataset for accidental personal data or credentials before committing edits.
