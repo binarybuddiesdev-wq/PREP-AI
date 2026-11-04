@@ -220,7 +220,10 @@ Portable starter files are in [`deploy/observability`](../deploy/observability/)
   endpoint every 15 seconds and loads the included alert rules.
 - `prometheus/alerts.yml` defines API availability/error/latency, worker
   failures and backlog, Redis memory, provider failovers, PostgreSQL query
-  latency, webhook signature failure, and HTTP liveness/readiness probe alerts.
+  latency, webhook signature failure, auth/general rate-limit rejection, and
+  HTTP liveness/readiness probe alerts. Rate-limit thresholds start at 20 auth
+  and 100 general rejections in five minutes for two minutes; tune them against
+  observed traffic before relying on them for production paging.
 - `blackbox/blackbox.yml` configures bounded HTTP GET probes for `/healthz` and
   `/readyz`; Prometheus sends requests through a `blackbox-exporter:9115`
   service on the same Podman network.

@@ -115,3 +115,23 @@ groups:
         annotations:
           summary: PrepAI webhook signature failures are elevated
           description: More than 25 webhook signature failures occurred in five minutes. Check provider configuration and investigate unexpected traffic.
+
+  - name: prepai-rate-limit-abuse
+    rules:
+      - alert: PrepAIAuthRateLimitRejectionsHigh
+        expr: sum(increase(http_rate_limit_exceeded_total{job="prepai-api",route_class="auth"}[5m])) > 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI auth rate-limit rejections are elevated
+          description: More than 20 auth requests were rejected in five minutes for two minutes. Check for credential stuffing or a misconfigured client.
+
+      - alert: PrepAIGeneralRateLimitRejectionsHigh
+        expr: sum(increase(http_rate_limit_exceeded_total{job="prepai-api",route_class="general"}[5m])) > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: PrepAI general rate-limit rejections are elevated
+          description: More than 100 general requests were rejected in five minutes for two minutes. Check for abusive traffic or a client retry loop.

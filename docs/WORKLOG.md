@@ -476,3 +476,9 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Added `http_rate_limit_exceeded_total` with fixed `auth` and `general` labels, wired from Fastify's `onExceeded` hook. No IP, rate-limit key, or raw route is recorded; enforcement behavior is unchanged.
 - Updated the backend and observability trackers.
 - Verification: focused metrics/Fastify tests and full server gate.
+
+## 2026-11-04 - Alert on rate-limit rejection bursts
+
+- Added warning alerts for sustained auth (>20) and general (>100) rate-limit rejections in five minutes, using the bounded `http_rate_limit_exceeded_total` counter. The thresholds are documented as starter values to tune after deployment.
+- Extended the observability config tests to verify both alerts and route-class selectors.
+- Verification: observability config test and full server gate.

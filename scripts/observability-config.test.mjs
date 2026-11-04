@@ -45,6 +45,7 @@ test('Prometheus alert rules only reference metrics exposed by the application',
   const metricNames = [
     'probe_success',
     'http_request_duration_seconds',
+    'http_rate_limit_exceeded_total',
     'worker_job_attempts_total',
     'bullmq_job_count',
     'redis_memory_used_bytes',
@@ -58,6 +59,20 @@ test('Prometheus alert rules only reference metrics exposed by the application',
   assert.equal(new Set(names).size, names.length, 'alert names are unique');
   const targetAlert = alerts.find(({ alert }) => alert === 'PrepAIApiTargetDown');
   assert.match(String(targetAlert?.expr), /absent\(/, 'missing scrape targets are detected too');
+  const authLimitAlert = alerts.find(({ alert }) => alert === 'PrepAIAuthRateLimitRejectionsHigh');
+  const generalLimitAlert = alerts.find(
+    ({ alert }) => alert === 'PrepAIGeneralRateLimitRejectionsHigh'
+  );
+  assert.match(String(authLimitAlert?.expr), /route_class="auth"/);
+  assert.match(String(authLimitAlert?.expr), /http_rate_limit_exceeded_total/);
+  assert.match(String(authLimitAlert?.expr), /> 20/);
+  assert.equal(authLimitAlert?.for, '2m');
+  assert.equal(authLimitAlert?.labels?.severity, 'warning');
+  assert.match(String(generalLimitAlert?.expr), /route_class="general"/);
+  assert.match(String(generalLimitAlert?.expr), /http_rate_limit_exceeded_total/);
+  assert.match(String(generalLimitAlert?.expr), /> 100/);
+  assert.equal(generalLimitAlert?.for, '2m');
+  assert.equal(generalLimitAlert?.labels?.severity, 'warning');
   for (const metric of metricNames) {
     assert.ok(
       expressions.some((expr) => expr.includes(metric)),
