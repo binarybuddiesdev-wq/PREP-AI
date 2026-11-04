@@ -8,6 +8,11 @@ export const envSchema = z
     DATABASE_URL: z.string().optional(),
     POSTGRESQL_URL: z.string().optional(),
     POSTGRESQL_WORKER_URL: z.string().optional(),
+    RAZORPAY_KEY_ID: z.string().min(1).optional(),
+    RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
+    RAZORPAY_WEBHOOK_SECRET: z.string().min(1).optional(),
+    RAZORPAY_PLAN_ID_MONTHLY: z.string().min(1).optional(),
+    RAZORPAY_PLAN_ID_YEARLY: z.string().min(1).optional(),
     PISTON_URL: z.string().url().optional().default('http://127.0.0.1:2000'),
     PISTON_EXECUTION_ENABLED: z
       .enum(['true', 'false'])

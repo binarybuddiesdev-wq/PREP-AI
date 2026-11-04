@@ -11,6 +11,8 @@ export enum ApiTags {
   ANALYTICS = 'Analytics',
   CHATBOT = 'Chatbot',
   PDFS = 'PDF Study',
+  PAYMENTS = 'Payments',
+  PAYMENT_WEBHOOKS = 'Payment Webhooks',
 }
 
 export enum ApiRoutes {
@@ -26,6 +28,8 @@ export enum ApiRoutes {
   ANALYTICS = 'analytics',
   CHATBOT = 'chatbot',
   PDFS = 'pdfs',
+  PAYMENTS = 'payments',
+  WEBHOOKS = 'webhooks',
 }
 
 export enum ApiOperation {
@@ -73,6 +77,9 @@ export enum ApiOperation {
   CODING_GET_SESSION = 'Get coding session details',
   CODING_COMPLETE_SESSION = 'Complete a coding session',
   CODING_GET_HISTORY = 'Get coding session history',
+  PAYMENT_START_SUBSCRIPTION = 'Start a monthly or yearly Premium subscription',
+  PAYMENT_GET_CURRENT_SUBSCRIPTION = 'Get the current Premium subscription',
+  PAYMENT_RECEIVE_RAZORPAY_WEBHOOK = 'Receive a Razorpay subscription event',
 }
 
 export const SUCCESS_MESSAGES = {

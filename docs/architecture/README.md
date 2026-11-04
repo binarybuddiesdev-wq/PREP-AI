@@ -97,6 +97,7 @@ See [../adr/](../adr/) for the full index. Highlights:
 - [architecture.md](architecture.md) — **Master Software Architecture & System Design Blueprint** (Hexagonal modular monolith, dual Prisma ORM, Mastra AI failover routing, Piston execution sandbox, N-Tier CQRS layer boundaries, testing gates).
 - [frontend-refactor.md](frontend-refactor.md) — **Frontend N-Tier Architecture** (implemented layers, Reader/Command hook patterns, file inventory).
 - [background-jobs.md](background-jobs.md) — BullMQ queue policies, current Piston worker flow, run modes, retries, and retention.
+- [../routes/payments-api-spec.md](../routes/payments-api-spec.md) — Razorpay subscription endpoints, webhook setup, configuration, and rollout steps.
 - [TODO.md](TODO.md) — **explicit list of architecture docs that are NOT YET
   WRITTEN**. Read this before assuming the system design is complete.
 - [../observability.md](../observability.md) — logging, metrics, tracing,

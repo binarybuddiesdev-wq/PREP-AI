@@ -126,33 +126,33 @@ model CodingQuestion {
 }
 
 model CodingAnswer {
-  id              String   @id @default(uuid())
-  executionId     String?  @unique
-  sessionId       String?
-  userId          String
-  problemId       String
-  language        String // "javascript" | "typescript" | "python"
-  code            String
-  status          String // "accepted" | "wrong_answer" | "error"
-  testCasesPassed Int
-  testCasesTotal  Int
-  runtime         Int? // ms
-  memoryUsage     Int? // MB
-  aiReviewJson    Json? // { timeComplexity, spaceComplexity, quality, suggestions }
-  aiReviewStatus  String   @default("not_requested") // not_requested | queued | running | completed | failed
-  aiReviewFailureMessage String?
-  aiReviewProvider String?
-  aiReviewModel String?
-  aiReviewPromptVersion String?
-    aiReviewDispatchClaimedAt DateTime?
-  createdAt       DateTime @default(now())
+  id                        String    @id @default(uuid())
+  executionId               String?   @unique
+  sessionId                 String?
+  userId                    String
+  problemId                 String
+  language                  String // "javascript" | "typescript" | "python"
+  code                      String
+  status                    String // "accepted" | "wrong_answer" | "error"
+  testCasesPassed           Int
+  testCasesTotal            Int
+  runtime                   Int? // ms
+  memoryUsage               Int? // MB
+  aiReviewJson              Json? // { timeComplexity, spaceComplexity, quality, suggestions }
+  aiReviewStatus            String    @default("not_requested") // not_requested | queued | running | completed | failed
+  aiReviewFailureMessage    String?
+  aiReviewProvider          String?
+  aiReviewModel             String?
+  aiReviewPromptVersion     String?
+  aiReviewDispatchClaimedAt DateTime?
+  createdAt                 DateTime  @default(now())
 
   session   CodingSession?   @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   execution CodingExecution? @relation(fields: [executionId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, createdAt])
-    @@index([aiReviewStatus, aiReviewDispatchClaimedAt, createdAt])
+  @@index([aiReviewStatus, aiReviewDispatchClaimedAt, createdAt])
   @@index([userId, problemId])
   @@index([sessionId])
   @@index([sessionId, problemId, status])
@@ -189,4 +189,44 @@ model CodingExecution {
   @@index([status, createdAt])
   @@index([status, dispatchClaimedAt, createdAt])
   @@index([queueJobId])
+}
+
+model PaymentSubscription {
+  id                     String    @id @default(uuid())
+  userId                 String
+  idempotencyKey         String
+  planKey                String
+  razorpayPlanId         String
+  razorpaySubscriptionId String?   @unique
+  shortUrl               String?
+  status                 String    @default("creating")
+  currentStart           DateTime?
+  currentEnd             DateTime?
+  providerUpdatedAt      DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, status])
+  @@index([status, currentEnd])
+}
+
+model PaymentWebhookEvent {
+  id                String    @id @default(uuid())
+  userId            String
+  eventId           String    @unique
+  eventType         String
+  subscriptionId    String
+  idempotencyKey    String
+  status            String    @default("received")
+  occurredAt        DateTime
+  dispatchClaimedAt DateTime?
+  attempts          Int       @default(0)
+  failureCode       String?
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([userId, status, createdAt])
+  @@index([status, dispatchClaimedAt, createdAt])
+  @@index([subscriptionId, occurredAt])
 }

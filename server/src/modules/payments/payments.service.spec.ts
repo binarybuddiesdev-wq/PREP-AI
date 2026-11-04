@@ -1,0 +1,718 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { createHmac } from 'node:crypto';
+import { describe, expect, it, vi } from 'vitest';
+import { PaymentsService } from './payments.service.js';
+import { RazorpayProvider } from './razorpay-provider.js';
+import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@/generated/postgresql-client/index.js';
+
+const configuredProvider = () =>
+  new RazorpayProvider({
+    get: (key: string) =>
+      (
+        ({
+          RAZORPAY_KEY_ID: 'key_test',
+          RAZORPAY_KEY_SECRET: 'secret_test',
+          RAZORPAY_PLAN_ID_MONTHLY: 'plan_monthly',
+          RAZORPAY_PLAN_ID_YEARLY: 'plan_yearly',
+          RAZORPAY_WEBHOOK_SECRET: 'webhook_secret',
+        }) as Record<string, string>
+      )[key],
+  } as unknown as ConfigService);
+
+const subscriptionRow = (overrides: Record<string, unknown> = {}) => ({
+  id: 'local_1',
+  idempotencyKey: 'request-1',
+  planKey: 'monthly',
+  status: 'creating',
+  shortUrl: null,
+  currentStart: null,
+  currentEnd: null,
+  createdAt: new Date('2026-11-04T00:00:00Z'),
+  ...overrides,
+});
+
+const postgresFor = (tx: Record<string, unknown>) => ({
+  withTenantContext: vi.fn(async (_userId: string, operation: (value: never) => unknown) =>
+    operation(tx as never)
+  ),
+});
+
+const createWebhookRequest = (eventId = 'evt_1') => {
+  const rawBody = Buffer.from(
+    JSON.stringify({
+      event: 'subscription.activated',
+      created_at: 1793793600,
+      payload: {
+        subscription: {
+          entity: {
+            id: 'sub_123',
+            plan_id: 'plan_monthly',
+            status: 'active',
+            updated_at: 1793793600,
+            notes: { prepai_user_id: 'user_1', prepai_request_id: 'req_1' },
+          },
+        },
+      },
+    })
+  );
+  return {
+    rawBody,
+    signature: createHmac('sha256', 'webhook_secret').update(rawBody).digest('hex'),
+    eventId,
+  };
+};
+
+describe('PaymentsService webhook intake', () => {
+  it('creates one provider subscription after persisting the local idempotent request', async () => {
+    const row = subscriptionRow();
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValue(row),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(row),
+        update: vi
+          .fn()
+          .mockResolvedValue(
+            subscriptionRow({ status: 'created', shortUrl: 'https://rzp.io/i/1' })
+          ),
+      },
+    };
+    const postgres = postgresFor(tx);
+    const provider = configuredProvider();
+    const create = vi.spyOn(provider, 'createSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'created',
+      short_url: 'https://rzp.io/i/1',
+    });
+    const service = new PaymentsService({} as never, postgres as never, provider, {} as never);
+
+    const result = await service.startSubscription('user_1', { plan: 'monthly' }, 'request-1');
+
+    expect(create).toHaveBeenCalledWith('user_1', 'monthly', 'request-1');
+    expect(tx.paymentSubscription.create).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({ plan: 'monthly', checkoutUrl: 'https://rzp.io/i/1' });
+  });
+
+  it('reuses a matching idempotency request and rejects conflicting or concurrent plans', async () => {
+    const existing = { ...subscriptionRow(), idempotencyKey: 'request-1' };
+    const reusedTx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue(existing),
+        findFirst: vi.fn(),
+        create: vi.fn(),
+      },
+    };
+    const provider = configuredProvider();
+    const create = vi.spyOn(provider, 'createSubscription');
+    const reused = new PaymentsService(
+      {} as never,
+      postgresFor(reusedTx) as never,
+      provider,
+      {} as never
+    );
+    await expect(
+      reused.startSubscription('user_1', { plan: 'monthly' }, 'request-1')
+    ).resolves.toMatchObject({ id: 'local_1', status: 'creating' });
+    expect(create).not.toHaveBeenCalled();
+
+    const mismatch = new PaymentsService(
+      {} as never,
+      postgresFor(reusedTx) as never,
+      provider,
+      {} as never
+    );
+    await expect(
+      mismatch.startSubscription('user_1', { plan: 'yearly' }, 'request-1')
+    ).rejects.toThrow(ConflictException);
+
+    const activeTx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        findFirst: vi.fn().mockResolvedValue({ id: 'other_subscription' }),
+        create: vi.fn(),
+      },
+    };
+    const active = new PaymentsService(
+      {} as never,
+      postgresFor(activeTx) as never,
+      provider,
+      {} as never
+    );
+    await expect(
+      active.startSubscription('user_1', { plan: 'yearly' }, 'request-2')
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('rejects a missing idempotency key and reports disabled checkout configuration', async () => {
+    const provider = configuredProvider();
+    const service = new PaymentsService({} as never, {} as never, provider, {} as never);
+    await expect(
+      service.startSubscription('user_1', { plan: 'monthly' }, undefined)
+    ).rejects.toThrow(BadRequestException);
+
+    const disabled = new PaymentsService(
+      {} as never,
+      {} as never,
+      new RazorpayProvider({ get: () => undefined } as unknown as ConfigService),
+      {} as never
+    );
+    await expect(
+      disabled.startSubscription('user_1', { plan: 'monthly' }, 'request-1')
+    ).rejects.toThrow(ServiceUnavailableException);
+  });
+
+  it('keeps an ambiguous provider failure pending and does not repeat the provider call', async () => {
+    const row = subscriptionRow();
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValue(row),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(row),
+      },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'createSubscription').mockRejectedValue(new Error('network timeout'));
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+    await expect(
+      service.startSubscription('user_1', { plan: 'monthly' }, 'request-1')
+    ).rejects.toThrow(ServiceUnavailableException);
+    await expect(
+      service.startSubscription('user_1', { plan: 'monthly' }, 'request-1')
+    ).resolves.toMatchObject({ status: 'creating', checkoutUrl: null });
+    expect(tx.paymentSubscription.create).toHaveBeenCalledOnce();
+  });
+
+  it('returns the current non-terminal subscription or null', async () => {
+    const row = subscriptionRow();
+    const tx = {
+      paymentSubscription: {
+        findFirst: vi.fn().mockResolvedValueOnce(row).mockResolvedValueOnce(null),
+      },
+    };
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      configuredProvider(),
+      {} as never
+    );
+    await expect(service.getCurrentSubscription('user_1')).resolves.toMatchObject({
+      id: 'local_1',
+    });
+    await expect(service.getCurrentSubscription('user_1')).resolves.toBeNull();
+  });
+
+  it('rejects a bad signature before touching persistent state', async () => {
+    const postgres = { withTenantContext: vi.fn() };
+    const service = new PaymentsService({} as never, postgres as never, configuredProvider(), {
+      enqueue: vi.fn(),
+    } as never);
+
+    await expect(
+      service.acceptWebhook(Buffer.from('{}'), '00'.repeat(32), 'evt_1')
+    ).rejects.toThrow(BadRequestException);
+    expect(postgres.withTenantContext).not.toHaveBeenCalled();
+  });
+
+  it('rejects missing event IDs and malformed signed payloads before persistence', async () => {
+    const postgres = { withTenantContext: vi.fn() };
+    const service = new PaymentsService(
+      {} as never,
+      postgres as never,
+      configuredProvider(),
+      {} as never
+    );
+    const good = createWebhookRequest();
+    await expect(service.acceptWebhook(good.rawBody, good.signature, undefined)).rejects.toThrow(
+      BadRequestException
+    );
+    const malformed = Buffer.from('{invalid-json');
+    const signature = createHmac('sha256', 'webhook_secret').update(malformed).digest('hex');
+    await expect(service.acceptWebhook(malformed, signature, 'evt_2')).rejects.toThrow(
+      'Invalid Razorpay webhook payload'
+    );
+    expect(postgres.withTenantContext).not.toHaveBeenCalled();
+  });
+
+  it('rejects validly signed events that do not match a saved subscription', async () => {
+    const request = createWebhookRequest();
+    const tx = {
+      paymentSubscription: { findUnique: vi.fn().mockResolvedValue(null) },
+      paymentWebhookEvent: { findUnique: vi.fn() },
+    };
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      configuredProvider(),
+      {} as never
+    );
+    await expect(
+      service.acceptWebhook(request.rawBody, request.signature, request.eventId)
+    ).rejects.toThrow(BadRequestException);
+    expect(tx.paymentWebhookEvent.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('reuses an already persisted webhook and reports queue failure for provider retry', async () => {
+    const request = createWebhookRequest();
+    const subscription = {
+      id: 'local_1',
+      userId: 'user_1',
+      idempotencyKey: 'req_1',
+      razorpayPlanId: 'plan_monthly',
+      razorpaySubscriptionId: 'sub_123',
+    };
+    const prior = {
+      id: 'event_1',
+      userId: 'user_1',
+      eventId: request.eventId,
+      subscriptionId: 'sub_123',
+    };
+    const tx = {
+      paymentSubscription: { findUnique: vi.fn().mockResolvedValue(subscription), update: vi.fn() },
+      paymentWebhookEvent: {
+        findUnique: vi.fn().mockResolvedValue(prior),
+        create: vi.fn(),
+        update: vi.fn(),
+      },
+    };
+    const jobs = { enqueue: vi.fn().mockRejectedValue(new Error('Redis unavailable')) };
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      configuredProvider(),
+      jobs as never
+    );
+    await expect(
+      service.acceptWebhook(request.rawBody, request.signature, request.eventId)
+    ).rejects.toThrow(ServiceUnavailableException);
+    expect(tx.paymentWebhookEvent.create).not.toHaveBeenCalled();
+    expect(tx.paymentWebhookEvent.update).not.toHaveBeenCalled();
+  });
+
+  it('accepts a verified webhook only after durable persistence and queue dispatch', async () => {
+    const rawBody = Buffer.from(
+      JSON.stringify({
+        event: 'subscription.activated',
+        created_at: 1793793600,
+        payload: {
+          subscription: {
+            entity: {
+              id: 'sub_123',
+              plan_id: 'plan_monthly',
+              status: 'active',
+              updated_at: 1793793600,
+              notes: { prepai_user_id: 'user_1', prepai_request_id: 'req_1' },
+            },
+          },
+        },
+      })
+    );
+    const signature = createHmac('sha256', 'webhook_secret').update(rawBody).digest('hex');
+    const tx = {
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'local_1',
+          userId: 'user_1',
+          idempotencyKey: 'req_1',
+          razorpayPlanId: 'plan_monthly',
+          razorpaySubscriptionId: null,
+        }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      paymentWebhookEvent: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: 'event_1', userId: 'user_1', eventId: 'evt_1' }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+    const postgres = { withTenantContext: vi.fn(async (_userId, operation) => operation(tx)) };
+    const jobs = { enqueue: vi.fn().mockResolvedValue('job_1') };
+    const service = new PaymentsService(
+      {} as never,
+      postgres as never,
+      configuredProvider(),
+      jobs as never
+    );
+
+    await expect(service.acceptWebhook(rawBody, signature, 'evt_1')).resolves.toEqual({
+      received: true,
+    });
+    expect(tx.paymentWebhookEvent.create).toHaveBeenCalledOnce();
+    expect(jobs.enqueue).toHaveBeenCalledWith(
+      'payment-reconcile-queue',
+      {
+        idempotencyKey: 'evt_1',
+        userId: 'user_1',
+      },
+      'reconcile-subscription'
+    );
+  });
+
+  it('fetches current provider state and projects Premium before completing the inbox event', async () => {
+    const local = {
+      id: 'local_1',
+      userId: 'user_1',
+      idempotencyKey: 'req_1',
+      planKey: 'monthly',
+      razorpayPlanId: 'plan_monthly',
+      razorpaySubscriptionId: 'sub_123',
+      status: 'created',
+      currentStart: null,
+      currentEnd: null,
+      providerUpdatedAt: null,
+    };
+    const event = {
+      id: 'event_1',
+      userId: 'user_1',
+      eventId: 'evt_1',
+      idempotencyKey: 'req_1',
+      subscriptionId: 'sub_123',
+      processedAt: null,
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(event), update: vi.fn() },
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue(local),
+        update: vi.fn().mockResolvedValue({
+          ...local,
+          status: 'active',
+          currentStart: new Date(Date.now() - 1_000),
+          currentEnd: new Date(Date.now() + 60_000),
+        }),
+      },
+    };
+    const postgres = {
+      withTenantContext: vi.fn(async (_userId: string, operation: (value: typeof tx) => unknown) =>
+        operation(tx)
+      ),
+    };
+    const mongo = {
+      user: { findUnique: vi.fn().mockResolvedValue({ role: 'USER' }), update: vi.fn() },
+      inAppNotification: { create: vi.fn() },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'fetchSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'active',
+      current_start: Math.floor((Date.now() - 1_000) / 1000),
+      current_end: Math.floor((Date.now() + 60_000) / 1000),
+      updated_at: Math.floor(Date.now() / 1000),
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'req_1' },
+    });
+    const service = new PaymentsService(mongo as never, postgres as never, provider, {
+      enqueue: vi.fn(),
+    } as never);
+
+    await service.processWebhookEvent('user_1', 'evt_1');
+
+    expect(mongo.inAppNotification.create).toHaveBeenCalledOnce();
+    expect(mongo.user.update).toHaveBeenCalledWith({
+      where: { clerkUserId: 'user_1' },
+      data: { role: 'PREMIUM' },
+    });
+    expect(tx.paymentWebhookEvent.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'event_1' },
+        data: expect.objectContaining({ status: 'processed' }),
+      })
+    );
+  });
+
+  it('skips processed webhook events and rejects an event without its saved provider subscription', async () => {
+    const processed = { id: 'event_1', processedAt: new Date() };
+    const tx = {
+      paymentWebhookEvent: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce(processed)
+          .mockResolvedValueOnce({ ...processed, processedAt: null }),
+      },
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue({ id: 'local_1', razorpaySubscriptionId: null }),
+      },
+    };
+    const provider = configuredProvider();
+    const fetch = vi.spyOn(provider, 'fetchSubscription');
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await service.processWebhookEvent('user_1', 'evt_done');
+    expect(fetch).not.toHaveBeenCalled();
+    await expect(service.processWebhookEvent('user_1', 'evt_missing-sub')).rejects.toThrow(
+      'Payment webhook does not match a persisted provider subscription'
+    );
+  });
+
+  it('does nothing when the webhook inbox row no longer exists', async () => {
+    const tx = { paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(null) } };
+    const provider = configuredProvider();
+    const fetch = vi.spyOn(provider, 'fetchSubscription');
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+    await service.processWebhookEvent('user_1', 'evt_missing');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('removes Premium when current Razorpay state is cancelled and treats duplicate notice as safe', async () => {
+    const local = {
+      id: 'local_1',
+      userId: 'user_1',
+      idempotencyKey: 'req_1',
+      razorpayPlanId: 'plan_monthly',
+      razorpaySubscriptionId: 'sub_123',
+      status: 'active',
+      currentStart: new Date(Date.now() - 60_000),
+      currentEnd: new Date(Date.now() + 60_000),
+      providerUpdatedAt: new Date(Date.now() - 120_000),
+    };
+    const event = {
+      id: 'event_1',
+      userId: 'user_1',
+      eventId: 'evt_1',
+      idempotencyKey: 'req_1',
+      subscriptionId: 'sub_123',
+      processedAt: null,
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(event), update: vi.fn() },
+      paymentSubscription: {
+        findUnique: vi.fn().mockResolvedValue(local),
+        update: vi.fn().mockResolvedValue({
+          ...local,
+          status: 'cancelled',
+          currentEnd: null,
+          providerUpdatedAt: new Date(Date.now() + 10_000),
+        }),
+      },
+    };
+    const uniqueViolation = Object.assign(
+      Object.create(Prisma.PrismaClientKnownRequestError.prototype),
+      { code: 'P2002' }
+    );
+    const mongo = {
+      user: { findUnique: vi.fn().mockResolvedValue({ role: 'PREMIUM' }), update: vi.fn() },
+      inAppNotification: { create: vi.fn().mockRejectedValue(uniqueViolation) },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'fetchSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'cancelled',
+      updated_at: Math.floor((Date.now() + 10_000) / 1000),
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'req_1' },
+    });
+    const service = new PaymentsService(
+      mongo as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+    await service.processWebhookEvent('user_1', 'evt_1');
+    expect(mongo.user.update).toHaveBeenCalledWith({
+      where: { clerkUserId: 'user_1' },
+      data: { role: 'USER' },
+    });
+    expect(tx.paymentWebhookEvent.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'event_1' },
+        data: expect.objectContaining({ status: 'processed' }),
+      })
+    );
+  });
+
+  it('preserves the admin role for a valid active subscription', async () => {
+    const local = {
+      id: 'local_1',
+      userId: 'user_1',
+      idempotencyKey: 'req_1',
+      razorpayPlanId: 'plan_monthly',
+      razorpaySubscriptionId: 'sub_123',
+      status: 'active',
+      currentStart: new Date(Date.now() - 60_000),
+      currentEnd: new Date(Date.now() + 60_000),
+      providerUpdatedAt: new Date(),
+    };
+    const event = {
+      id: 'event_1',
+      userId: 'user_1',
+      eventId: 'evt_1',
+      idempotencyKey: 'req_1',
+      subscriptionId: 'sub_123',
+      processedAt: null,
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentWebhookEvent: { findFirst: vi.fn().mockResolvedValue(event), update: vi.fn() },
+      paymentSubscription: { findUnique: vi.fn().mockResolvedValue(local), update: vi.fn() },
+    };
+    const mongo = {
+      user: { findUnique: vi.fn().mockResolvedValue({ role: 'ADMIN' }), update: vi.fn() },
+      inAppNotification: { create: vi.fn() },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'fetchSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'active',
+      updated_at: Math.floor((Date.now() - 1_000) / 1000),
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'req_1' },
+    });
+    const service = new PaymentsService(
+      mongo as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+    await service.processWebhookEvent('user_1', 'evt_1');
+    expect(mongo.user.update).not.toHaveBeenCalled();
+    expect(mongo.inAppNotification.create).not.toHaveBeenCalled();
+    expect(tx.paymentSubscription.update).not.toHaveBeenCalled();
+  });
+
+  it('reconciles queued inbox events after a missed dispatch', async () => {
+    const tx = { paymentWebhookEvent: { update: vi.fn() } };
+    const client = {
+      paymentWebhookEvent: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ id: 'event_1', eventId: 'evt_1', userId: 'user_1' }]),
+      },
+      paymentSubscription: { findMany: vi.fn().mockResolvedValue([]) },
+    };
+    const jobs = { enqueue: vi.fn().mockResolvedValue('job_1') };
+    const service = new PaymentsService(
+      {} as never,
+      { ...postgresFor(tx), client_: client } as never,
+      configuredProvider(),
+      jobs as never
+    );
+
+    await service.reconcilePendingPayments();
+
+    expect(jobs.enqueue).toHaveBeenCalledWith(
+      'payment-reconcile-queue',
+      {
+        idempotencyKey: 'evt_1',
+        userId: 'user_1',
+      },
+      'reconcile-subscription'
+    );
+    expect(tx.paymentWebhookEvent.update).toHaveBeenCalledOnce();
+  });
+
+  it('continues after redispatch failures and skips expired subscriptions without provider IDs', async () => {
+    const expired = [
+      {
+        id: 'local_missing',
+        userId: 'user_1',
+        idempotencyKey: 'req_missing',
+        razorpaySubscriptionId: null,
+      },
+      {
+        id: 'local_unavailable',
+        userId: 'user_2',
+        idempotencyKey: 'req_2',
+        razorpaySubscriptionId: 'sub_2',
+        razorpayPlanId: 'plan_monthly',
+      },
+    ];
+    const client = {
+      paymentWebhookEvent: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ id: 'event_1', eventId: 'evt_1', userId: 'user_1' }]),
+      },
+      paymentSubscription: { findMany: vi.fn().mockResolvedValue(expired) },
+    };
+    const jobs = { enqueue: vi.fn().mockRejectedValue(new Error('Redis unavailable')) };
+    const provider = configuredProvider();
+    const fetch = vi
+      .spyOn(provider, 'fetchSubscription')
+      .mockRejectedValue(new Error('Razorpay unavailable'));
+    const service = new PaymentsService(
+      {} as never,
+      { ...postgresFor({}), client_: client } as never,
+      provider,
+      jobs as never
+    );
+
+    await expect(service.reconcilePendingPayments()).resolves.toBeUndefined();
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledWith('sub_2');
+  });
+
+  it('handles duplicate event inserts caused by concurrent webhook deliveries', async () => {
+    const request = createWebhookRequest();
+    const subscription = {
+      id: 'local_1',
+      userId: 'user_1',
+      idempotencyKey: 'req_1',
+      razorpayPlanId: 'plan_monthly',
+      razorpaySubscriptionId: 'sub_123',
+    };
+    const prior = {
+      id: 'event_1',
+      userId: 'user_1',
+      eventId: request.eventId,
+      subscriptionId: 'sub_123',
+    };
+    const uniqueViolation = Object.assign(
+      Object.create(Prisma.PrismaClientKnownRequestError.prototype),
+      { code: 'P2002' }
+    );
+    const tx = {
+      paymentSubscription: { findUnique: vi.fn().mockResolvedValue(subscription) },
+      paymentWebhookEvent: {
+        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(prior),
+        create: vi.fn().mockRejectedValue(uniqueViolation),
+        update: vi.fn(),
+      },
+    };
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      configuredProvider(),
+      { enqueue: vi.fn().mockResolvedValue('job_1') } as never
+    );
+
+    await expect(
+      service.acceptWebhook(request.rawBody, request.signature, request.eventId)
+    ).resolves.toEqual({ received: true });
+    expect(tx.paymentWebhookEvent.create).toHaveBeenCalledOnce();
+  });
+
+  it('reconciles nothing when PostgreSQL has no API client', async () => {
+    const service = new PaymentsService(
+      {} as never,
+      { client_: undefined } as never,
+      configuredProvider(),
+      {} as never
+    );
+    await expect(service.reconcilePendingPayments()).resolves.toBeUndefined();
+  });
+});

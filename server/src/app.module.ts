@@ -25,6 +25,7 @@ import { StudyChatModule } from './modules/study-chat/study-chat.module.js';
 import { TracingModule } from './telemetry/tracing.module.js';
 import { MongoIdempotencyCleanupScheduler } from './common/idempotency/mongo-idempotency-cleanup.scheduler.js';
 import { PrismaService } from './prisma/prisma.service.js';
+import { PaymentsModule } from './modules/payments/payments.module.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,6 +53,7 @@ const __dirname = dirname(__filename);
     PdfModule,
     NotificationsModule,
     StudyChatModule,
+    PaymentsModule,
     TracingModule,
   ],
   controllers: [],

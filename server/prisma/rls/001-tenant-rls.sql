@@ -31,7 +31,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
   public."CodingSession",
   public."CodingAnswer",
   public."CodingExecution",
-  public."CodingQuestion"
+  public."CodingQuestion",
+  public."PaymentSubscription",
+  public."PaymentWebhookEvent"
 TO prepai_api;
 
 GRANT SELECT ON public."CodingQuestion" TO prepai_worker;
