@@ -49,7 +49,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   return (
     <main
       aria-label="Profile setup"
-      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-hidden bg-[#09090b] px-4 py-3 font-['DM_Sans',sans-serif] text-zinc-100"
+      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-hidden bg-[#09090b] px-3 py-2 font-['DM_Sans',sans-serif] text-zinc-100 sm:px-4"
     >
       <div
         aria-hidden="true"
@@ -57,7 +57,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card relative w-full min-w-0 max-w-[calc(100vw-2rem)] overflow-visible rounded-2xl border border-white/[0.08] bg-[#18181b] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:max-w-[480px] sm:p-5"
+        className="onboarding-card onboarding-card--compact relative w-full min-w-0 max-w-[calc(100vw-1.5rem)] overflow-visible rounded-2xl border border-white/[0.08] bg-[#18181b] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:max-w-[480px] sm:p-4"
       >
         <header className="onboarding-header mb-3 text-center">
           <div className="mb-1 flex justify-center">{brand}</div>

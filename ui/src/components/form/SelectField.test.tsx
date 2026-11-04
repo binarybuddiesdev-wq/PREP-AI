@@ -23,15 +23,16 @@ describe('SelectField', () => {
     );
 
     const dropdown = screen.getByRole('combobox', { name: 'Target Role' });
-    expect(dropdown).toHaveClass('settings-select-trigger', 'h-10');
+    expect(dropdown).toHaveClass('settings-select-trigger', 'h-9');
     expect(dropdown.parentElement?.querySelector('svg')).toBeInTheDocument();
 
     await user.click(dropdown);
     expect(document.body.style.overflow).not.toBe('hidden');
     const option = await screen.findByRole('option', { name: 'Backend Engineer' });
     expect(option.closest('.settings-select-popup')).toBeInTheDocument();
+    expect(option.closest('.settings-select-popup')).toHaveClass('settings-select-popup--compact');
     expect(option.closest('.settings-select-positioner')).toHaveAttribute('data-align', 'start');
-    expect(option).toHaveClass('min-h-9');
+    expect(option).toHaveClass('min-h-8');
     await user.click(option);
     expect(onChange).toHaveBeenCalledWith('backend');
   });

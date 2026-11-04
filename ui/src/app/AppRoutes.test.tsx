@@ -32,6 +32,7 @@ vi.mock('@/pages', async (importOriginal) => {
   return {
     ...pages,
     DashboardPage: () => <h1>Authenticated dashboard</h1>,
+    PracticePage: () => <h1>Authenticated practice</h1>,
     OnboardingPage: () => <h1>Authenticated onboarding</h1>,
     SettingsPage: () => <h1>Authenticated settings</h1>,
   };
@@ -109,6 +110,22 @@ describe('AppRoutes', () => {
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings');
   });
 
+  it('serves Practice inside the authenticated route group', () => {
+    authenticationState.isSignedIn = true;
+
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/practice']
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authenticated practice' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/practice');
+  });
+
   it('redirects signed-out users away from the setup route', () => {
     renderWithProviders(
       <>
@@ -116,6 +133,18 @@ describe('AppRoutes', () => {
         <CurrentPath />
       </>,
       ['/onboarding']
+    );
+
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/sign-in');
+  });
+
+  it('redirects signed-out users away from Practice', () => {
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/practice']
     );
 
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/sign-in');

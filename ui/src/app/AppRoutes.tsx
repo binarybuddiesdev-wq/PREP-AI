@@ -5,6 +5,7 @@ import {
   DashboardPage,
   LandingPage,
   OnboardingPage,
+  PracticePage,
   SettingsPage,
   SignInPage,
   SignUpPage,
@@ -45,6 +46,7 @@ export const AppRoutes = () => (
       }
     >
       <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+      <Route path={ROUTES.practice} element={<PracticePage />} />
       <Route path={ROUTES.settings} element={<SettingsPage />} />
     </Route>
     <Route

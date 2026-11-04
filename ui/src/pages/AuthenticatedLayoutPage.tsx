@@ -24,7 +24,7 @@ const NAVIGATION: IAppShellNavigationGroup[] = [
     label: 'Main',
     items: [
       { label: 'Dashboard', route: ROUTES.dashboard, icon: <LayoutDashboard size={18} /> },
-      { label: 'Practice', route: null, icon: <Zap size={18} /> },
+      { label: 'Practice', route: ROUTES.practice, icon: <Zap size={18} /> },
       { label: 'Coding', route: null, icon: <Code2 size={18} /> },
     ],
   },
@@ -45,8 +45,15 @@ export const AuthenticatedLayoutPage = () => {
   const { theme, toggleTheme } = useThemePreference();
   const activeRoute: AppShellRoute = matchRoutes([{ path: ROUTES.settings }], location)
     ? ROUTES.settings
-    : ROUTES.dashboard;
-  const pageTitle = activeRoute === ROUTES.settings ? 'Settings' : 'Dashboard';
+    : matchRoutes([{ path: ROUTES.practice }], location)
+      ? ROUTES.practice
+      : ROUTES.dashboard;
+  const pageTitle =
+    activeRoute === ROUTES.settings
+      ? 'Settings'
+      : activeRoute === ROUTES.practice
+        ? 'Practice'
+        : 'Dashboard';
   const userName = user?.firstName ?? user?.email ?? 'Account';
 
   return (

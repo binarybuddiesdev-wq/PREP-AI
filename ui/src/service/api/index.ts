@@ -1,11 +1,17 @@
 export type { ApiClient, ICreateApiClientInput } from './apiClient.types';
 export { createApiClient } from './apiClient';
 export { getHttpStatus } from './getHttpStatus';
+export { getCodingSessionHistory } from './coding.api';
 export {
-  getCodingSessionHistory,
+  completeTheorySession,
   getPracticeTopics,
+  getTheoryAnswerEvaluation,
   getTheoryScoreTrend,
+  getTheorySessionDetail,
   getTheorySessionHistory,
+  getTheorySessionQuestions,
   getTheoryWeakAreas,
-} from './dashboard.api';
+  startTheorySession,
+  submitTheoryAnswer,
+} from './theory.api';
 export { getMe, getSettings, setupComplete, updateSettings } from './user.api';

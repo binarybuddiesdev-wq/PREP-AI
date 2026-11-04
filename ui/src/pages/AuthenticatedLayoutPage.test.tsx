@@ -33,6 +33,7 @@ const renderAuthenticatedRoutes = (initialPath = '/dashboard') =>
       <Routes>
         <Route element={<AuthenticatedLayoutPage />}>
           <Route path="/dashboard" element={<h2>Dashboard route content</h2>} />
+          <Route path="/practice" element={<h2>Practice route content</h2>} />
           <Route path="/settings" element={<h2>Settings route content</h2>} />
         </Route>
       </Routes>
@@ -72,6 +73,17 @@ describe('AuthenticatedLayoutPage', () => {
     await user.click(screen.getByRole('button', { name: 'Switch to light theme' }));
 
     expect(state.toggleTheme).toHaveBeenCalledOnce();
+  });
+
+  it('marks Practice active and updates the page title for its route', () => {
+    renderAuthenticatedRoutes('/practice');
+
+    expect(within(screen.getByRole('banner')).getByText('Practice')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Practice' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(screen.getByRole('heading', { name: 'Practice route content' })).toBeVisible();
   });
 
   it('uses the same case-insensitive route match as React Router', () => {

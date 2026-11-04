@@ -3,3 +3,8 @@ export interface IApiEnvelope<TData> {
   message: string;
   data: TData;
 }
+
+export interface IPaginationRequest {
+  page: number;
+  limit: number;
+}

@@ -3,6 +3,17 @@
   scrollbar-width: none;
 }
 
+html:has(.onboarding-screen),
+body:has(.onboarding-screen) {
+  overflow: hidden;
+}
+
+#root:has(.onboarding-screen) {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .onboarding-actions button {
   padding-inline: 0.75rem;
   white-space: nowrap;
@@ -60,6 +71,22 @@
 
   .onboarding-skip {
     font-size: 0.75rem;
+  }
+}
+
+@media (min-height: 701px) {
+  .onboarding-header {
+    margin-bottom: 0.625rem;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 0.625rem;
+  }
+
+  .onboarding-fields,
+  .onboarding-content-section,
+  .onboarding-difficulty {
+    margin-top: 0.625rem;
   }
 }
 

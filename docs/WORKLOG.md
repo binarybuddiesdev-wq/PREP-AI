@@ -1,3 +1,19 @@
+## 2026-11-05 - Complete theory practice lifecycle and tighten onboarding layout
+
+- Added the protected theory practice route and its topic/weak-area setup,
+  server-backed questions, elapsed timer, answer retry with stable idempotency,
+  asynchronous evaluation feedback, and session completion summary. Reset now
+  clears the completion mutation so Practice Again can start another session.
+  Session history remains pending in Phase 3.
+- Tightened onboarding card and select sizing, prevented page-level scrolling at
+  normal viewport heights, and made dropdown placement flip to stay visible.
+- Verification: 48 UI test files / 161 tests, UI lint, UI type-check, changed
+  file formatting, and production build passed. Edge ran the Playwright UI
+  smoke suite: two homepage checks passed; two duplicate smoke specs fail
+  because a broad text locator matches five elements. Root lint, format, and
+  type-check remain red on unrelated dirty-worktree files. The authenticated
+  practice and onboarding screens could not be exercised in a browser session.
+
 ## 2026-11-04 - Port reference-matched onboarding
 
 - Added the protected, resumable three-step onboarding flow using the existing

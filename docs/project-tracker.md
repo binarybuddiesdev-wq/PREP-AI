@@ -111,21 +111,21 @@ dashboard loading slow as accounts grow, add a server summary endpoint.
 
 ### Phase 3 — Theory practice and session history
 
-**Status: Backend ready; frontend not started.** Theory endpoints support topic
-practice, weak-area analysis, answer evaluation, session completion, history,
-score trends, and role-based limits. See the
+**Status: Practice lifecycle implemented; session history pending.** Theory
+endpoints support topic practice, weak-area analysis, answer evaluation, session
+completion, history, score trends, and role-based limits. See the
 [theory API](../routes/theory-api-spec.md).
 
-- [ ] Add the practice mode selector and topic/difficulty configuration.
-- [ ] Add weak-area practice using the server-selected weak topics.
-- [ ] Build the session start, question, answer, timer, skip, evaluation,
+- [x] Add the practice mode selector and topic/difficulty configuration.
+- [x] Add weak-area practice using the server-selected weak topics.
+- [x] Build the session start, question, answer, timer, skip, evaluation,
       feedback, next-question, end-session, and completion states.
-- [ ] Represent asynchronous AI evaluation and quota failures using the API's
+- [x] Represent asynchronous AI evaluation and quota failures using the API's
       real status and error responses; prevent duplicate submissions.
 - [ ] Add paginated session history with expandable question, answer, and
       feedback details; implement CSV export only from actual returned data.
-- [ ] Preserve configured question counts, time limits, and hints only where
-      those settings are supported by the backend contract.
+- [x] Use role-supported question counts; do not expose unsupported time-limit
+      or hint settings.
 
 ### Phase 4 — PDF documents, library, and PDF Study
 

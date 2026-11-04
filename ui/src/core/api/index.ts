@@ -1,1 +1,1 @@
-export type { IApiEnvelope } from './api.types';
+export type { IApiEnvelope, IPaginationRequest } from './api.types';
