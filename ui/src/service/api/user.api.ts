@@ -4,8 +4,8 @@ import type { ApiClient } from './apiClient.types';
 export const getMe = (api: ApiClient): Promise<IApiEnvelope<IUser>> =>
   api.get('users/me').json<IApiEnvelope<IUser>>();
 
-export const getSettings = (api: ApiClient): Promise<IApiEnvelope<IUserSettings>> =>
-  api.get('users/settings').json<IApiEnvelope<IUserSettings>>();
+export const getSettings = (api: ApiClient): Promise<IApiEnvelope<IUserSettings | null>> =>
+  api.get('users/settings').json<IApiEnvelope<IUserSettings | null>>();
 
 export const updateSettings = (
   api: ApiClient,

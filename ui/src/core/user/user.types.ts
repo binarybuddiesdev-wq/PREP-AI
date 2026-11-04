@@ -13,6 +13,7 @@ export interface IUser {
 export interface IUserProfile {
   targetRole?: string;
   experienceLevel?: string;
+  targetCompanies?: string;
   [key: string]: unknown;
 }
 

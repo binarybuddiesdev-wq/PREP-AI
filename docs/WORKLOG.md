@@ -1,3 +1,17 @@
+## 2026-11-04 - Port reference-matched onboarding
+
+- Added the protected, resumable three-step onboarding flow using the existing
+  user/settings and setup-complete APIs. First-time users route from the
+  dashboard into setup; returning users go to the dashboard.
+- Matched the reference card and control sizes, added consistent custom select
+  affordances, and introduced compact spacing for short viewports. All steps
+  fit without page scrolling from 360x640 through 1440x900. Inputs are disabled
+  during saves to prevent edits from being lost.
+- Verification: 26 UI test files / 69 tests, UI and repository lint, format,
+  type-check, production build, and Chrome visual checks across 5 viewport
+  sizes. Playwright smoke could not launch because the pinned headless browser
+  is not installed.
+
 ## 2026-11-04 - Guard budgeted learner AI prompts with Mastra
 
 - Added the provider-matched Mastra prompt-injection detector to Study Chat and theory answer evaluation. A detected Study Chat turn returns a safe client error and follows existing idempotency cleanup; a detected theory answer is marked failed without retrying the worker job. Provider failover stops after detection.

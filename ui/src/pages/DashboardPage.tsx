@@ -1,3 +1,5 @@
+import { Navigate } from 'react-router';
+
 import { DashboardActions, InfoCard, WelcomeHeading } from '@/components/dashboard';
 import { AppHeader, LoadingScreen, QueryErrorState } from '@/components/layout';
 import { ROUTES } from '@/core';
@@ -14,6 +16,10 @@ export const DashboardPage = () => {
 
   if (!isLoaded || userQuery.isPending) {
     return <LoadingScreen label="Loading your dashboard..." />;
+  }
+
+  if (!userQuery.isError && userQuery.data?.isNewUser) {
+    return <Navigate to={ROUTES.onboarding} replace />;
   }
 
   return (

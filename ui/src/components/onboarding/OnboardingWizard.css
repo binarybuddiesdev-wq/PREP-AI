@@ -1,0 +1,107 @@
+@media (max-height: 820px) {
+  .onboarding-screen {
+    padding-block: 0.5rem;
+  }
+
+  .onboarding-card {
+    padding-block: 1.5rem;
+  }
+
+  .onboarding-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 1.25rem;
+  }
+
+  .onboarding-fields,
+  .onboarding-content-section,
+  .onboarding-difficulty {
+    margin-top: 1rem;
+  }
+
+  .onboarding-actions {
+    margin-top: 1.25rem;
+  }
+
+  .onboarding-skip {
+    margin-top: 0.75rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .onboarding-screen {
+    padding-block: 0.25rem;
+  }
+
+  .onboarding-card {
+    padding-block: 0.75rem;
+  }
+
+  .onboarding-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .onboarding-header > div:first-child {
+    margin-bottom: 0.25rem;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 0.75rem;
+  }
+
+  .onboarding-fields,
+  .onboarding-content-section,
+  .onboarding-difficulty {
+    margin-top: 0.75rem;
+  }
+
+  .onboarding-actions {
+    margin-top: 0.75rem;
+  }
+
+  .onboarding-skip {
+    margin-top: 0.5rem;
+  }
+
+  .onboarding-topic {
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+@media (max-height: 650px) {
+  .onboarding-screen {
+    padding-block: 0;
+  }
+
+  .onboarding-card {
+    padding-block: 0.25rem;
+  }
+
+  .onboarding-header {
+    margin-bottom: 0.25rem;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 0.25rem;
+  }
+
+  .onboarding-fields,
+  .onboarding-content-section,
+  .onboarding-difficulty {
+    margin-top: 0.5rem;
+  }
+
+  .onboarding-actions {
+    margin-top: 0.5rem;
+  }
+
+  .onboarding-skip {
+    margin-top: 0.25rem;
+  }
+
+  .onboarding-topic {
+    padding-block: 0.25rem;
+  }
+}

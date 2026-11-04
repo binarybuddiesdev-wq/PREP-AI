@@ -1,6 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { ROUTES } from '@/core';
-import { DashboardPage, LandingPage, SettingsPage, SignInPage, SignUpPage } from '@/pages';
+import {
+  DashboardPage,
+  LandingPage,
+  OnboardingPage,
+  SettingsPage,
+  SignInPage,
+  SignUpPage,
+} from '@/pages';
 import { ProtectedRoute, PublicRoute } from './RouteGuards';
 
 export const AppRoutes = () => (
@@ -42,6 +49,14 @@ export const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <SettingsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path={ROUTES.onboarding}
+      element={
+        <ProtectedRoute>
+          <OnboardingPage />
         </ProtectedRoute>
       }
     />

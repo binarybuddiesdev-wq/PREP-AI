@@ -70,9 +70,9 @@ React app, not the standalone HTML.
 
 ### Phase 1 — Public entry, app shell, authentication, and setup
 
-**Status: Partial.** The public landing page and reference-styled Clerk
-sign-in/sign-up shell exist. The full app shell and setup wizard are not yet
-ported.
+**Status: Partial.** The public landing page, reference-styled Clerk
+sign-in/sign-up shell, and three-step onboarding flow exist. The full app shell
+and shared authenticated navigation are still pending.
 
 - [x] Add the landing page: responsive navigation, animated terminal hero, ambient
       particle canvas, cursor-tilting feedback showcase, feature statements,
@@ -82,7 +82,7 @@ ported.
 - [x] Style Clerk sign-in/sign-up inside the reference auth shell. Show only
       authentication methods enabled in Clerk; do not recreate the prototype's
       pretend social-login buttons.
-- [ ] Build the three-step onboarding flow for target role/experience, target
+- [x] Build the three-step onboarding flow for target role/experience, target
       companies, and preferred topics/default difficulty, with back/skip/resume
       behavior and persistence through the user/settings API.
 - [ ] Add the authenticated application shell: responsive collapsible sidebar,

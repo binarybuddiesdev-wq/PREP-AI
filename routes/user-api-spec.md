@@ -75,6 +75,19 @@ Get settings for the authenticated user.
 }
 ```
 
+Onboarding stores its progress in the existing JSON settings fields:
+
+- `profile.targetRole`, `profile.experienceLevel`, and
+  `profile.targetCompanies` hold role, experience, and comma-separated company
+  names.
+- `preferences.preferredTopics` is a list of selected topic names.
+- `preferences.defaultDifficulty` is `Junior`, `Mid`, or `Senior`.
+- `preferences.onboardingStep` is `1`, `2`, or `3` and records the last saved
+  step so a first-time user can resume after returning to the app.
+
+The UI saves progress through `PATCH /users/settings`. It marks onboarding
+complete separately through `PATCH /users/setup-complete`.
+
 ---
 
 ## 3. Update User Settings

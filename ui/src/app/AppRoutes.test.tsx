@@ -22,6 +22,7 @@ vi.mock('@/pages', async (importOriginal) => {
   return {
     ...pages,
     DashboardPage: () => <h1>Authenticated dashboard</h1>,
+    OnboardingPage: () => <h1>Authenticated onboarding</h1>,
   };
 });
 
@@ -62,5 +63,32 @@ describe('AppRoutes', () => {
 
     expect(screen.getByRole('heading', { name: 'Authenticated dashboard' })).toBeInTheDocument();
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/dashboard');
+  });
+
+  it('shows onboarding to signed-in users on the setup route', () => {
+    authenticationState.isSignedIn = true;
+
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/onboarding']
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authenticated onboarding' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/onboarding');
+  });
+
+  it('redirects signed-out users away from the setup route', () => {
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/onboarding']
+    );
+
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/sign-in');
   });
 });
