@@ -51,6 +51,7 @@ const codingProblemListSchema = {
       description: { type: 'string' },
       difficulty: { type: 'string' },
       topic: { type: 'string' },
+      isSolved: { type: 'boolean' },
     },
   },
 };

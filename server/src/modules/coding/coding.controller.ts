@@ -60,8 +60,11 @@ export class CodingController {
   @HttpCode(200)
   @ApiOperation({ summary: ApiOperationEnum.CODING_LIST_PROBLEMS })
   @ApiResponse(CodingProblemsResponse)
-  async listProblems(@Query() dto: ListCodingProblemsDto) {
-    return { message: CODING_PROBLEMS_FETCHED, data: await this.codingService.listProblems(dto) };
+  async listProblems(@Query() dto: ListCodingProblemsDto, @CurrentUser('id') userId: string) {
+    return {
+      message: CODING_PROBLEMS_FETCHED,
+      data: await this.codingService.listProblems(dto, userId),
+    };
   }
 
   @ApiBearerAuth()

@@ -66,15 +66,15 @@ describe('CodingController', () => {
     codingService.listProblems.mockResolvedValue([problem]);
     codingService.getProblem.mockResolvedValue(problem);
 
-    const list = await controller.listProblems({ topic: 'Arrays', difficulty: 'Easy' });
+    const list = await controller.listProblems({ topic: 'Arrays', difficulty: 'Easy' }, 'user_001');
     const detail = await controller.getProblem('two-sum');
 
     expect(list).toEqual({ message: expect.any(String), data: [problem] });
     expect(detail).toEqual({ message: expect.any(String), data: problem });
-    expect(codingService.listProblems).toHaveBeenCalledWith({
-      topic: 'Arrays',
-      difficulty: 'Easy',
-    });
+    expect(codingService.listProblems).toHaveBeenCalledWith(
+      { topic: 'Arrays', difficulty: 'Easy' },
+      'user_001'
+    );
     expect(codingService.getProblem).toHaveBeenCalledWith('two-sum');
   });
 

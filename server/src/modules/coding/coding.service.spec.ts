@@ -342,8 +342,22 @@ describe('CodingService', () => {
   });
 
   describe('problem bank', () => {
+    it('marks only this authenticated user’s accepted problems as solved', async () => {
+      pg().codingAnswer.findMany.mockResolvedValueOnce([{ problemId }]);
+
+      const result = await service.listProblems({ topic: 'Arrays' }, userId);
+
+      expect(result).toEqual([expect.objectContaining({ id: problemId, isSolved: true })]);
+      expect(postgres.withTenantContext).toHaveBeenCalledWith(userId, expect.any(Function));
+      expect(pg().codingAnswer.findMany).toHaveBeenCalledWith({
+        where: { userId, status: 'accepted' },
+        select: { problemId: true },
+        distinct: ['problemId'],
+      });
+    });
+
     it('lists problems using only requested filters and does not expose test internals', async () => {
-      const result = await service.listProblems({ topic: 'Arrays', difficulty: 'Easy' });
+      const result = await service.listProblems({ topic: 'Arrays', difficulty: 'Easy' }, userId);
 
       expect(result).toEqual([expect.objectContaining({ id: problemId, slug: 'two-sum' })]);
       expect(pg().codingQuestion.findMany).toHaveBeenCalledWith(
@@ -374,13 +388,17 @@ describe('CodingService', () => {
 
     it('returns 503 when PostgreSQL is unavailable', async () => {
       (postgres as { client_: unknown }).client_ = undefined;
-      await expect(service.listProblems({})).rejects.toBeInstanceOf(ServiceUnavailableException);
+      await expect(service.listProblems({}, userId)).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
     });
 
     it('maps PostgreSQL query errors to 503', async () => {
       pg().codingQuestion.findMany.mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
 
-      await expect(service.listProblems({})).rejects.toBeInstanceOf(ServiceUnavailableException);
+      await expect(service.listProblems({}, userId)).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
     });
   });
 

@@ -53,24 +53,39 @@ export class CodingService {
     @InjectPinoLogger(CodingService.name) private readonly logger: PinoLogger
   ) {}
 
-  async listProblems(dto: ListCodingProblemsDto) {
+  async listProblems(dto: ListCodingProblemsDto, userId: string) {
     const pg = this.database();
     try {
       const where: Prisma.CodingQuestionWhereInput = {};
       if (dto.topic) where.topic = dto.topic;
       if (dto.difficulty) where.difficulty = dto.difficulty;
-      return await pg.codingQuestion.findMany({
-        where,
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          description: true,
-          difficulty: true,
-          topic: true,
-        },
-        orderBy: [{ difficulty: 'asc' }, { title: 'asc' }],
-      });
+      const [problems, acceptedAnswers] = await Promise.all([
+        pg.codingQuestion.findMany({
+          where,
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            description: true,
+            difficulty: true,
+            topic: true,
+          },
+          orderBy: [{ difficulty: 'asc' }, { title: 'asc' }],
+        }),
+        this.postgres.withTenantContext(userId, (transaction) =>
+          transaction.codingAnswer.findMany({
+            where: { userId, status: 'accepted' },
+            select: { problemId: true },
+            distinct: ['problemId'],
+          })
+        ),
+      ]);
+      const solvedProblemIds = new Set(acceptedAnswers.map(({ problemId }) => problemId));
+
+      return problems.map((problem) => ({
+        ...problem,
+        isSolved: solvedProblemIds.has(problem.id),
+      }));
     } catch (error) {
       throw this.databaseError(error);
     }
