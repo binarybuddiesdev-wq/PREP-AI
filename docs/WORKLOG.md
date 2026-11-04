@@ -572,3 +572,13 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Improved shared select trigger, focus/open states, popup contrast, selected option treatment, and mobile action button labels.
 - Made the select interaction test wait for the accessible option to appear, avoiding an intermittent timing failure under the full UI suite.
 - Verification: UI lint passed; UI tests passed (32 files, 87 tests); UI type-check and production build passed. Root lint and format checks reported errors/warnings in other dirty workspace files; changed-file formatting passed.
+
+## 2026-11-05 - Compact onboarding and add the progress dashboard
+
+- Reduced onboarding's repeated step labels, supporting copy, card spacing, and small-screen chip spacing. The role and experience dropdowns now use a more compact, clearer trigger and option menu; the menu remains within the viewport without creating page scroll.
+- Added a data-backed dashboard overview for theory/coding totals, recent sessions, weak-area practice, streak, score trend, and setup progress. Each API-backed panel has independent loading, retryable error, and empty states.
+- Architecture/correctness review identified account-agnostic dashboard cache keys and missing recovery actions for coding-history and topic-name errors; all dashboard keys now include the Clerk user ID, and both affected UI states show an error with a source-specific retry.
+- Deferred recent-session detail links to Phase 3 because the app has no session detail route or detail endpoint yet; updated the feature tracker and implementation plan to reflect the boundary.
+- Dashboard totals page through all session history because the current APIs do not expose aggregate completed-session counts; a server summary endpoint can reduce this cost if history volume makes dashboard loading slow.
+- Browser measurements for onboarding confirmed no document or card scrolling at 390×844, 390×640, 320×568, and 1366×768. The dropdown was opened at 320×568 and 390×844; both remained within the viewport. Dashboard coding-history retry was inspected at mobile and desktop widths; the topic-name error/retry was inspected at 390×844 without horizontal overflow. The layout detector returned no findings.
+- Verification: UI lint, `tsc -b`, production build, and UI tests passed (35 files, 100 tests). Changed-file Prettier passed. Root lint still reports 14 `no-undef` errors in the unrelated untracked `types/piston.js`; root format still reports 12 unrelated untracked e2e, Piston, seed, and tooling files. Those files were not modified. Build reports the existing Vite config and large-chunk warnings.

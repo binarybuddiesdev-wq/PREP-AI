@@ -92,14 +92,21 @@ navigation around the implemented dashboard and settings routes are in place.
 
 ### Phase 2 — Dashboard and progress overview
 
-**Status: Partial.** The current dashboard displays basic profile details; the
-prototype's progress dashboard is not implemented.
+**Status: Complete for the progress overview.** The dashboard now summarizes
+real theory and coding activity with independent loading, error, retry, and
+empty states. Session detail navigation remains in Phase 3 because the React
+app does not yet have session history detail routes.
 
-- [ ] Show real session, answer, score, and solved-problem summaries.
-- [ ] Add recent sessions and links into their history details.
-- [ ] Add suggested practice based on backend weak-area results.
-- [ ] Add the streak, score trend, and weak-area panels using backend data.
-- [ ] Recreate the welcome/setup checklist, empty states, and responsive card
+**Scale note:** Exact summary totals currently require reading all paginated
+session history because the APIs do not provide aggregate counts. If that makes
+dashboard loading slow as accounts grow, add a server summary endpoint.
+
+- [x] Show real session, answer, score, and solved-problem summaries.
+- [x] Show recent sessions from the session APIs. Add links to history details
+      in Phase 3 when those routes exist.
+- [x] Add suggested practice based on backend weak-area results.
+- [x] Add the streak, score trend, and weak-area panels using backend data.
+- [x] Recreate the welcome/setup checklist, empty states, and responsive card
       layout without sample KPI values.
 
 ### Phase 3 — Theory practice and session history

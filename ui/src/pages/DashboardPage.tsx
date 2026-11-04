@@ -1,15 +1,34 @@
+import type { UseQueryResult } from '@tanstack/react-query';
 import { Navigate } from 'react-router';
 
-import { InfoCard, WelcomeHeading } from '@/components/dashboard';
+import { DashboardOverview, type IDashboardPanelStatus } from '@/components/dashboard';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
 import { ROUTES } from '@/core';
-import { getHttpStatus, useSessionReader, useUserReader } from '@/logic';
-import { formatDate } from '@/utils';
+import {
+  getHttpStatus,
+  useDashboardDataReader,
+  useSessionReader,
+  useSettingsReader,
+  useUserReader,
+} from '@/logic';
+
+const toPanelStatus = <TData,>(query: UseQueryResult<TData, Error>): IDashboardPanelStatus => ({
+  isPending: query.isPending,
+  isError: query.isError,
+  isFetching: query.isFetching,
+  error: query.error,
+  onRetry: () => void query.refetch(),
+});
 
 export const DashboardPage = () => {
   const { isLoaded, user } = useSessionReader();
   // Fetching the profile is what syncs the Clerk user into the backend on first sign-in.
   const userQuery = useUserReader();
+  const settingsQuery = useSettingsReader();
+  const dashboard = useDashboardDataReader(
+    settingsQuery.data,
+    !userQuery.isPending && !userQuery.isError && !userQuery.data?.isNewUser
+  );
   const profileErrorStatus = userQuery.error ? getHttpStatus(userQuery.error) : undefined;
 
   if (!isLoaded || userQuery.isPending) {
@@ -21,7 +40,7 @@ export const DashboardPage = () => {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl">
+    <div className="mx-auto w-full max-w-6xl">
       {userQuery.isError ? (
         <QueryErrorState
           title="Couldn’t load your profile"
@@ -43,19 +62,17 @@ export const DashboardPage = () => {
           isRetrying={userQuery.isFetching}
         />
       ) : (
-        <>
-          <WelcomeHeading name={user?.firstName || user?.email || ''} />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InfoCard title="User ID" value={user?.id ?? ''} isMonospace />
-            <InfoCard title="Email" value={user?.email ?? ''} />
-            <InfoCard
-              title="Account Created"
-              value={user?.createdAt ? formatDate(user.createdAt) : 'N/A'}
-            />
-          </div>
-        </>
+        <DashboardOverview
+          name={user?.firstName || user?.email || ''}
+          summary={dashboard.summary}
+          theoryStatus={toPanelStatus(dashboard.theorySessionsQuery)}
+          codingStatus={toPanelStatus(dashboard.codingSessionsQuery)}
+          scoreTrendStatus={toPanelStatus(dashboard.scoreTrendQuery)}
+          weakAreasStatus={toPanelStatus(dashboard.weakAreasQuery)}
+          practiceTopicsStatus={toPanelStatus(dashboard.practiceTopicsQuery)}
+          settingsStatus={toPanelStatus(settingsQuery)}
+        />
       )}
-    </main>
+    </div>
   );
 };

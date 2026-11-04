@@ -54,6 +54,35 @@
   color: #52525b;
 }
 
+.app-shell[data-theme='light'] .app-shell-panel .text-zinc-100 {
+  color: #18181b;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-zinc-200 {
+  color: #27272a;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-amber-200,
+.app-shell[data-theme='light'] .app-shell-panel .text-amber-300 {
+  color: #92400e;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-sky-300 {
+  color: #0369a1;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-emerald-300 {
+  color: #047857;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-violet-300 {
+  color: #6d28d9;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-rose-300 {
+  color: #be123c;
+}
+
 .app-shell[data-theme='light'] .app-shell-panel .text-amber-400 {
   color: #b45309;
 }

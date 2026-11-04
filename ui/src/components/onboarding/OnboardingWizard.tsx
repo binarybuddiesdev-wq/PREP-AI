@@ -49,7 +49,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   return (
     <main
       aria-label="Profile setup"
-      className="onboarding-screen relative isolate flex h-svh min-h-svh items-center justify-center overflow-hidden bg-[#09090b] px-5 py-4 font-['DM_Sans',sans-serif] text-zinc-100"
+      className="onboarding-screen relative isolate flex h-svh min-h-svh items-center justify-center overflow-hidden bg-[#09090b] px-4 py-3 font-['DM_Sans',sans-serif] text-zinc-100"
     >
       <div
         aria-hidden="true"
@@ -57,24 +57,22 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card relative w-full max-w-[520px] overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#18181b] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-8"
+        className="onboarding-card relative w-full max-w-[520px] rounded-2xl border border-white/[0.08] bg-[#18181b] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6"
       >
-        <header className="onboarding-header mb-6 text-center">
-          <div className="mb-2 flex justify-center">{brand}</div>
+        <header className="onboarding-header mb-4 text-center">
+          <div className="mb-1 flex justify-center">{brand}</div>
           <h1
             id="onboarding-title"
             className="m-0 text-[1.3rem] font-semibold leading-tight tracking-tight text-zinc-50"
           >
             Let’s set up your profile
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            This helps us personalize your interview prep experience.
-          </p>
+          <p className="mt-1 text-sm text-zinc-400">Practice that fits your goals.</p>
         </header>
 
         <ol
           aria-label="Setup progress"
-          className="onboarding-progress mb-6 flex items-center gap-2 px-1 sm:gap-3"
+          className="onboarding-progress mb-4 flex items-center gap-2 px-1 sm:gap-3"
         >
           {STEPS.map((currentStep) => (
             <li
@@ -86,7 +84,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
               <span
                 aria-hidden="true"
                 className={cn(
-                  'flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
+                  'flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
                   step === currentStep.value && 'border-amber-500 bg-amber-500/10 text-amber-300',
                   step > currentStep.value && 'border-emerald-500 bg-emerald-500 text-white',
                   step < currentStep.value && 'border-white/10 bg-[#09090b] text-zinc-500'
@@ -110,9 +108,6 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
         <div aria-live="polite">
           {step === 1 && (
             <section aria-labelledby="onboarding-step-title">
-              <p className="mb-1 text-xs font-medium uppercase tracking-[0.16em] text-amber-400">
-                Step 1 of 3
-              </p>
               <h2
                 id="onboarding-step-title"
                 className="m-0 text-[1.05rem] font-semibold text-zinc-50"
@@ -120,10 +115,10 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Tell us about your target role
               </h2>
               <p className="mt-1 text-sm text-zinc-400">
-                We’ll tailor questions to match your interview goals.
+                We’ll tailor questions for your target role.
               </p>
 
-              <div className="onboarding-fields mt-5 space-y-3">
+              <div className="onboarding-fields mt-4 space-y-2.5">
                 <SelectField
                   id="onboarding-target-role"
                   label="Target Role"
@@ -151,7 +146,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 />
               </div>
 
-              <div className="onboarding-actions mt-7 flex gap-3">
+              <div className="onboarding-actions mt-4 flex gap-3">
                 <button
                   type="button"
                   className={primaryButtonClassName}
@@ -166,9 +161,6 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
 
           {step === 2 && (
             <section aria-labelledby="onboarding-step-title">
-              <p className="mb-1 text-xs font-medium uppercase tracking-[0.16em] text-amber-400">
-                Step 2 of 3
-              </p>
               <h2
                 id="onboarding-step-title"
                 className="m-0 text-[1.05rem] font-semibold text-zinc-50"
@@ -176,10 +168,10 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Where are you applying?
               </h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Optional — we’ll bias questions toward what those companies ask.
+                Optional — focus questions on companies you want to join.
               </p>
 
-              <div className="onboarding-content-section mt-5">
+              <div className="onboarding-content-section mt-4">
                 <label
                   htmlFor="onboarding-target-companies"
                   className="text-[0.8rem] font-medium text-zinc-300"
@@ -198,7 +190,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 />
               </div>
 
-              <div className="onboarding-actions mt-7 flex gap-3">
+              <div className="onboarding-actions mt-4 flex gap-3">
                 <button
                   type="button"
                   className={secondaryButtonClassName}
@@ -221,20 +213,15 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
 
           {step === 3 && (
             <section aria-labelledby="onboarding-step-title">
-              <p className="mb-1 text-xs font-medium uppercase tracking-[0.16em] text-amber-400">
-                Step 3 of 3
-              </p>
               <h2
                 id="onboarding-step-title"
                 className="m-0 text-[1.05rem] font-semibold text-zinc-50"
               >
                 Pick your focus areas
               </h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                Select topics you want to practice most. You can change these later.
-              </p>
+              <p className="mt-1 text-sm text-zinc-400">Choose your focus topics for practice.</p>
 
-              <div className="onboarding-content-section mt-5">
+              <div className="onboarding-content-section mt-4">
                 <p id="onboarding-topics-label" className="text-sm font-medium text-zinc-300">
                   Preferred Topics
                 </p>
@@ -254,7 +241,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                         disabled={isSaving}
                         onClick={() => toggleTopic(topic)}
                         className={cn(
-                          'onboarding-topic rounded-full border px-3.5 py-1.5 text-[0.8rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50',
+                          'onboarding-topic rounded-full border px-3 py-1 text-[0.78rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50',
                           isSelected
                             ? 'border-amber-500/40 bg-amber-500/10 font-medium text-amber-300'
                             : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-100'
@@ -267,7 +254,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 </div>
               </div>
 
-              <div className="onboarding-difficulty mt-5">
+              <div className="onboarding-difficulty mt-4">
                 <SelectField
                   id="onboarding-default-difficulty"
                   label="Default Difficulty"
@@ -284,7 +271,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 />
               </div>
 
-              <div className="onboarding-actions mt-7 flex gap-3">
+              <div className="onboarding-actions mt-4 flex gap-3">
                 <button
                   type="button"
                   className={secondaryButtonClassName}
@@ -323,7 +310,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
 
         <button
           type="button"
-          className="onboarding-skip mt-5 w-full rounded-md py-1 text-center text-sm text-zinc-500 transition-colors hover:text-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60"
+          className="onboarding-skip mt-3 w-full rounded-md py-1 text-center text-sm text-zinc-500 transition-colors hover:text-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60"
           disabled={isSaving}
           onClick={onSkip}
         >

@@ -37,8 +37,9 @@ describe('OnboardingWizard', () => {
 
     expect(screen.getByRole('main', { name: 'Profile setup' })).toBeInTheDocument();
     expect(container.querySelector('.onboarding-screen')).toHaveClass('h-svh', 'overflow-hidden');
-    expect(container.querySelector('.onboarding-card')).toHaveClass('overflow-y-auto');
+    expect(container.querySelector('.onboarding-card')).not.toHaveClass('overflow-y-auto');
     expect(screen.getByRole('heading', { name: 'Tell us about your target role' })).toBeVisible();
+    expect(screen.queryByText('Step 1 of 3')).not.toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Setup progress' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Target Role' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Experience Level' })).toBeInTheDocument();
