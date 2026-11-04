@@ -4,9 +4,11 @@ import {
   AuthenticatedLayoutPage,
   DashboardPage,
   LandingPage,
+  LibraryPage,
   OnboardingPage,
   PracticePage,
   SettingsPage,
+  SettingsDocumentsPage,
   SessionHistoryPage,
   SignInPage,
   SignUpPage,
@@ -52,6 +54,8 @@ export const AppRoutes = () => (
       <Route path={ROUTES.history} element={<SessionHistoryPage />} />
       <Route path={ROUTES.historySessionDetail} element={<TheorySessionDetailPage />} />
       <Route path={ROUTES.settings} element={<SettingsPage />} />
+      <Route path={ROUTES.settingsDocuments} element={<SettingsDocumentsPage />} />
+      <Route path={ROUTES.library} element={<LibraryPage />} />
     </Route>
     <Route
       path={ROUTES.onboarding}

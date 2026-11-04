@@ -1,9 +1,11 @@
 export { AuthenticatedLayoutPage } from './AuthenticatedLayoutPage';
 export { DashboardPage } from './DashboardPage';
 export { LandingPage } from './LandingPage';
+export { LibraryPage } from './LibraryPage';
 export { OnboardingPage } from './OnboardingPage';
 export { PracticePage } from './PracticePage';
 export { SettingsPage } from './SettingsPage';
+export { SettingsDocumentsPage } from './SettingsDocumentsPage';
 export { SessionHistoryPage } from './SessionHistoryPage';
 export { SignInPage } from './SignInPage';
 export { SignUpPage } from './SignUpPage';

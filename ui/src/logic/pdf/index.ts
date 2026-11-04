@@ -6,3 +6,4 @@ export type {
   IUploadPdfVariables,
 } from './usePdfCommands';
 export { usePdfSourceReader, usePdfSourcesReader } from './usePdfSourcesReader';
+export { usePdfContentReader } from './usePdfContentReader';

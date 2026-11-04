@@ -37,6 +37,8 @@ vi.mock('@/pages', async (importOriginal) => {
     TheorySessionDetailPage: () => <h1>Authenticated session detail</h1>,
     OnboardingPage: () => <h1>Authenticated onboarding</h1>,
     SettingsPage: () => <h1>Authenticated settings</h1>,
+    SettingsDocumentsPage: () => <h1>Authenticated documents</h1>,
+    LibraryPage: () => <h1>Authenticated Library</h1>,
   };
 });
 
@@ -110,6 +112,38 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('heading', { name: 'Authenticated settings' })).toBeInTheDocument();
     expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings');
+  });
+
+  it('serves settings documents inside the authenticated route group', () => {
+    authenticationState.isSignedIn = true;
+
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/settings/documents']
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authenticated documents' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings/documents');
+  });
+
+  it('serves the Library inside the authenticated route group', () => {
+    authenticationState.isSignedIn = true;
+
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/library']
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authenticated Library' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/library');
   });
 
   it('serves Practice inside the authenticated route group', () => {

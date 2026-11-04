@@ -57,17 +57,17 @@
 
 **Interfaces:** `PdfDocumentManager` consumes the list query and upload/reindex/delete mutations; file validation is aligned with the server contract and never claims server validation has completed.
 
-- [ ] Add failing component tests for picker/drop, validation, progress, statuses, reindex, delete confirmation, and recovery.
-- [ ] Implement responsive document manager and route/settings navigation.
-- [ ] Run focused tests and UI checks; commit.
+- [x] Add failing component tests for picker/drop, validation, progress, statuses, reindex, delete confirmation, and recovery.
+- [x] Implement responsive document manager and route/settings navigation.
+- [x] Run focused tests and UI checks; commit.
 
 ### Task 4: Library preview
 
 **Interfaces:** `/library` lists owned sources and fetches only selected ready PDF bytes. A page-level effect creates and revokes one object URL; native browser PDF controls handle page, zoom, and fullscreen.
 
-- [ ] Add failing tests for empty/loading/error states, selection, object URL cleanup, and unavailable preview.
-- [ ] Implement Library route and preview controls without a new viewer dependency.
-- [ ] Run focused tests and UI checks; commit.
+- [x] Add failing tests for empty/loading/error states, selection, object URL cleanup, and unavailable preview.
+- [x] Implement Library route and preview controls without a new viewer dependency.
+- [x] Run focused tests and UI checks; commit.
 
 ### Task 5: PDF Study integration
 

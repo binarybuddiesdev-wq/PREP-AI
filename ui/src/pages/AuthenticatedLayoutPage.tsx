@@ -33,7 +33,7 @@ const NAVIGATION: IAppShellNavigationGroup[] = [
     items: [
       { label: 'History', route: ROUTES.history, icon: <History size={18} /> },
       { label: 'Settings', route: ROUTES.settings, icon: <Settings2 size={18} /> },
-      { label: 'Library', route: null, icon: <LibraryBig size={18} /> },
+      { label: 'Library', route: ROUTES.library, icon: <LibraryBig size={18} /> },
     ],
   },
 ];
@@ -48,11 +48,13 @@ export const AuthenticatedLayoutPage = () => {
     location
   )
     ? ROUTES.history
-    : matchRoutes([{ path: ROUTES.settings }], location)
+    : matchRoutes([{ path: ROUTES.settings }, { path: ROUTES.settingsDocuments }], location)
       ? ROUTES.settings
-      : matchRoutes([{ path: ROUTES.practice }], location)
-        ? ROUTES.practice
-        : ROUTES.dashboard;
+      : matchRoutes([{ path: ROUTES.library }], location)
+        ? ROUTES.library
+        : matchRoutes([{ path: ROUTES.practice }], location)
+          ? ROUTES.practice
+          : ROUTES.dashboard;
   const pageTitle =
     activeRoute === ROUTES.history
       ? 'History'
@@ -60,7 +62,9 @@ export const AuthenticatedLayoutPage = () => {
         ? 'Settings'
         : activeRoute === ROUTES.practice
           ? 'Practice'
-          : 'Dashboard';
+          : activeRoute === ROUTES.library
+            ? 'Library'
+            : 'Dashboard';
   const userName = user?.firstName ?? user?.email ?? 'Account';
 
   return (

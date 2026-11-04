@@ -8,6 +8,8 @@ export const ROUTES = {
   historySessionDetail: '/history/:sessionId',
   onboarding: '/onboarding',
   settings: '/settings',
+  settingsDocuments: '/settings/documents',
+  library: '/library',
 } as const;
 
 export const historySessionDetailPath = (sessionId: string) =>
@@ -18,5 +20,6 @@ export const APP_SHELL_ROUTES = [
   ROUTES.practice,
   ROUTES.history,
   ROUTES.settings,
+  ROUTES.library,
 ] as const;
 export type AppShellRoute = (typeof APP_SHELL_ROUTES)[number];

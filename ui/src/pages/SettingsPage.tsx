@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
 import { RawSettingsCard, SettingsFormCard, UserModelCard } from '@/components/settings';
-import { type ISettingsFormValues, type ISettingsSaveStatus } from '@/core';
+import { ROUTES, type ISettingsFormValues, type ISettingsSaveStatus } from '@/core';
 import {
   getSettingsFormValues,
   toUpdateSettingsBody,
@@ -66,8 +67,18 @@ export const SettingsPage = () => {
 
   return (
     <main className="mx-auto w-full max-w-4xl">
-      <h1 className="text-2xl font-bold mb-2">Settings</h1>
-      <p className="text-zinc-400 mb-8">Manage your profile and practice preferences.</p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="mb-2 text-2xl font-bold">Settings</h1>
+          <p className="text-zinc-400">Manage your profile and practice preferences.</p>
+        </div>
+        <Link
+          to={ROUTES.settingsDocuments}
+          className="inline-flex min-h-9 w-fit items-center rounded-lg border border-white/10 px-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400"
+        >
+          Manage documents
+        </Link>
+      </div>
 
       <UserModelCard user={userQuery.data} />
       <SettingsFormCard
