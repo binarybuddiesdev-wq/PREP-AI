@@ -774,6 +774,78 @@ describe('PaymentsService webhook intake', () => {
     });
   });
 
+  it('continues expiry reconciliation when one user profile cannot be projected', async () => {
+    const expired = [
+      {
+        id: 'local_missing_profile',
+        userId: 'user_missing_profile',
+        idempotencyKey: 'req_missing_profile',
+        razorpaySubscriptionId: 'sub_missing_profile',
+      },
+      {
+        id: 'local_valid_profile',
+        userId: 'user_valid_profile',
+        idempotencyKey: 'req_valid_profile',
+        razorpaySubscriptionId: 'sub_valid_profile',
+      },
+    ];
+    const client = {
+      paymentWebhookEvent: { findMany: vi.fn().mockResolvedValue([]) },
+      paymentSubscription: { findMany: vi.fn().mockResolvedValue(expired) },
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findUnique: vi
+          .fn()
+          .mockImplementation(({ where }) =>
+            Promise.resolve(expired.find((row) => row.id === where.id))
+          ),
+        findMany: vi.fn().mockImplementation(({ where }) =>
+          Promise.resolve(
+            where.userId === 'user_valid_profile'
+              ? [
+                  {
+                    status: 'active',
+                    currentStart: new Date(Date.now() - 120_000),
+                    currentEnd: new Date(Date.now() - 60_000),
+                  },
+                ]
+              : []
+          )
+        ),
+      },
+    };
+    const postgres = {
+      ...postgresFor(tx),
+      client_: client,
+      withTenantContext: vi.fn(async (_userId, operation) => operation(tx)),
+    };
+    const mongo = {
+      user: {
+        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ role: 'PREMIUM' }),
+        update: vi.fn(),
+      },
+      inAppNotification: { create: vi.fn() },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'fetchSubscription').mockRejectedValue(new Error('Razorpay unavailable'));
+    const service = new PaymentsService(mongo as never, postgres as never, provider, {
+      enqueue: vi.fn(),
+    } as never);
+
+    await expect(service.reconcilePendingPayments()).resolves.toBeUndefined();
+
+    expect(postgres.withTenantContext).toHaveBeenCalledWith(
+      'user_valid_profile',
+      expect.any(Function)
+    );
+    expect(mongo.user.update).toHaveBeenCalledWith({
+      where: { clerkUserId: 'user_valid_profile' },
+      data: { role: 'USER' },
+    });
+  });
+
   it('handles duplicate event inserts caused by concurrent webhook deliveries', async () => {
     const request = createWebhookRequest();
     const subscription = {

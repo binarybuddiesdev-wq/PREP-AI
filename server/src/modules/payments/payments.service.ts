@@ -325,7 +325,14 @@ export class PaymentsService {
       try {
         await this.fetchAndApplyProviderState(subscription.userId, subscription.id);
       } catch (error) {
-        await this.projectUserEntitlement(subscription.userId);
+        try {
+          await this.projectUserEntitlement(subscription.userId);
+        } catch (projectionError) {
+          this.logger.error(
+            { subscriptionId: subscription.id, err: projectionError },
+            'Expired payment entitlement fallback failed'
+          );
+        }
         this.logger.warn(
           { subscriptionId: subscription.id, err: error },
           'Expired payment reconciliation failed'
