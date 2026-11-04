@@ -1,8 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { PrismaClient as PostgresAdminClient } from '../../src/generated/postgresql-client/index.js';
 import { UserService } from '../../src/modules/user/user.service.js';
 import { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
 import { StudyChatService } from '../../src/modules/study-chat/study-chat.service.js';
 import { StudyChatIdempotencyService } from '../../src/modules/study-chat/study-chat-idempotency.service.js';
+import { AuditLogService } from '../../src/modules/audit/audit-log.service.js';
 import {
   connectIsolationTestDatabases,
   createIntegrationLogger,
@@ -14,6 +16,7 @@ type TDatabase = Awaited<ReturnType<typeof connectIsolationTestDatabases>>;
 
 describe('MongoDB user data isolation', () => {
   let database: TDatabase | undefined;
+  let postgresAdmin: PostgresAdminClient | undefined;
   let users: Awaited<ReturnType<typeof createTestUserPair>> | undefined;
   let service: UserService;
   let notifications: NotificationsService;
@@ -22,8 +25,18 @@ describe('MongoDB user data isolation', () => {
 
   beforeAll(async () => {
     database = await connectIsolationTestDatabases();
+    const adminUrl = process.env['POSTGRESQL_ADMIN_URL'];
+    if (!adminUrl) throw new Error('POSTGRESQL_ADMIN_URL is required for audit deletion checks');
+    postgresAdmin = new PostgresAdminClient({ datasourceUrl: adminUrl });
+    await postgresAdmin.$connect();
     users = await createTestUserPair(database.mongo, 'user-data-isolation');
-    service = new UserService(database.mongo, {} as never, createIntegrationLogger() as never);
+    const logger = createIntegrationLogger();
+    service = new UserService(
+      database.mongo,
+      {} as never,
+      logger as never,
+      new AuditLogService(database.postgresProvider, logger as never)
+    );
     notifications = new NotificationsService(
       database.mongo,
       {} as never,
@@ -50,6 +63,7 @@ describe('MongoDB user data isolation', () => {
   }, 30_000);
 
   afterAll(async () => {
+    await postgresAdmin?.$disconnect();
     if (!database) return;
     if (users) {
       const userIds = [users.userA.id, users.userB.id];
@@ -210,6 +224,15 @@ describe('MongoDB user data isolation', () => {
     });
 
     await service.deleteUser(users!.userA.clerkUserId);
+
+    await expect(
+      postgresAdmin!.auditLog.findFirst({
+        where: { eventKey: `clerk-user-deleted:${users!.userA.clerkUserId}` },
+      })
+    ).resolves.toMatchObject({
+      action: 'user.account_deleted',
+      subjectUserId: users!.userA.clerkUserId,
+    });
 
     await expect(service.getSettings(users!.userA.clerkUserId)).resolves.toBeNull();
     await expect(

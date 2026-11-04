@@ -6,13 +6,15 @@ import { BadRequestException, Injectable, ServiceUnavailableException } from '@n
 import { createClerkClient } from '@clerk/clerk-sdk-node';
 
 import { ClerkUserDataDto } from './dto/index.js';
+import { AuditLogService } from '@/modules/audit/audit-log.service.js';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-    @InjectPinoLogger(UserService.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(UserService.name) private readonly logger: PinoLogger,
+    private readonly auditLog: AuditLogService
   ) {}
 
   async createUser(dto: ClerkUserDataDto) {
@@ -140,7 +142,7 @@ export class UserService {
     return updated;
   }
 
-  async deleteUser(clerkUserId: string) {
+  async deleteUser(clerkUserId: string, webhookEventId?: string) {
     const user = await this.prisma.user.findUnique({
       where: { clerkUserId },
     });
@@ -149,6 +151,16 @@ export class UserService {
       this.logger.warn({ clerkUserId }, 'User not found for deletion');
       return null;
     }
+
+    await this.auditLog.append({
+      actorType: 'PROVIDER',
+      actorId: 'clerk',
+      subjectUserId: clerkUserId,
+      action: 'user.account_deleted',
+      resourceType: 'user',
+      resourceId: clerkUserId,
+      eventKey: `clerk-user-deleted:${webhookEventId ?? clerkUserId}`,
+    });
 
     await this.prisma.userSettings.deleteMany({
       where: { userId: user.id },

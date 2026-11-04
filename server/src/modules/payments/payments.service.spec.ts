@@ -38,6 +38,8 @@ const subscriptionRow = (overrides: Record<string, unknown> = {}) => ({
 });
 
 const postgresFor = (tx: Record<string, unknown>) => ({
+  client_: { $executeRaw: vi.fn() },
+  workerClient_: { $executeRaw: vi.fn() },
   withTenantContext: vi.fn(async (_userId: string, operation: (value: never) => unknown) =>
     operation(tx as never)
   ),
@@ -514,6 +516,8 @@ describe('PaymentsService webhook intake', () => {
       },
     };
     const postgres = {
+      client_: { $executeRaw: vi.fn() },
+      workerClient_: { $executeRaw: vi.fn() },
       withTenantContext: vi.fn(async (_userId: string, operation: (value: typeof tx) => unknown) =>
         operation(tx)
       ),
@@ -543,6 +547,9 @@ describe('PaymentsService webhook intake', () => {
       where: { clerkUserId: 'user_1' },
       data: { role: 'PREMIUM' },
     });
+    expect(postgres.workerClient_.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      mongo.user.update.mock.invocationCallOrder[0]!
+    );
     expect(tx.paymentWebhookEvent.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'event_1' },
@@ -781,6 +788,7 @@ describe('PaymentsService webhook intake', () => {
   it('reconciles queued inbox events after a missed dispatch', async () => {
     const tx = { paymentWebhookEvent: { update: vi.fn() } };
     const client = {
+      $executeRaw: vi.fn(),
       paymentWebhookEvent: {
         findMany: vi
           .fn()
@@ -827,6 +835,7 @@ describe('PaymentsService webhook intake', () => {
       },
     ];
     const client = {
+      $executeRaw: vi.fn(),
       paymentWebhookEvent: {
         findMany: vi
           .fn()
@@ -888,6 +897,7 @@ describe('PaymentsService webhook intake', () => {
       },
     ];
     const client = {
+      $executeRaw: vi.fn(),
       paymentWebhookEvent: { findMany: vi.fn().mockResolvedValue([]) },
       paymentSubscription: { findMany: vi.fn().mockResolvedValue(expired) },
     };
@@ -1578,6 +1588,11 @@ describe('PaymentsService full refunds', () => {
       where: { id: refundIntent.id },
       data: expect.objectContaining({ status: 'processed', razorpayRefundId: 'rfnd_1' }),
     });
+    expect(
+      tx.$executeRaw.mock.calls.some((call: unknown[]) =>
+        String((call[0] as TemplateStringsArray).join(' ')).includes('prepai_append_audit_log')
+      )
+    ).toBe(true);
   });
 
   it('links an existing full refund found after a retry conflict in the reconciliation worker', async () => {

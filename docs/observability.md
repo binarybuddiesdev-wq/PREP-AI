@@ -176,16 +176,33 @@ External probe (BetterStack / Cronitor / UptimeRobot — pick one) hitting:
 The `readyz` JSON response carries per-dependency `latencyMs` — graph this
 to spot creeping DB connection latency before it becomes an incident.
 
-## Audit log (TODO — plan in `docs/architecture/TODO.md` §13)
+## Audit log
 
-Append-only `auditLog` Postgres table (planned). Capture every:
+Sensitive billing and identity events are recorded in PostgreSQL's append-only
+`AuditLog` table. Payment webhook intake, subscription cancellation, refund
+requests, entitlement role projections, Clerk account deletion, and Clerk or
+Razorpay signature failures are covered. Security-failure writes are best
+effort; business-event writes must succeed before the related mutation
+continues. Records omit raw webhook contents, signatures, credentials, and
+direct contact details. There is no account export endpoint yet, so export
+events will be added with that feature.
 
-- Role change (USER → PREMIUM, USER → ADMIN)
-- Payment event (Razorpay webhook idempotency keys)
-- Account deletion / data export request (GDPR)
-- Webhook signature failure
+The `prepai_api` and `prepai_worker` runtime roles can invoke a fixed
+security-definer append function and cannot read or mutate the table directly.
+`prepai_auditor` has SELECT only and no login; operators provision individual
+auditor credentials when required. A nightly scheduler deletes records older
+than two years through a restricted database function. Invalid-signature
+events are coalesced by provider, route, and minute to bound table growth; the
+existing metrics retain the full failure count. The service and database
+function both enforce action, resource, details, and size allow-lists.
 
-2-year retention. Read-only role for the compliance auditor.
+Release order: first create the PostgreSQL `AuditLog` table and runtime roles,
+then apply and verify
+[`001-audit-log-controls.sql`](../server/prisma/audit/001-audit-log-controls.sql),
+confirm `POSTGRESQL_WORKER_URL` is set in production, and only then deploy code
+that calls its append function. Required audit writes
+can block payment or account mutations if this SQL is missing. RLS remains
+part of the final isolation rollout.
 
 ## Alerting
 

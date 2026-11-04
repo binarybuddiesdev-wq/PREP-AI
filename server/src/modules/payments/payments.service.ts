@@ -20,6 +20,7 @@ import { verifyRazorpayWebhookSignature } from './razorpay-webhook-signature.js'
 import { decideSubscriptionRequest } from './subscription-request.js';
 import { hasPaidAccess, normalizeProviderStatus } from './payment-state.js';
 import { getPaymentChargeRetentionCutoff } from './payment-retention.js';
+import { appendAuditLog, makeSignatureFailureEventKey } from '@/modules/audit/audit-log.service.js';
 
 const IN_PROGRESS_STATUSES = [
   'creating',
@@ -206,6 +207,15 @@ export class PaymentsService {
               cancelAtPeriodEnd: true,
             },
           });
+          await appendAuditLog(tx as never, {
+            actorType: 'USER',
+            actorId: userId,
+            subjectUserId: userId,
+            action: 'payment.subscription_cancelled',
+            resourceType: 'payment_subscription',
+            resourceId: subscription.id,
+            eventKey: `subscription-cancelled:${subscription.id}`,
+          });
           return this.toSubscriptionResponse(saved);
         },
         { maxWait: 10_000, timeout: 45_000 }
@@ -251,7 +261,7 @@ export class PaymentsService {
       if (!ownedCharge) throw new NotFoundException('Captured payment charge was not found');
       const existing = await tx.paymentRefund.findUnique({ where: { chargeId: ownedCharge.id } });
       if (existing) return existing;
-      return tx.paymentRefund.create({
+      const refund = await tx.paymentRefund.create({
         data: {
           chargeId: ownedCharge.id,
           userId: ownedCharge.userId,
@@ -262,6 +272,21 @@ export class PaymentsService {
           status: 'requested',
         },
       });
+      await appendAuditLog(tx as never, {
+        actorType: 'ADMIN',
+        actorId: adminUserId,
+        subjectUserId: ownedCharge.userId,
+        action: 'payment.refund_requested',
+        resourceType: 'payment_refund',
+        resourceId: refund.id,
+        eventKey: `payment-refund-requested:${refund.id}`,
+        details: {
+          chargeId: ownedCharge.id,
+          amountMinor: refund.amountMinor,
+          currency: refund.currency,
+        },
+      });
+      return refund;
     });
 
     if (intent.status !== 'requested' || intent.razorpayRefundId) {
@@ -311,6 +336,21 @@ export class PaymentsService {
       throw new BadRequestException('A valid x-razorpay-event-id header is required');
     }
     if (!verifyRazorpayWebhookSignature(rawBody, signature, this.provider.webhookSecret)) {
+      try {
+        await appendAuditLog(this.postgres.client_ as never, {
+          actorType: 'ANONYMOUS',
+          action: 'webhook.signature_failed',
+          resourceType: 'webhook',
+          resourceId: 'razorpay',
+          eventKey: makeSignatureFailureEventKey('RAZORPAY', 'webhooks/razorpay'),
+          details: { provider: 'RAZORPAY', route: 'webhooks/razorpay' },
+        });
+      } catch (error) {
+        this.logger.warn(
+          { err: redactRefundError(error) },
+          'Could not audit Razorpay signature failure'
+        );
+      }
       throw new BadRequestException('Invalid Razorpay webhook signature');
     }
 
@@ -387,7 +427,7 @@ export class PaymentsService {
           }
           return prior;
         }
-        return tx.paymentWebhookEvent.create({
+        const createdEvent = await tx.paymentWebhookEvent.create({
           data: {
             userId: event.userId,
             eventId,
@@ -397,6 +437,16 @@ export class PaymentsService {
             occurredAt: event.eventAt,
           },
         });
+        await appendAuditLog(tx as never, {
+          actorType: 'PROVIDER',
+          subjectUserId: event.userId,
+          action: 'payment.webhook_received',
+          resourceType: 'payment_webhook_event',
+          resourceId: createdEvent.id,
+          eventKey: `payment-webhook:${eventId}`,
+          details: { eventType: event.eventType },
+        });
+        return createdEvent;
       });
     } catch (error) {
       if (!isUniqueConstraintError(error)) throw error;
@@ -631,10 +681,24 @@ export class PaymentsService {
   ) {
     return this.postgres.withTenantContext(userId, async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
-      return tx.paymentRefund.update({
+      const saved = await tx.paymentRefund.update({
         where: { id: refundId },
         data: { ...data, updatedAt: new Date() },
       });
+      await appendAuditLog(tx as never, {
+        actorType: 'PROVIDER',
+        actorId: 'razorpay',
+        subjectUserId: userId,
+        action: 'payment.refund_state_changed',
+        resourceType: 'payment_refund',
+        resourceId: refundId,
+        eventKey: `payment-refund-state:${refundId}:${data.status}:${data.razorpayRefundId ?? 'unlinked'}`,
+        details: {
+          status: data.status,
+          ...(data.razorpayRefundId ? { providerRefundId: data.razorpayRefundId } : {}),
+        },
+      });
+      return saved;
     });
   }
 
@@ -742,23 +806,24 @@ export class PaymentsService {
                 new Date(),
           },
         });
-        await this.projectUserEntitlementInTransaction(userId, tx);
       },
       { maxWait: 10_000, timeout: 45_000 }
     );
+    await this.projectUserEntitlement(userId);
   }
 
   private async projectUserEntitlement(userId: string): Promise<void> {
     await this.postgres.withTenantContext(userId, async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
-      await this.projectUserEntitlementInTransaction(userId, tx);
+      const projection = await this.projectUserEntitlementInTransaction(userId, tx);
+      await this.applyUserEntitlementProjection(userId, projection);
     });
   }
 
   private async projectUserEntitlementInTransaction(
     userId: string,
     tx: Prisma.TransactionClient
-  ): Promise<void> {
+  ): Promise<{ paid: boolean; latestPeriodEnd: string | undefined }> {
     const subscriptions = await tx.paymentSubscription.findMany({
       where: { userId },
       select: { status: true, currentStart: true, currentEnd: true, cancelAtPeriodEnd: true },
@@ -777,12 +842,19 @@ export class PaymentsService {
       .sort()
       .at(-1);
 
+    return { paid, latestPeriodEnd };
+  }
+
+  private async applyUserEntitlementProjection(
+    userId: string,
+    projection: { paid: boolean; latestPeriodEnd: string | undefined }
+  ): Promise<void> {
     const user = await this.mongo.user.findUnique({
       where: { clerkUserId: userId },
       select: { role: true },
     });
     if (!user) throw new Error('Subscription owner profile is not available for role projection');
-    const nextRole = paid
+    const nextRole = projection.paid
       ? user.role === 'ADMIN'
         ? 'ADMIN'
         : 'PREMIUM'
@@ -791,11 +863,22 @@ export class PaymentsService {
         : user.role;
     if (nextRole === user.role) return;
 
+    await appendAuditLog(this.postgres.workerClient_ as never, {
+      actorType: 'SYSTEM',
+      actorId: 'payment_entitlement_projection',
+      subjectUserId: userId,
+      action: 'user.role_projection_requested',
+      resourceType: 'user',
+      resourceId: userId,
+      eventKey: `user-role:${userId}:${nextRole}:${projection.latestPeriodEnd ?? 'unknown'}`,
+      details: { fromRole: user.role, toRole: nextRole },
+    });
+
     try {
       await this.mongo.inAppNotification.create({
         data: {
           userId,
-          idempotencyKey: `subscription-role:${userId}:${nextRole}:${latestPeriodEnd ?? 'unknown'}`,
+          idempotencyKey: `subscription-role:${userId}:${nextRole}:${projection.latestPeriodEnd ?? 'unknown'}`,
           category: 'billing',
           title: nextRole === 'PREMIUM' ? 'Premium is active' : 'Premium access ended',
           body:

@@ -93,16 +93,10 @@ export const envSchema = z
       path: ['DATABASE_URL'],
     }
   )
-  .refine(
-    (data) =>
-      data.NODE_ENV !== 'production' ||
-      !data.JOBS_WORKER_ENABLED ||
-      Boolean(data.POSTGRESQL_WORKER_URL),
-    {
-      message: 'POSTGRESQL_WORKER_URL is required in production when job workers are enabled',
-      path: ['POSTGRESQL_WORKER_URL'],
-    }
-  );
+  .refine((data) => data.NODE_ENV !== 'production' || Boolean(data.POSTGRESQL_WORKER_URL), {
+    message: 'POSTGRESQL_WORKER_URL is required in production',
+    path: ['POSTGRESQL_WORKER_URL'],
+  });
 
 export type TEnv = z.infer<typeof envSchema>;
 

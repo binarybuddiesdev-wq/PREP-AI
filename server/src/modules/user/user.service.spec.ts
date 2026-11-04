@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@prisma/client';
+import { AuditLogService } from '@/modules/audit/audit-log.service.js';
 const mockGetClerkUser = vi.hoisted(() => vi.fn());
 
 vi.mock('@clerk/clerk-sdk-node', () => ({
@@ -84,6 +85,7 @@ describe('UserService', () => {
         UserService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: vi.fn(() => 'sk_test_secret') } },
+        { provide: AuditLogService, useValue: { append: vi.fn().mockResolvedValue(undefined) } },
         { provide: 'PinoLogger:UserService', useValue: mockPinoLogger },
       ],
     }).compile();

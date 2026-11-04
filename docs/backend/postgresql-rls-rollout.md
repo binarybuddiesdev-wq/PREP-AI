@@ -1,9 +1,11 @@
 # PostgreSQL row security rollout
 
-The API now supports transaction-local tenant identity, and the worker uses a
-separate PostgreSQL client when `POSTGRESQL_WORKER_URL` is configured. The
+The API now supports transaction-local tenant identity. The worker always uses
+a separate PostgreSQL pool: it uses the restricted role when
+`POSTGRESQL_WORKER_URL` is configured, and a separate API-credential pool in
+development otherwise. Production requires the restricted URL. The
 disposable isolation suite provisions restricted runtime roles, applies the
-base and PDF policy SQL, and exercises API and worker access—including PDF
+base, audit, and PDF policy SQL, and exercises API and worker access—including PDF
 owner/source/revision scoping—against real pgvector/PostgreSQL:
 
 ```powershell
@@ -42,9 +44,10 @@ POSTGRESQL_URL=postgresql://prepai_api:<API_PASSWORD>@<postgres-host>:5432/prepa
 POSTGRESQL_WORKER_URL=postgresql://prepai_worker:<WORKER_PASSWORD>@<postgres-host>:5432/prepai
 ```
 
-`POSTGRESQL_WORKER_URL` is required in production when workers are enabled.
-Development can continue using the current local database URL; the server logs
-that the worker shares the API client when no worker URL is supplied.
+`POSTGRESQL_WORKER_URL` is required in production. It uses a separate pool and
+the restricted worker role for queued work and independently committed audit
+appends while an API transaction holds a user lock. In development, when this
+URL is omitted, the server creates a separate local pool using API credentials.
 
 ## Current rollout boundary
 

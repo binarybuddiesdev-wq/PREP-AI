@@ -25,6 +25,7 @@ const childEnvironment = {
   DATABASE_URL: mongoUrl,
   POSTGRESQL_URL: apiPostgresUrl,
   POSTGRESQL_WORKER_URL: workerPostgresUrl,
+  POSTGRESQL_ADMIN_URL: postgresAdminUrl,
 };
 const schemaEnvironment = {
   ...childEnvironment,
@@ -160,6 +161,16 @@ try {
       databaseName,
     ],
     { input: rolePolicySql }
+  );
+
+  const auditControlsSql = await readFile(
+    path.join(serverDirectory, 'prisma', 'audit', '001-audit-log-controls.sql'),
+    'utf8'
+  );
+  run(
+    'podman',
+    ['exec', '-i', `${projectName}_postgres_1`, 'psql', '-U', 'postgres', '-d', databaseName],
+    { input: auditControlsSql }
   );
 
   const pdfPolicySql = await readFile(

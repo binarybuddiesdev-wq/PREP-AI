@@ -125,10 +125,37 @@ describe('Prisma services', () => {
     await service.onModuleInit();
     await service.onModuleDestroy();
 
-    expect(prismaMocks.postgresConstructor).toHaveBeenCalledOnce();
-    expect(prismaMocks.postgresConnect).toHaveBeenCalledOnce();
-    expect(prismaMocks.postgresDisconnect).toHaveBeenCalledOnce();
+    expect(prismaMocks.postgresConstructor).toHaveBeenCalledTimes(2);
+    expect(prismaMocks.postgresConstructor).toHaveBeenNthCalledWith(1, {
+      datasourceUrl: 'postgresql://localhost:5432/prepai',
+    });
+    expect(prismaMocks.postgresConstructor).toHaveBeenNthCalledWith(2, {
+      datasourceUrl: 'postgresql://localhost:5432/prepai',
+    });
+    expect(prismaMocks.postgresConnect).toHaveBeenCalledTimes(2);
+    expect(prismaMocks.postgresDisconnect).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(
+      'POSTGRESQL_WORKER_URL not set; separate worker pool is using the API database role'
+    );
     expect(log).toHaveBeenCalledWith('PostgreSQL connected');
+  });
+
+  it('fails closed instead of using API credentials for the worker pool in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', '');
+    const service = new PrismaPostgresqlService();
+
+    await service.onModuleInit();
+
+    expect(service.client_).toBeDefined();
+    expect(service.workerClient_).toBeUndefined();
+    expect(prismaMocks.postgresConstructor).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledWith(
+      'PostgreSQL connection failed',
+      expect.objectContaining({ message: 'POSTGRESQL_WORKER_URL is required in production' })
+    );
+    await service.onModuleDestroy();
   });
 
   it('records bounded API PostgreSQL model query timing for successful and failed calls', async () => {

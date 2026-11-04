@@ -17,6 +17,7 @@ import { Webhook } from 'svix';
 import { UserService } from './user.service.js';
 import { ClerkWebhookEventDto } from './dto/index.js';
 import { MetricsService } from '../metrics/metrics.service.js';
+import { AuditLogService } from '@/modules/audit/audit-log.service.js';
 
 @Controller('webhooks')
 export class WebhookController {
@@ -24,6 +25,7 @@ export class WebhookController {
     private readonly userService: UserService,
     private readonly config: ConfigService,
     private readonly metrics: MetricsService,
+    private readonly auditLog: AuditLogService,
     @InjectPinoLogger(WebhookController.name) private readonly logger: PinoLogger
   ) {}
 
@@ -44,6 +46,7 @@ export class WebhookController {
 
     if (!svixId || !svixTimestamp || !svixSignature) {
       this.metrics.recordWebhookSignatureFailure('clerk');
+      await this.auditLog.recordSecurityFailure('CLERK', 'webhooks/clerk');
       this.logger.warn('Missing svix headers');
       throw new BadRequestException('Missing webhook headers');
     }
@@ -62,6 +65,7 @@ export class WebhookController {
       });
     } catch (err) {
       this.metrics.recordWebhookSignatureFailure('clerk');
+      await this.auditLog.recordSecurityFailure('CLERK', 'webhooks/clerk');
       this.logger.warn({ err }, 'Webhook signature verification failed');
       throw new BadRequestException('Invalid webhook signature');
     }
@@ -86,7 +90,7 @@ export class WebhookController {
         return { received: true, userId: user?.id };
       }
       case 'user.deleted': {
-        const user = await this.userService.deleteUser(data.id);
+        const user = await this.userService.deleteUser(data.id, svixId);
         this.logger.info({ userId: user?.id }, 'User deleted via webhook');
         return { received: true };
       }

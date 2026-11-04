@@ -267,3 +267,20 @@ model PaymentRefund {
     @@index([status, updatedAt, id])
   @@index([createdAt])
 }
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorType     String
+  actorId       String?
+  subjectUserId String?
+  action        String
+  resourceType  String
+  resourceId    String?
+  eventKey      String?  @unique
+  details       Json?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([subjectUserId, createdAt])
+  @@index([action, createdAt])
+}

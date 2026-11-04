@@ -40,13 +40,18 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
       this.client = this.createClient(process.env['POSTGRESQL_URL']);
       await this.client.$connect();
       const workerUrl = process.env['POSTGRESQL_WORKER_URL'];
+      if (!workerUrl && process.env['NODE_ENV'] === 'production') {
+        throw new Error('POSTGRESQL_WORKER_URL is required in production');
+      }
       if (workerUrl) {
         this.workerClient = this.createClient(workerUrl, false);
         await this.workerClient.$connect();
-      } else if (process.env['NODE_ENV'] !== 'production') {
-        this.workerClient = this.client;
+      } else {
+        // Keep a distinct local pool for audit writes that commit under an API transaction lock.
+        this.workerClient = this.createClient(process.env['POSTGRESQL_URL'], false);
+        await this.workerClient.$connect();
         this.logger.warn(
-          'POSTGRESQL_WORKER_URL not set; local worker is using the API database role'
+          'POSTGRESQL_WORKER_URL not set; separate worker pool is using the API database role'
         );
       }
       this.logger.log('PostgreSQL connected');

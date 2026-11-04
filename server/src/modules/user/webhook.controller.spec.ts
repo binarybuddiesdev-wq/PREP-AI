@@ -8,6 +8,7 @@ import type { ClerkWebhookEventDto } from './dto/index.js';
 import { BadRequestException } from '@nestjs/common';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MetricsService } from '../metrics/metrics.service.js';
+import { AuditLogService } from '@/modules/audit/audit-log.service.js';
 
 const { verifyWebhookMock } = vi.hoisted(() => ({ verifyWebhookMock: vi.fn() }));
 
@@ -38,6 +39,7 @@ describe('WebhookController', () => {
     error: ReturnType<typeof vi.fn>;
   };
   const metrics = { recordWebhookSignatureFailure: vi.fn() };
+  const auditLog = { recordSecurityFailure: vi.fn().mockResolvedValue(undefined) };
 
   const mockUser = {
     id: 'user_001',
@@ -75,6 +77,7 @@ describe('WebhookController', () => {
     verifyWebhookMock.mockReset();
     verifyWebhookMock.mockImplementation(() => undefined);
     metrics.recordWebhookSignatureFailure.mockReset();
+    auditLog.recordSecurityFailure.mockReset();
     userService = {
       createUser: vi.fn(),
       updateUser: vi.fn(),
@@ -93,6 +96,7 @@ describe('WebhookController', () => {
         { provide: UserService, useValue: userService },
         { provide: ConfigService, useValue: config },
         { provide: MetricsService, useValue: metrics },
+        { provide: AuditLogService, useValue: auditLog },
         { provide: 'PinoLogger:WebhookController', useValue: mockPinoLogger },
       ],
     }).compile();
@@ -169,7 +173,7 @@ describe('WebhookController', () => {
       const result = await invokeWebhook(body);
 
       expect(result).toEqual({ received: true });
-      expect(userService.deleteUser).toHaveBeenCalledWith('clerk_123');
+      expect(userService.deleteUser).toHaveBeenCalledWith('clerk_123', 'msg_123');
     });
 
     it('should return received for unhandled event types', async () => {

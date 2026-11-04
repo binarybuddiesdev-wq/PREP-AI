@@ -24,6 +24,22 @@ describe('background worker environment validation', () => {
     expect(result.JOBS_WORKER_ENABLED).toBe(false);
   });
 
+  it('requires the restricted PostgreSQL worker URL in production even when jobs are disabled', () => {
+    const base = {
+      NODE_ENV: 'production',
+      DATABASE_URL: 'mongodb://localhost/prepai',
+      JOBS_WORKER_ENABLED: 'false',
+    };
+
+    expect(envSchema.safeParse(base).success).toBe(false);
+    expect(
+      envSchema.safeParse({
+        ...base,
+        POSTGRESQL_WORKER_URL: 'postgresql://worker@localhost/prepai',
+      }).success
+    ).toBe(true);
+  });
+
   it('provides configurable role-based daily AI token budgets', () => {
     const defaults = envSchema.parse({ NODE_ENV: 'test' });
     expect(defaults.AI_DAILY_TOKENS_FREE).toBe(400_000);
