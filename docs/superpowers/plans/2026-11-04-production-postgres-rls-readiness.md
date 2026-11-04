@@ -68,4 +68,4 @@
 
 - [x] Document the new `/readyz` validation and its staging/deployment boundary.
 - [x] Run the full server gate and database isolation suite.
-- [ ] Review the diff and commit/push the completed feature to `main`.
+- [x] Review the diff and commit/push the completed feature to `main`.
