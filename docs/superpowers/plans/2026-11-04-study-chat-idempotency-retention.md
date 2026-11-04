@@ -44,4 +44,4 @@ the idempotency fallback after snapshot cleanup.
       index, and cleanup.
 - [x] Run Prisma generation, focused tests, and the full server gate.
 - [x] Update API/architecture/backend docs and worklog.
-- [ ] Commit and push.
+- [x] Commit and push.
