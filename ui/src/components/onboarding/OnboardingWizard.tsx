@@ -17,8 +17,8 @@ const STEPS = [
 ] as const;
 
 const fieldClassName =
-  'mt-1.5 w-full rounded-lg border border-white/10 bg-[#09090b] px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15';
-const selectClassName = `${fieldClassName} appearance-none pr-11 accent-amber-400`;
+  'mt-1.5 w-full rounded-lg border border-white/10 bg-[#09090b] px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15';
+const selectClassName = `onboarding-select ${fieldClassName} appearance-none pr-11 accent-amber-400`;
 
 const primaryButtonClassName =
   'inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
@@ -60,9 +60,9 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card relative w-full max-w-[520px] rounded-2xl border border-white/[0.08] bg-[#18181b] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-10"
+        className="onboarding-card relative w-full max-w-[520px] rounded-2xl border border-white/[0.08] bg-[#18181b] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-8"
       >
-        <header className="onboarding-header mb-7 text-center">
+        <header className="onboarding-header mb-6 text-center">
           <div className="mb-2 flex justify-center">{brand}</div>
           <h1
             id="onboarding-title"
@@ -77,7 +77,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
 
         <ol
           aria-label="Setup progress"
-          className="onboarding-progress mb-8 flex items-center gap-2 px-1 sm:gap-3"
+          className="onboarding-progress mb-6 flex items-center gap-2 px-1 sm:gap-3"
         >
           {STEPS.map((currentStep) => (
             <li
@@ -126,7 +126,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 We’ll tailor questions to match your interview goals.
               </p>
 
-              <div className="onboarding-fields mt-6 space-y-5">
+              <div className="onboarding-fields mt-5 space-y-4">
                 <div>
                   <label
                     htmlFor="onboarding-target-role"
@@ -239,7 +239,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Optional — we’ll bias questions toward what those companies ask.
               </p>
 
-              <div className="onboarding-content-section mt-6">
+              <div className="onboarding-content-section mt-5">
                 <label
                   htmlFor="onboarding-target-companies"
                   className="text-[0.8rem] font-medium text-zinc-300"
@@ -294,7 +294,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Select topics you want to practice most. You can change these later.
               </p>
 
-              <div className="onboarding-content-section mt-6">
+              <div className="onboarding-content-section mt-5">
                 <p id="onboarding-topics-label" className="text-sm font-medium text-zinc-300">
                   Preferred Topics
                 </p>
@@ -314,7 +314,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                         disabled={isSaving}
                         onClick={() => toggleTopic(topic)}
                         className={cn(
-                          'onboarding-topic rounded-full border px-4 py-2 text-[0.825rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50',
+                          'onboarding-topic rounded-full border px-3.5 py-1.5 text-[0.8rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50',
                           isSelected
                             ? 'border-amber-500/40 bg-amber-500/10 font-medium text-amber-300'
                             : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-100'
@@ -327,7 +327,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 </div>
               </div>
 
-              <div className="onboarding-difficulty mt-6">
+              <div className="onboarding-difficulty mt-5">
                 <label
                   htmlFor="onboarding-default-difficulty"
                   className="text-[0.8rem] font-medium text-zinc-300"

@@ -1,10 +1,32 @@
+/* Keep onboarding controls aligned with the compact HTML reference. */
+.onboarding-select {
+  min-height: 2.625rem;
+  padding-block: 0.625rem;
+  background-color: #09090b;
+  color-scheme: dark;
+}
+
+.onboarding-select-wrap > svg {
+  color: #a1a1aa;
+  transition: color 160ms ease;
+}
+
+.onboarding-select-wrap:focus-within > svg {
+  color: #fbbf24;
+}
+
+.onboarding-select option {
+  background-color: #18181b;
+  color: #f4f4f5;
+}
+
 @media (max-height: 820px) {
   .onboarding-screen {
     padding-block: 0.5rem;
   }
 
   .onboarding-card {
-    padding-block: 1.5rem;
+    padding-block: 1.25rem;
   }
 
   .onboarding-header {

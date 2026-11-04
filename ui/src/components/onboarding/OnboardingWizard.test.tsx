@@ -108,4 +108,13 @@ describe('OnboardingWizard', () => {
     rerender(<OnboardingWizard {...createWizardProps({ step: 2, isSaving: true })} />);
     expect(screen.getByRole('textbox', { name: /Target Companies/ })).toBeDisabled();
   });
+
+  it('uses the compact reference select treatment for onboarding dropdowns', () => {
+    render(<OnboardingWizard {...createWizardProps()} />);
+
+    expect(screen.getByRole('combobox', { name: 'Target Role' })).toHaveClass('onboarding-select');
+    expect(screen.getByRole('combobox', { name: 'Experience Level' })).toHaveClass(
+      'onboarding-select'
+    );
+  });
 });
