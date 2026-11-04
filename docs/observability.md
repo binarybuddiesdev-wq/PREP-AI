@@ -310,8 +310,9 @@ verify the probe exporter is reachable from Prometheus.
       we install a `Logger.error` interceptor in `app.module.ts`.
 - [ ] Pin correlation-id format (UUIDv4 vs ULID vs nanoid).
 - [x] Use the existing Redis client as the shared Fastify rate-limit store.
-      Storage failures are fail-closed; limiter decisions are not exposed as
-      Prometheus metrics.
+      Storage failures are fail-closed. Rejected requests are visible as HTTP
+      429s in the existing request histogram; there is no separate limiter
+      counter.
 
 ## References
 
