@@ -63,6 +63,7 @@ const renderDashboard = () => {
       <MemoryRouter initialEntries={['/dashboard']}>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/history/:sessionId" element={<h1>Selected session details</h1>} />
           <Route path="/onboarding" element={<h1>Profile setup</h1>} />
         </Routes>
         <CurrentPath />
@@ -114,6 +115,60 @@ describe('DashboardPage first-run routing', () => {
     expect(screen.getByRole('heading', { name: 'Recent Sessions' })).toBeVisible();
     expect(await screen.findByText('No sessions yet')).toBeVisible();
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/dashboard');
+  });
+
+  it('opens the matching saved session from the dashboard', async () => {
+    const user = userEvent.setup();
+    serviceMocks.getMe.mockResolvedValue({
+      success: true,
+      message: 'ok',
+      data: userProfile(false),
+    });
+    serviceMocks.getTheorySessionHistory.mockResolvedValue({
+      success: true,
+      message: 'ok',
+      data: {
+        sessions: [
+          {
+            id: 'session-one',
+            topicId: 'topic-react',
+            mode: 'topic',
+            difficulty: 'Mid',
+            totalQuestions: 10,
+            questionsAnswered: 8,
+            avgScore: 7.5,
+            status: 'completed',
+            startedAt: '2026-11-01T10:00:00.000Z',
+            completedAt: '2026-11-01T10:20:00.000Z',
+            createdAt: '2026-11-01T10:00:00.000Z',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 100,
+      },
+    });
+    serviceMocks.getPracticeTopics.mockResolvedValue({
+      success: true,
+      message: 'ok',
+      data: [
+        {
+          id: 'topic-react',
+          name: 'React',
+          slug: 'react',
+          category: 'practice',
+          icon: null,
+          createdAt: '2026-11-01T00:00:00.000Z',
+          updatedAt: '2026-11-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    renderDashboard();
+    await user.click(await screen.findByRole('button', { name: 'View React session' }));
+
+    expect(await screen.findByRole('heading', { name: 'Selected session details' })).toBeVisible();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/history/session-one');
   });
 
   it('shows theory history failures with a retry while keeping independent dashboard panels visible', async () => {

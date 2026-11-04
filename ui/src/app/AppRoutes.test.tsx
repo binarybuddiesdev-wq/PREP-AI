@@ -33,6 +33,8 @@ vi.mock('@/pages', async (importOriginal) => {
     ...pages,
     DashboardPage: () => <h1>Authenticated dashboard</h1>,
     PracticePage: () => <h1>Authenticated practice</h1>,
+    SessionHistoryPage: () => <h1>Authenticated session history</h1>,
+    TheorySessionDetailPage: () => <h1>Authenticated session detail</h1>,
     OnboardingPage: () => <h1>Authenticated onboarding</h1>,
     SettingsPage: () => <h1>Authenticated settings</h1>,
   };
@@ -124,6 +126,50 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('heading', { name: 'Authenticated practice' })).toBeInTheDocument();
     expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/practice');
+  });
+
+  it('serves a shareable session detail URL inside the authenticated route group', () => {
+    authenticationState.isSignedIn = true;
+
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/history/session-one']
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authenticated session detail' })).toBeVisible();
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/history/session-one');
+  });
+
+  it('serves session history inside the authenticated route group', () => {
+    authenticationState.isSignedIn = true;
+
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/history']
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authenticated session history' })).toBeVisible();
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/history');
+  });
+
+  it('redirects signed-out users away from session details', () => {
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/history/session-one']
+    );
+
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/sign-in');
   });
 
   it('redirects signed-out users away from the setup route', () => {

@@ -34,6 +34,8 @@ const renderAuthenticatedRoutes = (initialPath = '/dashboard') =>
         <Route element={<AuthenticatedLayoutPage />}>
           <Route path="/dashboard" element={<h2>Dashboard route content</h2>} />
           <Route path="/practice" element={<h2>Practice route content</h2>} />
+          <Route path="/history" element={<h2>History route content</h2>} />
+          <Route path="/history/:sessionId" element={<h2>Session detail route content</h2>} />
           <Route path="/settings" element={<h2>Settings route content</h2>} />
         </Route>
       </Routes>
@@ -85,6 +87,23 @@ describe('AuthenticatedLayoutPage', () => {
     );
     expect(screen.getByRole('heading', { name: 'Practice route content' })).toBeVisible();
   });
+
+  it.each(['/history', '/history/session-one'])(
+    'marks History active and updates the page title for %s',
+    (path) => {
+      renderAuthenticatedRoutes(path);
+
+      expect(within(screen.getByRole('banner')).getByText('History')).toBeVisible();
+      expect(screen.getByRole('button', { name: 'History' })).toHaveAttribute(
+        'aria-current',
+        'page'
+      );
+      expect(
+        screen.getByRole('heading', { name: /History route content|Session detail route content/ })
+      ).toBeVisible();
+      expect(screen.getByLabelText('Current route')).toHaveTextContent(path);
+    }
+  );
 
   it('uses the same case-insensitive route match as React Router', () => {
     renderAuthenticatedRoutes('/Settings');

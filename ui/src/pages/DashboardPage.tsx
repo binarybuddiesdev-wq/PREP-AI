@@ -1,9 +1,9 @@
 import type { UseQueryResult } from '@tanstack/react-query';
-import { Navigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 
 import { DashboardOverview, type IDashboardPanelStatus } from '@/components/dashboard';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
-import { ROUTES } from '@/core';
+import { historySessionDetailPath, ROUTES } from '@/core';
 import {
   getHttpStatus,
   useDashboardDataReader,
@@ -21,6 +21,7 @@ const toPanelStatus = <TData,>(query: UseQueryResult<TData, Error>): IDashboardP
 });
 
 export const DashboardPage = () => {
+  const navigate = useNavigate();
   const { isLoaded, user } = useSessionReader();
   // Fetching the profile is what syncs the Clerk user into the backend on first sign-in.
   const userQuery = useUserReader();
@@ -71,6 +72,7 @@ export const DashboardPage = () => {
           weakAreasStatus={toPanelStatus(dashboard.weakAreasQuery)}
           practiceTopicsStatus={toPanelStatus(dashboard.practiceTopicsQuery)}
           settingsStatus={toPanelStatus(settingsQuery)}
+          onOpenSession={(sessionId) => navigate(historySessionDetailPath(sessionId))}
         />
       )}
     </div>

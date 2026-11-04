@@ -12,3 +12,5 @@ export {
 export { useTheoryPracticeSession } from './useTheoryPracticeSession';
 export { useTheorySessionCommand } from './useTheorySessionCommand';
 export type { IStartTheorySessionVariables } from './useTheorySessionCommand';
+export { useTheorySessionHistoryReader } from './useTheorySessionHistoryReader';
+export { useTheorySessionDetailReader } from './useTheorySessionDetailReader';

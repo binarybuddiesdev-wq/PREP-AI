@@ -7,8 +7,10 @@ import {
   OnboardingPage,
   PracticePage,
   SettingsPage,
+  SessionHistoryPage,
   SignInPage,
   SignUpPage,
+  TheorySessionDetailPage,
 } from '@/pages';
 import { ProtectedRoute, PublicRoute } from './RouteGuards';
 
@@ -47,6 +49,8 @@ export const AppRoutes = () => (
     >
       <Route path={ROUTES.dashboard} element={<DashboardPage />} />
       <Route path={ROUTES.practice} element={<PracticePage />} />
+      <Route path={ROUTES.history} element={<SessionHistoryPage />} />
+      <Route path={ROUTES.historySessionDetail} element={<TheorySessionDetailPage />} />
       <Route path={ROUTES.settings} element={<SettingsPage />} />
     </Route>
     <Route

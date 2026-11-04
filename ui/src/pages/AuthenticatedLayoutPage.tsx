@@ -31,7 +31,7 @@ const NAVIGATION: IAppShellNavigationGroup[] = [
   {
     label: 'Track',
     items: [
-      { label: 'History', route: null, icon: <History size={18} /> },
+      { label: 'History', route: ROUTES.history, icon: <History size={18} /> },
       { label: 'Settings', route: ROUTES.settings, icon: <Settings2 size={18} /> },
       { label: 'Library', route: null, icon: <LibraryBig size={18} /> },
     ],
@@ -43,17 +43,24 @@ export const AuthenticatedLayoutPage = () => {
   const navigate = useNavigate();
   const { user } = useSessionReader();
   const { theme, toggleTheme } = useThemePreference();
-  const activeRoute: AppShellRoute = matchRoutes([{ path: ROUTES.settings }], location)
-    ? ROUTES.settings
-    : matchRoutes([{ path: ROUTES.practice }], location)
-      ? ROUTES.practice
-      : ROUTES.dashboard;
+  const activeRoute: AppShellRoute = matchRoutes(
+    [{ path: ROUTES.historySessionDetail }, { path: ROUTES.history }],
+    location
+  )
+    ? ROUTES.history
+    : matchRoutes([{ path: ROUTES.settings }], location)
+      ? ROUTES.settings
+      : matchRoutes([{ path: ROUTES.practice }], location)
+        ? ROUTES.practice
+        : ROUTES.dashboard;
   const pageTitle =
-    activeRoute === ROUTES.settings
-      ? 'Settings'
-      : activeRoute === ROUTES.practice
-        ? 'Practice'
-        : 'Dashboard';
+    activeRoute === ROUTES.history
+      ? 'History'
+      : activeRoute === ROUTES.settings
+        ? 'Settings'
+        : activeRoute === ROUTES.practice
+          ? 'Practice'
+          : 'Dashboard';
   const userName = user?.firstName ?? user?.email ?? 'Account';
 
   return (

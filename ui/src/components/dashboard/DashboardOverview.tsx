@@ -66,6 +66,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
     weakAreasStatus,
     practiceTopicsStatus,
     settingsStatus,
+    onOpenSession,
   } = props;
   const { metrics } = summary;
   const scoreTrendLabel = summary.scoreTrend
@@ -173,9 +174,14 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                         key={session.id}
                         className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
                       >
-                        <span className="truncate text-sm font-medium text-zinc-200">
+                        <button
+                          type="button"
+                          aria-label={`View ${session.topicName} session`}
+                          onClick={() => onOpenSession(session.id)}
+                          className="min-w-0 truncate text-left text-sm font-medium text-zinc-200 transition hover:text-amber-200 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-amber-400"
+                        >
                           {session.topicName}
-                        </span>
+                        </button>
                         <span className="text-xs text-zinc-500">
                           {formatSessionDate(session.startedAt)}
                         </span>

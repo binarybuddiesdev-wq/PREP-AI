@@ -1,6 +1,6 @@
 # PrepAI project tracker
 
-Last reviewed: 2026-11-04
+Last reviewed: 2026-11-05
 
 This is the project-wide progress list for the backend, frontend, shared
 integration, and production readiness. Use it to choose the next feature and
@@ -15,7 +15,7 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 | Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                        |
 | Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist). |
 | Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).   |
-| Frontend screens             | Early implementation                 | The public landing page, Clerk auth shell, onboarding, shared authenticated navigation, profile dashboard, and basic settings exist. Product screens beyond these foundations remain to be built.                                                                                          |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, onboarding, dashboard, theory practice, paginated session history, and basic settings are implemented. PDF Study, coding, chat, expanded settings, notifications, and billing remain on the roadmap.                                                           |
 | Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                             |
 
 ## Reference and implementation rules
@@ -95,15 +95,15 @@ navigation around the implemented dashboard and settings routes are in place.
 **Status: Complete for the progress overview.** The dashboard now summarizes
 real theory and coding activity with independent loading, error, retry, and
 empty states. Session detail navigation remains in Phase 3 because the React
-app does not yet have session history detail routes.
+app now has session history detail routes.
 
 **Scale note:** Exact summary totals currently require reading all paginated
 session history because the APIs do not provide aggregate counts. If that makes
 dashboard loading slow as accounts grow, add a server summary endpoint.
 
 - [x] Show real session, answer, score, and solved-problem summaries.
-- [x] Show recent sessions from the session APIs. Add links to history details
-      in Phase 3 when those routes exist.
+- [x] Show recent sessions from the session APIs and link each recent session
+      to its Phase 3 history detail route.
 - [x] Add suggested practice based on backend weak-area results.
 - [x] Add the streak, score trend, and weak-area panels using backend data.
 - [x] Recreate the welcome/setup checklist, empty states, and responsive card
@@ -111,9 +111,10 @@ dashboard loading slow as accounts grow, add a server summary endpoint.
 
 ### Phase 3 — Theory practice and session history
 
-**Status: Practice lifecycle implemented; session history pending.** Theory
-endpoints support topic practice, weak-area analysis, answer evaluation, session
-completion, history, score trends, and role-based limits. See the
+**Status: Complete.** The React app now supports topic and weak-area practice,
+asynchronous evaluation, session completion, paginated history with expandable
+saved answers, shareable session details, current-page CSV export, and dashboard
+links to session details. See the
 [theory API](../routes/theory-api-spec.md).
 
 - [x] Add the practice mode selector and topic/difficulty configuration.
@@ -122,7 +123,7 @@ completion, history, score trends, and role-based limits. See the
       feedback, next-question, end-session, and completion states.
 - [x] Represent asynchronous AI evaluation and quota failures using the API's
       real status and error responses; prevent duplicate submissions.
-- [ ] Add paginated session history with expandable question, answer, and
+- [x] Add paginated session history with expandable question, answer, and
       feedback details; implement CSV export only from actual returned data.
 - [x] Use role-supported question counts; do not expose unsupported time-limit
       or hint settings.

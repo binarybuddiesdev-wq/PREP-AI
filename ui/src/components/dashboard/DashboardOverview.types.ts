@@ -17,4 +17,5 @@ export interface IDashboardOverviewProps {
   weakAreasStatus: IDashboardPanelStatus;
   practiceTopicsStatus: IDashboardPanelStatus;
   settingsStatus: IDashboardPanelStatus;
+  onOpenSession: (sessionId: string) => void;
 }

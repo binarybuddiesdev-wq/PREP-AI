@@ -70,6 +70,7 @@ const renderOverview = (overrides: Partial<IDashboardOverviewProps> = {}) =>
       weakAreasStatus={ready()}
       practiceTopicsStatus={ready()}
       settingsStatus={ready()}
+      onOpenSession={vi.fn()}
       {...overrides}
     />
   );
@@ -91,6 +92,16 @@ describe('DashboardOverview', () => {
     expect(screen.getAllByText('Node.js')).toHaveLength(2);
     expect(screen.getByText('Choose focus topics')).toBeVisible();
     expect(screen.getByRole('img', { name: /score trend/i })).toBeInTheDocument();
+  });
+
+  it('opens the matching session detail from a recent practice session', async () => {
+    const user = userEvent.setup();
+    const onOpenSession = vi.fn();
+    renderOverview({ onOpenSession });
+
+    await user.click(screen.getByRole('button', { name: 'View React session' }));
+
+    expect(onOpenSession).toHaveBeenCalledWith('session-1');
   });
 
   it('shows empty states without sample dashboard values', () => {
