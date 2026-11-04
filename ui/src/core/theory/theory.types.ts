@@ -34,8 +34,16 @@ export interface IStartTheorySessionBody {
 export interface ITheoryQuestion {
   id: string;
   question: string;
-  topicId: string;
-  difficulty: TheoryDifficulty;
+  topicId?: string | null;
+  difficulty?: TheoryDifficulty;
+  citations?: ITheoryQuestionCitation[];
+}
+
+export interface ITheoryQuestionCitation {
+  pdfId: string;
+  displayName: string;
+  page: number;
+  chunkId: string;
 }
 
 export interface ISubmitTheoryAnswerBody {

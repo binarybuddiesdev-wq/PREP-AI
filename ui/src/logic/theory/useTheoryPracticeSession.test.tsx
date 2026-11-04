@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { HTTPError } from 'ky';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -21,6 +22,8 @@ const state = vi.hoisted(() => ({
   completedSessionData: null as ITheorySession | null,
   resetCompletion: vi.fn(),
   questions: [] as ITheoryQuestion[],
+  questionsError: null as Error | null,
+  questionsIsPending: false,
   evaluation: null as ITheoryAnswer | null,
 }));
 
@@ -62,10 +65,16 @@ vi.mock('./useTheoryCompleteSessionCommand', () => ({
   }),
 }));
 vi.mock('./useTheoryPracticeReader', () => ({
-  useTheorySessionQuestionsReader: (sessionId: string, limit: number) => {
-    state.questionReader(sessionId, limit);
+  useTheorySessionQuestionsReader: (sessionId: string, limit: number, isPdfStudy: boolean) => {
+    state.questionReader(sessionId, limit, isPdfStudy);
     return sessionId
-      ? { data: state.questions, isPending: false, isError: false, error: null, refetch: vi.fn() }
+      ? {
+          data: state.questions,
+          isPending: state.questionsIsPending,
+          isError: Boolean(state.questionsError),
+          error: state.questionsError,
+          refetch: vi.fn(),
+        }
       : { data: undefined, isPending: false, isError: false, error: null, refetch: vi.fn() };
   },
 }));
@@ -117,6 +126,8 @@ describe('useTheoryPracticeSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     state.questions = questions;
+    state.questionsError = null;
+    state.questionsIsPending = false;
     state.startMutation.mockResolvedValue(session);
     state.answerMutation.mockResolvedValue(answer);
     state.resetAnswer.mockReset();
@@ -147,8 +158,33 @@ describe('useTheoryPracticeSession', () => {
     expect(result.current.sessionId).toBe('session-one');
     expect(result.current.activeQuestion).toEqual(questions[0]);
     expect(result.current.progress).toEqual({ current: 1, total: 2 });
-    expect(state.questionReader).toHaveBeenCalledWith('session-one', 10);
+    expect(state.questionReader).toHaveBeenCalledWith('session-one', 10, false);
     expect(result.current.phase).toBe('question');
+  });
+
+  it('keeps PDF question generation conflicts in the preparing state', async () => {
+    const pendingError = new HTTPError(
+      new Response(null, { status: 409 }),
+      new Request('http://localhost/api/v1/theory/session/session-one/questions'),
+      {} as never
+    );
+    pendingError.message = 'PDF study questions are still being generated';
+    state.questionsError = pendingError;
+    state.startMutation.mockResolvedValue({ ...session, mode: 'pdf' });
+    const { result } = renderHook(() => useTheoryPracticeSession());
+
+    await act(async () => {
+      await result.current.start({
+        ...startBody,
+        topicId: undefined,
+        pdfIds: ['pdf-one'],
+        mode: 'pdf',
+      });
+    });
+
+    expect(state.questionReader).toHaveBeenCalledWith('session-one', 10, true);
+    expect(result.current.phase).toBe('loading');
+    expect(result.current.questionsQuery.error).toBe(pendingError);
   });
 
   it('counts elapsed seconds and resets the timer and answer when advancing', async () => {

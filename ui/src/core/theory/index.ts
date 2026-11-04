@@ -3,6 +3,7 @@ export type {
   ISubmitTheoryAnswerBody,
   ITheoryAnswer,
   ITheoryQuestion,
+  ITheoryQuestionCitation,
   ITheoryScoreTrendPoint,
   ITheorySession,
   ITheorySessionDetail,

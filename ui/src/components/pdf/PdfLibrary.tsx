@@ -21,6 +21,7 @@ export interface IPdfLibraryProps {
   contentUrl: string | null;
   contentLoading: boolean;
   contentError: string | null;
+  initialPage?: number;
   onSelectSource: (pdfId: string) => void;
   onRetryList: () => void;
   onRetryContent: () => void;
@@ -35,12 +36,13 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
     contentUrl,
     contentLoading,
     contentError,
+    initialPage = 1,
     onSelectSource,
     onRetryList,
     onRetryContent,
   } = props;
   const viewerRef = useRef<HTMLDivElement>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [zoom, setZoom] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState<string | null>(null);
@@ -48,9 +50,9 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
   const readySources = sources.filter((source) => source.status === 'ready');
 
   useEffect(() => {
-    setPage(1);
+    setPage(Math.min(pageCount, Math.max(1, initialPage)));
     setZoom(100);
-  }, [selectedSource?.id]);
+  }, [initialPage, pageCount, selectedSource?.id]);
 
   useEffect(() => {
     const updateFullscreen = () =>

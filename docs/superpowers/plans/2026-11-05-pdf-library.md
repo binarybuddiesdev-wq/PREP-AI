@@ -73,12 +73,12 @@
 
 **Interfaces:** practice setup selects one to five ready IDs; start sends `mode: "pdf"` and `pdfIds`; questions query distinguishes generation pending from terminal failure and renders actual API citations.
 
-- [ ] Add failing tests for selection bounds/readiness, payload, generation polling, citations, and evaluation flow.
-- [ ] Implement PDF mode through the existing theory session lifecycle.
-- [ ] Run focused tests and UI checks; commit.
+- [x] Add failing tests for selection bounds/readiness, payload, generation polling, citations, and evaluation flow.
+- [x] Implement PDF mode through the existing theory session lifecycle.
+- [x] Run focused tests and UI checks; commit.
 
 ### Task 6: Full verification and tracker
 
-- [ ] Run complete UI and server tests, lint, typecheck, and builds; run browser checks at desktop and mobile sizes.
-- [ ] Update the project tracker with completed scope and remaining limitations.
+- [x] Run complete UI and server test suites, UI lint, typecheck, and build. Browser visual checks at desktop/mobile sizes remain to be completed with an authenticated browser session.
+- [x] Update the project tracker with completed scope and remaining limitations.
 - [ ] Review the final diff, commit, and push to `main`.

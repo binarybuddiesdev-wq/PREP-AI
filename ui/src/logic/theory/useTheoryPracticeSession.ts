@@ -11,6 +11,7 @@ import { useTheoryCompleteSessionCommand } from './useTheoryCompleteSessionComma
 import { useTheoryEvaluationReader } from './useTheoryEvaluationReader';
 import { useTheorySessionCommand } from './useTheorySessionCommand';
 import { useTheorySessionQuestionsReader } from './useTheoryPracticeReader';
+import { isPdfQuestionGenerationPending } from './pdfQuestionGeneration';
 
 export type TheoryPracticePhase =
   'setup' | 'loading' | 'error' | 'question' | 'submitted' | 'empty' | 'complete';
@@ -44,7 +45,13 @@ export const useTheoryPracticeSession = () => {
   const completionLock = useRef(false);
   const pendingSubmissionRef = useRef<typeof pendingSubmission>(null);
   const sessionId = session?.id ?? '';
-  const questionsQuery = useTheorySessionQuestionsReader(sessionId, session?.totalQuestions);
+  const isPdfStudy = session?.mode === 'pdf';
+  const questionsQuery = useTheorySessionQuestionsReader(
+    sessionId,
+    session?.totalQuestions,
+    isPdfStudy
+  );
+  const pdfQuestionsPending = isPdfStudy && isPdfQuestionGenerationPending(questionsQuery.error);
   const evaluationQuery = useTheoryEvaluationReader(sessionId, currentAnswer?.id ?? '');
   const questions = questionsQuery.data ?? [];
   const evaluation = evaluationQuery.data ?? currentAnswer;
@@ -54,7 +61,7 @@ export const useTheoryPracticeSession = () => {
 
   const phase: TheoryPracticePhase = !session
     ? 'setup'
-    : questionsQuery.isPending
+    : questionsQuery.isPending || pdfQuestionsPending
       ? 'loading'
       : questionsQuery.isError
         ? 'error'

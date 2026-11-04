@@ -5,7 +5,7 @@ import { SelectField } from '@/components/form';
 import type { IPracticeSetupProps, PracticeMode } from './PracticeSetup.types';
 
 const MODES: Array<{
-  value: PracticeMode | 'pdf';
+  value: PracticeMode;
   label: string;
   description: string;
   icon: typeof Zap;
@@ -44,6 +44,13 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
     isPremium,
     topics,
     weakAreas,
+    pdfSources,
+    selectedPdfIds,
+    isPdfSourcesLoading,
+    pdfSourcesError,
+    onRetryPdfSources,
+    onPdfSelectionChange,
+    onManageDocuments,
     isTopicsLoading,
     topicsError,
     onRetryTopics,
@@ -58,11 +65,19 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
     onStart,
   } = props;
 
+  const readyPdfSources = pdfSources.filter((source) => source.status === 'ready');
+  const validPdfIds = new Set(readyPdfSources.map((source) => source.id));
+  const hasValidPdfSelection =
+    selectedPdfIds.length >= 1 &&
+    selectedPdfIds.length <= 5 &&
+    selectedPdfIds.every((id) => validPdfIds.has(id));
   const cannotStart =
     isStarting ||
     (mode === 'topic'
       ? isTopicsLoading || Boolean(topicsError) || topics.length === 0 || !topicId
-      : isWeakAreasLoading || Boolean(weakAreasError) || weakAreas.length === 0);
+      : mode === 'weak'
+        ? isWeakAreasLoading || Boolean(weakAreasError) || weakAreas.length === 0
+        : isPdfSourcesLoading || Boolean(pdfSourcesError) || !hasValidPdfSelection);
   const selectedTopic = topics.find((topic) => topic.id === topicId);
 
   return (
@@ -76,23 +91,19 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
 
       <section aria-label="Practice mode" className="grid gap-3 sm:grid-cols-3">
         {MODES.map(({ value, label, description, icon: Icon }) => {
-          const isDisabled = value === 'pdf';
           const isSelected = value === mode;
           return (
             <button
               key={value}
               type="button"
-              aria-pressed={isDisabled ? undefined : isSelected}
-              aria-label={isDisabled ? `${label}, unavailable yet` : label}
-              disabled={isDisabled}
-              onClick={() => {
-                if (value !== 'pdf') onModeChange(value);
-              }}
+              aria-label={label}
+              aria-pressed={isSelected}
+              onClick={() => onModeChange(value)}
               className={`rounded-xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 sm:p-5 ${
                 isSelected
                   ? 'border-amber-400/60 bg-amber-400/[0.07]'
                   : 'border-white/[0.08] bg-[#18181b] hover:border-white/20 hover:bg-white/[0.04]'
-              } ${isDisabled ? 'cursor-not-allowed opacity-55' : ''}`}
+              }`}
             >
               <span
                 className={`mb-3 inline-flex size-10 items-center justify-center rounded-xl ${
@@ -107,11 +118,6 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               </span>
               <span className="block text-sm font-semibold text-zinc-100">{label}</span>
               <span className="mt-1 block text-xs leading-5 text-zinc-400">{description}</span>
-              {isDisabled ? (
-                <span className="mt-2 inline-block text-[0.7rem] font-medium text-zinc-500">
-                  Unavailable yet
-                </span>
-              ) : null}
             </button>
           );
         })}
@@ -170,7 +176,7 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               </div>
             </div>
           </div>
-        ) : (
+        ) : mode === 'weak' ? (
           <div className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-[var(--text-h)]">
@@ -233,6 +239,101 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               </div>
             </div>
           </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-[var(--text-h)]">Choose study sources</h2>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">
+                  Choose 1–5 ready PDFs to focus this session.
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs tabular-nums text-zinc-300">
+                {selectedPdfIds.length} of 5 selected
+              </span>
+            </div>
+            {isPdfSourcesLoading ? (
+              <p role="status" className="text-sm text-zinc-400">
+                Loading your PDFs…
+              </p>
+            ) : pdfSourcesError ? (
+              <div role="alert" className="space-y-3">
+                <p className="text-sm text-rose-300">{pdfSourcesError}</p>
+                <button type="button" className={retryButtonClassName} onClick={onRetryPdfSources}>
+                  <RotateCw aria-hidden="true" className="size-3.5" />
+                  Retry documents
+                </button>
+              </div>
+            ) : readyPdfSources.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] p-4">
+                <p className="text-sm font-medium text-zinc-200">No ready PDFs yet</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">
+                  Upload a document and wait for it to finish processing before starting PDF study.
+                </p>
+                <button
+                  type="button"
+                  onClick={onManageDocuments}
+                  className="mt-3 inline-flex min-h-9 items-center rounded-lg border border-white/10 px-3 text-xs font-medium text-zinc-100 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400"
+                >
+                  Manage documents
+                </button>
+              </div>
+            ) : (
+              <ul aria-label="Ready study PDFs" className="grid gap-2 sm:grid-cols-2">
+                {readyPdfSources.map((source) => {
+                  const checked = selectedPdfIds.includes(source.id);
+                  const atLimit = selectedPdfIds.length >= 5 && !checked;
+                  return (
+                    <li key={source.id}>
+                      <label
+                        className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2 transition ${checked ? 'border-amber-400/35 bg-amber-400/[0.07]' : 'border-white/[0.08] bg-black/10 hover:border-white/20'} ${atLimit ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={atLimit}
+                          onChange={() =>
+                            onPdfSelectionChange(
+                              checked
+                                ? selectedPdfIds.filter((id) => id !== source.id)
+                                : [...selectedPdfIds, source.id]
+                            )
+                          }
+                          className="size-4 accent-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
+                          {source.displayName}
+                        </span>
+                        <span className="shrink-0 text-xs text-zinc-500">
+                          {source.pageCount ?? '—'}p
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div>
+              <p className="mb-2 text-xs font-medium text-zinc-400">Difficulty</p>
+              <div role="group" aria-label="Difficulty" className="flex gap-2">
+                {DIFFICULTIES.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={difficulty === option}
+                    onClick={() => onDifficultyChange(option)}
+                    className={`min-h-9 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-amber-400 ${
+                      difficulty === option
+                        ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
+                        : 'border-white/10 bg-white/[0.02] text-zinc-400 hover:text-zinc-100'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </section>
 
@@ -244,7 +345,9 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               ? selectedTopic
                 ? `${selectedTopic.name} · ${difficulty} difficulty`
                 : `Choose a topic · ${difficulty} difficulty`
-              : `Weak areas · ${difficulty} difficulty`}
+              : mode === 'weak'
+                ? `Weak areas · ${difficulty} difficulty`
+                : `${selectedPdfIds.length} PDF${selectedPdfIds.length === 1 ? '' : 's'} · ${difficulty} difficulty`}
             {' · '}
             {totalQuestions} questions requested. Server limits apply.
           </p>

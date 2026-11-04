@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { IPracticeTopic, ITheoryWeakArea, TheoryDifficulty } from '@/core';
+import type { IPdfSource } from '@/core';
 import { PracticeSetup } from './PracticeSetup';
 import type { IPracticeSetupProps } from './PracticeSetup.types';
 
@@ -28,6 +29,31 @@ const weakAreas: ITheoryWeakArea[] = [
   },
 ];
 
+const pdfSources: IPdfSource[] = [
+  {
+    id: 'pdf-one',
+    displayName: 'React notes.pdf',
+    byteSize: 2048,
+    pageCount: 12,
+    status: 'ready',
+    activeRevision: 1,
+    failureCode: null,
+    createdAt: '2026-11-05T00:00:00.000Z',
+    updatedAt: '2026-11-05T00:00:00.000Z',
+  },
+  {
+    id: 'pdf-two',
+    displayName: 'System design.pdf',
+    byteSize: 3072,
+    pageCount: 20,
+    status: 'ready',
+    activeRevision: 1,
+    failureCode: null,
+    createdAt: '2026-11-05T00:00:00.000Z',
+    updatedAt: '2026-11-05T00:00:00.000Z',
+  },
+];
+
 const createProps = (overrides: Partial<IPracticeSetupProps> = {}): IPracticeSetupProps => ({
   mode: 'topic',
   topicId: '',
@@ -36,6 +62,13 @@ const createProps = (overrides: Partial<IPracticeSetupProps> = {}): IPracticeSet
   isPremium: false,
   topics,
   weakAreas,
+  pdfSources,
+  selectedPdfIds: [],
+  isPdfSourcesLoading: false,
+  pdfSourcesError: null,
+  onRetryPdfSources: vi.fn(),
+  onPdfSelectionChange: vi.fn(),
+  onManageDocuments: vi.fn(),
   isTopicsLoading: false,
   topicsError: null,
   onRetryTopics: vi.fn(),
@@ -52,7 +85,7 @@ const createProps = (overrides: Partial<IPracticeSetupProps> = {}): IPracticeSet
 });
 
 describe('PracticeSetup', () => {
-  it('offers topic and weak-area modes and keeps PDF study disabled', () => {
+  it('offers topic, weak-area, and PDF study modes', () => {
     render(<PracticeSetup {...createProps()} />);
 
     expect(screen.getByRole('button', { name: /Topic Practice/ })).toHaveAttribute(
@@ -63,8 +96,60 @@ describe('PracticeSetup', () => {
       'aria-pressed',
       'false'
     );
-    expect(screen.getByRole('button', { name: /PDF Study/ })).toBeDisabled();
-    expect(screen.getByText(/unavailable yet/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'PDF Study' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+  });
+
+  it('selects up to five ready PDFs for the session', async () => {
+    const user = userEvent.setup();
+    const onModeChange = vi.fn();
+    const onPdfSelectionChange = vi.fn();
+    const props = createProps({ onModeChange, onPdfSelectionChange, mode: 'pdf' });
+    const { rerender } = render(<PracticeSetup {...props} />);
+
+    expect(screen.getByText('Choose 1–5 ready PDFs to focus this session.')).toBeVisible();
+    expect(screen.getByRole('button', { name: /Start/ })).toBeDisabled();
+    await user.click(screen.getByRole('checkbox', { name: /React notes.pdf/ }));
+    expect(onPdfSelectionChange).toHaveBeenCalledWith(['pdf-one']);
+
+    rerender(<PracticeSetup {...props} selectedPdfIds={['pdf-one']} />);
+    expect(screen.getByText('1 of 5 selected')).toBeVisible();
+    await user.click(screen.getByRole('checkbox', { name: /System design.pdf/ }));
+    expect(onPdfSelectionChange).toHaveBeenLastCalledWith(['pdf-one', 'pdf-two']);
+  });
+
+  it('allows choosing a difficulty for PDF study', async () => {
+    const user = userEvent.setup();
+    const onDifficultyChange = vi.fn();
+    render(<PracticeSetup {...createProps({ mode: 'pdf', onDifficultyChange })} />);
+
+    await user.click(screen.getByRole('button', { name: 'Senior' }));
+
+    expect(onDifficultyChange).toHaveBeenCalledWith('Senior');
+  });
+
+  it('blocks a sixth source and links to document management when no PDFs are ready', async () => {
+    const user = userEvent.setup();
+    const onManageDocuments = vi.fn();
+    const { rerender } = render(
+      <PracticeSetup
+        {...createProps({ mode: 'pdf', selectedPdfIds: ['pdf-one', 'pdf-two', '3', '4', '5'] })}
+        pdfSources={[
+          ...pdfSources,
+          { ...pdfSources[0]!, id: 'pdf-six', displayName: 'PDF six.pdf' },
+        ]}
+      />
+    );
+    expect(screen.getByRole('checkbox', { name: /PDF six\.pdf/ })).toBeDisabled();
+
+    rerender(
+      <PracticeSetup {...createProps({ mode: 'pdf', pdfSources: [], onManageDocuments })} />
+    );
+    expect(screen.getByText(/No ready PDFs yet/)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Manage documents' }));
+    expect(onManageDocuments).toHaveBeenCalledOnce();
   });
 
   it('switches to weak-area mode through the mode selector', async () => {

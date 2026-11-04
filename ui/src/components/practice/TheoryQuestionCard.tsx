@@ -1,4 +1,5 @@
 import { Clock3, Send } from 'lucide-react';
+import { Link } from 'react-router';
 
 import type { ITheoryQuestionCardProps } from './TheoryQuestionCard.types';
 
@@ -42,7 +43,7 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
             <span>
               Question {currentQuestion} of {totalQuestions}
             </span>
-            <span>{question.difficulty}</span>
+            {question.difficulty ? <span>{question.difficulty}</span> : null}
           </div>
           <div
             role="progressbar"
@@ -66,6 +67,23 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
             </p>
             <h2 className="text-lg font-semibold leading-7 text-zinc-100">{question.question}</h2>
           </div>
+
+          {question.citations?.length ? (
+            <div aria-label="Source citations" className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-zinc-500">Sources</span>
+              {question.citations.map((citation) => (
+                <Link
+                  key={`${citation.pdfId}:${citation.page}:${citation.chunkId}`}
+                  to={`/library?pdfId=${encodeURIComponent(citation.pdfId)}&page=${citation.page}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-8 items-center rounded-md border border-sky-300/20 bg-sky-300/[0.06] px-2.5 text-xs font-medium text-sky-200 transition hover:border-sky-300/35 hover:bg-sky-300/10 focus-visible:outline-2 focus-visible:outline-amber-400"
+                >
+                  {citation.displayName} · Page {citation.page}
+                </Link>
+              ))}
+            </div>
+          ) : null}
 
           <div>
             <label htmlFor="theory-answer" className="mb-2 block text-sm font-medium text-zinc-300">

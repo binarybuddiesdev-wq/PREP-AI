@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ITheoryQuestion } from '@/core';
@@ -72,5 +73,28 @@ describe('TheoryQuestionCard', () => {
     expect(screen.queryByText(/answer saved/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry answer' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Your answer' })).toBeDisabled();
+  });
+
+  it('shows source citations linked to the cited PDF page', () => {
+    render(
+      <MemoryRouter>
+        <TheoryQuestionCard
+          {...createProps({
+            question: {
+              id: 'pdf-question',
+              question: 'Explain reconciliation.',
+              citations: [
+                { pdfId: 'pdf-one', displayName: 'React notes.pdf', page: 4, chunkId: 'chunk-1' },
+              ],
+            },
+          })}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('link', { name: 'React notes.pdf · Page 4' })).toHaveAttribute(
+      'href',
+      '/library?pdfId=pdf-one&page=4'
+    );
   });
 });

@@ -1,6 +1,6 @@
-import type { IPracticeTopic, ITheoryWeakArea, TheoryDifficulty } from '@/core';
+import type { IPdfSource, IPracticeTopic, ITheoryWeakArea, TheoryDifficulty } from '@/core';
 
-export type PracticeMode = 'topic' | 'weak';
+export type PracticeMode = 'topic' | 'weak' | 'pdf';
 
 export interface IPracticeSetupProps {
   mode: PracticeMode;
@@ -10,6 +10,13 @@ export interface IPracticeSetupProps {
   isPremium: boolean;
   topics: IPracticeTopic[];
   weakAreas: ITheoryWeakArea[];
+  pdfSources: IPdfSource[];
+  selectedPdfIds: string[];
+  isPdfSourcesLoading: boolean;
+  pdfSourcesError: string | null;
+  onRetryPdfSources: () => void;
+  onPdfSelectionChange: (pdfIds: string[]) => void;
+  onManageDocuments: () => void;
   isTopicsLoading: boolean;
   topicsError: string | null;
   onRetryTopics: () => void;

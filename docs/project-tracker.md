@@ -15,7 +15,7 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 | Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                        |
 | Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist). |
 | Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).   |
-| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, onboarding, dashboard, theory practice, paginated session history, and basic settings are implemented. PDF Study, coding, chat, expanded settings, notifications, and billing remain on the roadmap.                                                           |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, and PDF Study are implemented. Coding, chat, expanded settings, notifications, and billing remain on the roadmap.                                              |
 | Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                             |
 
 ## Reference and implementation rules
@@ -130,19 +130,23 @@ links to session details. See the
 
 ### Phase 4 — PDF documents, library, and PDF Study
 
-**Status: Backend v1 ready; frontend not started.** PDF upload, indexing,
-retrieval, question generation, citations, list/status/delete, and reindex APIs
-exist. Production RLS and provider rollout are tracked separately.
+**Status: Functional frontend integration complete.** Settings > Documents
+supports validated upload, progress, processing/retry, reindex, and delete.
+Library reads private owner-authenticated previews and supports page, zoom, and
+fullscreen controls. PDF Study selects one to five ready documents, uses the
+existing theory session lifecycle, waits for background question generation,
+and links returned citations to the source page. Production RLS and provider
+rollout remain separate readiness work.
 
-- [ ] Build document upload with drag/drop, validation, upload progress, and
+- [x] Build document upload with drag/drop, validation, upload progress, and
       processing/ready/failed states.
-- [ ] Add the document list, source enablement where supported, reindex,
+- [x] Add the document list, source enablement where supported, reindex,
       deletion confirmation, and owner-safe error handling.
-- [ ] Build the Library grid and viewer with page navigation, zoom, and
+- [x] Build the Library grid and viewer with page navigation, zoom, and
       fullscreen behavior from the reference.
-- [ ] Add PDF Study source selection, difficulty, generated questions,
+- [x] Add PDF Study source selection, difficulty, generated questions,
       answer evaluation, and visible source/page citations.
-- [ ] Use the backend's private document access mechanism; do not substitute
+- [x] Use the backend's private document access mechanism; do not substitute
       local placeholder PDFs or expose permanent private storage URLs.
 
 ### Phase 5 — Coding challenges

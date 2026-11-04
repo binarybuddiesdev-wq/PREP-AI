@@ -82,4 +82,18 @@ describe('LibraryPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('PDF is unavailable');
     expect(screen.getByRole('button', { name: 'Retry preview' })).toBeInTheDocument();
   });
+
+  it('opens a requested page from a question citation', async () => {
+    render(
+      <MemoryRouter initialEntries={['/library?pdfId=pdf-one&page=3']}>
+        <Routes>
+          <Route path="/library" element={<LibraryPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('spinbutton', { name: 'Current page' })).toHaveValue(3)
+    );
+  });
 });

@@ -27,6 +27,8 @@ export const LibraryPage = () => {
   });
   const sources = (sourcesQuery.data ?? []).filter((source) => source.status === 'ready');
   const selectedId = searchParams.get('pdfId');
+  const pageFromUrl = Number(searchParams.get('page'));
+  const initialPage = Number.isInteger(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1;
   const selectedSource = sources.find((source) => source.id === selectedId) ?? null;
 
   useEffect(() => {
@@ -98,7 +100,8 @@ export const LibraryPage = () => {
       contentUrl={matchingContent && contentState.status === 'ready' ? contentState.url : null}
       contentLoading={contentLoading}
       contentError={matchingContent && contentState.status === 'failed' ? contentState.error : null}
-      onSelectSource={(pdfId) => setSearchParams({ pdfId })}
+      initialPage={initialPage}
+      onSelectSource={(pdfId) => setSearchParams({ pdfId, page: '1' })}
       onRetryList={() => void sourcesQuery.refetch()}
       onRetryContent={() => setRetryCount((current) => current + 1)}
     />

@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HTTPError } from 'ky';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -107,5 +108,26 @@ describe('theory practice readers', () => {
 
     await waitFor(() => expect(result.current.topicsQuery.isError).toBe(true));
     expect(result.current.topicsQuery.error).toBe(error);
+  });
+
+  it('polls PDF questions only while the server reports generation is pending', async () => {
+    const pendingError = new HTTPError(
+      new Response(null, { status: 409 }),
+      new Request('http://localhost/api/v1/theory/session/session-one/questions'),
+      {} as never
+    );
+    pendingError.message = 'PDF study questions are still being generated';
+    vi.mocked(getTheorySessionQuestions)
+      .mockRejectedValueOnce(pendingError)
+      .mockResolvedValueOnce(envelope([]));
+    const { Wrapper } = createWrapper();
+
+    const { result } = renderHook(() => useTheorySessionQuestionsReader('session-one', 10, true), {
+      wrapper: Wrapper,
+    });
+
+    await waitFor(() => expect(result.current.error).toBe(pendingError));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 3000 });
+    expect(getTheorySessionQuestions).toHaveBeenCalledTimes(2);
   });
 });

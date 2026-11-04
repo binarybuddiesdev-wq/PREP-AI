@@ -4,6 +4,9 @@ import { getPracticeTopics, getTheorySessionQuestions, getTheoryWeakAreas } from
 import { useApiClient } from '../api';
 import { useSessionReader } from '../auth';
 import { theoryKeys } from './theory.keys';
+import { isPdfQuestionGenerationPending } from './pdfQuestionGeneration';
+
+const PDF_QUESTION_POLL_INTERVAL_MS = 1500;
 
 export const useTheoryPracticeReader = () => {
   const api = useApiClient();
@@ -25,7 +28,11 @@ export const useTheoryPracticeReader = () => {
   return { topicsQuery, weakAreasQuery };
 };
 
-export const useTheorySessionQuestionsReader = (sessionId: string, limit?: number) => {
+export const useTheorySessionQuestionsReader = (
+  sessionId: string,
+  limit?: number,
+  isPdfStudy = false
+) => {
   const api = useApiClient();
   const { isLoaded, isSignedIn, user } = useSessionReader();
   const userId = user?.id ?? '';
@@ -34,5 +41,9 @@ export const useTheorySessionQuestionsReader = (sessionId: string, limit?: numbe
     queryKey: theoryKeys.sessionQuestions(userId, sessionId, limit),
     queryFn: async () => (await getTheorySessionQuestions(api, sessionId, limit)).data,
     enabled: isLoaded && isSignedIn && Boolean(userId) && Boolean(sessionId),
+    refetchInterval: (query) =>
+      isPdfStudy && isPdfQuestionGenerationPending(query.state.error)
+        ? PDF_QUESTION_POLL_INTERVAL_MS
+        : false,
   });
 };

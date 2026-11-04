@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import {
   PracticeSetup,
@@ -8,9 +9,10 @@ import {
   type PracticeMode,
 } from '@/components/practice';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
-import type { IStartTheorySessionBody, TheoryDifficulty } from '@/core';
+import { ROUTES, type IStartTheorySessionBody, type TheoryDifficulty } from '@/core';
 import {
   getPracticePolicy,
+  usePdfSourcesReader,
   useSessionReader,
   useTheoryPracticeReader,
   useTheoryPracticeSession,
@@ -18,13 +20,27 @@ import {
 } from '@/logic';
 
 export const PracticePage = () => {
+  const navigate = useNavigate();
   const { isLoaded } = useSessionReader();
   const userQuery = useUserReader();
   const { topicsQuery, weakAreasQuery } = useTheoryPracticeReader();
+  const pdfSourcesQuery = usePdfSourcesReader();
   const practice = useTheoryPracticeSession();
   const [mode, setMode] = useState<PracticeMode>('topic');
   const [topicId, setTopicId] = useState('');
   const [difficulty, setDifficulty] = useState<TheoryDifficulty>('Mid');
+  const [selectedPdfIds, setSelectedPdfIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!pdfSourcesQuery.data) return;
+    const readyIds = new Set(
+      pdfSourcesQuery.data.filter((source) => source.status === 'ready').map((source) => source.id)
+    );
+    setSelectedPdfIds((current) => {
+      const next = current.filter((id) => readyIds.has(id));
+      return next.length === current.length ? current : next;
+    });
+  }, [pdfSourcesQuery.data]);
 
   if (!isLoaded || userQuery.isPending) {
     return <LoadingScreen label="Loading practice setup…" layout="embedded" />;
@@ -49,6 +65,7 @@ export const PracticePage = () => {
   const handleStart = () => {
     const body: IStartTheorySessionBody = {
       ...(mode === 'topic' ? { topicId } : {}),
+      ...(mode === 'pdf' ? { pdfIds: selectedPdfIds } : {}),
       mode,
       difficulty,
       totalQuestions,
@@ -68,10 +85,55 @@ export const PracticePage = () => {
 
   if (practice.session) {
     if (practice.phase === 'loading') {
-      return <LoadingScreen label="Loading your questions…" layout="embedded" />;
+      return (
+        <LoadingScreen
+          label={
+            practice.session.mode === 'pdf'
+              ? 'Preparing questions from your PDFs…'
+              : 'Loading your questions…'
+          }
+          layout="embedded"
+        />
+      );
     }
 
     if (practice.phase === 'error') {
+      if (practice.session.mode === 'pdf') {
+        return (
+          <main className="mx-auto w-full max-w-3xl rounded-xl border border-rose-400/20 bg-rose-400/[0.05] p-5 sm:p-6">
+            <h1 className="text-lg font-semibold text-zinc-100">
+              PDF questions could not be prepared
+            </h1>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Check the error details, retry question generation, or end this session and choose
+              another source.
+            </p>
+            {practice.questionsQuery.error?.message ? (
+              <p className="mt-3 break-words rounded-lg bg-black/20 p-3 text-xs leading-5 text-rose-200">
+                {practice.questionsQuery.error.message}
+              </p>
+            ) : null}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={practice.questionsQuery.isFetching}
+                onClick={() => void practice.questionsQuery.refetch()}
+                className="min-h-10 rounded-lg border border-white/10 px-4 text-sm font-medium text-zinc-100 hover:bg-white/[0.06] disabled:opacity-50"
+              >
+                {practice.questionsQuery.isFetching ? 'Retrying…' : 'Retry questions'}
+              </button>
+              <button
+                type="button"
+                disabled={practice.isCompleting}
+                onClick={() => void practice.end()}
+                className="min-h-10 rounded-lg bg-amber-500 px-4 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-50"
+              >
+                {practice.isCompleting ? 'Ending session…' : 'End session'}
+              </button>
+            </div>
+          </main>
+        );
+      }
       return (
         <main className="mx-auto w-full max-w-3xl">
           <QueryErrorState
@@ -192,6 +254,13 @@ export const PracticePage = () => {
       isPremium={isPremium}
       topics={topicsQuery.data ?? []}
       weakAreas={weakAreasQuery.data ?? []}
+      pdfSources={pdfSourcesQuery.data ?? []}
+      selectedPdfIds={selectedPdfIds}
+      isPdfSourcesLoading={pdfSourcesQuery.isPending}
+      pdfSourcesError={pdfSourcesQuery.isError ? pdfSourcesQuery.error.message : null}
+      onRetryPdfSources={() => void pdfSourcesQuery.refetch()}
+      onPdfSelectionChange={setSelectedPdfIds}
+      onManageDocuments={() => navigate(ROUTES.settingsDocuments)}
       isTopicsLoading={topicsQuery.isPending}
       topicsError={topicsQuery.isError ? topicsQuery.error.message : null}
       onRetryTopics={() => void topicsQuery.refetch()}
