@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['test/e2e/**/*.e2e-spec.ts'],
+    fileParallelism: false,
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },

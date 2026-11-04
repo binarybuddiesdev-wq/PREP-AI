@@ -248,9 +248,12 @@ export class PaymentsService {
   }
 
   async initiateFullRefund(chargeId: string, adminUserId: string) {
-    const client = this.postgres.client_;
-    if (!client) throw new ServiceUnavailableException('Payment storage is not available');
-    const charge = await client.paymentCharge.findUnique({ where: { id: chargeId } });
+    if (!this.postgres.client_) {
+      throw new ServiceUnavailableException('Payment storage is not available');
+    }
+    const charge = await this.postgres.withAdminContext(adminUserId, (tx) =>
+      tx.paymentCharge.findUnique({ where: { id: chargeId } })
+    );
     if (!charge) throw new NotFoundException('Captured payment charge was not found');
 
     const intent = await this.postgres.withTenantContext(charge.userId, async (tx) => {
@@ -491,12 +494,12 @@ export class PaymentsService {
   }
 
   async processWebhookEvent(userId: string, eventId: string): Promise<void> {
-    const event = await this.postgres.withTenantContext(userId, (tx) =>
+    const event = await this.postgres.withWorkerTenantContext(userId, eventId, (tx) =>
       tx.paymentWebhookEvent.findFirst({ where: { userId, eventId } })
     );
     if (!event || event.processedAt) return;
 
-    const local = await this.postgres.withTenantContext(userId, (tx) =>
+    const local = await this.postgres.withWorkerTenantContext(userId, eventId, (tx) =>
       tx.paymentSubscription.findUnique({
         where: { userId_idempotencyKey: { userId, idempotencyKey: event.idempotencyKey } },
       })
@@ -505,9 +508,9 @@ export class PaymentsService {
       throw new Error('Payment webhook does not match a persisted provider subscription');
     }
 
-    await this.fetchAndApplyProviderState(userId, local.id);
+    await this.fetchAndApplyProviderState(userId, local.id, eventId);
 
-    await this.postgres.withTenantContext(userId, (tx) =>
+    await this.postgres.withWorkerTenantContext(userId, eventId, (tx) =>
       tx.paymentWebhookEvent.update({
         where: { id: event.id },
         data: { status: 'processed', processedAt: new Date(), failureCode: null },
@@ -517,74 +520,46 @@ export class PaymentsService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async reconcilePendingPayments(): Promise<void> {
-    const client = this.postgres.client_;
-    if (!client) return;
-    const pending = await client.paymentWebhookEvent.findMany({
-      where: {
-        status: 'received',
-        OR: [
-          { dispatchClaimedAt: null },
-          { dispatchClaimedAt: { lt: new Date(Date.now() - 60_000) } },
-        ],
-      },
-      orderBy: { createdAt: 'asc' },
-      take: 100,
-      select: { userId: true, eventId: true, id: true },
-    });
+    if (!this.postgres.workerClient_) return;
+    const pending = await this.postgres.claimPendingPaymentWebhookEvents(100);
     for (const event of pending) {
       try {
         await this.jobs.enqueue(
           JOB_QUEUE_NAMES.PAYMENT_RECONCILIATION,
           {
-            idempotencyKey: event.eventId,
-            userId: event.userId,
+            idempotencyKey: event.event_id,
+            userId: event.user_id,
           },
           'reconcile-subscription',
           true
         );
-        await this.postgres.withTenantContext(event.userId, (tx) =>
-          tx.paymentWebhookEvent.update({
+      } catch (error) {
+        await this.postgres.withWorkerTenantContext(event.user_id, event.event_id, (tx) =>
+          tx.paymentWebhookEvent.updateMany({
             where: { id: event.id },
-            data: { dispatchClaimedAt: new Date(), attempts: { increment: 1 }, failureCode: null },
+            data: { dispatchClaimedAt: null, failureCode: 'DISPATCH_FAILED' },
           })
         );
-      } catch (error) {
         this.logger.warn(
-          { eventId: event.eventId, err: error },
+          { eventId: event.event_id, err: error },
           'Payment event reconciliation dispatch failed'
         );
       }
     }
 
     const expiredAt = new Date();
-    const expired = await client.paymentSubscription.findMany({
-      where: {
-        OR: [
-          { status: 'active', currentEnd: { lte: expiredAt } },
-          {
-            status: 'cancelled',
-            cancelAtPeriodEnd: true,
-            currentEnd: { lte: expiredAt },
-          },
-        ],
-      },
-      take: 100,
-      select: {
-        id: true,
-        userId: true,
-        idempotencyKey: true,
-        razorpaySubscriptionId: true,
-        razorpayPlanId: true,
-        cancelAtPeriodEnd: true,
-      },
-    });
+    const expired = await this.postgres.listExpiredPaymentSubscriptions(expiredAt, 100);
     for (const subscription of expired) {
-      if (!subscription.razorpaySubscriptionId) continue;
+      if (!subscription.razorpay_subscription_id) continue;
       try {
-        await this.fetchAndApplyProviderState(subscription.userId, subscription.id);
+        await this.fetchAndApplyProviderState(
+          subscription.user_id,
+          subscription.id,
+          subscription.id
+        );
       } catch (error) {
         try {
-          await this.projectUserEntitlement(subscription.userId);
+          await this.projectUserEntitlement(subscription.user_id, subscription.id);
         } catch (projectionError) {
           this.logger.error(
             { subscriptionId: subscription.id, err: projectionError },
@@ -601,17 +576,13 @@ export class PaymentsService {
 
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async cleanupExpiredPaymentCharges(): Promise<void> {
-    const client = this.postgres.client_;
-    if (!client) return;
+    if (!this.postgres.workerClient_) return;
     try {
-      const expiredRefunds = await client.paymentRefund.deleteMany({
-        where: { createdAt: { lt: getPaymentChargeRetentionCutoff(new Date()) } },
-      });
-      const result = await client.paymentCharge.deleteMany({
-        where: { createdAt: { lt: getPaymentChargeRetentionCutoff(new Date()) } },
-      });
+      const result = await this.postgres.deleteExpiredPaymentLedger(
+        getPaymentChargeRetentionCutoff(new Date())
+      );
       this.logger.log(
-        { deletedCharges: result.count, deletedRefunds: expiredRefunds.count },
+        { deletedCharges: result.deleted_charges, deletedRefunds: result.deleted_refunds },
         'Expired payment charge and refund records removed'
       );
     } catch (error) {
@@ -621,40 +592,45 @@ export class PaymentsService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async reconcilePendingRefunds(): Promise<void> {
-    const client = this.postgres.client_;
-    if (!client) return;
-    const pending = await client.paymentRefund.findMany({
-      where: { status: { in: ['requested', 'pending'] } },
-      orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
-      take: 100,
-      select: {
-        id: true,
-        userId: true,
-        razorpayPaymentId: true,
-        razorpayRefundId: true,
-        amountMinor: true,
-        currency: true,
-      },
-    });
-    for (const intent of pending) {
+    if (!this.postgres.workerClient_) return;
+    const pending = await this.postgres.claimPendingPaymentRefunds(100);
+    for (const row of pending) {
+      const intent = {
+        id: row.id,
+        userId: row.user_id,
+        razorpayPaymentId: row.razorpay_payment_id,
+        razorpayRefundId: row.razorpay_refund_id,
+        amountMinor: row.amount_minor,
+        currency: row.currency,
+      };
       try {
         const remote = intent.razorpayRefundId
           ? await this.provider.fetchRefund(intent.razorpayRefundId)
-          : await this.requestFullRefund(intent);
+          : await this.requestFullRefund(intent, intent.id);
         if (!remote) continue;
         this.assertRefundMatchesIntent(remote, intent);
-        await this.updateRefundState(intent.userId, intent.id, {
-          razorpayRefundId: remote.id,
-          status: remote.status,
-          failureCode: null,
-          providerCreatedAt: epochDate(remote.created_at),
-        });
+        await this.updateRefundState(
+          intent.userId,
+          intent.id,
+          {
+            razorpayRefundId: remote.id,
+            status: remote.status,
+            failureCode: null,
+            providerCreatedAt: epochDate(remote.created_at),
+          },
+          intent.id
+        );
       } catch (error) {
         try {
-          await this.updateRefundState(intent.userId, intent.id, {
-            status: intent.razorpayRefundId ? 'pending' : 'requested',
-            failureCode: 'RECONCILIATION_RETRY',
-          });
+          await this.updateRefundState(
+            intent.userId,
+            intent.id,
+            {
+              status: intent.razorpayRefundId ? 'pending' : 'requested',
+              failureCode: 'RECONCILIATION_RETRY',
+            },
+            intent.id
+          );
         } catch (stateError) {
           this.logger.warn(
             { refundId: intent.id, err: redactRefundError(stateError) },
@@ -677,13 +653,14 @@ export class PaymentsService {
       status: string;
       failureCode?: string | null;
       providerCreatedAt?: Date | null;
-    }
+    },
+    workerOperationId?: string
   ) {
-    return this.postgres.withTenantContext(userId, async (tx) => {
+    const update = async (tx: Prisma.TransactionClient) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
       const saved = await tx.paymentRefund.update({
         where: { id: refundId },
-        data: { ...data, updatedAt: new Date() },
+        data: { ...data, reconcileClaimedAt: null, updatedAt: new Date() },
       });
       await appendAuditLog(tx as never, {
         actorType: 'PROVIDER',
@@ -699,16 +676,22 @@ export class PaymentsService {
         },
       });
       return saved;
-    });
+    };
+    return workerOperationId
+      ? this.postgres.withWorkerTenantContext(userId, workerOperationId, update)
+      : this.postgres.withTenantContext(userId, update);
   }
 
-  private async requestFullRefund(intent: {
-    id: string;
-    userId: string;
-    razorpayPaymentId: string;
-    amountMinor: number;
-    currency: string;
-  }): Promise<IRazorpayRefund | null> {
+  private async requestFullRefund(
+    intent: {
+      id: string;
+      userId: string;
+      razorpayPaymentId: string;
+      amountMinor: number;
+      currency: string;
+    },
+    workerOperationId?: string
+  ): Promise<IRazorpayRefund | null> {
     try {
       return await this.provider.refundPayment(intent.razorpayPaymentId, intent.id);
     } catch (error) {
@@ -732,10 +715,15 @@ export class PaymentsService {
 
       // Razorpay can reject a refund temporarily (for example, while funds are
       // unavailable). Keep the same intent/key and let the worker retry fairly.
-      await this.updateRefundState(intent.userId, intent.id, {
-        status: 'requested',
-        failureCode: 'PROVIDER_RETRYABLE',
-      });
+      await this.updateRefundState(
+        intent.userId,
+        intent.id,
+        {
+          status: 'requested',
+          failureCode: 'PROVIDER_RETRYABLE',
+        },
+        workerOperationId
+      );
       return null;
     }
   }
@@ -783,41 +771,50 @@ export class PaymentsService {
     };
   }
 
-  private async fetchAndApplyProviderState(userId: string, localId: string): Promise<void> {
-    await this.postgres.withTenantContext(
-      userId,
-      async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
-        const subscription = await tx.paymentSubscription.findUnique({ where: { id: localId } });
-        if (!subscription) throw new NotFoundException('Payment subscription was not found');
-        if (!subscription.razorpaySubscriptionId)
-          throw new Error('Payment subscription has no provider subscription ID');
-        const remote = await this.provider.fetchSubscription(subscription.razorpaySubscriptionId);
-        this.assertProviderSubscriptionIdentity(remote, subscription, userId);
-        await tx.paymentSubscription.update({
-          where: { id: localId },
-          data: {
-            status: normalizeProviderStatus(remote.status),
-            currentStart: epochDate(remote.current_start) ?? subscription.currentStart,
-            currentEnd: epochDate(remote.current_end) ?? subscription.currentEnd,
-            cancelAtPeriodEnd:
-              subscription.cancelAtPeriodEnd &&
-              (epochDate(remote.current_end) ?? subscription.currentEnd ?? new Date(0)) >
-                new Date(),
-          },
-        });
-      },
-      { maxWait: 10_000, timeout: 45_000 }
-    );
-    await this.projectUserEntitlement(userId);
+  private async fetchAndApplyProviderState(
+    userId: string,
+    localId: string,
+    workerOperationId?: string
+  ): Promise<void> {
+    const apply = async (tx: Prisma.TransactionClient) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+      const subscription = await tx.paymentSubscription.findUnique({ where: { id: localId } });
+      if (!subscription) throw new NotFoundException('Payment subscription was not found');
+      if (!subscription.razorpaySubscriptionId)
+        throw new Error('Payment subscription has no provider subscription ID');
+      const remote = await this.provider.fetchSubscription(subscription.razorpaySubscriptionId);
+      this.assertProviderSubscriptionIdentity(remote, subscription, userId);
+      await tx.paymentSubscription.update({
+        where: { id: localId },
+        data: {
+          status: normalizeProviderStatus(remote.status),
+          currentStart: epochDate(remote.current_start) ?? subscription.currentStart,
+          currentEnd: epochDate(remote.current_end) ?? subscription.currentEnd,
+          cancelAtPeriodEnd:
+            subscription.cancelAtPeriodEnd &&
+            (epochDate(remote.current_end) ?? subscription.currentEnd ?? new Date(0)) > new Date(),
+        },
+      });
+    };
+    if (workerOperationId) {
+      await this.postgres.withWorkerTenantContext(userId, workerOperationId, apply);
+    } else {
+      await this.postgres.withTenantContext(userId, apply, { maxWait: 10_000, timeout: 45_000 });
+    }
+    await this.projectUserEntitlement(userId, workerOperationId);
   }
 
-  private async projectUserEntitlement(userId: string): Promise<void> {
-    await this.postgres.withTenantContext(userId, async (tx) => {
+  private async projectUserEntitlement(userId: string, workerOperationId?: string): Promise<void> {
+    const project = async (tx: Prisma.TransactionClient) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
       const projection = await this.projectUserEntitlementInTransaction(userId, tx);
-      await this.applyUserEntitlementProjection(userId, projection);
-    });
+      await this.applyUserEntitlementProjection(userId, projection, tx);
+    };
+    if (workerOperationId) {
+      await this.postgres.withWorkerTenantContext(userId, workerOperationId, project);
+    } else {
+      await this.postgres.withTenantContext(userId, project);
+    }
   }
 
   private async projectUserEntitlementInTransaction(
@@ -847,7 +844,8 @@ export class PaymentsService {
 
   private async applyUserEntitlementProjection(
     userId: string,
-    projection: { paid: boolean; latestPeriodEnd: string | undefined }
+    projection: { paid: boolean; latestPeriodEnd: string | undefined },
+    tx: Prisma.TransactionClient
   ): Promise<void> {
     const user = await this.mongo.user.findUnique({
       where: { clerkUserId: userId },
@@ -863,7 +861,7 @@ export class PaymentsService {
         : user.role;
     if (nextRole === user.role) return;
 
-    await appendAuditLog(this.postgres.workerClient_ as never, {
+    await appendAuditLog(tx as never, {
       actorType: 'SYSTEM',
       actorId: 'payment_entitlement_projection',
       subjectUserId: userId,

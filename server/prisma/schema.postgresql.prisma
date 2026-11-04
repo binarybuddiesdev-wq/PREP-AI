@@ -258,13 +258,14 @@ model PaymentRefund {
   amountMinor       Int
   currency          String
   status            String    @default("requested")
+  reconcileClaimedAt DateTime?
   failureCode       String?
   providerCreatedAt DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   @@index([userId, status, createdAt])
-    @@index([status, updatedAt, id])
+  @@index([status, reconcileClaimedAt, updatedAt, id])
   @@index([createdAt])
 }
 

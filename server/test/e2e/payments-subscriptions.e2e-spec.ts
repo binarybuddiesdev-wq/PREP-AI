@@ -160,9 +160,20 @@ describe('Razorpay subscription persistence and role projection', () => {
       await service.acceptWebhook(chargeBody, chargeSignature, chargeEventId);
       await service.acceptWebhook(chargeBody, chargeSignature, chargeEventId);
       await service.acceptWebhook(chargeBody, chargeSignature, `${chargeEventId}-redelivery`);
-      const charge = await database!.postgresProvider.client_!.paymentCharge.findUnique({
-        where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
-      });
+      const capturedRecords = await database!.postgresProvider.withTenantContext(
+        userId,
+        async (tx) => {
+          const paymentId = `pay_${suffix.replaceAll('-', '')}`;
+          return {
+            charge: await tx.paymentCharge.findUnique({ where: { razorpayPaymentId: paymentId } }),
+            chargeCount: await tx.paymentCharge.count({ where: { razorpayPaymentId: paymentId } }),
+            eventCount: await tx.paymentWebhookEvent.count({
+              where: { eventId: { in: [chargeEventId, `${chargeEventId}-redelivery`] } },
+            }),
+          };
+        }
+      );
+      const { charge } = capturedRecords;
       expect(charge).toMatchObject({
         userId,
         subscriptionId: started.id,
@@ -172,41 +183,37 @@ describe('Razorpay subscription persistence and role projection', () => {
         invoiceId: `inv_${suffix.replaceAll('-', '')}`,
       });
       expect(charge?.createdAt).toBeInstanceOf(Date);
-      await expect(
-        database!.postgresProvider.client_!.paymentCharge.count({
-          where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
-        })
-      ).resolves.toBe(1);
-      await expect(
-        database!.postgresProvider.client_!.paymentWebhookEvent.count({
-          where: { eventId: { in: [chargeEventId, `${chargeEventId}-redelivery`] } },
-        })
-      ).resolves.toBe(2);
+      expect(capturedRecords.chargeCount).toBe(1);
+      expect(capturedRecords.eventCount).toBe(2);
       const expiredPaymentId = `pay-old-${suffix.replaceAll('-', '')}`;
-      await database!.postgresProvider.client_!.paymentCharge.create({
-        data: {
-          userId,
-          subscriptionId: started.id,
-          razorpaySubscriptionId: providerSubscriptionId,
-          razorpayPaymentId: expiredPaymentId,
-          invoiceId: null,
-          amountMinor: 49900,
-          currency: 'INR',
-          chargedAt: new Date('2018-01-01T00:00:00Z'),
-          createdAt: new Date('2018-01-01T00:00:00Z'),
-        },
-      });
+      await database!.postgresProvider.withTenantContext(userId, (tx) =>
+        tx.paymentCharge.create({
+          data: {
+            userId,
+            subscriptionId: started.id,
+            razorpaySubscriptionId: providerSubscriptionId,
+            razorpayPaymentId: expiredPaymentId,
+            invoiceId: null,
+            amountMinor: 49900,
+            currency: 'INR',
+            chargedAt: new Date('2018-01-01T00:00:00Z'),
+            createdAt: new Date('2018-01-01T00:00:00Z'),
+          },
+        })
+      );
       await service.cleanupExpiredPaymentCharges();
-      await expect(
-        database!.postgresProvider.client_!.paymentCharge.findUnique({
-          where: { razorpayPaymentId: expiredPaymentId },
-        })
-      ).resolves.toBeNull();
-      await expect(
-        database!.postgresProvider.client_!.paymentCharge.findUnique({
-          where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
-        })
-      ).resolves.toMatchObject({ razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` });
+      const retainedCharges = await database!.postgresProvider.withTenantContext(userId, (tx) =>
+        Promise.all([
+          tx.paymentCharge.findUnique({ where: { razorpayPaymentId: expiredPaymentId } }),
+          tx.paymentCharge.findUnique({
+            where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
+          }),
+        ])
+      );
+      expect(retainedCharges[0]).toBeNull();
+      expect(retainedCharges[1]).toMatchObject({
+        razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}`,
+      });
 
       await database!.postgresProvider.withTenantContext(userId, (tx) =>
         tx.paymentSubscription.update({
@@ -308,5 +315,5 @@ describe('Razorpay subscription persistence and role projection', () => {
       await database!.mongo.inAppNotification.deleteMany({ where: { userId } });
       await database!.mongo.user.delete({ where: { id: user.id } });
     }
-  });
+  }, 30_000);
 });

@@ -1,4 +1,9 @@
-# Worklog
+## 2026-11-04 - PostgreSQL RLS for payment data
+
+- Added forced row-level security for payment subscriptions, webhook events, charges, and refunds. Owner reads/writes are tenant-scoped; the guarded admin refund flow gets transaction-local cross-tenant read access for charge lookup, and worker row updates require tenant plus operation identity.
+- Moved global webhook/refund claims, expired-subscription scans, and seven-year charge/refund cleanup behind bounded security-definer functions executable only by the restricted worker role. Refund reconciliation claims expire after 60 seconds. Entitlement audit entries now use the active worker transaction.
+- Extended the disposable Podman isolation suite with real API/worker role checks. RLS remains off in development and production; documented schema and policy rollout order and staging gates.
+- Verification: payment/Prisma unit tests passed; `pnpm test:database:isolation` passed (10 files, 50 tests).# Worklog
 
 ## 2026-11-04 - Expire Study Chat idempotency snapshots
 

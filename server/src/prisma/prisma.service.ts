@@ -90,6 +90,22 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     }, options);
   }
 
+  async withAdminContext<T>(
+    userId: string,
+    operation: (transaction: Prisma.TransactionClient) => Promise<T>,
+    options?: { maxWait?: number; timeout?: number }
+  ): Promise<T> {
+    this.assertIdentity(userId, 'Admin identity is required');
+    const client = this.client;
+    if (!client) throw new Error('PostgreSQL API client is not connected');
+
+    return client.$transaction(async (transaction) => {
+      await this.setTenantContext(transaction, userId);
+      await transaction.$executeRaw`SELECT set_config('app.current_user_is_admin', 'true', true)`;
+      return operation(transaction);
+    }, options);
+  }
+
   async withWorkerJobContext<T>(
     jobId: string,
     operation: (transaction: Prisma.TransactionClient) => Promise<T>
@@ -104,9 +120,27 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  async withWorkerTenantContext<T>(
+    userId: string,
+    operationId: string,
+    operation: (transaction: Prisma.TransactionClient) => Promise<T>
+  ): Promise<T> {
+    this.assertIdentity(userId, 'Worker tenant identity is required');
+    this.assertIdentity(operationId, 'Worker operation identity is required');
+    const client = this.workerClient;
+    if (!client) throw new Error('PostgreSQL worker client is not connected');
+
+    return client.$transaction(async (transaction) => {
+      await this.setTenantContext(transaction, userId);
+      await this.setWorkerJobContext(transaction, operationId);
+      return operation(transaction);
+    });
+  }
+
   async setTenantContext(transaction: Prisma.TransactionClient, userId: string): Promise<void> {
     this.assertIdentity(userId, 'Tenant identity is required');
     await transaction.$executeRaw`SELECT set_config('app.current_user_id', ${userId}, true)`;
+    await transaction.$executeRaw`SELECT set_config('app.current_user_is_admin', 'false', true)`;
   }
 
   async setWorkerJobContext(transaction: Prisma.TransactionClient, jobId: string): Promise<void> {
@@ -133,6 +167,89 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     return rows.map((row) => row.session_id);
   }
 
+  async claimPendingPaymentWebhookEvents(
+    limit = 100
+  ): Promise<Array<{ id: string; user_id: string; event_id: string }>> {
+    const client = this.workerClient;
+    if (!client) throw new Error('PostgreSQL worker client is not connected');
+    const safeLimit = this.clampWorkerLimit(limit);
+    return client.$queryRaw<Array<{ id: string; user_id: string; event_id: string }>>`
+      SELECT id, user_id, event_id
+      FROM public.prepai_claim_pending_payment_webhook_events(${safeLimit}::integer)
+    `;
+  }
+
+  async listExpiredPaymentSubscriptions(
+    cutoff: Date,
+    limit = 100
+  ): Promise<
+    Array<{
+      id: string;
+      user_id: string;
+      idempotency_key: string;
+      razorpay_subscription_id: string | null;
+    }>
+  > {
+    const client = this.workerClient;
+    if (!client) throw new Error('PostgreSQL worker client is not connected');
+    const safeLimit = this.clampWorkerLimit(limit);
+    return client.$queryRaw<
+      Array<{
+        id: string;
+        user_id: string;
+        idempotency_key: string;
+        razorpay_subscription_id: string | null;
+      }>
+    >`
+      SELECT id, user_id, idempotency_key, razorpay_subscription_id
+      FROM public.prepai_list_expired_payment_subscriptions(${cutoff}, ${safeLimit}::integer)
+    `;
+  }
+
+  async claimPendingPaymentRefunds(limit = 100): Promise<
+    Array<{
+      id: string;
+      user_id: string;
+      razorpay_payment_id: string;
+      razorpay_refund_id: string | null;
+      amount_minor: number;
+      currency: string;
+    }>
+  > {
+    const client = this.workerClient;
+    if (!client) throw new Error('PostgreSQL worker client is not connected');
+    const safeLimit = this.clampWorkerLimit(limit);
+    return client.$queryRaw<
+      Array<{
+        id: string;
+        user_id: string;
+        razorpay_payment_id: string;
+        razorpay_refund_id: string | null;
+        amount_minor: number;
+        currency: string;
+      }>
+    >`
+      SELECT id, user_id, razorpay_payment_id, razorpay_refund_id, amount_minor, currency
+      FROM public.prepai_claim_pending_payment_refunds(${safeLimit}::integer)
+    `;
+  }
+
+  async deleteExpiredPaymentLedger(cutoff: Date): Promise<{
+    deleted_refunds: number;
+    deleted_charges: number;
+  }> {
+    const client = this.workerClient;
+    if (!client) throw new Error('PostgreSQL worker client is not connected');
+    const [result] = await client.$queryRaw<
+      Array<{ deleted_refunds: number; deleted_charges: number }>
+    >`
+      SELECT deleted_refunds, deleted_charges
+      FROM public.prepai_delete_expired_payment_ledger(${cutoff})
+    `;
+    if (!result) throw new Error('Payment retention function returned no result');
+    return result;
+  }
+
   async withWorkerPdfContext<T>(
     ownerId: string,
     sourceId: string,
@@ -157,6 +274,10 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
 
   private assertIdentity(value: string, message: string): void {
     if (!value.trim()) throw new Error(message);
+  }
+
+  private clampWorkerLimit(limit: number): number {
+    return Math.min(Math.max(Math.floor(limit), 1), 100);
   }
 
   private createClient(datasourceUrl: string, measureQueries = true): PostgresPrismaClient {

@@ -183,6 +183,16 @@ try {
     { input: pdfPolicySql }
   );
 
+  const paymentPolicySql = await readFile(
+    path.join(serverDirectory, 'prisma', 'rls', '003-payment-rls.sql'),
+    'utf8'
+  );
+  run(
+    'podman',
+    ['exec', '-i', `${projectName}_postgres_1`, 'psql', '-U', 'postgres', '-d', databaseName],
+    { input: paymentPolicySql }
+  );
+
   run('pnpm', ['test:e2e'], { cwd: serverDirectory, env: childEnvironment });
 } catch (error) {
   primaryError = error;

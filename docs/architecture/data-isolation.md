@@ -41,38 +41,39 @@ model and the checks that guard it.
 
 ### Enforcement boundary
 
-Current enforcement is in NestJS guards, role metadata, and service-level
-database predicates. PostgreSQL row-level security (RLS) is **not enabled**;
-these filters are application-enforced and must not be described as
-database-enforced. [ADR-0012](../adr/0012-postgresql-row-level-security.md)
-records the decision to adopt RLS before public multi-tenant deployment and
-the staged design for transaction-local identity, pooled connections, worker
-access, runtime roles, and real-database tests. The ADR does not enable RLS;
-all rollout gates must pass first.
+MongoDB ownership is enforced by service-level predicates. PostgreSQL RLS is
+implemented for theory, coding, PDF, audit, and payment data and exercised with
+restricted API/worker roles in the disposable integration harness. RLS is not
+enabled in the normal development or production databases. The rollout steps
+and SQL order are documented in the [RLS rollout guide](../backend/postgresql-rls-rollout.md)
+and [ADR-0012](../adr/0012-postgresql-row-level-security.md); complete staging
+and provider validation before enabling it in a deployed environment.
 
 ## Verification inventory
 
-| Surface                                 | Required checks                                                                                    | Specs                                                                                                                                                                                                                                                                                       |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authenticated routes and admin metadata | Controller guard metadata; ADMIN metadata on cross-user lookup and catalog writes                  | `server/src/modules/user/user.controller.spec.ts`, `topic/topic.controller.spec.ts`, `question/question.controller.spec.ts`, `theory/theory.controller.spec.ts`, `coding/coding.controller.spec.ts`; `server/src/common/guards/clerk-auth.guard.spec.ts`, `roles.guard.spec.ts`             |
-| Profile and settings                    | Resolve by Clerk subject; updates, setup completion, settings, and deletion affect only that user  | `server/src/modules/user/user.service.spec.ts`; real MongoDB coverage in `server/test/e2e/user-data-isolation.e2e-spec.ts`                                                                                                                                                                  |
-| Theory sessions and answers             | Owner on creation and `{id, userId}` access; child access through session; foreign records are 404 | `server/src/modules/theory/theory.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/theory-data-isolation.e2e-spec.ts`                                                                                                                                                         |
-| Theory history and analytics            | Caller filter on session list, counts, weak areas, and score trends                                | `server/src/modules/theory/theory.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/theory-data-isolation.e2e-spec.ts`                                                                                                                                                         |
-| Coding sessions and executions          | Caller filter on session actions and execution retrieval; foreign records are 404                  | `server/src/modules/coding/coding.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/coding-data-isolation.e2e-spec.ts`                                                                                                                                                         |
-| Coding history                          | Caller filter on page query and count                                                              | `server/src/modules/coding/coding.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/coding-data-isolation.e2e-spec.ts`                                                                                                                                                         |
-| Clerk webhook                           | Reject invalid signatures before user changes                                                      | `server/src/modules/webhook/webhook.controller.spec.ts`                                                                                                                                                                                                                                     |
-| Workers                                 | Operate on persisted execution/answer IDs and preserve owner scope when updating sessions          | `server/src/modules/coding/coding-execution.service.spec.ts`, `coding-execution.worker.spec.ts`, `server/src/modules/theory/theory-evaluation.service.spec.ts`, `theory-evaluation.worker.spec.ts`; real coding transaction coverage in `server/test/e2e/coding-data-isolation.e2e-spec.ts` |
-| Public surfaces                         | No private user records exposed or mutated                                                         | `server/src/modules/health/health.controller.spec.ts`, `server/src/modules/tech-expert/tech-expert.service.spec.ts`                                                                                                                                                                         |
+| Surface                                 | Required checks                                                                                          | Specs                                                                                                                                                                                                                                                                                       |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authenticated routes and admin metadata | Controller guard metadata; ADMIN metadata on cross-user lookup and catalog writes                        | `server/src/modules/user/user.controller.spec.ts`, `topic/topic.controller.spec.ts`, `question/question.controller.spec.ts`, `theory/theory.controller.spec.ts`, `coding/coding.controller.spec.ts`; `server/src/common/guards/clerk-auth.guard.spec.ts`, `roles.guard.spec.ts`             |
+| Profile and settings                    | Resolve by Clerk subject; updates, setup completion, settings, and deletion affect only that user        | `server/src/modules/user/user.service.spec.ts`; real MongoDB coverage in `server/test/e2e/user-data-isolation.e2e-spec.ts`                                                                                                                                                                  |
+| Theory sessions and answers             | Owner on creation and `{id, userId}` access; child access through session; foreign records are 404       | `server/src/modules/theory/theory.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/theory-data-isolation.e2e-spec.ts`                                                                                                                                                         |
+| Theory history and analytics            | Caller filter on session list, counts, weak areas, and score trends                                      | `server/src/modules/theory/theory.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/theory-data-isolation.e2e-spec.ts`                                                                                                                                                         |
+| Coding sessions and executions          | Caller filter on session actions and execution retrieval; foreign records are 404                        | `server/src/modules/coding/coding.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/coding-data-isolation.e2e-spec.ts`                                                                                                                                                         |
+| Coding history                          | Caller filter on page query and count                                                                    | `server/src/modules/coding/coding.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/coding-data-isolation.e2e-spec.ts`                                                                                                                                                         |
+| Payments                                | Tenant isolation for subscriptions, webhook events, charges, and refunds; admin lookup; worker job scope | `server/src/modules/payments/payments.service.spec.ts`; real PostgreSQL coverage in `server/test/e2e/payments-data-isolation.e2e-spec.ts`, `payments-subscriptions.e2e-spec.ts`, and `payments-refunds.e2e-spec.ts`                                                                         |
+| Clerk webhook                           | Reject invalid signatures before user changes                                                            | `server/src/modules/webhook/webhook.controller.spec.ts`                                                                                                                                                                                                                                     |
+| Workers                                 | Operate on persisted execution/answer IDs and preserve owner scope when updating sessions                | `server/src/modules/coding/coding-execution.service.spec.ts`, `coding-execution.worker.spec.ts`, `server/src/modules/theory/theory-evaluation.service.spec.ts`, `theory-evaluation.worker.spec.ts`; real coding transaction coverage in `server/test/e2e/coding-data-isolation.e2e-spec.ts` |
+| Public surfaces                         | No private user records exposed or mutated                                                               | `server/src/modules/health/health.controller.spec.ts`, `server/src/modules/tech-expert/tech-expert.service.spec.ts`                                                                                                                                                                         |
 
 Service specs assert Prisma arguments using mocks, and ownership tests exercise
 the 404 behavior. The opt-in suite has separate MongoDB user, PostgreSQL
 theory, and PostgreSQL coding specs under `server/test/e2e/`. It covers user
 profile/settings mutations, theory session/answer/history/analytics paths,
-coding session/execution/history paths, and coding worker submission mutations
-using the persisted owner. Run it through root `pnpm test:database:isolation`;
-its dedicated Podman project uses fresh databases and does not touch the
-development stack. This proves the exercised application paths, not
-database-wide isolation or PostgreSQL RLS.
+coding session/execution/history paths, coding worker submission mutations
+using the persisted owner, and payment table RLS with worker-only global
+functions. Run it through root `pnpm test:database:isolation`; its dedicated
+Podman project uses fresh databases and does not touch the development stack.
+This verifies the policies and paths exercised by the suite, not every
+possible production access path.
 
 ## Consequences and open work
 
@@ -80,5 +81,6 @@ database-wide isolation or PostgreSQL RLS.
 - Internal theory evaluation and queue-dispatch worker paths, webhook signature
   handling, and public surfaces remain covered by their existing unit tests;
   they do not share the user-request ownership boundary tested here.
-- PostgreSQL RLS is not enabled. Follow [ADR-0012](../adr/0012-postgresql-row-level-security.md)
-  before enabling database-enforced tenant isolation.
+- PostgreSQL RLS remains disabled in development and production pending the
+  staged deployment gates. Follow [ADR-0012](../adr/0012-postgresql-row-level-security.md)
+  and the [rollout guide](../backend/postgresql-rls-rollout.md).

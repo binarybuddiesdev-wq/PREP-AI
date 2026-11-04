@@ -44,8 +44,8 @@ vi.mock('../generated/postgresql-client/index.js', () => ({
       return this;
     }
 
-    $queryRaw() {
-      return prismaMocks.postgresQueryRaw();
+    $queryRaw(...args: unknown[]) {
+      return prismaMocks.postgresQueryRaw(...args);
     }
 
     $transaction(callback: (transaction: unknown) => unknown, options?: unknown) {
@@ -211,7 +211,26 @@ describe('Prisma services', () => {
     await expect(service.withTenantContext('user_123', operation)).resolves.toBe('tenant-result');
 
     expect(prismaMocks.postgresTransaction).toHaveBeenCalledOnce();
-    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledOnce();
+    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledTimes(2);
+    expect(operation).toHaveBeenCalledOnce();
+    await service.onModuleDestroy();
+  });
+
+  it('sets an admin claim only inside the admin transaction', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    const operation = vi.fn().mockResolvedValue('admin-result');
+    await service.onModuleInit();
+
+    await expect(service.withAdminContext('admin_1', operation)).resolves.toBe('admin-result');
+
+    expect(prismaMocks.postgresTransaction).toHaveBeenCalledOnce();
+    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledTimes(3);
+    expect(String(prismaMocks.postgresExecuteRaw.mock.calls[1]?.[0])).toContain(
+      'app.current_user_is_admin'
+    );
+    expect(String(prismaMocks.postgresExecuteRaw.mock.calls[1]?.[0])).toContain('false');
+    expect(String(prismaMocks.postgresExecuteRaw.mock.calls[2]?.[0])).toContain('true');
     expect(operation).toHaveBeenCalledOnce();
     await service.onModuleDestroy();
   });
@@ -266,6 +285,31 @@ describe('Prisma services', () => {
     expect(prismaMocks.postgresDisconnect).toHaveBeenCalledTimes(2);
   });
 
+  it('sets the persisted owner and job ID inside the worker tenant transaction', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    const service = new PrismaPostgresqlService();
+    const operation = vi.fn().mockResolvedValue('worker-tenant-result');
+    await service.onModuleInit();
+
+    await expect(
+      service.withWorkerTenantContext('user_1', 'payment-event-1', operation)
+    ).resolves.toBe('worker-tenant-result');
+
+    expect(prismaMocks.postgresTransaction).toHaveBeenCalledOnce();
+    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledTimes(3);
+    expect(prismaMocks.postgresExecuteRaw.mock.calls[0]?.[1]).toBe('user_1');
+    expect(prismaMocks.postgresExecuteRaw.mock.calls[2]?.[1]).toBe('payment-event-1');
+    expect(operation).toHaveBeenCalledOnce();
+    await expect(
+      service.withWorkerTenantContext(' ', 'payment-event-1', operation)
+    ).rejects.toThrow('Worker tenant identity is required');
+    await expect(service.withWorkerTenantContext('user_1', ' ', operation)).rejects.toThrow(
+      'Worker operation identity is required'
+    );
+    await service.onModuleDestroy();
+  });
+
   it('scopes PDF worker writes to the persisted owner, source, and revision', async () => {
     vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
     vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
@@ -277,7 +321,7 @@ describe('Prisma services', () => {
       'pdf-result'
     );
 
-    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledTimes(3);
+    expect(prismaMocks.postgresExecuteRaw).toHaveBeenCalledTimes(4);
     expect(operation).toHaveBeenCalledOnce();
     await expect(service.withWorkerPdfContext('', 'source_1', 2, operation)).rejects.toThrow(
       'PDF worker owner identity is required'
@@ -296,6 +340,85 @@ describe('Prisma services', () => {
 
     await expect(service.listQueuedPdfStudySessionIds(25)).resolves.toEqual(['session_1']);
     expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledOnce();
+    await service.onModuleDestroy();
+  });
+
+  it('runs bounded payment scans and retention through the separate worker client', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw.mockResolvedValue([{ deleted_refunds: 2, deleted_charges: 3 }]);
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await service.claimPendingPaymentWebhookEvents(500);
+    await service.listExpiredPaymentSubscriptions(new Date(), 200);
+    await service.claimPendingPaymentRefunds(101);
+    await expect(service.deleteExpiredPaymentLedger(new Date())).resolves.toEqual({
+      deleted_refunds: 2,
+      deleted_charges: 3,
+    });
+
+    expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledTimes(4);
+    expect(prismaMocks.postgresQueryRaw.mock.calls.map((call) => String(call[0]))).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('prepai_claim_pending_payment_webhook_events'),
+        expect.stringContaining('prepai_list_expired_payment_subscriptions'),
+        expect.stringContaining('prepai_claim_pending_payment_refunds'),
+        expect.stringContaining('prepai_delete_expired_payment_ledger'),
+      ])
+    );
+    expect(prismaMocks.postgresQueryRaw.mock.calls[0]?.[1]).toBe(100);
+    expect(prismaMocks.postgresQueryRaw.mock.calls[1]?.[2]).toBe(100);
+    expect(prismaMocks.postgresQueryRaw.mock.calls[2]?.[1]).toBe(100);
+    await service.onModuleDestroy();
+  });
+
+  it('rejects tenant/admin/worker work when the corresponding database client is unavailable', async () => {
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.withTenantContext('user_1', async () => undefined)).rejects.toThrow(
+      'PostgreSQL API client is not connected'
+    );
+    await expect(service.withAdminContext('admin_1', async () => undefined)).rejects.toThrow(
+      'PostgreSQL API client is not connected'
+    );
+    await expect(service.withWorkerJobContext('job_1', async () => undefined)).rejects.toThrow(
+      'PostgreSQL worker client is not connected'
+    );
+    await expect(
+      service.withWorkerTenantContext('user_1', 'job_1', async () => undefined)
+    ).rejects.toThrow('PostgreSQL worker client is not connected');
+    await expect(service.listQueuedPdfStudySessionIds()).rejects.toThrow(
+      'PostgreSQL worker client is not connected'
+    );
+    await expect(service.claimPendingPaymentWebhookEvents()).rejects.toThrow(
+      'PostgreSQL worker client is not connected'
+    );
+    await expect(service.listExpiredPaymentSubscriptions(new Date())).rejects.toThrow(
+      'PostgreSQL worker client is not connected'
+    );
+    await expect(service.claimPendingPaymentRefunds()).rejects.toThrow(
+      'PostgreSQL worker client is not connected'
+    );
+    await expect(service.deleteExpiredPaymentLedger(new Date())).rejects.toThrow(
+      'PostgreSQL worker client is not connected'
+    );
+    await expect(
+      service.withWorkerPdfContext('user_1', 'source_1', 1, async () => undefined)
+    ).rejects.toThrow('PostgreSQL worker client is not connected');
+  });
+
+  it('fails when the payment retention function returns no result', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw.mockResolvedValueOnce([]);
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.deleteExpiredPaymentLedger(new Date())).rejects.toThrow(
+      'Payment retention function returned no result'
+    );
     await service.onModuleDestroy();
   });
 

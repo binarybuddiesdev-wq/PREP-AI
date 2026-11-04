@@ -43,6 +43,17 @@ const postgresFor = (tx: Record<string, unknown>) => ({
   withTenantContext: vi.fn(async (_userId: string, operation: (value: never) => unknown) =>
     operation(tx as never)
   ),
+  withAdminContext: vi.fn(async (_userId: string, operation: (value: never) => unknown) =>
+    operation(tx as never)
+  ),
+  withWorkerTenantContext: vi.fn(
+    async (_userId: string, _operationId: string, operation: (value: never) => unknown) =>
+      operation(tx as never)
+  ),
+  claimPendingPaymentWebhookEvents: vi.fn().mockResolvedValue([]),
+  listExpiredPaymentSubscriptions: vi.fn().mockResolvedValue([]),
+  claimPendingPaymentRefunds: vi.fn().mockResolvedValue([]),
+  deleteExpiredPaymentLedger: vi.fn().mockResolvedValue({ deleted_refunds: 0, deleted_charges: 0 }),
 });
 
 const createWebhookRequest = (eventId = 'evt_1') => {
@@ -515,13 +526,11 @@ describe('PaymentsService webhook intake', () => {
         }),
       },
     };
-    const postgres = {
-      client_: { $executeRaw: vi.fn() },
-      workerClient_: { $executeRaw: vi.fn() },
-      withTenantContext: vi.fn(async (_userId: string, operation: (value: typeof tx) => unknown) =>
-        operation(tx)
-      ),
-    };
+    const postgres = postgresFor(tx);
+    postgres.withWorkerTenantContext = vi.fn(async (_userId, _operationId, operation) => {
+      await postgres.workerClient_.$executeRaw();
+      return operation(tx as never);
+    });
     const mongo = {
       user: { findUnique: vi.fn().mockResolvedValue({ role: 'USER' }), update: vi.fn() },
       inAppNotification: { create: vi.fn() },
@@ -786,20 +795,15 @@ describe('PaymentsService webhook intake', () => {
   });
 
   it('reconciles queued inbox events after a missed dispatch', async () => {
-    const tx = { paymentWebhookEvent: { update: vi.fn() } };
-    const client = {
-      $executeRaw: vi.fn(),
-      paymentWebhookEvent: {
-        findMany: vi
-          .fn()
-          .mockResolvedValue([{ id: 'event_1', eventId: 'evt_1', userId: 'user_1' }]),
-      },
-      paymentSubscription: { findMany: vi.fn().mockResolvedValue([]) },
-    };
+    const tx = { paymentWebhookEvent: { updateMany: vi.fn() } };
+    const postgres = postgresFor(tx);
+    postgres.claimPendingPaymentWebhookEvents.mockResolvedValue([
+      { id: 'event_1', event_id: 'evt_1', user_id: 'user_1' },
+    ]);
     const jobs = { enqueue: vi.fn().mockResolvedValue('job_1') };
     const service = new PaymentsService(
       {} as never,
-      { ...postgresFor(tx), client_: client } as never,
+      postgres as never,
       configuredProvider(),
       jobs as never
     );
@@ -815,34 +819,30 @@ describe('PaymentsService webhook intake', () => {
       'reconcile-subscription',
       true
     );
-    expect(tx.paymentWebhookEvent.update).toHaveBeenCalledOnce();
+    expect(postgres.claimPendingPaymentWebhookEvents).toHaveBeenCalledWith(100);
+    expect(tx.paymentWebhookEvent.updateMany).not.toHaveBeenCalled();
   });
 
   it('continues after redispatch failures and skips expired subscriptions without provider IDs', async () => {
     const expired = [
       {
         id: 'local_missing',
-        userId: 'user_1',
-        idempotencyKey: 'req_missing',
-        razorpaySubscriptionId: null,
+        user_id: 'user_1',
+        idempotency_key: 'req_missing',
+        razorpay_subscription_id: null,
       },
       {
         id: 'local_unavailable',
-        userId: 'user_2',
-        idempotencyKey: 'req_2',
-        razorpaySubscriptionId: 'sub_2',
-        razorpayPlanId: 'plan_monthly',
+        user_id: 'user_2',
+        idempotency_key: 'req_2',
+        razorpay_subscription_id: 'sub_2',
       },
     ];
-    const client = {
-      $executeRaw: vi.fn(),
-      paymentWebhookEvent: {
-        findMany: vi
-          .fn()
-          .mockResolvedValue([{ id: 'event_1', eventId: 'evt_1', userId: 'user_1' }]),
-      },
-      paymentSubscription: { findMany: vi.fn().mockResolvedValue(expired) },
-    };
+    const postgres = postgresFor({});
+    postgres.claimPendingPaymentWebhookEvents.mockResolvedValue([
+      { id: 'event_1', event_id: 'evt_1', user_id: 'user_1' },
+    ]);
+    postgres.listExpiredPaymentSubscriptions.mockResolvedValue(expired);
     const jobs = { enqueue: vi.fn().mockRejectedValue(new Error('Redis unavailable')) };
     const provider = configuredProvider();
     const fetch = vi
@@ -850,8 +850,13 @@ describe('PaymentsService webhook intake', () => {
       .mockRejectedValue(new Error('Razorpay unavailable'));
     const tx = {
       $executeRaw: vi.fn(),
+      paymentWebhookEvent: { updateMany: vi.fn() },
       paymentSubscription: {
-        findUnique: vi.fn().mockResolvedValue(expired[1]),
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'local_unavailable',
+          userId: 'user_2',
+          razorpaySubscriptionId: 'sub_2',
+        }),
         findMany: vi.fn().mockResolvedValue([
           {
             status: 'active',
@@ -867,12 +872,21 @@ describe('PaymentsService webhook intake', () => {
     };
     const service = new PaymentsService(
       mongo as never,
-      { ...postgresFor(tx), client_: client } as never,
+      {
+        ...postgres,
+        withWorkerTenantContext: vi.fn(async (_userId, _operationId, operation) =>
+          operation(tx as never)
+        ),
+      } as never,
       provider,
       jobs as never
     );
 
     await expect(service.reconcilePendingPayments()).resolves.toBeUndefined();
+    expect(tx.paymentWebhookEvent.updateMany).toHaveBeenCalledWith({
+      where: { id: 'event_1' },
+      data: { dispatchClaimedAt: null, failureCode: 'DISPATCH_FAILED' },
+    });
     expect(fetch).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledWith('sub_2');
     expect(mongo.user.update).toHaveBeenCalledWith({
@@ -896,11 +910,15 @@ describe('PaymentsService webhook intake', () => {
         razorpaySubscriptionId: 'sub_valid_profile',
       },
     ];
-    const client = {
-      $executeRaw: vi.fn(),
-      paymentWebhookEvent: { findMany: vi.fn().mockResolvedValue([]) },
-      paymentSubscription: { findMany: vi.fn().mockResolvedValue(expired) },
-    };
+    const basePostgres = postgresFor({});
+    basePostgres.listExpiredPaymentSubscriptions.mockResolvedValue(
+      expired.map((subscription) => ({
+        id: subscription.id,
+        user_id: subscription.userId,
+        idempotency_key: subscription.idempotencyKey,
+        razorpay_subscription_id: subscription.razorpaySubscriptionId,
+      }))
+    );
     const tx = {
       $executeRaw: vi.fn(),
       paymentSubscription: {
@@ -925,9 +943,10 @@ describe('PaymentsService webhook intake', () => {
       },
     };
     const postgres = {
-      ...postgresFor(tx),
-      client_: client,
-      withTenantContext: vi.fn(async (_userId, operation) => operation(tx)),
+      ...basePostgres,
+      withWorkerTenantContext: vi.fn(async (_userId, _operationId, operation) =>
+        operation(tx as never)
+      ),
     };
     const mongo = {
       user: {
@@ -944,8 +963,9 @@ describe('PaymentsService webhook intake', () => {
 
     await expect(service.reconcilePendingPayments()).resolves.toBeUndefined();
 
-    expect(postgres.withTenantContext).toHaveBeenCalledWith(
+    expect(postgres.withWorkerTenantContext).toHaveBeenCalledWith(
       'user_valid_profile',
+      'local_valid_profile',
       expect.any(Function)
     );
     expect(mongo.user.update).toHaveBeenCalledWith({
@@ -998,7 +1018,7 @@ describe('PaymentsService webhook intake', () => {
   it('reconciles nothing when PostgreSQL has no API client', async () => {
     const service = new PaymentsService(
       {} as never,
-      { client_: undefined } as never,
+      { client_: undefined, workerClient_: undefined } as never,
       configuredProvider(),
       {} as never
     );
@@ -1008,35 +1028,32 @@ describe('PaymentsService webhook intake', () => {
   it('deletes charge records strictly older than seven years', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2033-01-02T03:00:00.000Z'));
-    const deleteMany = vi.fn().mockResolvedValue({ count: 2 });
+    const postgres = postgresFor({});
+    postgres.deleteExpiredPaymentLedger.mockResolvedValue({
+      deleted_refunds: 2,
+      deleted_charges: 3,
+    });
     const service = new PaymentsService(
       {} as never,
-      {
-        client_: {
-          paymentCharge: { deleteMany },
-          paymentRefund: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
-        },
-      } as never,
+      postgres as never,
       configuredProvider(),
       {} as never
     );
 
     await service.cleanupExpiredPaymentCharges();
 
-    expect(deleteMany).toHaveBeenCalledWith({
-      where: { createdAt: { lt: new Date('2026-01-02T03:00:00.000Z') } },
-    });
+    expect(postgres.deleteExpiredPaymentLedger).toHaveBeenCalledWith(
+      new Date('2026-01-02T03:00:00.000Z')
+    );
     vi.useRealTimers();
   });
 
   it('does not crash when charge retention cleanup fails', async () => {
+    const postgres = postgresFor({});
+    postgres.deleteExpiredPaymentLedger.mockRejectedValue(new Error('PostgreSQL down'));
     const service = new PaymentsService(
       {} as never,
-      {
-        client_: {
-          paymentCharge: { deleteMany: vi.fn().mockRejectedValue(new Error('PostgreSQL down')) },
-        },
-      } as never,
+      postgres as never,
       configuredProvider(),
       {} as never
     );
@@ -1355,7 +1372,10 @@ describe('PaymentsService full refunds', () => {
   const setup = (existingRefund: Record<string, unknown> | null = null) => {
     const tx = {
       $executeRaw: vi.fn(),
-      paymentCharge: { findFirst: vi.fn().mockResolvedValue(charge) },
+      paymentCharge: {
+        findFirst: vi.fn().mockResolvedValue(charge),
+        findUnique: vi.fn().mockResolvedValue(charge),
+      },
       paymentRefund: {
         findUnique: vi.fn().mockResolvedValue(existingRefund),
         create: vi.fn().mockResolvedValue(refundIntent),
@@ -1466,8 +1486,8 @@ describe('PaymentsService full refunds', () => {
   });
 
   it('does not attempt a refund when the captured charge does not exist', async () => {
-    const { postgres, provider, service } = setup();
-    vi.mocked(postgres.client_!.paymentCharge.findUnique).mockResolvedValueOnce(null as never);
+    const { tx, provider, service } = setup();
+    tx.paymentCharge.findUnique.mockResolvedValueOnce(null);
 
     await expect(service.initiateFullRefund('unknown_charge', 'admin_1')).rejects.toThrow(
       NotFoundException
@@ -1575,10 +1595,17 @@ describe('PaymentsService full refunds', () => {
       status: 'processed',
       created_at: 1793793600,
     });
-    const postgres = {
-      ...postgresFor(tx),
-      client_: { paymentRefund: { findMany: vi.fn().mockResolvedValue([pending]) } },
-    };
+    const postgres = postgresFor(tx);
+    postgres.claimPendingPaymentRefunds.mockResolvedValue([
+      {
+        id: pending.id,
+        user_id: pending.userId,
+        razorpay_payment_id: pending.razorpayPaymentId,
+        razorpay_refund_id: pending.razorpayRefundId,
+        amount_minor: pending.amountMinor,
+        currency: pending.currency,
+      },
+    ]);
     const service = new PaymentsService({} as never, postgres as never, provider, {} as never);
 
     await service.reconcilePendingRefunds();
@@ -1624,10 +1651,17 @@ describe('PaymentsService full refunds', () => {
         created_at: 1793793600,
       },
     ]);
-    const postgres = {
-      ...postgresFor(tx),
-      client_: { paymentRefund: { findMany: vi.fn().mockResolvedValue([pending]) } },
-    };
+    const postgres = postgresFor(tx);
+    postgres.claimPendingPaymentRefunds.mockResolvedValue([
+      {
+        id: pending.id,
+        user_id: pending.userId,
+        razorpay_payment_id: pending.razorpayPaymentId,
+        razorpay_refund_id: pending.razorpayRefundId,
+        amount_minor: pending.amountMinor,
+        currency: pending.currency,
+      },
+    ]);
     const service = new PaymentsService({} as never, postgres as never, provider, {} as never);
 
     await service.reconcilePendingRefunds();
@@ -1643,21 +1677,16 @@ describe('PaymentsService full refunds', () => {
   });
 
   it('queries the oldest updated pending refunds first so repeated retries rotate through batches', async () => {
-    const findMany = vi.fn().mockResolvedValue([]);
+    const postgres = postgresFor({});
     const service = new PaymentsService(
       {} as never,
-      { client_: { paymentRefund: { findMany } } } as never,
+      postgres as never,
       configuredProvider(),
       {} as never
     );
 
     await service.reconcilePendingRefunds();
 
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
-        take: 100,
-      })
-    );
+    expect(postgres.claimPendingPaymentRefunds).toHaveBeenCalledWith(100);
   });
 });

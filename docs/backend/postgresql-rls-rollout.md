@@ -1,18 +1,19 @@
 # PostgreSQL row security rollout
 
-The API now supports transaction-local tenant identity. The worker always uses
-a separate PostgreSQL pool: it uses the restricted role when
-`POSTGRESQL_WORKER_URL` is configured, and a separate API-credential pool in
-development otherwise. Production requires the restricted URL. The
-disposable isolation suite provisions restricted runtime roles, applies the
-base, audit, and PDF policy SQL, and exercises API and worker access—including PDF
-owner/source/revision scoping—against real pgvector/PostgreSQL:
+The API uses transaction-local tenant identity. The worker uses a separate
+PostgreSQL pool: a restricted role when `POSTGRESQL_WORKER_URL` is configured,
+and a separate API-credential pool in development otherwise. Production
+requires the restricted URL. The disposable isolation suite provisions
+restricted runtime roles and applies the base, audit, PDF, and payment policy
+SQL. It verifies PostgreSQL RLS for theory, coding, PDF, and payment data,
+including payment admin lookups, worker operation scope, and bounded
+reconciliation/retention functions:
 
 ```powershell
 pnpm test:database:isolation
 ```
 
-This test creates and removes its own Podman containers. It does not change the
+The suite creates and removes its own Podman containers. It does not change the
 development database or enable row security in an existing environment.
 
 ## Runtime roles
@@ -21,12 +22,10 @@ development database or enable row security in an existing environment.
 `prepai_worker`, and the non-login function owner. The API and worker roles are
 neither superusers nor RLS bypass roles. The function owner has `BYPASSRLS`
 only so its narrowly scoped queue/owner lookup functions can read across
-tenants; queue functions take row locks with `SKIP LOCKED` and set a
-30-second dispatch lease so a crashed dispatcher can be retried; no application
-process can log in as that role.
+tenants; no application process can log in as that role.
 
-After applying the PostgreSQL schema to a staging database, an administrator
-can apply the role and policy SQL with unique runtime passwords:
+After applying the PostgreSQL schema to a staging database, provision the
+runtime roles with unique passwords:
 
 ```powershell
 $env:PREPAI_API_PASSWORD = '<unique API role password>'
@@ -45,15 +44,42 @@ POSTGRESQL_WORKER_URL=postgresql://prepai_worker:<WORKER_PASSWORD>@<postgres-hos
 ```
 
 `POSTGRESQL_WORKER_URL` is required in production. It uses a separate pool and
-the restricted worker role for queued work and independently committed audit
-appends while an API transaction holds a user lock. In development, when this
-URL is omitted, the server creates a separate local pool using API credentials.
+the restricted worker role for queued work and background processing. In
+development, when this URL is omitted, the server creates a separate local
+pool using API credentials.
+
+## Policy SQL order
+
+Apply the PostgreSQL schema first, including the additive
+`PaymentRefund.reconcileClaimedAt` column and index. Run
+`pnpm --filter server prisma:push:postgresql` with a schema-owner connection,
+then use the same policy order as the isolation harness:
+
+1. `server/prisma/rls/001-tenant-rls.sql` provisions runtime roles and core
+   tenant policies. Supply the unique API and worker passwords as shown above.
+2. `server/prisma/audit/001-audit-log-controls.sql` installs append-only audit
+   controls and audit grants.
+3. `server/prisma/rls/002-pdf-rag.sql` installs PDF owner/source policies and
+   bounded worker functions.
+4. `server/prisma/rls/003-payment-rls.sql` installs payment owner policies and
+   worker-only global reconciliation/retention functions.
+
+`003-payment-rls.sql` enables and forces RLS on the four payment tables. The
+API reads and writes its tenant's rows. The guarded ADMIN refund flow receives
+a transaction-local read exception to locate a captured charge; refund writes
+still require the charge owner's tenant context. Worker queries require tenant
+identity and, for webhook/refund rows, an operation identity. Cross-tenant
+event/refund claims, expired-subscription scans, and charge/refund retention
+use bounded `SECURITY DEFINER` functions. Only `prepai_worker` can execute
+these functions; the no-login function owner receives only the table
+permissions they need.
 
 ## Current rollout boundary
 
-RLS policy SQL is applied by the isolated integration harness and verified
-there, but the normal development and production databases are not changed by
-this feature. Before enabling it in a deployed environment, apply the schema,
-provision the roles, configure both runtime URLs, verify the role attributes,
-and run the isolation suite against staging. Keep the schema/migration
-credential out of API and worker runtime configuration.
+Policy SQL is applied and verified by the isolated integration harness, but
+the normal development and production databases are not changed. Before
+enabling RLS in a deployed environment, apply the schema, provision the roles
+and policies in the order above, configure both runtime URLs, verify the role
+attributes, and run the isolation suite against staging. Validate real
+Razorpay webhook/refund flows and confirm rollback steps. Keep schema and
+migration credentials out of API and worker runtime configuration.
