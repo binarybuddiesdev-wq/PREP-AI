@@ -13,4 +13,10 @@ describe('payment charge retention', () => {
     getPaymentChargeRetentionCutoff(now);
     expect(now).toEqual(new Date('2033-01-02T03:04:05.000Z'));
   });
+
+  it('clamps leap day to the last valid day in the target year', () => {
+    expect(getPaymentChargeRetentionCutoff(new Date('2032-02-29T03:00:00.000Z'))).toEqual(
+      new Date('2025-02-28T03:00:00.000Z')
+    );
+  });
 });

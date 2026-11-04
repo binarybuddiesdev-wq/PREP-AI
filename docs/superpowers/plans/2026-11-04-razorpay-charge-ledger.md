@@ -51,4 +51,4 @@
 
 - [x] Update API/architecture tracker and docs to describe ledger fields, event setup, privacy, duplicate handling, and retention behavior.
 - [x] Run server coverage, build, database isolation, Prisma validation, architecture viewer check, agent-doc check, and `git diff --check`.
-- [ ] Request scoped review, fix Critical/Important findings, commit, and push `main`.
+- [x] Request scoped review, fix Critical/Important findings, commit, and push `main`.

@@ -159,6 +159,7 @@ describe('Razorpay subscription persistence and role projection', () => {
       const chargeEventId = `evt-charge-${suffix}`;
       await service.acceptWebhook(chargeBody, chargeSignature, chargeEventId);
       await service.acceptWebhook(chargeBody, chargeSignature, chargeEventId);
+      await service.acceptWebhook(chargeBody, chargeSignature, `${chargeEventId}-redelivery`);
       const charge = await database!.postgresProvider.client_!.paymentCharge.findUnique({
         where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
       });
@@ -176,6 +177,11 @@ describe('Razorpay subscription persistence and role projection', () => {
           where: { razorpayPaymentId: `pay_${suffix.replaceAll('-', '')}` },
         })
       ).resolves.toBe(1);
+      await expect(
+        database!.postgresProvider.client_!.paymentWebhookEvent.count({
+          where: { eventId: { in: [chargeEventId, `${chargeEventId}-redelivery`] } },
+        })
+      ).resolves.toBe(2);
       const expiredPaymentId = `pay-old-${suffix.replaceAll('-', '')}`;
       await database!.postgresProvider.client_!.paymentCharge.create({
         data: {

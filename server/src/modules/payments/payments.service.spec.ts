@@ -457,13 +457,18 @@ describe('PaymentsService webhook intake', () => {
     );
     expect(JSON.stringify(tx.paymentCharge.upsert.mock.calls[0])).not.toContain('+919999999999');
 
-    tx.paymentCharge.upsert.mockResolvedValueOnce({
-      ...tx.paymentCharge.upsert.mock.calls[0][0].create,
-      userId: 'user_2',
-    });
-    await expect(service.acceptWebhook(rawBody, signature, 'evt_charge_collision')).rejects.toThrow(
-      BadRequestException
-    );
+    const storedCharge = tx.paymentCharge.upsert.mock.calls[0][0].create;
+    for (const [eventId, conflict] of [
+      ['evt_charge_collision_owner', { userId: 'user_2' }],
+      ['evt_charge_collision_subscription', { subscriptionId: 'local_other' }],
+      ['evt_charge_collision_provider_subscription', { razorpaySubscriptionId: 'sub_other' }],
+      ['evt_charge_collision_amount', { amountMinor: 1 }],
+    ] as const) {
+      tx.paymentCharge.upsert.mockResolvedValueOnce({ ...storedCharge, ...conflict });
+      await expect(service.acceptWebhook(rawBody, signature, eventId)).rejects.toThrow(
+        BadRequestException
+      );
+    }
     expect(tx.paymentWebhookEvent.create).toHaveBeenCalledOnce();
   });
 
