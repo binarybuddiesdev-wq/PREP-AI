@@ -7,7 +7,7 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { PaymentsService } from './payments.service.js';
-import { RazorpayProvider } from './razorpay-provider.js';
+import { RazorpayApiError, RazorpayProvider } from './razorpay-provider.js';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@/generated/postgresql-client/index.js';
 
@@ -1001,7 +1001,12 @@ describe('PaymentsService webhook intake', () => {
     const deleteMany = vi.fn().mockResolvedValue({ count: 2 });
     const service = new PaymentsService(
       {} as never,
-      { client_: { paymentCharge: { deleteMany } } } as never,
+      {
+        client_: {
+          paymentCharge: { deleteMany },
+          paymentRefund: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+        },
+      } as never,
       configuredProvider(),
       {} as never
     );
@@ -1308,6 +1313,336 @@ describe('PaymentsService subscription cancellation', () => {
     );
     await expect(disabled.cancelCurrentSubscription('user_1')).rejects.toThrow(
       ServiceUnavailableException
+    );
+  });
+});
+
+describe('PaymentsService full refunds', () => {
+  const charge = {
+    id: 'charge_1',
+    userId: 'owner_1',
+    subscriptionId: 'local_subscription_1',
+    razorpaySubscriptionId: 'sub_1',
+    razorpayPaymentId: 'pay_1',
+    amountMinor: 49900,
+    currency: 'INR',
+  };
+  const refundIntent = {
+    id: 'e4a57d52-97c2-4b08-8f3d-a4c2625cc1cf',
+    chargeId: charge.id,
+    userId: charge.userId,
+    initiatedByUserId: 'admin_1',
+    razorpayPaymentId: charge.razorpayPaymentId,
+    razorpayRefundId: null,
+    amountMinor: charge.amountMinor,
+    currency: charge.currency,
+    status: 'requested',
+    failureCode: null,
+    providerCreatedAt: null,
+    createdAt: new Date('2026-11-04T00:00:00Z'),
+  };
+
+  const setup = (existingRefund: Record<string, unknown> | null = null) => {
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentCharge: { findFirst: vi.fn().mockResolvedValue(charge) },
+      paymentRefund: {
+        findUnique: vi.fn().mockResolvedValue(existingRefund),
+        create: vi.fn().mockResolvedValue(refundIntent),
+        update: vi.fn().mockResolvedValue({
+          ...refundIntent,
+          razorpayRefundId: 'rfnd_1',
+          status: 'pending',
+          providerCreatedAt: new Date(1793793600 * 1000),
+        }),
+      },
+    };
+    const global = { paymentCharge: { findUnique: vi.fn().mockResolvedValue(charge) } };
+    const postgres = {
+      ...postgresFor(tx),
+      client_: global,
+    };
+    const provider = configuredProvider();
+    const refund = vi.spyOn(provider, 'refundPayment').mockResolvedValue({
+      id: 'rfnd_1',
+      payment_id: 'pay_1',
+      amount: 49900,
+      currency: 'INR',
+      status: 'pending',
+      created_at: 1793793600,
+    });
+    return {
+      tx,
+      global,
+      postgres,
+      provider,
+      refund,
+      service: new PaymentsService({} as never, postgres as never, provider, {} as never),
+    };
+  };
+
+  it('skips refund reconciliation and retention cleanup when PostgreSQL is unavailable', async () => {
+    const service = new PaymentsService(
+      {} as never,
+      { client_: undefined } as never,
+      configuredProvider(),
+      {} as never
+    );
+
+    await expect(service.reconcilePendingRefunds()).resolves.toBeUndefined();
+    await expect(service.cleanupExpiredPaymentCharges()).resolves.toBeUndefined();
+  });
+
+  it('issues a full refund from the stored captured charge with a stable provider idempotency key', async () => {
+    const { tx, provider, refund, service } = setup();
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_1')).resolves.toMatchObject({
+      chargeId: charge.id,
+      amountMinor: 49900,
+      currency: 'INR',
+      status: 'pending',
+      razorpayRefundId: 'rfnd_1',
+    });
+    expect(tx.paymentRefund.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        chargeId: charge.id,
+        userId: 'owner_1',
+        initiatedByUserId: 'admin_1',
+        razorpayPaymentId: 'pay_1',
+        amountMinor: 49900,
+        currency: 'INR',
+        status: 'requested',
+      }),
+    });
+    expect(refund).toHaveBeenCalledWith('pay_1', refundIntent.id);
+  });
+
+  it('returns a completed full refund without issuing a second provider request', async () => {
+    const existing = {
+      ...refundIntent,
+      razorpayRefundId: 'rfnd_1',
+      status: 'processed',
+      providerCreatedAt: new Date('2026-11-04T01:00:00Z'),
+    };
+    const { tx, refund, service } = setup(existing);
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_2')).resolves.toMatchObject({
+      status: 'processed',
+      razorpayRefundId: 'rfnd_1',
+    });
+    expect(tx.paymentRefund.create).not.toHaveBeenCalled();
+    expect(refund).not.toHaveBeenCalled();
+  });
+
+  it('reuses an existing pending refund intent with the same provider key', async () => {
+    const { refund, service } = setup(refundIntent);
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_2')).resolves.toMatchObject({
+      status: 'pending',
+      razorpayRefundId: 'rfnd_1',
+    });
+    expect(refund).toHaveBeenCalledWith('pay_1', refundIntent.id);
+  });
+
+  it('leaves a timed-out refund request retryable with its original idempotency key', async () => {
+    const { tx, refund, service } = setup();
+    refund.mockRejectedValueOnce(new Error('network timeout'));
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentRefund.create).toHaveBeenCalledOnce();
+    expect(tx.paymentRefund.update).not.toHaveBeenCalled();
+  });
+
+  it('does not attempt a refund when the captured charge does not exist', async () => {
+    const { postgres, provider, service } = setup();
+    vi.mocked(postgres.client_!.paymentCharge.findUnique).mockResolvedValueOnce(null as never);
+
+    await expect(service.initiateFullRefund('unknown_charge', 'admin_1')).rejects.toThrow(
+      NotFoundException
+    );
+    expect(provider.refundPayment).not.toHaveBeenCalled();
+  });
+
+  it('keeps a refund pending when Razorpay returns a mismatched payment or amount', async () => {
+    const { tx, refund, service } = setup();
+    refund.mockResolvedValueOnce({
+      id: 'rfnd_wrong',
+      payment_id: 'pay_other',
+      amount: 1,
+      currency: 'INR',
+      status: 'processed',
+      created_at: 1793793600,
+    });
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentRefund.update).not.toHaveBeenCalled();
+  });
+
+  it('links the exact full refund when Razorpay reports an idempotency conflict', async () => {
+    const { tx, provider, refund, service } = setup();
+    refund.mockRejectedValueOnce(new RazorpayApiError(400, 'BAD_REQUEST_ERROR', 'rejected'));
+    vi.spyOn(provider, 'fetchRefundsForPayment').mockResolvedValue([
+      {
+        id: 'rfnd_existing',
+        payment_id: 'pay_1',
+        amount: 49900,
+        currency: 'INR',
+        status: 'processed',
+        created_at: 1793793600,
+      },
+    ]);
+    tx.paymentRefund.update.mockResolvedValueOnce({
+      ...refundIntent,
+      razorpayRefundId: 'rfnd_existing',
+      status: 'processed',
+      providerCreatedAt: new Date(1793793600 * 1000),
+    });
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_1')).resolves.toMatchObject({
+      status: 'processed',
+      razorpayRefundId: 'rfnd_existing',
+    });
+    expect(tx.paymentRefund.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'processed' }) })
+    );
+  });
+
+  it('keeps a provider rejection retryable when no full refund exists yet', async () => {
+    const { tx, provider, refund, service } = setup();
+    refund.mockRejectedValueOnce(new RazorpayApiError(400, 'BAD_REQUEST_ERROR', 'rejected'));
+    vi.spyOn(provider, 'fetchRefundsForPayment').mockResolvedValue([]);
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentRefund.update).toHaveBeenCalledWith({
+      where: { id: refundIntent.id },
+      data: expect.objectContaining({ status: 'requested', failureCode: 'PROVIDER_RETRYABLE' }),
+    });
+    tx.paymentRefund.findUnique.mockResolvedValue(refundIntent);
+    await expect(service.initiateFullRefund(charge.id, 'admin_1')).resolves.toMatchObject({
+      status: 'pending',
+    });
+    expect(refund).toHaveBeenNthCalledWith(2, 'pay_1', refundIntent.id);
+  });
+
+  it('leaves a request recoverable when Razorpay cannot list refunds after a conflict', async () => {
+    const { tx, provider, refund, service } = setup();
+    refund.mockRejectedValueOnce(new RazorpayApiError(400, 'BAD_REQUEST_ERROR', 'rejected'));
+    vi.spyOn(provider, 'fetchRefundsForPayment').mockRejectedValueOnce(new Error('network error'));
+
+    await expect(service.initiateFullRefund(charge.id, 'admin_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentRefund.update).not.toHaveBeenCalled();
+  });
+
+  it('reconciles pending refunds using the persisted provider refund ID', async () => {
+    const pending = {
+      id: refundIntent.id,
+      userId: charge.userId,
+      razorpayPaymentId: charge.razorpayPaymentId,
+      razorpayRefundId: 'rfnd_1',
+      amountMinor: charge.amountMinor,
+      currency: charge.currency,
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentRefund: {
+        update: vi.fn().mockResolvedValue({ ...refundIntent, status: 'processed' }),
+      },
+    };
+    const provider = configuredProvider();
+    const fetchRefund = vi.spyOn(provider, 'fetchRefund').mockResolvedValue({
+      id: 'rfnd_1',
+      payment_id: 'pay_1',
+      amount: 49900,
+      currency: 'INR',
+      status: 'processed',
+      created_at: 1793793600,
+    });
+    const postgres = {
+      ...postgresFor(tx),
+      client_: { paymentRefund: { findMany: vi.fn().mockResolvedValue([pending]) } },
+    };
+    const service = new PaymentsService({} as never, postgres as never, provider, {} as never);
+
+    await service.reconcilePendingRefunds();
+
+    expect(fetchRefund).toHaveBeenCalledWith('rfnd_1');
+    expect(tx.paymentRefund.update).toHaveBeenCalledWith({
+      where: { id: refundIntent.id },
+      data: expect.objectContaining({ status: 'processed', razorpayRefundId: 'rfnd_1' }),
+    });
+  });
+
+  it('links an existing full refund found after a retry conflict in the reconciliation worker', async () => {
+    const pending = {
+      id: refundIntent.id,
+      userId: charge.userId,
+      razorpayPaymentId: charge.razorpayPaymentId,
+      razorpayRefundId: null,
+      amountMinor: charge.amountMinor,
+      currency: charge.currency,
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentRefund: {
+        update: vi.fn().mockResolvedValue({ ...refundIntent, status: 'processed' }),
+      },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'refundPayment').mockRejectedValueOnce(
+      new RazorpayApiError(400, 'BAD_REQUEST_ERROR', 'already refunded')
+    );
+    const listRefunds = vi.spyOn(provider, 'fetchRefundsForPayment').mockResolvedValue([
+      {
+        id: 'rfnd_dashboard',
+        payment_id: 'pay_1',
+        amount: 49900,
+        currency: 'INR',
+        status: 'processed',
+        created_at: 1793793600,
+      },
+    ]);
+    const postgres = {
+      ...postgresFor(tx),
+      client_: { paymentRefund: { findMany: vi.fn().mockResolvedValue([pending]) } },
+    };
+    const service = new PaymentsService({} as never, postgres as never, provider, {} as never);
+
+    await service.reconcilePendingRefunds();
+
+    expect(listRefunds).toHaveBeenCalledWith('pay_1');
+    expect(tx.paymentRefund.update).toHaveBeenCalledWith({
+      where: { id: refundIntent.id },
+      data: expect.objectContaining({
+        status: 'processed',
+        razorpayRefundId: 'rfnd_dashboard',
+      }),
+    });
+  });
+
+  it('queries the oldest updated pending refunds first so repeated retries rotate through batches', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const service = new PaymentsService(
+      {} as never,
+      { client_: { paymentRefund: { findMany } } } as never,
+      configuredProvider(),
+      {} as never
+    );
+
+    await service.reconcilePendingRefunds();
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+        take: 100,
+      })
     );
   });
 });

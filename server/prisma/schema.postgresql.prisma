@@ -247,3 +247,23 @@ model PaymentCharge {
   @@index([subscriptionId, chargedAt])
   @@index([createdAt])
 }
+
+model PaymentRefund {
+  id                String    @id @default(uuid())
+  chargeId          String    @unique
+  userId            String
+  initiatedByUserId String
+  razorpayPaymentId String
+  razorpayRefundId  String?   @unique
+  amountMinor       Int
+  currency          String
+  status            String    @default("requested")
+  failureCode       String?
+  providerCreatedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId, status, createdAt])
+    @@index([status, updatedAt, id])
+  @@index([createdAt])
+}

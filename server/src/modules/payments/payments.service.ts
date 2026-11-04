@@ -13,8 +13,8 @@ import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { PrismaPostgresqlService, PrismaService } from '@/prisma/prisma.service.js';
 import type { CreateSubscriptionInput } from './dto/create-subscription.schema.js';
 import { isValidPaymentIdempotencyKey } from './dto/create-subscription.schema.js';
-import type { IRazorpaySubscription } from './razorpay-provider.js';
-import { RazorpayProvider } from './razorpay-provider.js';
+import type { IRazorpayRefund, IRazorpaySubscription } from './razorpay-provider.js';
+import { RazorpayApiError, RazorpayProvider } from './razorpay-provider.js';
 import { parseRazorpaySubscriptionEvent } from './razorpay-webhook-event.js';
 import { verifyRazorpayWebhookSignature } from './razorpay-webhook-signature.js';
 import { decideSubscriptionRequest } from './subscription-request.js';
@@ -235,6 +235,66 @@ export class PaymentsService {
       );
     }
     return result;
+  }
+
+  async initiateFullRefund(chargeId: string, adminUserId: string) {
+    const client = this.postgres.client_;
+    if (!client) throw new ServiceUnavailableException('Payment storage is not available');
+    const charge = await client.paymentCharge.findUnique({ where: { id: chargeId } });
+    if (!charge) throw new NotFoundException('Captured payment charge was not found');
+
+    const intent = await this.postgres.withTenantContext(charge.userId, async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${charge.userId}, 0))`;
+      const ownedCharge = await tx.paymentCharge.findFirst({
+        where: { id: charge.id, userId: charge.userId },
+      });
+      if (!ownedCharge) throw new NotFoundException('Captured payment charge was not found');
+      const existing = await tx.paymentRefund.findUnique({ where: { chargeId: ownedCharge.id } });
+      if (existing) return existing;
+      return tx.paymentRefund.create({
+        data: {
+          chargeId: ownedCharge.id,
+          userId: ownedCharge.userId,
+          initiatedByUserId: adminUserId,
+          razorpayPaymentId: ownedCharge.razorpayPaymentId,
+          amountMinor: ownedCharge.amountMinor,
+          currency: ownedCharge.currency,
+          status: 'requested',
+        },
+      });
+    });
+
+    if (intent.status !== 'requested' || intent.razorpayRefundId) {
+      return this.toRefundResponse(intent);
+    }
+
+    let remote: IRazorpayRefund | null;
+    try {
+      remote = await this.requestFullRefund(intent);
+    } catch (error) {
+      this.logger.warn(
+        { refundId: intent.id, err: redactRefundError(error) },
+        'Razorpay refund request did not return a result'
+      );
+      throw new ServiceUnavailableException(
+        'Refund request is saved and will be retried with the same provider idempotency key',
+        { cause: error }
+      );
+    }
+    if (!remote) {
+      throw new ServiceUnavailableException(
+        'Refund request is saved and will be retried when Razorpay can accept it'
+      );
+    }
+
+    this.assertRefundMatchesIntent(remote, intent);
+    const saved = await this.updateRefundState(intent.userId, intent.id, {
+      razorpayRefundId: remote.id,
+      status: remote.status,
+      failureCode: null,
+      providerCreatedAt: epochDate(remote.created_at),
+    });
+    return this.toRefundResponse(saved);
   }
 
   async acceptWebhook(
@@ -494,13 +554,169 @@ export class PaymentsService {
     const client = this.postgres.client_;
     if (!client) return;
     try {
+      const expiredRefunds = await client.paymentRefund.deleteMany({
+        where: { createdAt: { lt: getPaymentChargeRetentionCutoff(new Date()) } },
+      });
       const result = await client.paymentCharge.deleteMany({
         where: { createdAt: { lt: getPaymentChargeRetentionCutoff(new Date()) } },
       });
-      this.logger.log({ deletedCount: result.count }, 'Expired payment charge records removed');
+      this.logger.log(
+        { deletedCharges: result.count, deletedRefunds: expiredRefunds.count },
+        'Expired payment charge and refund records removed'
+      );
     } catch (error) {
       this.logger.warn({ err: error }, 'Expired payment charge cleanup failed');
     }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async reconcilePendingRefunds(): Promise<void> {
+    const client = this.postgres.client_;
+    if (!client) return;
+    const pending = await client.paymentRefund.findMany({
+      where: { status: { in: ['requested', 'pending'] } },
+      orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+      take: 100,
+      select: {
+        id: true,
+        userId: true,
+        razorpayPaymentId: true,
+        razorpayRefundId: true,
+        amountMinor: true,
+        currency: true,
+      },
+    });
+    for (const intent of pending) {
+      try {
+        const remote = intent.razorpayRefundId
+          ? await this.provider.fetchRefund(intent.razorpayRefundId)
+          : await this.requestFullRefund(intent);
+        if (!remote) continue;
+        this.assertRefundMatchesIntent(remote, intent);
+        await this.updateRefundState(intent.userId, intent.id, {
+          razorpayRefundId: remote.id,
+          status: remote.status,
+          failureCode: null,
+          providerCreatedAt: epochDate(remote.created_at),
+        });
+      } catch (error) {
+        try {
+          await this.updateRefundState(intent.userId, intent.id, {
+            status: intent.razorpayRefundId ? 'pending' : 'requested',
+            failureCode: 'RECONCILIATION_RETRY',
+          });
+        } catch (stateError) {
+          this.logger.warn(
+            { refundId: intent.id, err: redactRefundError(stateError) },
+            'Could not reschedule pending Razorpay refund reconciliation'
+          );
+        }
+        this.logger.warn(
+          { refundId: intent.id, err: redactRefundError(error) },
+          'Pending Razorpay refund reconciliation failed'
+        );
+      }
+    }
+  }
+
+  private async updateRefundState(
+    userId: string,
+    refundId: string,
+    data: {
+      razorpayRefundId?: string;
+      status: string;
+      failureCode?: string | null;
+      providerCreatedAt?: Date | null;
+    }
+  ) {
+    return this.postgres.withTenantContext(userId, async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+      return tx.paymentRefund.update({
+        where: { id: refundId },
+        data: { ...data, updatedAt: new Date() },
+      });
+    });
+  }
+
+  private async requestFullRefund(intent: {
+    id: string;
+    userId: string;
+    razorpayPaymentId: string;
+    amountMinor: number;
+    currency: string;
+  }): Promise<IRazorpayRefund | null> {
+    try {
+      return await this.provider.refundPayment(intent.razorpayPaymentId, intent.id);
+    } catch (error) {
+      if (!(error instanceof RazorpayApiError) || error.statusCode !== 400) throw error;
+
+      let existingRefunds: IRazorpayRefund[];
+      try {
+        existingRefunds = await this.provider.fetchRefundsForPayment(intent.razorpayPaymentId);
+      } catch (fetchError) {
+        throw new ServiceUnavailableException('Razorpay refund state could not be checked', {
+          cause: fetchError,
+        });
+      }
+      const priorFullRefund = existingRefunds.find(
+        (refund) =>
+          refund.payment_id === intent.razorpayPaymentId &&
+          refund.amount === intent.amountMinor &&
+          refund.currency === intent.currency
+      );
+      if (priorFullRefund) return priorFullRefund;
+
+      // Razorpay can reject a refund temporarily (for example, while funds are
+      // unavailable). Keep the same intent/key and let the worker retry fairly.
+      await this.updateRefundState(intent.userId, intent.id, {
+        status: 'requested',
+        failureCode: 'PROVIDER_RETRYABLE',
+      });
+      return null;
+    }
+  }
+
+  private assertRefundMatchesIntent(
+    remote: IRazorpayRefund,
+    local: {
+      razorpayPaymentId: string;
+      amountMinor: number;
+      currency: string;
+    }
+  ): void {
+    if (
+      !remote.id ||
+      remote.payment_id !== local.razorpayPaymentId ||
+      remote.amount !== local.amountMinor ||
+      remote.currency !== local.currency ||
+      !['pending', 'processed', 'failed'].includes(remote.status)
+    ) {
+      throw new ServiceUnavailableException(
+        'Razorpay returned a refund that does not match the saved charge'
+      );
+    }
+  }
+
+  private toRefundResponse(row: {
+    id: string;
+    chargeId: string;
+    amountMinor: number;
+    currency: string;
+    razorpayRefundId: string | null;
+    status: string;
+    createdAt: Date;
+    providerCreatedAt: Date | null;
+  }) {
+    return {
+      id: row.id,
+      chargeId: row.chargeId,
+      amountMinor: row.amountMinor,
+      currency: row.currency,
+      razorpayRefundId: row.razorpayRefundId,
+      status: row.status,
+      requestedAt: row.createdAt,
+      providerCreatedAt: row.providerCreatedAt,
+    };
   }
 
   private async fetchAndApplyProviderState(userId: string, localId: string): Promise<void> {
@@ -644,4 +860,12 @@ function epochDate(value: number | null | undefined): Date | null {
 
 function isUniqueConstraintError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
+}
+
+function redactRefundError(error: unknown): Record<string, unknown> {
+  if (error instanceof RazorpayApiError) {
+    return { name: error.name, statusCode: error.statusCode, code: error.code };
+  }
+  if (error instanceof Error) return { name: error.name };
+  return { name: 'UnknownError' };
 }

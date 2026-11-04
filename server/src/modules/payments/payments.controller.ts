@@ -6,13 +6,14 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { CurrentUser, ClerkAuthGuard, RolesGuard, Public } from '@/common/index.js';
+import { CurrentUser, ClerkAuthGuard, Roles, RolesGuard, Public } from '@/common/index.js';
 import {
   ApiOperation as ApiOperationEnum,
   ApiRoutes,
@@ -65,6 +66,16 @@ export class PaymentsController {
   async cancelCurrentSubscription(@CurrentUser('id') userId: string) {
     const data = await this.payments.cancelCurrentSubscription(userId);
     return { message: 'Subscription cancellation scheduled', data };
+  }
+
+  @ApiBearerAuth()
+  @Post('charges/:chargeId/refund')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: ApiOperationEnum.PAYMENT_REFUND_CHARGE })
+  async refundCharge(@Param('chargeId') chargeId: string, @CurrentUser('id') adminUserId: string) {
+    const data = await this.payments.initiateFullRefund(chargeId, adminUserId);
+    return { message: 'Full refund requested', data };
   }
 }
 

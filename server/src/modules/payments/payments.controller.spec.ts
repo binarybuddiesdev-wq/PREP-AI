@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PaymentsController, RazorpayWebhookController } from './payments.controller.js';
+import { ROLES_KEY } from '@/common/decorators/roles.decorator.js';
 
 describe('payment controllers', () => {
   it('passes authenticated subscription input to the payments service', async () => {
@@ -9,6 +10,7 @@ describe('payment controllers', () => {
       cancelCurrentSubscription: vi
         .fn()
         .mockResolvedValue({ id: 'local_1', cancelAtPeriodEnd: true }),
+      initiateFullRefund: vi.fn().mockResolvedValue({ id: 'refund_1', status: 'pending' }),
     };
     const controller = new PaymentsController(payments as never);
     await expect(
@@ -28,6 +30,14 @@ describe('payment controllers', () => {
       data: { id: 'local_1', cancelAtPeriodEnd: true },
     });
     expect(payments.cancelCurrentSubscription).toHaveBeenCalledWith('user_1');
+    await expect(controller.refundCharge('charge_1', 'admin_1')).resolves.toEqual({
+      message: 'Full refund requested',
+      data: { id: 'refund_1', status: 'pending' },
+    });
+    expect(payments.initiateFullRefund).toHaveBeenCalledWith('charge_1', 'admin_1');
+    expect(Reflect.getMetadata(ROLES_KEY, PaymentsController.prototype.refundCharge)).toEqual([
+      'ADMIN',
+    ]);
   });
 
   it('passes raw body and Razorpay headers to the webhook service', async () => {

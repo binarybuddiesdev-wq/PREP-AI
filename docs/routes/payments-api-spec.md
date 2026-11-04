@@ -54,6 +54,32 @@ Requires a Clerk bearer token. Returns the most recent non-terminal
 subscription or `null`. It does not expose provider credentials or payment
 instrument data.
 
+## Refund a captured charge
+
+`POST /api/v1/payments/charges/:chargeId/refund`
+
+Requires a Clerk bearer token and the existing `ADMIN` role. The request has
+no body. The server only accepts a charge stored from a verified captured
+`subscription.charged` webhook and reads its payment ID, full amount, and
+currency from PostgreSQL. The caller cannot provide a payment ID or amount.
+
+One refund intent is stored per charge before calling Razorpay. Repeated calls
+resume the same operation with its stable idempotency key. The response data
+contains the local refund ID, charge ID, full amount in currency subunits,
+currency, provider status (`requested`, `pending`, `processed`, or `failed`),
+and provider refund ID when available. Provider timeouts or temporary
+rejections return `503`; retry the same endpoint, which reuses the saved
+operation. If Razorpay rejects a request while an identical refund already
+exists, the server links that refund. Other unclassified provider rejections
+remain retryable under the same key. Pending refunds are reconciled every
+minute, with oldest-updated intents rotated fairly through bounded batches. A
+missing captured charge returns `404`; unavailable payment storage/provider
+returns `503`.
+
+This endpoint performs full refunds only. It does not decide refund eligibility
+or provide self-service refunds. Refund records retain the initiating admin
+and are removed by the daily seven-year retention job.
+
 ## Razorpay webhook
 
 `POST /api/v1/webhooks/razorpay`
@@ -101,7 +127,8 @@ server environment. Apply the additive PostgreSQL schema with
 `pnpm --filter server prisma:push:postgresql` before enabling this API. The
 PostgreSQL RLS production rollout remains separate and is still pending.
 
-The v1 stores subscription state, normalized webhook lifecycle records, and
-captured subscription charges. Users can schedule cancellation at the end of
-their paid period. Refunds are not implemented. Configure production keys and webhook secret through the
-deployment secret manager; do not commit live credentials.
+The v1 stores subscription state, normalized webhook lifecycle records,
+captured subscription charges, and full refund operations. Users can schedule
+cancellation at the end of their paid period. Configure production keys and
+webhook secret through the deployment secret manager; do not commit live
+credentials.

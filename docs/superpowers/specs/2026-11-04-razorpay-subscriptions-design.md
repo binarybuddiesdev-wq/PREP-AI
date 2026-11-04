@@ -46,8 +46,9 @@ PostgreSQL, MongoDB, Redis, or Razorpay is temporarily unavailable.
 - Use monthly/yearly provider plan IDs; total billing cycles are bounded to ten
   years (120 monthly or 10 yearly). In-app cancellation is added by the
   cancellation follow-up design; users can stop renewal at the paid period end.
-  No client-controlled amount, refund, pause, or plan mutation endpoint is
-  added.
+  No client-controlled amount, pause, or plan mutation endpoint is added.
+  Admin-only full refunds are defined separately in the
+  [refund follow-up design](2026-11-04-razorpay-refunds-design.md).
 - Payment records follow the documented seven-year retention policy. Existing
   authenticated `/metrics` protection and trace/log privacy rules remain.
 
@@ -59,7 +60,7 @@ PostgreSQL, MongoDB, Redis, or Razorpay is temporarily unavailable.
 - Do not activate Premium from a browser callback or an unverified webhook.
 - Do not change the staged PostgreSQL RLS production rollout in this feature;
   tenant scoping stays explicit, and RLS production enablement remains last.
-- Do not implement one-time purchases, refunds, admin billing, or frontend
+- Do not implement one-time purchases, admin billing, or frontend
   checkout UI or an individual charge ledger in this backend feature.
 
 ## Verification

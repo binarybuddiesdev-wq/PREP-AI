@@ -80,6 +80,7 @@ export enum ApiOperation {
   PAYMENT_START_SUBSCRIPTION = 'Start a monthly or yearly Premium subscription',
   PAYMENT_GET_CURRENT_SUBSCRIPTION = 'Get the current Premium subscription',
   PAYMENT_CANCEL_SUBSCRIPTION = 'Schedule cancellation of the current Premium subscription',
+  PAYMENT_REFUND_CHARGE = 'Issue a full refund for a captured subscription charge',
   PAYMENT_RECEIVE_RAZORPAY_WEBHOOK = 'Receive a Razorpay subscription event',
 }
 
