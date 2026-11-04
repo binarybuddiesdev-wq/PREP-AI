@@ -104,4 +104,4 @@ behavior on the existing disposable real-database isolation harness.
       unchanged production rollout boundary.
 - [x] Run `pnpm test:database:isolation` and the full server gate.
 - [x] Review the complete diff and run the code review.
-- [ ] Commit and push `main`.
+- [x] Commit and push `main`.
