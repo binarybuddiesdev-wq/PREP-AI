@@ -11,6 +11,9 @@ export interface IRazorpaySubscription {
   short_url?: string | null;
   current_start?: number | null;
   current_end?: number | null;
+  updated_at?: number | null;
+  has_scheduled_changes?: boolean;
+  change_scheduled_at?: number | null;
   notes?: Record<string, string | number>;
 }
 
@@ -18,6 +21,10 @@ interface IRazorpayClient {
   subscriptions: {
     create(input: Record<string, unknown>): Promise<IRazorpaySubscription>;
     fetch(subscriptionId: string): Promise<IRazorpaySubscription>;
+    cancel(
+      subscriptionId: string,
+      options: { cancel_at_cycle_end: true }
+    ): Promise<IRazorpaySubscription>;
   };
 }
 
@@ -76,6 +83,12 @@ export class RazorpayProvider {
 
   async fetchSubscription(subscriptionId: string): Promise<IRazorpaySubscription> {
     return this.requireClient().subscriptions.fetch(subscriptionId);
+  }
+
+  async cancelSubscription(subscriptionId: string): Promise<IRazorpaySubscription> {
+    return this.requireClient().subscriptions.cancel(subscriptionId, {
+      cancel_at_cycle_end: true,
+    });
   }
 
   private requireClient(): IRazorpayClient {

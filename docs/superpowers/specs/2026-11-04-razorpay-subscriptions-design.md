@@ -35,16 +35,19 @@ PostgreSQL, MongoDB, Redis, or Razorpay is temporarily unavailable.
   application run under the same per-user PostgreSQL advisory lock; no provider
   revision field is assumed to exist in Razorpay responses. Reconciliation
   explicitly retries deterministic BullMQ jobs left in the failed state.
-- Grant `PREMIUM` only for an active subscription within its current paid
-  period. Remove Premium for halted, paused, cancelled, completed, or expired
-  subscriptions. Queue retries and startup reconciliation recover unfinished
+- Grant `PREMIUM` only within the current paid period for an active
+  subscription or a locally marked end-of-cycle cancellation. Remove Premium
+  for halted, paused, cancellation without the local end-of-cycle marker,
+  completed, or expired subscriptions. Queue retries and startup reconciliation recover unfinished
   events; periodic expiry reconciliation handles missed terminal events and
   removes locally expired access even if Razorpay is unavailable. Entitlement
   is computed across all of a user's subscriptions, so an old subscription's
   delayed event cannot revoke access backed by a newer active subscription.
 - Use monthly/yearly provider plan IDs; total billing cycles are bounded to ten
-  years (120 monthly or 10 yearly). Users cancel through Razorpay for v1; no
-  client-controlled amount, refund, pause, or plan mutation endpoint is added.
+  years (120 monthly or 10 yearly). In-app cancellation is added by the
+  cancellation follow-up design; users can stop renewal at the paid period end.
+  No client-controlled amount, refund, pause, or plan mutation endpoint is
+  added.
 - Payment records follow the documented seven-year retention policy. Existing
   authenticated `/metrics` protection and trace/log privacy rules remain.
 

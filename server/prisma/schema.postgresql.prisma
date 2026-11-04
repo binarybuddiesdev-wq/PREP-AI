@@ -200,6 +200,7 @@ model PaymentSubscription {
   razorpaySubscriptionId String?   @unique
   shortUrl               String?
   status                 String    @default("creating")
+  cancelAtPeriodEnd      Boolean   @default(false)
   currentStart           DateTime?
   currentEnd             DateTime?
   createdAt              DateTime  @default(now())
@@ -231,16 +232,16 @@ model PaymentWebhookEvent {
 }
 
 model PaymentCharge {
-  id                    String   @id @default(uuid())
-  userId                String
-  subscriptionId        String
+  id                     String   @id @default(uuid())
+  userId                 String
+  subscriptionId         String
   razorpaySubscriptionId String
-  razorpayPaymentId     String   @unique
-  invoiceId             String?
-  amountMinor           Int
-  currency              String
-  chargedAt             DateTime
-  createdAt             DateTime @default(now())
+  razorpayPaymentId      String   @unique
+  invoiceId              String?
+  amountMinor            Int
+  currency               String
+  chargedAt              DateTime
+  createdAt              DateTime @default(now())
 
   @@index([userId, chargedAt])
   @@index([subscriptionId, chargedAt])

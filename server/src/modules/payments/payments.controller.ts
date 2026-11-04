@@ -57,6 +57,15 @@ export class PaymentsController {
     const data = await this.payments.getCurrentSubscription(userId);
     return { message: 'Current subscription fetched', data };
   }
+
+  @ApiBearerAuth()
+  @Post('subscriptions/current/cancel')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: ApiOperationEnum.PAYMENT_CANCEL_SUBSCRIPTION })
+  async cancelCurrentSubscription(@CurrentUser('id') userId: string) {
+    const data = await this.payments.cancelCurrentSubscription(userId);
+    return { message: 'Subscription cancellation scheduled', data };
+  }
 }
 
 @ApiTags(ApiTagsEnum.PAYMENT_WEBHOOKS)

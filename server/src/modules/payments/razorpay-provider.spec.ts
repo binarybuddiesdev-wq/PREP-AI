@@ -7,12 +7,19 @@ const razorpayMocks = vi.hoisted(() => ({
   constructor: vi.fn(),
   create: vi.fn(),
   fetch: vi.fn(),
+  cancel: vi.fn(),
 }));
 
 vi.mock('razorpay', () => ({
   default: vi.fn(function RazorpayMock() {
     razorpayMocks.constructor();
-    return { subscriptions: { create: razorpayMocks.create, fetch: razorpayMocks.fetch } };
+    return {
+      subscriptions: {
+        create: razorpayMocks.create,
+        fetch: razorpayMocks.fetch,
+        cancel: razorpayMocks.cancel,
+      },
+    };
   }),
 }));
 
@@ -21,6 +28,7 @@ describe('RazorpayProvider', () => {
     vi.clearAllMocks();
     razorpayMocks.create.mockResolvedValue({ id: 'sub_123' });
     razorpayMocks.fetch.mockResolvedValue({ id: 'sub_123', status: 'active' });
+    razorpayMocks.cancel.mockResolvedValue({ id: 'sub_123', status: 'cancelled' });
   });
 
   const createProvider = (values: Record<string, string | undefined>) =>
@@ -87,6 +95,22 @@ describe('RazorpayProvider', () => {
       expect.objectContaining({ plan_id: 'plan_yearly', total_count: 10 })
     );
     expect(razorpayMocks.fetch).toHaveBeenCalledWith('sub_123');
+  });
+
+  it('asks Razorpay to cancel only at the end of the billing cycle', async () => {
+    const provider = createProvider({
+      RAZORPAY_KEY_ID: 'key_test',
+      RAZORPAY_KEY_SECRET: 'secret_test',
+      RAZORPAY_PLAN_ID_MONTHLY: 'plan_monthly',
+      RAZORPAY_PLAN_ID_YEARLY: 'plan_yearly',
+      RAZORPAY_WEBHOOK_SECRET: 'webhook_secret',
+    });
+
+    await provider.cancelSubscription('sub_123');
+
+    expect(razorpayMocks.cancel).toHaveBeenCalledWith('sub_123', {
+      cancel_at_cycle_end: true,
+    });
   });
 
   it('requires the independent webhook secret before enabling webhook processing', () => {

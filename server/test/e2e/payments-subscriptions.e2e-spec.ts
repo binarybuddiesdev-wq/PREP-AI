@@ -249,6 +249,56 @@ describe('Razorpay subscription persistence and role projection', () => {
           tx.paymentSubscription.findUnique({ where: { id: started.id } })
         )
       ).resolves.toMatchObject({ status: 'completed' });
+
+      const paidEnd = new Date(Math.floor((Date.now() + 60_000) / 1000) * 1000);
+      await database!.postgresProvider.withTenantContext(userId, (tx) =>
+        tx.paymentSubscription.update({
+          where: { id: started.id },
+          data: {
+            status: 'active',
+            cancelAtPeriodEnd: false,
+            currentStart: new Date(Date.now() - 60_000),
+            currentEnd: paidEnd,
+          },
+        })
+      );
+      vi.spyOn(provider, 'cancelSubscription').mockResolvedValue({
+        ...remote,
+        status: 'active',
+        has_scheduled_changes: true,
+        current_start: Math.floor((Date.now() - 60_000) / 1000),
+        current_end: Math.floor(paidEnd.getTime() / 1000),
+      });
+      await expect(service.cancelCurrentSubscription(userId)).resolves.toMatchObject({
+        status: 'active',
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: paidEnd,
+      });
+      await expect(
+        database!.mongo.user.findUnique({ where: { clerkUserId: userId } })
+      ).resolves.toMatchObject({ role: 'PREMIUM' });
+
+      await database!.postgresProvider.withTenantContext(userId, (tx) =>
+        tx.paymentSubscription.update({
+          where: { id: started.id },
+          data: { currentEnd: new Date(Date.now() - 60_000) },
+        })
+      );
+      fetchSubscription.mockResolvedValue({
+        ...remote,
+        status: 'cancelled',
+        current_start: now - 3_600,
+        current_end: now - 1,
+      });
+      await service.reconcilePendingPayments();
+      await expect(
+        database!.postgresProvider.withTenantContext(userId, (tx) =>
+          tx.paymentSubscription.findUnique({ where: { id: started.id } })
+        )
+      ).resolves.toMatchObject({ cancelAtPeriodEnd: false });
+      await expect(
+        database!.mongo.user.findUnique({ where: { clerkUserId: userId } })
+      ).resolves.toMatchObject({ role: 'USER' });
     } finally {
       await database!.postgresProvider.withTenantContext(userId, async (tx) => {
         await tx.paymentWebhookEvent.deleteMany({ where: { userId } });

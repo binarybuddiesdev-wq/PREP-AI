@@ -1,6 +1,7 @@
 ﻿import {
   BadRequestException,
   ConflictException,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
@@ -1026,5 +1027,287 @@ describe('PaymentsService webhook intake', () => {
     );
 
     await expect(service.cleanupExpiredPaymentCharges()).resolves.toBeUndefined();
+  });
+});
+
+describe('PaymentsService subscription cancellation', () => {
+  const activeSubscription = () => ({
+    id: 'local_1',
+    userId: 'user_1',
+    idempotencyKey: 'request-1',
+    planKey: 'monthly',
+    razorpayPlanId: 'plan_monthly',
+    razorpaySubscriptionId: 'sub_123',
+    status: 'active',
+    shortUrl: null,
+    currentStart: new Date(Date.now() - 60_000),
+    currentEnd: new Date(Date.now() + 60_000),
+    createdAt: new Date('2026-11-04T00:00:00Z'),
+    cancelAtPeriodEnd: false,
+  });
+
+  it('schedules end-of-cycle cancellation for the authenticated user and retains paid access', async () => {
+    const row = activeSubscription();
+    const scheduled = { ...row, status: 'active', cancelAtPeriodEnd: true };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findFirst: vi.fn().mockResolvedValue(row),
+        update: vi.fn().mockResolvedValue(scheduled),
+        findMany: vi.fn().mockResolvedValue([scheduled]),
+      },
+    };
+    const provider = configuredProvider();
+    const cancel = vi.spyOn(provider, 'cancelSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'active',
+      has_scheduled_changes: true,
+      current_start: Math.floor(row.currentStart.getTime() / 1000),
+      current_end: Math.floor(row.currentEnd.getTime() / 1000),
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'request-1' },
+    });
+    const mongo = { user: { findUnique: vi.fn().mockResolvedValue({ role: 'PREMIUM' }) } };
+    const service = new PaymentsService(
+      mongo as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).resolves.toMatchObject({
+      id: 'local_1',
+      status: 'active',
+      cancelAtPeriodEnd: true,
+      currentPeriodEnd: row.currentEnd,
+    });
+    expect(cancel).toHaveBeenCalledWith('sub_123');
+    expect(tx.paymentSubscription.update).toHaveBeenCalledWith({
+      where: { id: 'local_1' },
+      data: expect.objectContaining({ status: 'active', cancelAtPeriodEnd: true }),
+    });
+    expect(mongo.user.findUnique).toHaveBeenCalledOnce();
+  });
+
+  it('returns an already scheduled cancellation without calling Razorpay again', async () => {
+    const scheduled = { ...activeSubscription(), status: 'active', cancelAtPeriodEnd: true };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findFirst: vi.fn().mockResolvedValue(scheduled),
+        update: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([scheduled]),
+      },
+    };
+    const provider = configuredProvider();
+    const cancel = vi.spyOn(provider, 'cancelSubscription');
+    const service = new PaymentsService(
+      { user: { findUnique: vi.fn().mockResolvedValue({ role: 'PREMIUM' }) } } as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).resolves.toMatchObject({
+      cancelAtPeriodEnd: true,
+    });
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it('rejects subscriptions without a current paid active period before contacting Razorpay', async () => {
+    const row = {
+      ...activeSubscription(),
+      status: 'halted',
+      currentEnd: new Date(Date.now() + 60_000),
+    };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: { findFirst: vi.fn().mockResolvedValue(row), update: vi.fn() },
+    };
+    const provider = configuredProvider();
+    const cancel = vi.spyOn(provider, 'cancelSubscription');
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).rejects.toThrow(ConflictException);
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it('recovers an ambiguous provider cancellation when a fresh fetch shows a future canceled period', async () => {
+    const row = activeSubscription();
+    const scheduled = { ...row, status: 'cancelled', cancelAtPeriodEnd: true };
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findFirst: vi.fn().mockResolvedValue(row),
+        update: vi.fn().mockResolvedValue(scheduled),
+        findMany: vi.fn().mockResolvedValue([scheduled]),
+      },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'cancelSubscription').mockRejectedValue(new Error('response timed out'));
+    vi.spyOn(provider, 'fetchSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'cancelled',
+      current_start: Math.floor(row.currentStart.getTime() / 1000),
+      current_end: Math.floor(row.currentEnd.getTime() / 1000),
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'request-1' },
+    });
+    const mongo = { user: { findUnique: vi.fn().mockResolvedValue({ role: 'PREMIUM' }) } };
+    const service = new PaymentsService(
+      mongo as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).resolves.toMatchObject({
+      cancelAtPeriodEnd: true,
+      status: 'cancelled',
+    });
+    expect(provider.fetchSubscription).toHaveBeenCalledWith('sub_123');
+  });
+
+  it('does not persist a provider response that identifies a different subscription', async () => {
+    const row = activeSubscription();
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: {
+        findFirst: vi.fn().mockResolvedValue(row),
+        update: vi.fn(),
+      },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'cancelSubscription').mockResolvedValue({
+      id: 'sub_other',
+      plan_id: 'plan_monthly',
+      status: 'active',
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'request-1' },
+    });
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentSubscription.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unexpected provider status after cancellation', async () => {
+    const row = activeSubscription();
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: { findFirst: vi.fn().mockResolvedValue(row), update: vi.fn() },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'cancelSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'created',
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'request-1' },
+    });
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentSubscription.update).not.toHaveBeenCalled();
+  });
+
+  it('does not mistake an unrelated scheduled provider change for a cancellation', async () => {
+    const row = activeSubscription();
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: { findFirst: vi.fn().mockResolvedValue(row), update: vi.fn() },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'cancelSubscription').mockRejectedValue(new Error('response timed out'));
+    vi.spyOn(provider, 'fetchSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'active',
+      has_scheduled_changes: true,
+      current_end: Math.floor(row.currentEnd.getTime() / 1000),
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'request-1' },
+    });
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentSubscription.update).not.toHaveBeenCalled();
+  });
+
+  it('does not confirm a cancellation after the paid period has already ended', async () => {
+    const row = activeSubscription();
+    const tx = {
+      $executeRaw: vi.fn(),
+      paymentSubscription: { findFirst: vi.fn().mockResolvedValue(row), update: vi.fn() },
+    };
+    const provider = configuredProvider();
+    vi.spyOn(provider, 'cancelSubscription').mockRejectedValue(new Error('response timed out'));
+    vi.spyOn(provider, 'fetchSubscription').mockResolvedValue({
+      id: 'sub_123',
+      plan_id: 'plan_monthly',
+      status: 'cancelled',
+      current_end: Math.floor((Date.now() - 60_000) / 1000),
+      notes: { prepai_user_id: 'user_1', prepai_request_id: 'request-1' },
+    });
+    const service = new PaymentsService(
+      {} as never,
+      postgresFor(tx) as never,
+      provider,
+      {} as never
+    );
+
+    await expect(service.cancelCurrentSubscription('user_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
+    expect(tx.paymentSubscription.update).not.toHaveBeenCalled();
+  });
+
+  it('reports missing subscriptions and disabled provider configuration explicitly', async () => {
+    const provider = configuredProvider();
+    const noSubscription = new PaymentsService(
+      {} as never,
+      postgresFor({
+        $executeRaw: vi.fn(),
+        paymentSubscription: { findFirst: vi.fn().mockResolvedValue(null) },
+      }) as never,
+      provider,
+      {} as never
+    );
+    await expect(noSubscription.cancelCurrentSubscription('user_1')).rejects.toThrow(
+      NotFoundException
+    );
+
+    const disabled = new PaymentsService(
+      {} as never,
+      {} as never,
+      new RazorpayProvider({ get: () => undefined } as unknown as ConfigService),
+      {} as never
+    );
+    await expect(disabled.cancelCurrentSubscription('user_1')).rejects.toThrow(
+      ServiceUnavailableException
+    );
   });
 });

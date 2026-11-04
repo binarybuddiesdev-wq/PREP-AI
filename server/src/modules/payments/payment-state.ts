@@ -19,10 +19,12 @@ export function hasPaidAccess(
   status: string,
   currentStart: Date | null,
   currentEnd: Date | null,
-  now = new Date()
+  now = new Date(),
+  cancelAtPeriodEnd = false
 ): boolean {
+  const normalizedStatus = normalizeProviderStatus(status);
   return (
-    normalizeProviderStatus(status) === 'active' &&
+    (normalizedStatus === 'active' || (normalizedStatus === 'cancelled' && cancelAtPeriodEnd)) &&
     currentStart !== null &&
     currentEnd !== null &&
     currentStart <= now &&

@@ -26,6 +26,26 @@ and the endpoint reports `503`; retry with the same key. A verified webhook
 can associate a provider subscription created before its response was lost.
 The API does not blindly create another provider subscription on that retry.
 
+## Cancel the current subscription
+
+`POST /api/v1/payments/subscriptions/current/cancel`
+
+Requires a Clerk bearer token. The backend resolves the subscription from the
+authenticated user and schedules cancellation at the end of the current
+Razorpay billing cycle. Razorpay may keep the provider status `active` until
+that period ends; `cancelAtPeriodEnd` represents the local scheduled state.
+The request has no body: the client cannot select a
+provider subscription ID or immediate cancellation. Premium remains active
+until the stored paid period ends. Repeating the request returns the stored
+cancellation state without issuing another provider mutation. The current
+subscription response includes `cancelAtPeriodEnd`.
+
+The endpoint returns `404` when the user has no current subscription, `409`
+when the current subscription is not active in a paid period, and `503` when
+Razorpay or persistence cannot confirm the cancellation. If the provider call
+times out after possibly succeeding, the service fetches the provider state and
+uses it only when cancellation is confirmed.
+
 ## Read current subscription
 
 `GET /api/v1/payments/subscriptions/current`
@@ -82,6 +102,6 @@ server environment. Apply the additive PostgreSQL schema with
 PostgreSQL RLS production rollout remains separate and is still pending.
 
 The v1 stores subscription state, normalized webhook lifecycle records, and
-captured subscription charges. Refunds and in-app cancellation are not yet
-implemented. Configure production keys and webhook secret through the
+captured subscription charges. Users can schedule cancellation at the end of
+their paid period. Refunds are not implemented. Configure production keys and webhook secret through the
 deployment secret manager; do not commit live credentials.

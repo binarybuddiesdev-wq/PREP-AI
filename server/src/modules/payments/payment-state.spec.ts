@@ -22,4 +22,14 @@ describe('Razorpay subscription state projection', () => {
     expect(normalizeProviderStatus('halted')).toBe('halted');
     expect(normalizeProviderStatus('unknown-provider-state')).toBe('unknown');
   });
+
+  it('keeps a cycle-end canceled subscription paid only while its local cancellation period is current', () => {
+    const now = new Date('2026-11-04T12:00:00.000Z');
+    const start = new Date('2026-11-03T00:00:00Z');
+    const end = new Date('2026-11-05T00:00:00Z');
+
+    expect(hasPaidAccess('cancelled', start, end, now, true)).toBe(true);
+    expect(hasPaidAccess('cancelled', start, end, now, false)).toBe(false);
+    expect(hasPaidAccess('cancelled', start, now, now, true)).toBe(false);
+  });
 });

@@ -65,7 +65,13 @@ export class PaymentsService {
         throw new ConflictException('Idempotency-Key was already used for another plan');
 
       const active = await tx.paymentSubscription.findFirst({
-        where: { userId, status: { in: IN_PROGRESS_STATUSES } },
+        where: {
+          userId,
+          OR: [
+            { status: { in: IN_PROGRESS_STATUSES } },
+            { cancelAtPeriodEnd: true, currentEnd: { gt: new Date() } },
+          ],
+        },
       });
       if (active)
         throw new ConflictException('An existing subscription is already being processed');
@@ -123,11 +129,112 @@ export class PaymentsService {
   async getCurrentSubscription(userId: string) {
     const row = await this.postgres.withTenantContext(userId, (tx) =>
       tx.paymentSubscription.findFirst({
-        where: { userId, status: { notIn: TERMINAL_STATUSES } },
+        where: {
+          userId,
+          OR: [
+            { status: { notIn: TERMINAL_STATUSES } },
+            { cancelAtPeriodEnd: true, currentEnd: { gt: new Date() } },
+          ],
+        },
         orderBy: { createdAt: 'desc' },
       })
     );
     return row ? this.toSubscriptionResponse(row) : null;
+  }
+
+  async cancelCurrentSubscription(userId: string) {
+    if (!this.provider.isCheckoutConfigured) {
+      throw new ServiceUnavailableException(
+        'Razorpay subscriptions are not configured on this server'
+      );
+    }
+
+    let result;
+    try {
+      result = await this.postgres.withTenantContext(
+        userId,
+        async (tx) => {
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+          const subscription = await tx.paymentSubscription.findFirst({
+            where: {
+              userId,
+              OR: [
+                { status: { notIn: TERMINAL_STATUSES } },
+                { cancelAtPeriodEnd: true, currentEnd: { gt: new Date() } },
+              ],
+            },
+            orderBy: { createdAt: 'desc' },
+          });
+          if (!subscription) throw new NotFoundException('No current subscription was found');
+          if (subscription.cancelAtPeriodEnd) return this.toSubscriptionResponse(subscription);
+          if (
+            subscription.status !== 'active' ||
+            !subscription.razorpaySubscriptionId ||
+            !hasPaidAccess(subscription.status, subscription.currentStart, subscription.currentEnd)
+          ) {
+            throw new ConflictException('Only an active paid subscription can be cancelled');
+          }
+
+          let remote: IRazorpaySubscription;
+          try {
+            remote = await this.provider.cancelSubscription(subscription.razorpaySubscriptionId);
+          } catch (cancelError) {
+            // The provider may complete cancellation but lose the response. A fetch
+            // confirms that ambiguous result without issuing another mutation.
+            remote = await this.provider.fetchSubscription(subscription.razorpaySubscriptionId);
+            this.assertProviderSubscriptionIdentity(remote, subscription, userId);
+            const confirmedEnd = epochDate(remote.current_end) ?? subscription.currentEnd;
+            const cancellationConfirmed =
+              normalizeProviderStatus(remote.status) === 'cancelled' &&
+              confirmedEnd !== null &&
+              confirmedEnd > new Date();
+            if (!cancellationConfirmed) {
+              throw cancelError;
+            }
+          }
+          this.assertProviderSubscriptionIdentity(remote, subscription, userId);
+          const remoteStatus = normalizeProviderStatus(remote.status);
+          if (remoteStatus !== 'active' && remoteStatus !== 'cancelled') {
+            throw new Error('Razorpay returned an unexpected status after cancellation');
+          }
+          const saved = await tx.paymentSubscription.update({
+            where: { id: subscription.id },
+            data: {
+              status: remoteStatus,
+              currentStart: epochDate(remote.current_start) ?? subscription.currentStart,
+              currentEnd: epochDate(remote.current_end) ?? subscription.currentEnd,
+              cancelAtPeriodEnd: true,
+            },
+          });
+          return this.toSubscriptionResponse(saved);
+        },
+        { maxWait: 10_000, timeout: 45_000 }
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ConflictException) throw error;
+      this.logger.error(
+        { userId, err: error },
+        'Razorpay subscription cancellation did not complete'
+      );
+      throw new ServiceUnavailableException(
+        'Subscription cancellation could not be confirmed. Retry the request.',
+        { cause: error }
+      );
+    }
+
+    try {
+      await this.projectUserEntitlement(userId);
+    } catch (error) {
+      this.logger.error(
+        { userId, err: error },
+        'Subscription cancellation entitlement projection failed'
+      );
+      throw new ServiceUnavailableException(
+        'Cancellation was saved, but Premium status could not be refreshed. Retry the request.',
+        { cause: error }
+      );
+    }
+    return result;
   }
 
   async acceptWebhook(
@@ -339,8 +446,18 @@ export class PaymentsService {
       }
     }
 
+    const expiredAt = new Date();
     const expired = await client.paymentSubscription.findMany({
-      where: { status: 'active', currentEnd: { lte: new Date() } },
+      where: {
+        OR: [
+          { status: 'active', currentEnd: { lte: expiredAt } },
+          {
+            status: 'cancelled',
+            cancelAtPeriodEnd: true,
+            currentEnd: { lte: expiredAt },
+          },
+        ],
+      },
       take: 100,
       select: {
         id: true,
@@ -348,6 +465,7 @@ export class PaymentsService {
         idempotencyKey: true,
         razorpaySubscriptionId: true,
         razorpayPlanId: true,
+        cancelAtPeriodEnd: true,
       },
     });
     for (const subscription of expired) {
@@ -400,8 +518,12 @@ export class PaymentsService {
           where: { id: localId },
           data: {
             status: normalizeProviderStatus(remote.status),
-            currentStart: epochDate(remote.current_start),
-            currentEnd: epochDate(remote.current_end),
+            currentStart: epochDate(remote.current_start) ?? subscription.currentStart,
+            currentEnd: epochDate(remote.current_end) ?? subscription.currentEnd,
+            cancelAtPeriodEnd:
+              subscription.cancelAtPeriodEnd &&
+              (epochDate(remote.current_end) ?? subscription.currentEnd ?? new Date(0)) >
+                new Date(),
           },
         });
         await this.projectUserEntitlementInTransaction(userId, tx);
@@ -423,10 +545,16 @@ export class PaymentsService {
   ): Promise<void> {
     const subscriptions = await tx.paymentSubscription.findMany({
       where: { userId },
-      select: { status: true, currentStart: true, currentEnd: true },
+      select: { status: true, currentStart: true, currentEnd: true, cancelAtPeriodEnd: true },
     });
     const paid = subscriptions.some((subscription) =>
-      hasPaidAccess(subscription.status, subscription.currentStart, subscription.currentEnd)
+      hasPaidAccess(
+        subscription.status,
+        subscription.currentStart,
+        subscription.currentEnd,
+        new Date(),
+        subscription.cancelAtPeriodEnd
+      )
     );
     const latestPeriodEnd = subscriptions
       .map(({ currentEnd }) => currentEnd?.toISOString() ?? '')
@@ -493,11 +621,13 @@ export class PaymentsService {
     currentStart: Date | null;
     currentEnd: Date | null;
     createdAt: Date;
+    cancelAtPeriodEnd: boolean;
   }) {
     return {
       id: row.id,
       plan: row.planKey,
       status: row.status,
+      cancelAtPeriodEnd: row.cancelAtPeriodEnd,
       checkoutUrl: row.shortUrl,
       currentPeriodStart: row.currentStart,
       currentPeriodEnd: row.currentEnd,

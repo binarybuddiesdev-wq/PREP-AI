@@ -6,6 +6,9 @@ describe('payment controllers', () => {
     const payments = {
       startSubscription: vi.fn().mockResolvedValue({ id: 'local_1' }),
       getCurrentSubscription: vi.fn().mockResolvedValue(null),
+      cancelCurrentSubscription: vi
+        .fn()
+        .mockResolvedValue({ id: 'local_1', cancelAtPeriodEnd: true }),
     };
     const controller = new PaymentsController(payments as never);
     await expect(
@@ -20,6 +23,11 @@ describe('payment controllers', () => {
       data: null,
     });
     expect(payments.getCurrentSubscription).toHaveBeenCalledWith('user_1');
+    await expect(controller.cancelCurrentSubscription('user_1')).resolves.toEqual({
+      message: 'Subscription cancellation scheduled',
+      data: { id: 'local_1', cancelAtPeriodEnd: true },
+    });
+    expect(payments.cancelCurrentSubscription).toHaveBeenCalledWith('user_1');
   });
 
   it('passes raw body and Razorpay headers to the webhook service', async () => {
