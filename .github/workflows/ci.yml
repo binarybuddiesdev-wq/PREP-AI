@@ -112,6 +112,18 @@ jobs:
         working-directory: server
         run: pnpm test
 
+      - name: Upload server source maps to Sentry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_ORG != '' && env.SENTRY_PROJECT != ''
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+        with:
+          release: prepai+${{ github.sha }}
+          sourcemaps: ./server/dist
+          set_commits: skip
+
   test-ui:
     name: UI Unit Tests
     runs-on: ubuntu-latest

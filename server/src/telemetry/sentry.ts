@@ -19,8 +19,7 @@ export function initializeErrorTracking(
   Sentry.init({
     dsn,
     environment: nodeEnv,
-    release:
-      env.SENTRY_RELEASE ?? `${env.npm_package_version ?? 'prepai'}+${env.GIT_SHA ?? 'local'}`,
+    release: env.SENTRY_RELEASE ?? `prepai+${env.GIT_SHA ?? 'local'}`,
     sampleRate: 1,
     tracesSampleRate: 0,
     sendDefaultPii: false,

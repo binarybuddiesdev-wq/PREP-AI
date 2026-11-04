@@ -1,5 +1,10 @@
 # Worklog
 
+## 2026-11-04 - Optional Sentry server source maps
+
+- Added a main-branch CI step that uploads compiled server source maps only when the configured Sentry token and project variables are present. Sentry's runtime release now consistently uses `prepai+<GIT_SHA>` unless `SENTRY_RELEASE` is explicitly set, matching the CI upload release.
+- Verification: full server gate passed; observability config tests and Sentry release tests passed; build emitted 192 JavaScript source maps for the upload action.
+
 ## 2026-11-04 - Topic cache latency histograms
 
 - Added `topic_cache_operation_duration_seconds` for topic list and detail reads, split by cache hit/miss. Durations include the complete path (cache lookup and, on misses, MongoDB retrieval), with fixed labels and existing bounded histogram buckets. Added a Grafana p95 panel and updated cache/observability trackers. This provides measurements before expanding caching to other read paths.

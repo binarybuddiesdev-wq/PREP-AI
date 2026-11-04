@@ -62,6 +62,20 @@ describe('Sentry error tracking', () => {
     );
   });
 
+  it('uses the same SHA-based release even when npm injects a package version', () => {
+    initializeErrorTracking(
+      {
+        NODE_ENV: 'production',
+        SENTRY_DSN: 'https://public@example.ingest.sentry.io/1',
+        npm_package_version: '0.0.1',
+        GIT_SHA: 'abc123',
+      },
+      'api'
+    );
+
+    expect(Sentry.init).toHaveBeenCalledWith(expect.objectContaining({ release: 'prepai+abc123' }));
+  });
+
   it('removes request and user data before an event can leave the process', () => {
     initializeErrorTracking(
       { NODE_ENV: 'production', SENTRY_DSN: 'https://public@example.ingest.sentry.io/1' },

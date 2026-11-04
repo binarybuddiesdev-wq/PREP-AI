@@ -156,15 +156,21 @@ disabled when `SENTRY_DSN` is empty or `NODE_ENV=test`; configured production
 events use a 100% error sample rate.
 
 - Set `SENTRY_DSN` to enable error reporting.
-- `SENTRY_RELEASE` overrides the default `<package-version>+<git-sha>` release
-  (the SHA falls back to `local` when `GIT_SHA` is unset).
+- `SENTRY_RELEASE` overrides the default `prepai+<git-sha>` release (the SHA
+  falls back to `local` when `GIT_SHA` is unset).
 - `REGION` adds an optional deployment region tag.
 - Events carry fixed `service` (`api` or `worker`) and `nodeEnv` tags.
 - Request, user, breadcrumb, and extra data are removed before sending. Default
   PII collection is disabled.
 - Sentry tracing is disabled (`tracesSampleRate: 0`); OpenTelemetry remains the
   single trace pipeline.
-- CI source-map upload is still a deployment follow-up.
+- On pushes to `main`, CI uploads `server/dist` source maps when the repository
+  has `SENTRY_AUTH_TOKEN` configured as a secret and `SENTRY_ORG` and
+  `SENTRY_PROJECT` configured as repository variables. The token needs Sentry's
+  `org:ci` and `org:read` scopes. CI uses `prepai+<commit-sha>` as the release;
+  deploy the same value through `SENTRY_RELEASE` or set `GIT_SHA` to that commit
+  so runtime events match the uploaded maps. Upload is skipped on pull requests,
+  other branches, and when credentials are not configured.
 
 ## Uptime monitoring
 

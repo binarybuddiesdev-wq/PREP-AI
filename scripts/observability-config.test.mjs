@@ -104,3 +104,21 @@ test('Grafana dashboard is portable and has panels for the service signals', asy
     );
   }
 });
+
+test('Sentry release upload is optional, main-only, and uses server build maps', async () => {
+  const workflow = await readYaml('../.github/workflows/ci.yml');
+  const releaseStep = workflow.jobs['test-server'].steps.find(({ uses }) =>
+    uses?.startsWith('getsentry/action-release@')
+  );
+
+  assert.ok(releaseStep, 'CI has an official Sentry release action');
+  assert.match(releaseStep.if, /github\.event_name == 'push'/);
+  assert.match(releaseStep.if, /refs\/heads\/main/);
+  assert.match(releaseStep.if, /SENTRY_AUTH_TOKEN/);
+  assert.equal(releaseStep.with.sourcemaps, './server/dist');
+  assert.equal(releaseStep.with.release, 'prepai+${{ github.sha }}');
+  assert.equal(releaseStep.with.set_commits, 'skip');
+  assert.equal(releaseStep.env.SENTRY_AUTH_TOKEN, '${{ secrets.SENTRY_AUTH_TOKEN }}');
+  assert.equal(releaseStep.env.SENTRY_ORG, '${{ vars.SENTRY_ORG }}');
+  assert.equal(releaseStep.env.SENTRY_PROJECT, '${{ vars.SENTRY_PROJECT }}');
+});
