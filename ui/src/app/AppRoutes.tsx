@@ -1,10 +1,18 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { ROUTES } from '@/core';
-import { DashboardPage, SettingsPage, SignInPage, SignUpPage } from '@/pages';
+import { DashboardPage, LandingPage, SettingsPage, SignInPage, SignUpPage } from '@/pages';
 import { ProtectedRoute, PublicRoute } from './RouteGuards';
 
 export const AppRoutes = () => (
   <Routes>
+    <Route
+      path={ROUTES.root}
+      element={
+        <PublicRoute>
+          <LandingPage />
+        </PublicRoute>
+      }
+    />
     <Route
       path={`${ROUTES.signIn}/*`}
       element={

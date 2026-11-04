@@ -528,3 +528,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Documented that the HTML is a visual/interaction reference with simulated data and outcomes; the React app must preserve its user-facing design while using real APIs and provider flows.
 - Linked the tracker from the root README and architecture index, and clarified the README's prototype section.
 - Verification: Prettier check, agent-doc check, and `git diff --check` passed; project-wide feature work has not started.
+
+## 2026-11-04 - Port the public landing page to React
+
+- Added the `/` public landing route with the reference navigation, hero terminal, feedback showcase, feature statements, four-step flow, result cards, CTA, and footer.
+- Added responsive mobile navigation, reduced-motion-aware canvas and scroll effects, animated metrics, cursor tilt, and a Redux-backed persisted theme preference through the `logic` layer.
+- Kept authentication links on the existing Clerk sign-in/sign-up routes; no prototype auth controls or fake provider flows were added.
+- Verification: UI tests passed (19 files, 43 tests); root/UI lint, Prettier, `tsc -b`, production build, and `git diff --check` passed. Root lint reports six existing warnings in server files; Vite reports a 709.8 kB chunk-size warning. Desktop/mobile visual and interaction checks passed in installed Chrome. Playwright Test could not launch because its bundled Chromium binary is not installed. Architecture, QA, and correctness review findings were resolved and rechecked; no findings remain.
