@@ -56,6 +56,35 @@ vi.mock('../generated/postgresql-client/index.js', () => ({
 
 import { PrismaPostgresqlService, PrismaService } from './prisma.service.js';
 
+const expectedRlsPolicies = [
+  ['TheorySession', 'theory_session_api_tenant', 'prepai_api'],
+  ['TheorySession', 'theory_session_worker_tenant', 'prepai_worker'],
+  ['TheoryAnswer', 'theory_answer_api_tenant', 'prepai_api'],
+  ['TheoryAnswer', 'theory_answer_worker_job', 'prepai_worker'],
+  ['CodingSession', 'coding_session_api_tenant', 'prepai_api'],
+  ['CodingSession', 'coding_session_worker_tenant', 'prepai_worker'],
+  ['CodingExecution', 'coding_execution_api_tenant', 'prepai_api'],
+  ['CodingExecution', 'coding_execution_worker_job', 'prepai_worker'],
+  ['CodingAnswer', 'coding_answer_api_tenant', 'prepai_api'],
+  ['CodingAnswer', 'coding_answer_worker_job', 'prepai_worker'],
+  ['PdfChunk', 'pdf_chunk_api_tenant', 'prepai_api'],
+  ['PdfChunk', 'pdf_chunk_worker_source', 'prepai_worker'],
+  ['PaymentSubscription', 'payment_subscription_api_tenant', 'prepai_api'],
+  ['PaymentSubscription', 'payment_subscription_worker_tenant', 'prepai_worker'],
+  ['PaymentWebhookEvent', 'payment_webhook_event_api_tenant', 'prepai_api'],
+  ['PaymentWebhookEvent', 'payment_webhook_event_worker_job', 'prepai_worker'],
+  ['PaymentCharge', 'payment_charge_api_tenant', 'prepai_api'],
+  ['PaymentRefund', 'payment_refund_api_tenant', 'prepai_api'],
+  ['PaymentRefund', 'payment_refund_worker_job', 'prepai_worker'],
+];
+
+const expectedPolicyRows = expectedRlsPolicies.map(([table_name, policy_name, role]) => ({
+  table_name,
+  policy_name,
+  roles: [role],
+  command: 'ALL',
+}));
+
 describe('Prisma services', () => {
   let log: ReturnType<typeof vi.spyOn>;
   let warn: ReturnType<typeof vi.spyOn>;
@@ -370,6 +399,331 @@ describe('Prisma services', () => {
     expect(prismaMocks.postgresQueryRaw.mock.calls[0]?.[1]).toBe(100);
     expect(prismaMocks.postgresQueryRaw.mock.calls[1]?.[2]).toBe(100);
     expect(prismaMocks.postgresQueryRaw.mock.calls[2]?.[1]).toBe(100);
+    await service.onModuleDestroy();
+  });
+
+  it('accepts restricted roles, forced tenant RLS, and worker-only functions', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_api',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_worker',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce(
+        [
+          'TheorySession',
+          'TheoryAnswer',
+          'CodingSession',
+          'CodingExecution',
+          'CodingAnswer',
+          'PdfChunk',
+          'PaymentSubscription',
+          'PaymentWebhookEvent',
+          'PaymentCharge',
+          'PaymentRefund',
+        ].map((table_name) => ({ table_name, rls_enabled: true, rls_forced: true }))
+      )
+      .mockResolvedValueOnce(expectedPolicyRows)
+      .mockResolvedValueOnce(
+        [
+          'prepai_list_queued_theory_answer_ids(integer)',
+          'prepai_get_theory_answer_owner(text)',
+          'prepai_list_queued_coding_execution_ids(integer)',
+          'prepai_list_queued_coding_review_execution_ids(integer)',
+          'prepai_get_coding_execution_owner(text)',
+          'prepai_list_queued_pdf_study_session_ids(integer)',
+          'prepai_get_pdf_study_session_owner(text)',
+          'prepai_claim_pending_payment_webhook_events(integer)',
+          'prepai_list_expired_payment_subscriptions(timestamptz,integer)',
+          'prepai_claim_pending_payment_refunds(integer)',
+          'prepai_delete_expired_payment_ledger(timestamptz)',
+        ].map((function_signature) => ({
+          function_signature,
+          exists: true,
+          worker_can_execute: true,
+          api_can_execute: false,
+        }))
+      );
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).resolves.toBeUndefined();
+
+    expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledTimes(5);
+    await service.onModuleDestroy();
+  });
+
+  it('rejects production RLS setup when an API role bypasses RLS', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw.mockResolvedValueOnce([
+      {
+        role_name: 'prepai_api',
+        is_superuser: true,
+        bypasses_rls: false,
+        has_elevated_membership: false,
+      },
+    ]);
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).rejects.toThrow(/prepai_api.*restricted/i);
+    expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledTimes(2);
+    await service.onModuleDestroy();
+  });
+
+  it('rejects production RLS setup when a runtime role can assume an elevated role', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw.mockResolvedValueOnce([
+      {
+        role_name: 'prepai_api',
+        is_superuser: false,
+        bypasses_rls: false,
+        has_elevated_membership: true,
+      },
+    ]);
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).rejects.toThrow(
+      /prepai_api.*restricted.*bypass RLS/i
+    );
+    await service.onModuleDestroy();
+  });
+
+  it('rejects production RLS setup when API can assume the worker role', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw.mockResolvedValueOnce([
+      {
+        role_name: 'prepai_api',
+        is_superuser: false,
+        bypasses_rls: false,
+        has_elevated_membership: false,
+        has_counterpart_membership: true,
+      },
+    ]);
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).rejects.toThrow(
+      /prepai_api.*must not assume.*prepai_worker/i
+    );
+    await service.onModuleDestroy();
+  });
+
+  it('rejects a required RLS policy installed on the wrong table or for the wrong role', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_api',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_worker',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce(
+        [
+          'TheorySession',
+          'TheoryAnswer',
+          'CodingSession',
+          'CodingExecution',
+          'CodingAnswer',
+          'PdfChunk',
+          'PaymentSubscription',
+          'PaymentWebhookEvent',
+          'PaymentCharge',
+          'PaymentRefund',
+        ].map((table_name) => ({ table_name, rls_enabled: true, rls_forced: true }))
+      )
+      .mockResolvedValueOnce([
+        ...expectedPolicyRows.filter(
+          (policy) => policy.policy_name !== 'payment_refund_worker_job'
+        ),
+        {
+          table_name: 'PaymentCharge',
+          policy_name: 'payment_refund_worker_job',
+          roles: ['prepai_worker'],
+          command: 'ALL',
+        },
+      ]);
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).rejects.toThrow(
+      /PaymentRefund\.payment_refund_worker_job/i
+    );
+    await service.onModuleDestroy();
+  });
+
+  it('rejects missing or unforced RLS tables and incorrect worker grants', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_api',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_worker',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce(
+        [
+          'TheorySession',
+          'TheoryAnswer',
+          'CodingSession',
+          'CodingExecution',
+          'CodingAnswer',
+          'PdfChunk',
+          'PaymentSubscription',
+          'PaymentWebhookEvent',
+          'PaymentCharge',
+          'PaymentRefund',
+        ].map((table_name) => ({
+          table_name,
+          rls_enabled: true,
+          rls_forced: table_name !== 'PaymentRefund',
+        }))
+      );
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).rejects.toThrow(
+      /enabled and forced on: PaymentRefund/i
+    );
+    expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledTimes(3);
+    await service.onModuleDestroy();
+  });
+
+  it('rejects when expected RLS policies are missing', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_api',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_worker',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce(
+        [
+          'TheorySession',
+          'TheoryAnswer',
+          'CodingSession',
+          'CodingExecution',
+          'CodingAnswer',
+          'PdfChunk',
+          'PaymentSubscription',
+          'PaymentWebhookEvent',
+          'PaymentCharge',
+          'PaymentRefund',
+        ].map((table_name) => ({ table_name, rls_enabled: true, rls_forced: true }))
+      )
+      .mockResolvedValueOnce(
+        expectedPolicyRows.filter((policy) => policy.policy_name !== 'payment_refund_worker_job')
+      );
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).rejects.toThrow(
+      /policies are missing or misconfigured: PaymentRefund\.payment_refund_worker_job/i
+    );
+    expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledTimes(4);
+    await service.onModuleDestroy();
+  });
+
+  it('rejects worker function grants that are missing or exposed to the API', async () => {
+    vi.stubEnv('POSTGRESQL_URL', 'postgresql://api@localhost:5432/prepai');
+    vi.stubEnv('POSTGRESQL_WORKER_URL', 'postgresql://worker@localhost:5432/prepai');
+    prismaMocks.postgresQueryRaw
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_api',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          role_name: 'prepai_worker',
+          is_superuser: false,
+          bypasses_rls: false,
+          has_elevated_membership: false,
+        },
+      ])
+      .mockResolvedValueOnce(
+        [
+          'TheorySession',
+          'TheoryAnswer',
+          'CodingSession',
+          'CodingExecution',
+          'CodingAnswer',
+          'PdfChunk',
+          'PaymentSubscription',
+          'PaymentWebhookEvent',
+          'PaymentCharge',
+          'PaymentRefund',
+        ].map((table_name) => ({ table_name, rls_enabled: true, rls_forced: true }))
+      )
+      .mockResolvedValueOnce(expectedPolicyRows)
+      .mockResolvedValueOnce([
+        {
+          function_signature: 'prepai_claim_pending_payment_refunds(integer)',
+          exists: true,
+          worker_can_execute: false,
+          api_can_execute: true,
+        },
+      ]);
+    const service = new PrismaPostgresqlService();
+    await service.onModuleInit();
+
+    await expect(service.assertProductionRlsReady()).rejects.toThrow(
+      /worker function grants are incomplete.*prepai_list_queued_theory_answer_ids/i
+    );
     await service.onModuleDestroy();
   });
 

@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import { HealthService } from './health.service.js';
 
 describe('HealthService', () => {
   let service: HealthService;
   let prisma: { $runCommandRaw: ReturnType<typeof vi.fn> };
-  let postgres: { client_: { $queryRaw: ReturnType<typeof vi.fn> } | undefined };
+  let postgres: {
+    client_: { $queryRaw: ReturnType<typeof vi.fn> } | undefined;
+    assertProductionRlsReady: ReturnType<typeof vi.fn>;
+  };
   let mockRedis: { ping: ReturnType<typeof vi.fn> };
   let pinoLogger: {
     info: ReturnType<typeof vi.fn>;
@@ -15,7 +18,10 @@ describe('HealthService', () => {
 
   beforeEach(async () => {
     prisma = { $runCommandRaw: vi.fn() };
-    postgres = { client_: undefined };
+    postgres = {
+      client_: undefined,
+      assertProductionRlsReady: vi.fn().mockResolvedValue(undefined),
+    };
     mockRedis = {
       ping: vi.fn().mockResolvedValue('PONG'),
     };
@@ -37,6 +43,10 @@ describe('HealthService', () => {
     }).compile();
 
     service = module.get<HealthService>(HealthService);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   describe('liveness', () => {
@@ -97,6 +107,46 @@ describe('HealthService', () => {
       const result = await service.readiness();
       expect(result.checks.postgres.status).toBe('up');
       expect(queryRaw).toHaveBeenCalled();
+    });
+
+    it('validates the RLS runtime posture in production readiness', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      postgres.client_ = { $queryRaw: queryRaw } as never;
+      prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
+
+      const result = await service.readiness();
+
+      expect(result.status).toBe('ready');
+      expect(postgres.assertProductionRlsReady).toHaveBeenCalledOnce();
+    });
+
+    it('marks Postgres down when the production RLS runtime posture is incomplete', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      postgres.client_ = { $queryRaw: queryRaw } as never;
+      postgres.assertProductionRlsReady.mockRejectedValue(
+        new Error('PostgreSQL role prepai_api must not bypass row-level security')
+      );
+      prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
+
+      const result = await service.readiness();
+
+      expect(result.status).toBe('not-ready');
+      expect(result.checks.postgres.status).toBe('down');
+      expect(result.checks.postgres.error).toContain('must not bypass');
+    });
+
+    it('does not run production RLS checks in development', async () => {
+      vi.stubEnv('NODE_ENV', 'development');
+      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      postgres.client_ = { $queryRaw: queryRaw } as never;
+      prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
+
+      const result = await service.readiness();
+
+      expect(result.status).toBe('ready');
+      expect(postgres.assertProductionRlsReady).not.toHaveBeenCalled();
     });
 
     it('should mark not-ready when Postgres client exists but ping fails', async () => {

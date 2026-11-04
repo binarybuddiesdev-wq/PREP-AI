@@ -83,3 +83,11 @@ and policies in the order above, configure both runtime URLs, verify the role
 attributes, and run the isolation suite against staging. Validate real
 Razorpay webhook/refund flows and confirm rollback steps. Keep schema and
 migration credentials out of API and worker runtime configuration.
+
+When `NODE_ENV=production`, `/readyz` also verifies that the API and worker
+connect as `prepai_api` and `prepai_worker`, both roles are non-superuser and
+do not bypass RLS, all required tenant tables have forced RLS and expected
+policies, and API/worker function grants match the deployment model. A failed
+check reports PostgreSQL as `down` and makes `/readyz` return 503. The check is
+read-only; it does not apply schema or policy changes. Development readiness
+remains connectivity-only.

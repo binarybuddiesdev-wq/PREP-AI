@@ -4,6 +4,55 @@ import { PrismaClient as PostgresPrismaClient } from '../generated/postgresql-cl
 import type { Prisma } from '../generated/postgresql-client/index.js';
 import { MetricsService } from '../modules/metrics/metrics.service.js';
 
+const RLS_PROTECTED_TABLES = [
+  'TheorySession',
+  'TheoryAnswer',
+  'CodingSession',
+  'CodingExecution',
+  'CodingAnswer',
+  'PdfChunk',
+  'PaymentSubscription',
+  'PaymentWebhookEvent',
+  'PaymentCharge',
+  'PaymentRefund',
+] as const;
+
+const RLS_REQUIRED_POLICIES = [
+  ['TheorySession', 'theory_session_api_tenant', 'prepai_api'],
+  ['TheorySession', 'theory_session_worker_tenant', 'prepai_worker'],
+  ['TheoryAnswer', 'theory_answer_api_tenant', 'prepai_api'],
+  ['TheoryAnswer', 'theory_answer_worker_job', 'prepai_worker'],
+  ['CodingSession', 'coding_session_api_tenant', 'prepai_api'],
+  ['CodingSession', 'coding_session_worker_tenant', 'prepai_worker'],
+  ['CodingExecution', 'coding_execution_api_tenant', 'prepai_api'],
+  ['CodingExecution', 'coding_execution_worker_job', 'prepai_worker'],
+  ['CodingAnswer', 'coding_answer_api_tenant', 'prepai_api'],
+  ['CodingAnswer', 'coding_answer_worker_job', 'prepai_worker'],
+  ['PdfChunk', 'pdf_chunk_api_tenant', 'prepai_api'],
+  ['PdfChunk', 'pdf_chunk_worker_source', 'prepai_worker'],
+  ['PaymentSubscription', 'payment_subscription_api_tenant', 'prepai_api'],
+  ['PaymentSubscription', 'payment_subscription_worker_tenant', 'prepai_worker'],
+  ['PaymentWebhookEvent', 'payment_webhook_event_api_tenant', 'prepai_api'],
+  ['PaymentWebhookEvent', 'payment_webhook_event_worker_job', 'prepai_worker'],
+  ['PaymentCharge', 'payment_charge_api_tenant', 'prepai_api'],
+  ['PaymentRefund', 'payment_refund_api_tenant', 'prepai_api'],
+  ['PaymentRefund', 'payment_refund_worker_job', 'prepai_worker'],
+] as const;
+
+const WORKER_ONLY_FUNCTIONS = [
+  'prepai_list_queued_theory_answer_ids(integer)',
+  'prepai_get_theory_answer_owner(text)',
+  'prepai_list_queued_coding_execution_ids(integer)',
+  'prepai_list_queued_coding_review_execution_ids(integer)',
+  'prepai_get_coding_execution_owner(text)',
+  'prepai_list_queued_pdf_study_session_ids(integer)',
+  'prepai_get_pdf_study_session_owner(text)',
+  'prepai_claim_pending_payment_webhook_events(integer)',
+  'prepai_list_expired_payment_subscriptions(timestamptz,integer)',
+  'prepai_claim_pending_payment_refunds(integer)',
+  'prepai_delete_expired_payment_ledger(timestamptz)',
+] as const;
+
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
@@ -73,6 +122,170 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
 
   get workerClient_(): PostgresPrismaClient | undefined {
     return this.workerClient;
+  }
+
+  async assertProductionRlsReady(): Promise<void> {
+    const api = this.client;
+    const worker = this.workerClient;
+    if (!api) throw new Error('PostgreSQL API client is not connected');
+    if (!worker) throw new Error('PostgreSQL worker client is not connected');
+
+    const [apiRole] = await api.$queryRaw<
+      Array<{
+        role_name: string;
+        is_superuser: boolean;
+        bypasses_rls: boolean;
+        has_elevated_membership: boolean;
+        has_counterpart_membership: boolean;
+      }>
+    >`
+      WITH RECURSIVE reachable_roles(role_oid) AS (
+        SELECT role.oid FROM pg_catalog.pg_roles AS role WHERE role.rolname = current_user
+        UNION
+        SELECT membership.roleid
+        FROM pg_catalog.pg_auth_members AS membership
+        JOIN reachable_roles AS reachable ON membership.member = reachable.role_oid
+      )
+      SELECT current_user AS role_name, role.rolsuper AS is_superuser,
+        role.rolbypassrls AS bypasses_rls,
+        EXISTS (
+          SELECT 1 FROM reachable_roles AS reachable
+          JOIN pg_catalog.pg_roles AS inherited ON inherited.oid = reachable.role_oid
+          WHERE inherited.oid <> role.oid AND (inherited.rolsuper OR inherited.rolbypassrls)
+        ) AS has_elevated_membership
+        , EXISTS (
+          SELECT 1 FROM reachable_roles AS reachable
+          JOIN pg_catalog.pg_roles AS inherited ON inherited.oid = reachable.role_oid
+          WHERE inherited.oid <> role.oid
+            AND inherited.rolname = CASE current_user
+              WHEN 'prepai_api' THEN 'prepai_worker'
+              WHEN 'prepai_worker' THEN 'prepai_api'
+            END
+        ) AS has_counterpart_membership
+      FROM pg_catalog.pg_roles AS role
+      WHERE role.rolname = current_user
+    `;
+    const [workerRole] = await worker.$queryRaw<
+      Array<{
+        role_name: string;
+        is_superuser: boolean;
+        bypasses_rls: boolean;
+        has_elevated_membership: boolean;
+        has_counterpart_membership: boolean;
+      }>
+    >`
+      WITH RECURSIVE reachable_roles(role_oid) AS (
+        SELECT role.oid FROM pg_catalog.pg_roles AS role WHERE role.rolname = current_user
+        UNION
+        SELECT membership.roleid
+        FROM pg_catalog.pg_auth_members AS membership
+        JOIN reachable_roles AS reachable ON membership.member = reachable.role_oid
+      )
+      SELECT current_user AS role_name, role.rolsuper AS is_superuser,
+        role.rolbypassrls AS bypasses_rls,
+        EXISTS (
+          SELECT 1 FROM reachable_roles AS reachable
+          JOIN pg_catalog.pg_roles AS inherited ON inherited.oid = reachable.role_oid
+          WHERE inherited.oid <> role.oid AND (inherited.rolsuper OR inherited.rolbypassrls)
+        ) AS has_elevated_membership
+        , EXISTS (
+          SELECT 1 FROM reachable_roles AS reachable
+          JOIN pg_catalog.pg_roles AS inherited ON inherited.oid = reachable.role_oid
+          WHERE inherited.oid <> role.oid
+            AND inherited.rolname = CASE current_user
+              WHEN 'prepai_api' THEN 'prepai_worker'
+              WHEN 'prepai_worker' THEN 'prepai_api'
+            END
+        ) AS has_counterpart_membership
+      FROM pg_catalog.pg_roles AS role
+      WHERE role.rolname = current_user
+    `;
+
+    this.assertRestrictedRole(apiRole, 'prepai_api');
+    this.assertRestrictedRole(workerRole, 'prepai_worker');
+
+    const tables = await api.$queryRaw<
+      Array<{ table_name: string; rls_enabled: boolean; rls_forced: boolean }>
+    >`
+      SELECT relation.relname AS table_name,
+        relation.relrowsecurity AS rls_enabled,
+        relation.relforcerowsecurity AS rls_forced
+      FROM pg_catalog.pg_class AS relation
+      JOIN pg_catalog.pg_namespace AS schema ON schema.oid = relation.relnamespace
+      WHERE schema.nspname = 'public'
+        AND relation.relkind IN ('r', 'p')
+        AND relation.relname = ANY(${[...RLS_PROTECTED_TABLES]}::text[])
+    `;
+    const tablesByName = new Map(tables.map((table) => [table.table_name, table]));
+    const missingTables = RLS_PROTECTED_TABLES.filter((name) => !tablesByName.has(name));
+    if (missingTables.length) {
+      throw new Error(`PostgreSQL RLS tenant tables are missing: ${missingTables.join(', ')}`);
+    }
+    const unforcedTables = RLS_PROTECTED_TABLES.filter((name) => {
+      const table = tablesByName.get(name);
+      return !table?.rls_enabled || !table.rls_forced;
+    });
+    if (unforcedTables.length) {
+      throw new Error(`PostgreSQL RLS must be enabled and forced on: ${unforcedTables.join(', ')}`);
+    }
+
+    const policies = await api.$queryRaw<
+      Array<{ table_name: string; policy_name: string; roles: string[]; command: string }>
+    >`
+      SELECT tablename AS table_name, policyname AS policy_name, roles, cmd AS command
+      FROM pg_catalog.pg_policies
+      WHERE schemaname = 'public'
+        AND policyname = ANY(${RLS_REQUIRED_POLICIES.map(([, name]) => name)}::text[])
+    `;
+    const policyKey = (table: string, name: string) => `${table}.${name}`;
+    const existingPolicies = new Set(
+      policies.map(({ table_name, policy_name, roles, command }) =>
+        roles.length === 1 && command === 'ALL'
+          ? `${policyKey(table_name, policy_name)}:${roles[0]}`
+          : ''
+      )
+    );
+    const missingPolicies = RLS_REQUIRED_POLICIES.filter(
+      ([table, name, role]) => !existingPolicies.has(`${policyKey(table, name)}:${role}`)
+    );
+    if (missingPolicies.length) {
+      throw new Error(
+        `PostgreSQL RLS policies are missing or misconfigured: ${missingPolicies
+          .map(([table, name]) => `${table}.${name}`)
+          .join(', ')}`
+      );
+    }
+
+    const functions = await api.$queryRaw<
+      Array<{
+        function_signature: string;
+        exists: boolean;
+        worker_can_execute: boolean;
+        api_can_execute: boolean;
+      }>
+    >`
+      SELECT required.function_signature,
+        to_regprocedure(required.function_signature) IS NOT NULL AS exists,
+        COALESCE(
+          has_function_privilege('prepai_worker', to_regprocedure(required.function_signature), 'EXECUTE'),
+          false
+        ) AS worker_can_execute,
+        COALESCE(
+          has_function_privilege('prepai_api', to_regprocedure(required.function_signature), 'EXECUTE'),
+          false
+        ) AS api_can_execute
+      FROM unnest(${[...WORKER_ONLY_FUNCTIONS]}::text[]) AS required(function_signature)
+    `;
+    const functionsByName = new Map(functions.map((fn) => [fn.function_signature, fn]));
+    const unavailableFunctions = WORKER_ONLY_FUNCTIONS.filter((signature) => {
+      const fn = functionsByName.get(signature);
+      return !fn?.exists || !fn.worker_can_execute || fn.api_can_execute;
+    });
+    if (unavailableFunctions.length) {
+      throw new Error(
+        `PostgreSQL worker function grants are incomplete: ${unavailableFunctions.join(', ')}`
+      );
+    }
   }
 
   async withTenantContext<T>(
@@ -274,6 +487,30 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
 
   private assertIdentity(value: string, message: string): void {
     if (!value.trim()) throw new Error(message);
+  }
+
+  private assertRestrictedRole(
+    role:
+      | {
+          role_name: string;
+          is_superuser: boolean;
+          bypasses_rls: boolean;
+          has_elevated_membership: boolean;
+          has_counterpart_membership: boolean;
+        }
+      | undefined,
+    expectedName: string
+  ): void {
+    if (role?.role_name !== expectedName) {
+      throw new Error(`Production PostgreSQL connection must use the ${expectedName} role`);
+    }
+    if (role.is_superuser || role.bypasses_rls || role.has_elevated_membership) {
+      throw new Error(`PostgreSQL role ${expectedName} must be restricted and must not bypass RLS`);
+    }
+    const counterpart = expectedName === 'prepai_api' ? 'prepai_worker' : 'prepai_api';
+    if (role.has_counterpart_membership) {
+      throw new Error(`PostgreSQL role ${expectedName} must not assume ${counterpart}`);
+    }
   }
 
   private clampWorkerLimit(limit: number): number {

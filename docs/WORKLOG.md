@@ -1,4 +1,8 @@
-## 2026-11-04 - PostgreSQL RLS for payment data
+## 2026-11-04 - Validate production PostgreSQL RLS readiness
+
+- Production `/readyz` now checks API/worker role names and RLS-bypass attributes, forced RLS on tenant tables, required policy names, and worker-only function grants. Development remains connectivity-only; the check is read-only and does not apply SQL.
+- Added unit coverage for readiness failures and a disposable Podman test using the actual restricted API and worker roles. Updated the RLS rollout, PostgreSQL runbook, observability guide, backend tracker, and implementation plan.
+- Verification: focused health/Prisma tests passed; `pnpm test:database:isolation` passed (11 files, 51 tests).## 2026-11-04 - PostgreSQL RLS for payment data
 
 - Added forced row-level security for payment subscriptions, webhook events, charges, and refunds. Owner reads/writes are tenant-scoped; the guarded admin refund flow gets transaction-local cross-tenant read access for charge lookup, and worker row updates require tenant plus operation identity.
 - Moved global webhook/refund claims, expired-subscription scans, and seven-year charge/refund cleanup behind bounded security-definer functions executable only by the restricted worker role. Refund reconciliation claims expire after 60 seconds. Entitlement audit entries now use the active worker transaction.

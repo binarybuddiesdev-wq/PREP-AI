@@ -37,11 +37,11 @@ Target stack: **Prometheus** + **Grafana** (or any OTLP-compatible backend).
 
 Endpoints to expose:
 
-| Endpoint   | Method | Purpose                                                               |
-| ---------- | ------ | --------------------------------------------------------------------- |
-| `/metrics` | GET    | Protected Prometheus scrape target; disabled without a bearer token.  |
-| `/readyz`  | GET    | Already implemented in `modules/health`. Use as the readiness signal. |
-| `/healthz` | GET    | Already implemented in `modules/health`. Use as the liveness signal.  |
+| Endpoint   | Method | Purpose                                                                                                                                                                           |
+| ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/metrics` | GET    | Protected Prometheus scrape target; disabled without a bearer token.                                                                                                              |
+| `/readyz`  | GET    | Already implemented in `modules/health`. Use as the readiness signal. Production also checks restricted PostgreSQL roles, forced-RLS tables/policies, and worker function grants. |
+| `/healthz` | GET    | Already implemented in `modules/health`. Use as the liveness signal.                                                                                                              |
 
 Current and planned metric families (Prometheus names):
 

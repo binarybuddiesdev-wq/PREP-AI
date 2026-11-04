@@ -78,6 +78,9 @@ export class HealthService {
     }
     try {
       await this.withTimeout(client.$queryRaw`SELECT 1`, PING_TIMEOUT_MS);
+      if (process.env['NODE_ENV'] === 'production') {
+        await this.withTimeout(this.postgres.assertProductionRlsReady(), PING_TIMEOUT_MS);
+      }
       return { status: 'up', latencyMs: Date.now() - started };
     } catch (error) {
       return {

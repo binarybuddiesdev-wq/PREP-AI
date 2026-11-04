@@ -11,7 +11,9 @@ rollout is completed.
 
 ## Detect and assess
 
-1. Check API `/readyz`; the `postgres` check must be `up`.
+1. Check API `/readyz`; the `postgres` check must be `up`. In production this
+   also confirms restricted API/worker roles, required forced-RLS policies,
+   and worker function grants. Development readiness checks connectivity only.
 2. Inspect `podman ps` and `podman-compose logs --tail=200 postgres`.
 3. Check PostgreSQL readiness and available disk before attempting a restart:
 
