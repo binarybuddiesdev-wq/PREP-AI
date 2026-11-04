@@ -1,4 +1,4 @@
-/* Keep the setup card within the viewport; long steps scroll inside the card. */
+/* Keep the setup flow compact while preserving an internal fallback on very short screens. */
 .onboarding-screen {
   box-sizing: border-box;
   scrollbar-width: none;
@@ -6,87 +6,98 @@
 
 .onboarding-card {
   box-sizing: border-box;
-  max-height: calc(100svh - 2rem);
+  max-height: calc(100svh - 1.5rem);
+  padding-block: clamp(0.75rem, 3svh, 2rem);
   overscroll-behavior: contain;
   scrollbar-color: rgb(161 161 170 / 35%) transparent;
   scrollbar-width: thin;
 }
 
+.onboarding-actions button {
+  padding-inline: 0.75rem;
+  white-space: nowrap;
+}
+
 @media (max-height: 820px) {
   .onboarding-card {
-    padding-block: 1.5rem;
+    padding-block: clamp(0.75rem, 2.6svh, 1.5rem);
   }
 
   .onboarding-header {
-    margin-bottom: 1rem;
+    margin-bottom: 0.875rem;
   }
 
   .onboarding-progress {
-    margin-bottom: 1rem;
+    margin-bottom: 0.875rem;
   }
 
   .onboarding-fields,
   .onboarding-content-section,
   .onboarding-difficulty {
-    margin-top: 1rem;
+    margin-top: 0.875rem;
   }
 
   .onboarding-actions {
-    margin-top: 1rem;
+    margin-top: 0.875rem;
   }
 
   .onboarding-skip {
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
   }
 }
 
 @media (max-height: 700px) {
   .onboarding-card {
-    padding-block: 1rem;
+    padding-block: 0.625rem;
   }
 
   .onboarding-header {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .onboarding-header > div:first-child {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
   }
 
   .onboarding-progress {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .onboarding-fields,
   .onboarding-content-section,
   .onboarding-difficulty {
-    margin-top: 0.75rem;
+    margin-top: 0.625rem;
   }
 
   .onboarding-actions {
-    margin-top: 0.75rem;
+    margin-top: 0.625rem;
   }
 
   .onboarding-skip {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
   }
 
   .onboarding-topic {
-    padding: 0.375rem 0.75rem;
+    padding: 0.3rem 0.625rem;
+  }
+
+  .onboarding-progress > li > span:first-child {
+    width: 1.75rem;
+    height: 1.75rem;
   }
 }
 
 @media (max-height: 650px) {
   .onboarding-card {
-    padding-block: 0.625rem;
+    padding-block: 0.375rem;
   }
 
   .onboarding-header {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.375rem;
   }
 
   .onboarding-progress {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.375rem;
   }
 
   .onboarding-fields,
@@ -100,7 +111,7 @@
   }
 
   .onboarding-skip {
-    margin-top: 0.25rem;
+    margin-top: 0.125rem;
   }
 
   .onboarding-topic {

@@ -565,3 +565,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Added mobile drawer focus handling and route matching consistent with React Router; the drawer is excluded from keyboard navigation while closed. Corrected light-theme active navigation and embedded loading contrast.
 - Verification: UI lint, `tsc -b`, production build, and 30 UI test files (84 tests) passed. Installed Chrome checks confirmed 240px and 68px desktop rails, 240px mobile navigation, mobile drawer selection/close, theme and error contrast, and no document overflow across all onboarding steps at 1440×900, 1366×768, 390×844, and 390×640. Dropdown popup styling was checked in Chrome. Build reports the existing Vite config and large-chunk warnings.
 - Repository-wide lint and format checks were also run; lint fails on the unrelated untracked `types/piston.js`, and format reports unrelated untracked server, seed, e2e, and tooling files. Those files were left untouched; changed UI files are checked separately.
+
+## 2026-11-04 - Refine onboarding spacing and select menus
+
+- Tightened onboarding spacing for short viewports while preserving a scroll fallback for unusually short screens; verified all steps at 390×844, 390×640, and 1366×768 with no page or card overflow.
+- Improved shared select trigger, focus/open states, popup contrast, selected option treatment, and mobile action button labels.
+- Made the select interaction test wait for the accessible option to appear, avoiding an intermittent timing failure under the full UI suite.
+- Verification: UI lint passed; UI tests passed (32 files, 87 tests); UI type-check and production build passed. Root lint and format checks reported errors/warnings in other dirty workspace files; changed-file formatting passed.

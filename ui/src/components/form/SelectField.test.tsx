@@ -28,7 +28,7 @@ describe('SelectField', () => {
 
     await user.click(dropdown);
     expect(document.body.style.overflow).not.toBe('hidden');
-    const option = screen.getByRole('option', { name: 'Backend Engineer' });
+    const option = await screen.findByRole('option', { name: 'Backend Engineer' });
     expect(option.closest('.settings-select-popup')).toBeInTheDocument();
     await user.click(option);
     expect(onChange).toHaveBeenCalledWith('backend');
