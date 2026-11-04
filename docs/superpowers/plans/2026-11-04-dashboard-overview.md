@@ -89,6 +89,6 @@
 - [x] Run the browser visual check at desktop, tablet, and mobile sizes; confirm each panel's responsive and empty/error behavior.
 - [x] Review the UI architecture and resolve findings. Independent architecture, QA, and correctness reviews reported no remaining findings after account-scoped keys and source-specific retries were added.
 - [x] Mark only implemented Phase 2 checklist items complete and record actual verification output.
-- [ ] Commit and push the finished dashboard feature and onboarding refinement to `main`.
+- [x] Commit and push the finished dashboard feature and onboarding refinement to `main` (`23ae2cf`).
 
 Recent-session links are explicitly deferred to Phase 3: no session detail route or detail API endpoint exists yet. The overview is complete without a dead control.
