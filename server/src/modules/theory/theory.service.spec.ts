@@ -645,6 +645,29 @@ describe('TheoryService', () => {
       expect(prisma.question.findMany).not.toHaveBeenCalled();
     });
 
+    it('explains token-budget and unsafe-content failures for PDF sessions', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValue({
+        ...mockSession,
+        mode: 'pdf',
+        pdfGenerationStatus: 'failed',
+        pdfGenerationError: 'daily_ai_token_budget_exceeded',
+      });
+      await expect(service.getSessionQuestions('session_001', 'user_001', dto)).rejects.toThrow(
+        'Daily AI token budget reached'
+      );
+
+      postgres.client_.theorySession.findFirst.mockResolvedValue({
+        ...mockSession,
+        mode: 'pdf',
+        pdfGenerationStatus: 'failed',
+        pdfGenerationError: 'unsafe_source_content',
+      });
+      await expect(service.getSessionQuestions('session_001', 'user_001', dto)).rejects.toThrow(
+        'PDF content could not be safely used to generate questions'
+      );
+      expect(prisma.question.findMany).not.toHaveBeenCalled();
+    });
+
     it('requires the topic reference on a topic session', async () => {
       postgres.client_.theorySession.findFirst.mockResolvedValue({
         ...mockSession,

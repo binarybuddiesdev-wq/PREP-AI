@@ -490,3 +490,11 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Prompt detections now transition to the existing safe terminal `review_unavailable` state and do not invoke provider fallback. Bumped prompt provenance to `coding-review-v2`.
 - Updated backend and architecture trackers. PDF question generation remains pending a separately designed quota policy.
 - Verification: focused coding-review and worker/token-budget suites (31 tests passed); full server gate passed.
+
+## 2026-11-04 - Guard and budget PDF question generation
+
+- Added provider-matched, fail-closed Mastra prompt-injection detection over the bounded retrieved excerpts.
+- Added per-provider-attempt role-based token reservations using prompt bytes, dynamic output ceiling (300 tokens per requested question, capped at 8,192), and detector allowance. Failed attempts retain reservations; successful attempts settle their allowance.
+- Token exhaustion and unsafe source detections now persist safe terminal generation codes, and the questions endpoint returns a specific safe message. Transient provider, detector, and budget-service failures remain retryable.
+- Updated PDF API, RAG design, backend, and architecture trackers.
+- Verification: focused PDF/theory tests (89 passed); full server gate passed.

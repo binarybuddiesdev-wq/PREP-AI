@@ -205,12 +205,17 @@ processing, ready/failed) for v1; avoid exposing raw parser/provider errors.
    small initial corpora. Record `EXPLAIN ANALYZE` and recall before tuning
    `lists`/`probes` or migrating index type.
 4. Give Mastra a bounded prompt with retrieved text clearly marked as untrusted
-   reference material. The PDF content must not override system instructions,
-   invoke tools, request secrets, or change the user's selected scope. Require
-   structured output containing question, expected answer, and citations that
-   identify only retrieved `sourceId`, chunk ID, and page. Validate citations
-   against retrieved chunk IDs before persisting/returning; never accept
-   model-invented source IDs or pages.
+   reference material. Run the provider-matched strict prompt-injection
+   detector before generation and reserve the prompt, detector, and bounded
+   output allowance for each provider attempt in the role-based daily token
+   budget. The PDF content must not override system instructions, invoke tools,
+   request secrets, or change the user's selected scope. Require structured
+   output containing question, expected answer, and citations that identify
+   only retrieved `sourceId`, chunk ID, and page. Validate citations against
+   retrieved chunk IDs before persisting/returning; never accept model-invented
+   source IDs or pages. A detector finding or exhausted budget is persisted as
+   a terminal safe generation code; transient provider/detector failures use
+   the queue retry policy.
 5. Persist the generation request and its selected source revisions on the
    theory session, then enqueue a separate `pdf-question-generation-queue`
    job with only the session ID. A worker reloads the session and trusted owner

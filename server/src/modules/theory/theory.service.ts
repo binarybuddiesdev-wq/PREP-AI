@@ -35,6 +35,7 @@ import {
   THEORY_TOPIC_ID_REQUIRED,
   THEORY_MODE_NOT_SUPPORTED,
   THEORY_DATABASE_UNAVAILABLE,
+  THEORY_AI_TOKEN_BUDGET_REACHED,
   IDEMPOTENCY_KEY_REUSED,
   THEORY_ANSWER_EVALUATION_IN_PROGRESS,
 } from '@/common/constants/api.constants.js';
@@ -273,6 +274,14 @@ export class TheoryService {
         throw new ConflictException('PDF study questions are still being generated');
       }
       if (session.pdfGenerationStatus === 'failed') {
+        if (session.pdfGenerationError === 'daily_ai_token_budget_exceeded') {
+          throw new ServiceUnavailableException(THEORY_AI_TOKEN_BUDGET_REACHED);
+        }
+        if (session.pdfGenerationError === 'unsafe_source_content') {
+          throw new ServiceUnavailableException(
+            'PDF content could not be safely used to generate questions'
+          );
+        }
         throw new ServiceUnavailableException('PDF study questions could not be generated');
       }
       questions = Array.isArray(session.pdfQuestions) ? session.pdfQuestions.slice(0, limit) : [];

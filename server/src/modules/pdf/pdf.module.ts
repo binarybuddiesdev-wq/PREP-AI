@@ -12,9 +12,10 @@ import { PdfRetrievalService } from './pdf-retrieval.service.js';
 import { PdfQuestionGeneratorService } from './pdf-question-generator.service.js';
 import { PdfStudyGenerationService } from './pdf-study-generation.service.js';
 import { MetricsModule } from '../metrics/metrics.module.js';
+import { TheoryModule } from '../theory/theory.module.js';
 
 @Module({
-  imports: [JobQueueModule, MetricsModule],
+  imports: [JobQueueModule, MetricsModule, TheoryModule],
   controllers: [PdfController],
   providers: [
     PdfService,

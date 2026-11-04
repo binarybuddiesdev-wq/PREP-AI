@@ -57,6 +57,12 @@ response once generation finishes; while it is queued/running, the API reports
 that generation is still in progress. Generated questions include citations
 to the source PDF and page used by the model.
 
+If generation fails, the questions endpoint returns `503`. Daily AI token
+budget exhaustion returns a retry-tomorrow message. If the safety detector
+blocks unsafe instructions in retrieved excerpts, the response says the PDF
+content could not safely be used to generate questions. Other generation
+failures use the generic unavailable message.
+
 ## Configuration and local database setup
 
 Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`,

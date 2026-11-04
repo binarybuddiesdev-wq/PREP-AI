@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PdfStudyGenerationService } from './pdf-study-generation.service.js';
+import { PdfAiTokenBudgetExceededError } from './pdf-question-generator.service.js';
+import { PromptInjectionBlockedError } from '../../mastra/prompt-injection-guard.js';
 
 describe('PdfStudyGenerationService', () => {
   function setup(
@@ -79,7 +81,7 @@ describe('PdfStudyGenerationService', () => {
       expect.any(String)
     );
     expect(generator.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ totalQuestions: 1, difficulty: 'Mid' })
+      expect.objectContaining({ userId: 'user_1', totalQuestions: 1, difficulty: 'Mid' })
     );
     const savedQuestions =
       transaction.theorySession.updateMany.mock.calls.at(-1)?.[0].data.pdfQuestions;
@@ -87,6 +89,25 @@ describe('PdfStudyGenerationService', () => {
     expect(savedQuestions[0].citations).toEqual([
       { pdfId: 'pdf_1', displayName: 'guide.pdf', page: 3, chunkId: 'chunk_1' },
     ]);
+  });
+
+  it.each([
+    [new PdfAiTokenBudgetExceededError(), 'daily_ai_token_budget_exceeded'],
+    [new PromptInjectionBlockedError(), 'unsafe_source_content'],
+  ])('persists terminal PDF generation error for %s', async (error, code) => {
+    const { service, transaction, generator } = setup();
+    generator.generate.mockRejectedValueOnce(error);
+
+    await expect(service.generate('session_1')).resolves.toBeUndefined();
+
+    expect(transaction.theorySession.updateMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        data: {
+          pdfGenerationStatus: 'failed',
+          pdfGenerationError: code,
+        },
+      })
+    );
   });
 
   it('persists insufficient-material without calling the generator when retrieval is empty', async () => {

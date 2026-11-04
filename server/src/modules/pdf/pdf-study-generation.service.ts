@@ -3,7 +3,11 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '../../generated/postgresql-client/index.js';
 import { PrismaPostgresqlService, PrismaService } from '@/prisma/prisma.service.js';
 import { PdfRetrievalService } from './pdf-retrieval.service.js';
-import { PdfQuestionGeneratorService } from './pdf-question-generator.service.js';
+import {
+  PdfAiTokenBudgetExceededError,
+  PdfQuestionGeneratorService,
+} from './pdf-question-generator.service.js';
+import { PromptInjectionBlockedError } from '../../mastra/prompt-injection-guard.js';
 
 @Injectable()
 export class PdfStudyGenerationService {
@@ -69,11 +73,31 @@ export class PdfStudyGenerationService {
       return;
     }
 
-    const generated = await this.generator.generate({
-      totalQuestions: session.totalQuestions,
-      difficulty: session.difficulty,
-      chunks: chunks.map(({ id, pageStart, text }) => ({ id, page: pageStart, text })),
-    });
+    let generated: Awaited<ReturnType<PdfQuestionGeneratorService['generate']>>;
+    try {
+      generated = await this.generator.generate({
+        userId: ownerId,
+        totalQuestions: session.totalQuestions,
+        difficulty: session.difficulty,
+        chunks: chunks.map(({ id, pageStart, text }) => ({ id, page: pageStart, text })),
+      });
+    } catch (error) {
+      if (error instanceof PdfAiTokenBudgetExceededError) {
+        await this.updateSession(sessionId, ownerId, {
+          pdfGenerationStatus: 'failed',
+          pdfGenerationError: 'daily_ai_token_budget_exceeded',
+        });
+        return;
+      }
+      if (error instanceof PromptInjectionBlockedError) {
+        await this.updateSession(sessionId, ownerId, {
+          pdfGenerationStatus: 'failed',
+          pdfGenerationError: 'unsafe_source_content',
+        });
+        return;
+      }
+      throw error;
+    }
     const chunksById = new Map(chunks.map((chunk) => [chunk.id, chunk]));
     const questions = generated.questions.map((question) => {
       const citations = question.citationChunkIds.map((chunkId) => {
