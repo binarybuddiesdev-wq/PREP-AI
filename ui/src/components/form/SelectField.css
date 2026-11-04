@@ -1,0 +1,167 @@
+.settings-select-trigger {
+  display: flex;
+  min-height: 2.5rem;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 0.625rem;
+  background: #09090b;
+  padding: 0.5rem 0.75rem;
+  color: #f4f4f5;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.settings-select-trigger:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 22%);
+  background: #111113;
+}
+
+.settings-select-trigger:focus-visible {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 16%);
+}
+
+.settings-select-trigger:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.settings-select-trigger [data-placeholder] {
+  color: #71717a;
+}
+
+.settings-select-icon {
+  display: flex;
+  flex: none;
+  color: #a1a1aa;
+  transition: transform 160ms ease;
+}
+
+.settings-select-trigger[data-popup-open] .settings-select-icon {
+  transform: rotate(180deg);
+  color: #fbbf24;
+}
+
+.settings-select-positioner {
+  z-index: 60;
+  outline: none;
+}
+
+.settings-select-popup {
+  max-height: min(var(--available-height, 20rem), 20rem);
+  min-width: var(--anchor-width);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 0.75rem;
+  background: #18181b;
+  padding: 0.3rem;
+  color: #f4f4f5;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 38%);
+  outline: none;
+  transform-origin: var(--transform-origin);
+  animation: select-popup-in 120ms ease-out;
+}
+
+.settings-select-item {
+  position: relative;
+  display: flex;
+  min-height: 2.375rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  color: #d4d4d8;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.settings-select-item[data-highlighted] {
+  background: rgb(245 158 11 / 12%);
+  color: #fef3c7;
+}
+
+.settings-select-item[data-selected] {
+  color: #fbbf24;
+}
+
+.settings-select-indicator {
+  display: flex;
+  flex: none;
+  color: #fbbf24;
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-trigger {
+  border-color: #d4d4d8;
+  background: #fff;
+  color: #18181b;
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-trigger:hover:not(:disabled) {
+  border-color: #a1a1aa;
+  background: #fafafa;
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-trigger [data-placeholder] {
+  color: #71717a;
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-popup {
+  border-color: #e4e4e7;
+  background: #fff;
+  color: #18181b;
+  box-shadow: 0 16px 40px rgb(24 24 27 / 16%);
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-item {
+  color: #3f3f46;
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-item[data-highlighted] {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-item[data-selected] {
+  color: #92400e;
+}
+
+:root:has(.app-shell[data-theme='light']) .settings-select-indicator {
+  color: #b45309;
+}
+
+@keyframes select-popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-select-trigger,
+  .settings-select-icon {
+    transition: none;
+  }
+
+  .settings-select-popup {
+    animation: none;
+  }
+}

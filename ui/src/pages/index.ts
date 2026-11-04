@@ -1,3 +1,4 @@
+export { AuthenticatedLayoutPage } from './AuthenticatedLayoutPage';
 export { DashboardPage } from './DashboardPage';
 export { LandingPage } from './LandingPage';
 export { OnboardingPage } from './OnboardingPage';

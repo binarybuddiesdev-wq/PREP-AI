@@ -15,6 +15,16 @@ vi.mock('@/service/auth', () => ({
     authenticationState.isSignedIn ? null : children,
   SignInWidget: () => null,
   SignUpWidget: () => null,
+  UserMenu: () => <button aria-label="Clerk user menu">Account</button>,
+}));
+
+vi.mock('@/logic', () => ({
+  useSessionReader: () => ({
+    isLoaded: true,
+    isSignedIn: true,
+    user: { id: 'user-1', firstName: 'Asha', email: 'asha@example.com' },
+  }),
+  useThemePreference: () => ({ theme: 'dark', toggleTheme: vi.fn() }),
 }));
 
 vi.mock('@/pages', async (importOriginal) => {
@@ -23,6 +33,7 @@ vi.mock('@/pages', async (importOriginal) => {
     ...pages,
     DashboardPage: () => <h1>Authenticated dashboard</h1>,
     OnboardingPage: () => <h1>Authenticated onboarding</h1>,
+    SettingsPage: () => <h1>Authenticated settings</h1>,
   };
 });
 
@@ -62,6 +73,7 @@ describe('AppRoutes', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Authenticated dashboard' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/dashboard');
   });
 
@@ -77,7 +89,24 @@ describe('AppRoutes', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Authenticated onboarding' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Primary navigation')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/onboarding');
+  });
+
+  it('serves settings inside the authenticated route group', () => {
+    authenticationState.isSignedIn = true;
+
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/settings']
+    );
+
+    expect(screen.getByRole('heading', { name: 'Authenticated settings' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings');
   });
 
   it('redirects signed-out users away from the setup route', () => {

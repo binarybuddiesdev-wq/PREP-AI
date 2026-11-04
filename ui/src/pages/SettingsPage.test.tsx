@@ -40,7 +40,9 @@ describe('SettingsPage', () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t load your profile');
+    const errorAlert = await screen.findByRole('alert');
+    expect(errorAlert).toHaveTextContent('Couldn’t load your profile');
+    expect(errorAlert.closest('main')).not.toHaveClass('min-h-screen');
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 });

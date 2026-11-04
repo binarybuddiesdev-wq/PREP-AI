@@ -1,5 +1,3 @@
-import { ChevronDown } from 'lucide-react';
-
 import {
   ONBOARDING_DIFFICULTY_OPTIONS,
   ONBOARDING_EXPERIENCE_OPTIONS,
@@ -7,6 +5,7 @@ import {
   ONBOARDING_TOPICS,
 } from '@/core';
 import { cn } from '@/utils';
+import { SelectField } from '@/components/form';
 import './OnboardingWizard.css';
 import type { IOnboardingWizardProps } from './OnboardingWizard.types';
 
@@ -18,8 +17,6 @@ const STEPS = [
 
 const fieldClassName =
   'mt-1.5 w-full rounded-lg border border-white/10 bg-[#09090b] px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15';
-const selectClassName = `onboarding-select ${fieldClassName} appearance-none pr-11 accent-amber-400`;
-
 const primaryButtonClassName =
   'inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
 
@@ -52,7 +49,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   return (
     <main
       aria-label="Profile setup"
-      className="onboarding-screen relative isolate flex min-h-svh items-center justify-center overflow-x-clip bg-[#09090b] px-5 py-4 font-['DM_Sans',sans-serif] text-zinc-100"
+      className="onboarding-screen relative isolate flex h-svh min-h-svh items-center justify-center overflow-hidden bg-[#09090b] px-5 py-4 font-['DM_Sans',sans-serif] text-zinc-100"
     >
       <div
         aria-hidden="true"
@@ -60,7 +57,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card relative w-full max-w-[520px] rounded-2xl border border-white/[0.08] bg-[#18181b] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-8"
+        className="onboarding-card relative w-full max-w-[520px] overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#18181b] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-8"
       >
         <header className="onboarding-header mb-6 text-center">
           <div className="mb-2 flex justify-center">{brand}</div>
@@ -126,89 +123,32 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 We’ll tailor questions to match your interview goals.
               </p>
 
-              <div className="onboarding-fields mt-5 space-y-4">
-                <div>
-                  <label
-                    htmlFor="onboarding-target-role"
-                    className="text-[0.8rem] font-medium text-zinc-300"
-                  >
-                    Target Role
-                  </label>
-                  <div className="onboarding-select-wrap relative">
-                    <select
-                      id="onboarding-target-role"
-                      aria-required="true"
-                      className={selectClassName}
-                      disabled={isSaving}
-                      value={values.targetRole}
-                      onChange={(event) =>
-                        onChange({
-                          ...values,
-                          targetRole: event.currentTarget.value as typeof values.targetRole,
-                        })
-                      }
-                    >
-                      <option className="bg-zinc-900 text-zinc-100" value="">
-                        Select your target role
-                      </option>
-                      {ONBOARDING_ROLE_OPTIONS.map((option) => (
-                        <option
-                          className="bg-zinc-900 text-zinc-100"
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      aria-hidden="true"
-                      className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="onboarding-experience-level"
-                    className="text-[0.8rem] font-medium text-zinc-300"
-                  >
-                    Experience Level
-                  </label>
-                  <div className="onboarding-select-wrap relative">
-                    <select
-                      id="onboarding-experience-level"
-                      aria-required="true"
-                      className={selectClassName}
-                      disabled={isSaving}
-                      value={values.experienceLevel}
-                      onChange={(event) =>
-                        onChange({
-                          ...values,
-                          experienceLevel: event.currentTarget
-                            .value as typeof values.experienceLevel,
-                        })
-                      }
-                    >
-                      <option className="bg-zinc-900 text-zinc-100" value="">
-                        Select your experience level
-                      </option>
-                      {ONBOARDING_EXPERIENCE_OPTIONS.map((option) => (
-                        <option
-                          className="bg-zinc-900 text-zinc-100"
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      aria-hidden="true"
-                      className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
-                    />
-                  </div>
-                </div>
+              <div className="onboarding-fields mt-5 space-y-3">
+                <SelectField
+                  id="onboarding-target-role"
+                  label="Target Role"
+                  placeholder="Select your target role"
+                  options={ONBOARDING_ROLE_OPTIONS}
+                  value={values.targetRole}
+                  disabled={isSaving}
+                  onChange={(targetRole) =>
+                    onChange({ ...values, targetRole: targetRole as typeof values.targetRole })
+                  }
+                />
+                <SelectField
+                  id="onboarding-experience-level"
+                  label="Experience Level"
+                  placeholder="Select your experience level"
+                  options={ONBOARDING_EXPERIENCE_OPTIONS}
+                  value={values.experienceLevel}
+                  disabled={isSaving}
+                  onChange={(experienceLevel) =>
+                    onChange({
+                      ...values,
+                      experienceLevel: experienceLevel as typeof values.experienceLevel,
+                    })
+                  }
+                />
               </div>
 
               <div className="onboarding-actions mt-7 flex gap-3">
@@ -328,41 +268,20 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
               </div>
 
               <div className="onboarding-difficulty mt-5">
-                <label
-                  htmlFor="onboarding-default-difficulty"
-                  className="text-[0.8rem] font-medium text-zinc-300"
-                >
-                  Default Difficulty
-                </label>
-                <div className="onboarding-select-wrap relative">
-                  <select
-                    id="onboarding-default-difficulty"
-                    className={selectClassName}
-                    disabled={isSaving}
-                    value={values.defaultDifficulty}
-                    onChange={(event) =>
-                      onChange({
-                        ...values,
-                        defaultDifficulty: event.currentTarget
-                          .value as typeof values.defaultDifficulty,
-                      })
-                    }
-                  >
-                    {ONBOARDING_DIFFICULTY_OPTIONS.map((option) => (
-                      <option
-                        className="bg-zinc-900 text-zinc-100"
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400"
-                  />
-                </div>
+                <SelectField
+                  id="onboarding-default-difficulty"
+                  label="Default Difficulty"
+                  placeholder="Select difficulty"
+                  options={ONBOARDING_DIFFICULTY_OPTIONS}
+                  value={values.defaultDifficulty}
+                  disabled={isSaving}
+                  onChange={(defaultDifficulty) =>
+                    onChange({
+                      ...values,
+                      defaultDifficulty: defaultDifficulty as typeof values.defaultDifficulty,
+                    })
+                  }
+                />
               </div>
 
               <div className="onboarding-actions mt-7 flex gap-3">

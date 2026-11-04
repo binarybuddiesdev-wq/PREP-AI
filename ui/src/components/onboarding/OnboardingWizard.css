@@ -1,40 +1,28 @@
-/* Keep onboarding controls aligned with the compact HTML reference. */
-.onboarding-select {
-  min-height: 2.625rem;
-  padding-block: 0.625rem;
-  background-color: #09090b;
-  color-scheme: dark;
+/* Keep the setup card within the viewport; long steps scroll inside the card. */
+.onboarding-screen {
+  box-sizing: border-box;
+  scrollbar-width: none;
 }
 
-.onboarding-select-wrap > svg {
-  color: #a1a1aa;
-  transition: color 160ms ease;
-}
-
-.onboarding-select-wrap:focus-within > svg {
-  color: #fbbf24;
-}
-
-.onboarding-select option {
-  background-color: #18181b;
-  color: #f4f4f5;
+.onboarding-card {
+  box-sizing: border-box;
+  max-height: calc(100svh - 2rem);
+  overscroll-behavior: contain;
+  scrollbar-color: rgb(161 161 170 / 35%) transparent;
+  scrollbar-width: thin;
 }
 
 @media (max-height: 820px) {
-  .onboarding-screen {
-    padding-block: 0.5rem;
-  }
-
   .onboarding-card {
-    padding-block: 1.25rem;
+    padding-block: 1.5rem;
   }
 
   .onboarding-header {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
   }
 
   .onboarding-progress {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
   }
 
   .onboarding-fields,
@@ -44,7 +32,7 @@
   }
 
   .onboarding-actions {
-    margin-top: 1.25rem;
+    margin-top: 1rem;
   }
 
   .onboarding-skip {
@@ -53,12 +41,8 @@
 }
 
 @media (max-height: 700px) {
-  .onboarding-screen {
-    padding-block: 0.25rem;
-  }
-
   .onboarding-card {
-    padding-block: 0.75rem;
+    padding-block: 1rem;
   }
 
   .onboarding-header {
@@ -93,12 +77,8 @@
 }
 
 @media (max-height: 650px) {
-  .onboarding-screen {
-    padding-block: 0;
-  }
-
   .onboarding-card {
-    padding-block: 0.25rem;
+    padding-block: 0.625rem;
   }
 
   .onboarding-header {

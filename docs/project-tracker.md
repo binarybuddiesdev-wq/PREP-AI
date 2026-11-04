@@ -15,7 +15,7 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 | Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                        |
 | Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist). |
 | Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).   |
-| Frontend screens             | Early implementation                 | The public landing page and reference-styled Clerk sign-in/sign-up shell are ported; a profile-focused dashboard and basic settings exist. Product screens beyond these foundations remain to be built.                                                                                    |
+| Frontend screens             | Early implementation                 | The public landing page, Clerk auth shell, onboarding, shared authenticated navigation, profile dashboard, and basic settings exist. Product screens beyond these foundations remain to be built.                                                                                          |
 | Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                             |
 
 ## Reference and implementation rules
@@ -70,9 +70,9 @@ React app, not the standalone HTML.
 
 ### Phase 1 — Public entry, app shell, authentication, and setup
 
-**Status: Partial.** The public landing page, reference-styled Clerk
-sign-in/sign-up shell, and three-step onboarding flow exist. The full app shell
-and shared authenticated navigation are still pending.
+**Status: Complete.** The public landing page, reference-styled Clerk
+sign-in/sign-up shell, three-step onboarding flow, and shared authenticated
+navigation around the implemented dashboard and settings routes are in place.
 
 - [x] Add the landing page: responsive navigation, animated terminal hero, ambient
       particle canvas, cursor-tilting feedback showcase, feature statements,
@@ -85,9 +85,9 @@ and shared authenticated navigation are still pending.
 - [x] Build the three-step onboarding flow for target role/experience, target
       companies, and preferred topics/default difficulty, with back/skip/resume
       behavior and persistence through the user/settings API.
-- [ ] Add the authenticated application shell: responsive collapsible sidebar,
+- [x] Add the authenticated application shell: responsive collapsible sidebar,
       top bar, active route title, user menu, sign-out, and mobile navigation.
-- [ ] Keep the existing app error boundary, configuration errors, loading
+- [x] Keep the existing app error boundary, configuration errors, loading
       screens, and retryable API error states in the new route structure.
 
 ### Phase 2 — Dashboard and progress overview

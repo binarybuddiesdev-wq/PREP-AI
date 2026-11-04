@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { UserEvent } from '@testing-library/user-event';
 import type { PropsWithChildren } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -49,6 +50,11 @@ const createSettings = (overrides: Partial<IUserSettings> = {}): IUserSettings =
 const CurrentPath = () => {
   const location = useLocation();
   return <output aria-label="Current route">{location.pathname}</output>;
+};
+
+const chooseOption = async (user: UserEvent, label: string, option: string) => {
+  await user.click(await screen.findByRole('combobox', { name: label }));
+  await user.click(await screen.findByRole('option', { name: option }));
 };
 
 const renderOnboarding = (initialPath = '/onboarding') => {
@@ -128,11 +134,8 @@ describe('OnboardingPage', () => {
     const user = userEvent.setup();
     renderOnboarding();
 
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Target Role' }),
-      'Backend Engineer'
-    );
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Experience Level' }), 'Senior');
+    await chooseOption(user, 'Target Role', 'Backend Engineer');
+    await chooseOption(user, 'Experience Level', 'Senior (5+ yrs)');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('heading', { name: 'Where are you applying?' })).toBeVisible();
@@ -152,10 +155,7 @@ describe('OnboardingPage', () => {
     expect(await screen.findByRole('heading', { name: 'Pick your focus areas' })).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'TypeScript' }));
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Default Difficulty' }),
-      'Junior'
-    );
+    await chooseOption(user, 'Default Difficulty', 'Junior');
     await user.click(screen.getByRole('button', { name: 'Start Practicing' }));
 
     expect(await screen.findByRole('heading', { name: 'Dashboard destination' })).toBeVisible();
@@ -168,11 +168,8 @@ describe('OnboardingPage', () => {
     const user = userEvent.setup();
     renderOnboarding();
 
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Target Role' }),
-      'Backend Engineer'
-    );
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Experience Level' }), 'Mid');
+    await chooseOption(user, 'Target Role', 'Backend Engineer');
+    await chooseOption(user, 'Experience Level', 'Mid (2-5 yrs)');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     const companyInput = await screen.findByRole('textbox', { name: /Target Companies/ });
     await user.type(companyInput, 'Stripe');
@@ -212,11 +209,8 @@ describe('OnboardingPage', () => {
     serviceMocks.updateSettings.mockRejectedValue(new Error('API unavailable'));
     renderOnboarding();
 
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Target Role' }),
-      'Backend Engineer'
-    );
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Experience Level' }), 'Senior');
+    await chooseOption(user, 'Target Role', 'Backend Engineer');
+    await chooseOption(user, 'Experience Level', 'Senior (5+ yrs)');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/save your progress/i);

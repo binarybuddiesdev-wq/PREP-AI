@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -33,9 +33,11 @@ const createWizardProps = (
 
 describe('OnboardingWizard', () => {
   it('shows the role and experience step with named progress', () => {
-    render(<OnboardingWizard {...createWizardProps()} />);
+    const { container } = render(<OnboardingWizard {...createWizardProps()} />);
 
     expect(screen.getByRole('main', { name: 'Profile setup' })).toBeInTheDocument();
+    expect(container.querySelector('.onboarding-screen')).toHaveClass('h-svh', 'overflow-hidden');
+    expect(container.querySelector('.onboarding-card')).toHaveClass('overflow-y-auto');
     expect(screen.getByRole('heading', { name: 'Tell us about your target role' })).toBeVisible();
     expect(screen.getByRole('list', { name: 'Setup progress' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Target Role' })).toBeInTheDocument();
@@ -95,7 +97,6 @@ describe('OnboardingWizard', () => {
     );
 
     const difficulty = screen.getByRole('combobox', { name: 'Default Difficulty' });
-    expect(within(difficulty).queryByRole('option', { name: /mixed/i })).not.toBeInTheDocument();
     expect(difficulty).toBeDisabled();
     expect(screen.getByRole('button', { name: 'React' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled();
@@ -109,12 +110,15 @@ describe('OnboardingWizard', () => {
     expect(screen.getByRole('textbox', { name: /Target Companies/ })).toBeDisabled();
   });
 
-  it('uses the compact reference select treatment for onboarding dropdowns', () => {
+  it('opens the consistent styled dropdown menu for onboarding fields', async () => {
+    const user = userEvent.setup();
     render(<OnboardingWizard {...createWizardProps()} />);
 
-    expect(screen.getByRole('combobox', { name: 'Target Role' })).toHaveClass('onboarding-select');
-    expect(screen.getByRole('combobox', { name: 'Experience Level' })).toHaveClass(
-      'onboarding-select'
-    );
+    const roleDropdown = screen.getByRole('combobox', { name: 'Target Role' });
+    expect(roleDropdown).toHaveClass('settings-select-trigger');
+    await user.click(roleDropdown);
+    const option = await screen.findByRole('option', { name: 'Frontend Engineer' });
+    expect(option.closest('.settings-select-popup')).toBeInTheDocument();
+    expect(option).toBeVisible();
   });
 });

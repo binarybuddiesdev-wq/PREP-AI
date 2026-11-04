@@ -7,4 +7,5 @@ export interface ISelectFieldProps {
   placeholder: string;
   options: readonly ISelectOption[];
   onChange: (value: string) => void;
+  disabled?: boolean;
 }

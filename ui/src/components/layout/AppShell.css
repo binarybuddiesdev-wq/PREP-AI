@@ -1,0 +1,102 @@
+.app-shell[data-theme='dark'] {
+  --text-h: #f4f4f5;
+  --text: #a1a1aa;
+  color-scheme: dark;
+}
+
+.app-shell[data-theme='light'] {
+  --text-h: #18181b;
+  --text: #52525b;
+  color-scheme: light;
+}
+
+@media (max-width: 767px) {
+  .app-shell aside[data-mobile-open='false'] {
+    visibility: hidden;
+    transition:
+      transform 200ms ease,
+      visibility 0s linear 200ms;
+  }
+
+  .app-shell aside[data-mobile-open='true'] {
+    visibility: visible;
+    transition:
+      transform 200ms ease,
+      visibility 0s;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-shell[data-collapsed='true'] [data-app-shell-brand] .app-shell-brand-label {
+    display: none;
+  }
+}
+
+.app-shell[data-theme='light'] .app-shell-panel {
+  border-color: #e4e4e7;
+  background-color: #fff;
+  color: #18181b;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-zinc-300 {
+  color: #3f3f46;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-zinc-400 {
+  color: #52525b;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-zinc-500 {
+  color: #71717a;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-zinc-600 {
+  color: #52525b;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel .text-amber-400 {
+  color: #b45309;
+}
+
+.app-shell[data-theme='light'] aside button[aria-current='page'] {
+  background-color: #fef3c7;
+  color: #78350f;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel input,
+.app-shell[data-theme='light'] .app-shell-panel select {
+  border-color: #d4d4d8;
+  background-color: #fff;
+  color: #18181b;
+}
+
+.app-shell[data-theme='light'] .app-shell-panel pre {
+  background-color: #f4f4f5;
+  color: #3f3f46;
+}
+
+.app-shell[data-theme='light'] .app-shell-muted {
+  color: #52525b;
+}
+
+.app-shell[data-theme='light'] .app-shell-loading {
+  color: #52525b;
+}
+
+.app-shell[data-theme='light'] .app-shell-error h2.text-zinc-100 {
+  color: #18181b;
+}
+
+.app-shell[data-theme='light'] .app-shell-error .text-zinc-400 {
+  color: #52525b;
+}
+
+.app-shell[data-theme='light'] .app-shell-error .text-zinc-500 {
+  color: #71717a;
+}
+
+.app-shell[data-theme='light'] .app-shell-error button.text-zinc-100 {
+  border-color: #d4d4d8;
+  background-color: #fff;
+  color: #27272a;
+}

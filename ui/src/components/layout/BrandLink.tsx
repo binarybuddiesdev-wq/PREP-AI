@@ -12,7 +12,11 @@ export const BrandLink = (props: IBrandLinkProps) => {
   const classes = SIZE_CLASSES[size];
 
   return (
-    <Link to={to} className={cn('inline-flex items-center gap-2 font-bold', classes.link)}>
+    <Link
+      to={to}
+      aria-label="PrepAI"
+      className={cn('inline-flex items-center gap-2 font-bold', classes.link)}
+    >
       <div
         className={cn(
           'rounded-lg bg-amber-500 flex items-center justify-center text-black font-extrabold',
@@ -21,7 +25,7 @@ export const BrandLink = (props: IBrandLinkProps) => {
       >
         P
       </div>
-      PrepAI
+      <span className="app-shell-brand-label">PrepAI</span>
     </Link>
   );
 };

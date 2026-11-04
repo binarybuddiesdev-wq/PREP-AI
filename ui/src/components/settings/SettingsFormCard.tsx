@@ -6,7 +6,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
   const { values, isSaving, status, onChange, onSave } = props;
 
   return (
-    <section className="bg-[#18181b] border border-white/10 rounded-xl p-6 mb-6">
+    <section className="app-shell-panel mb-6 rounded-xl border border-white/10 bg-[#18181b] p-6">
       <h2 className="text-lg font-semibold mb-4 text-amber-400">UserSettings Model (MongoDB)</h2>
 
       <div className="space-y-5">

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { ROUTES } from '@/core';
 import {
+  AuthenticatedLayoutPage,
   DashboardPage,
   LandingPage,
   OnboardingPage,
@@ -37,21 +38,15 @@ export const AppRoutes = () => (
       }
     />
     <Route
-      path={ROUTES.dashboard}
       element={
         <ProtectedRoute>
-          <DashboardPage />
+          <AuthenticatedLayoutPage />
         </ProtectedRoute>
       }
-    />
-    <Route
-      path={ROUTES.settings}
-      element={
-        <ProtectedRoute>
-          <SettingsPage />
-        </ProtectedRoute>
-      }
-    />
+    >
+      <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+      <Route path={ROUTES.settings} element={<SettingsPage />} />
+    </Route>
     <Route
       path={ROUTES.onboarding}
       element={

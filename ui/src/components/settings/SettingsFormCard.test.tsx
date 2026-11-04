@@ -29,7 +29,7 @@ describe('SettingsFormCard', () => {
   it('shows the current values', () => {
     renderCard();
 
-    expect(screen.getByLabelText('Target Role')).toHaveValue('Backend');
+    expect(screen.getByRole('combobox', { name: 'Target Role' })).toHaveTextContent('Backend');
     expect(screen.getByLabelText('Daily Practice Reminder')).toBeChecked();
     expect(screen.getByLabelText('Weekly Progress Report')).not.toBeChecked();
   });
@@ -37,7 +37,8 @@ describe('SettingsFormCard', () => {
   it('emits the full values object when a select changes', async () => {
     const { onChange } = renderCard();
 
-    await userEvent.selectOptions(screen.getByLabelText('Experience Level'), 'Senior');
+    await userEvent.click(screen.getByRole('combobox', { name: 'Experience Level' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Senior' }));
 
     expect(onChange).toHaveBeenCalledWith({ ...values, experienceLevel: 'Senior' });
   });

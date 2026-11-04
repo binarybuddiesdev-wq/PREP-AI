@@ -12,7 +12,7 @@ export const UserModelCard = (props: IUserModelCardProps) => {
   ];
 
   return (
-    <section className="bg-[#18181b] border border-white/10 rounded-xl p-6 mb-6">
+    <section className="app-shell-panel mb-6 rounded-xl border border-white/10 bg-[#18181b] p-6">
       <h2 className="text-lg font-semibold mb-4 text-amber-400">User Model (MongoDB)</h2>
       <div className="grid grid-cols-2 gap-4 text-sm">
         {rows.map((row) => (

@@ -8,7 +8,7 @@ export const QueryErrorState = (props: IQueryErrorStateProps) => {
   return (
     <section
       role="alert"
-      className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-5 text-left"
+      className="app-shell-error rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-5 text-left"
     >
       <div className="flex items-start gap-3">
         <AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-rose-300" />
