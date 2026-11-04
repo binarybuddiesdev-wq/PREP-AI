@@ -520,3 +520,11 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Clarified that frontend inbox UI is a frontend handoff and that backend feature code is largely implemented while production readiness still depends on staging, provider, or human-review evidence.
 - Replaced the stale suggestion to search for more repository-buildable backend gaps with the concrete rollout checklist and the existing isolated-database verification command.
 - Verification: full server gate passed; `pnpm test:database:isolation` passed (11 files, 51 tests) using its disposable Podman databases; Prettier and diff checks passed. Staging/live-provider/human-review gates remain open.
+
+## 2026-11-04 - Add project-wide feature tracker and UI roadmap
+
+- Inspected `prepai-ui.html` screen markup and handlers, current React routes/pages, frontend architecture decisions, and existing backend API/status docs.
+- Added a project-wide tracker with current frontend/backend status, staged React feature work, cross-project operational gates, and completion rules.
+- Documented that the HTML is a visual/interaction reference with simulated data and outcomes; the React app must preserve its user-facing design while using real APIs and provider flows.
+- Linked the tracker from the root README and architecture index, and clarified the README's prototype section.
+- Verification: Prettier check, agent-doc check, and `git diff --check` passed; project-wide feature work has not started.

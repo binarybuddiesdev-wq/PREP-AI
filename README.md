@@ -22,6 +22,7 @@ The platform covers system design, coding, and domain-specific topics (React, Ty
 - [Project Structure](#project-structure)
 - [Backend API](#backend-api)
 - [System Design](#system-design)
+- [Project Tracker](docs/project-tracker.md)
 - [Getting Started](#getting-started)
 - [Testing](#testing)
 - [UI Prototype](#ui-prototype)
@@ -30,7 +31,9 @@ The platform covers system design, coding, and domain-specific topics (React, Ty
 
 ## Screens
 
-The application has the following screens, each accessible via the sidebar navigation:
+The standalone prototype describes the target product screens. The React app
+is still being built out; see the [project tracker](docs/project-tracker.md)
+for implementation status and the step-by-step frontend roadmap.
 
 | Screen    | Description                                                     |
 | --------- | --------------------------------------------------------------- |
@@ -662,6 +665,10 @@ The file `prepai-ui.html` at the project root is a **fully self-contained HTML p
 - Responsive design
 
 Open it in any browser — no backend, no dependencies, no build step required.
+Its session scores, code-run results, payment confirmations, chat answers, and
+many account records are simulated. Use it as the visual and interaction
+reference; the production React app must use real PrepAI APIs and provider
+flows. See the [project tracker](docs/project-tracker.md).
 
 ---
 

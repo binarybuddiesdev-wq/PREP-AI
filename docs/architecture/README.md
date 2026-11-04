@@ -92,6 +92,7 @@ See [../adr/](../adr/) for the full index. Highlights:
 
 ## Related docs
 
+- [../project-tracker.md](../project-tracker.md) — project-wide backend, frontend, integration, and production-readiness roadmap; includes the step-by-step port of `prepai-ui.html` into React.
 - [data-isolation.md](data-isolation.md) — backend ownership rules, enforcement limits, and regression-test inventory.
 - [../backend-status.md](../backend-status.md) — current backend implementation tracker: completed capabilities, pending work, priorities, and links to detailed docs.
 - [architecture.md](architecture.md) — **Master Software Architecture & System Design Blueprint** (Hexagonal modular monolith, dual Prisma ORM, Mastra AI failover routing, Piston execution sandbox, N-Tier CQRS layer boundaries, testing gates).
