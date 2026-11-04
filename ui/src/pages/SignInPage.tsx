@@ -3,12 +3,7 @@ import { ROUTES } from '@/core';
 import { SignInWidget } from '@/service/auth';
 
 export const SignInPage = () => (
-  <AuthPageShell
-    brandTo={ROUTES.root}
-    footerPrompt="Don't have an account?"
-    footerLinkTo={ROUTES.signUp}
-    footerLinkLabel="Sign up"
-  >
+  <AuthPageShell brandTo={ROUTES.root}>
     <SignInWidget />
   </AuthPageShell>
 );

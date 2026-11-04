@@ -535,3 +535,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Added responsive mobile navigation, reduced-motion-aware canvas and scroll effects, animated metrics, cursor tilt, and a Redux-backed persisted theme preference through the `logic` layer.
 - Kept authentication links on the existing Clerk sign-in/sign-up routes; no prototype auth controls or fake provider flows were added.
 - Verification: UI tests passed (19 files, 43 tests); root/UI lint, Prettier, `tsc -b`, production build, and `git diff --check` passed. Root lint reports six existing warnings in server files; Vite reports a 709.8 kB chunk-size warning. Desktop/mobile visual and interaction checks passed in installed Chrome. Playwright Test could not launch because its bundled Chromium binary is not installed. Architecture, QA, and correctness review findings were resolved and rechecked; no findings remain.
+
+## 2026-11-04 - Style Clerk authentication screens
+
+- Reworked the shared sign-in/sign-up shell to match the reference card, dark surface, amber glow, brand placement, and responsive spacing; added an accessible account-access landmark.
+- Centralized the Clerk appearance for matching fields, buttons, alerts, and social provider controls. Clerk continues to render only providers enabled in its dashboard; no prototype-only login buttons were added.
+- Kept route composition in `pages`, layout in `components/auth`, and Clerk-specific styling next to the provider widgets in `service/auth`.
+- Verification: auth-shell and sign-in/sign-up page tests passed; the full UI gate passed (UI lint, repo lint, format, `tsc -b`, build, and 46 UI tests). Repo lint reports six existing server warnings; build reports the existing Vite config and chunk-size warnings. Installed Chrome confirmed sign-in/sign-up display at desktop and mobile widths, show only the three configured providers in this environment (GitHub, Google, LinkedIn), and have no browser page errors. Playwright smoke tests could not launch because the configured Chromium headless-shell binary is not installed.
