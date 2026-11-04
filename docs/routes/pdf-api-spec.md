@@ -25,12 +25,13 @@ or list sources until status is `ready` or `failed`.
 
 ## Read and manage sources
 
-| Method   | Path                          | Result                                                                                                                                   |
-| -------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`    | `/api/v1/pdfs?limit=20`       | Owned non-deleted sources; limit is 1–50.                                                                                                |
-| `GET`    | `/api/v1/pdfs/:pdfId`         | One owned source or 404.                                                                                                                 |
-| `POST`   | `/api/v1/pdfs/:pdfId/reindex` | Requires `Idempotency-Key`; returns 202 and queues a new revision. A matching retry returns the same revision without another queue job. |
-| `DELETE` | `/api/v1/pdfs/:pdfId`         | Returns 202, immediately revokes retrieval access, then asynchronously deletes private storage and vector revisions.                     |
+| Method   | Path                          | Result                                                                                                                                               |
+| -------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/v1/pdfs?limit=20`       | Owned non-deleted sources; limit is 1–50.                                                                                                            |
+| `GET`    | `/api/v1/pdfs/:pdfId`         | One owned source or 404.                                                                                                                             |
+| `GET`    | `/api/v1/pdfs/:pdfId/content` | Inline `application/pdf` bytes for an owned ready source; private and no-store. Missing or unowned sources return 404; non-ready sources return 409. |
+| `POST`   | `/api/v1/pdfs/:pdfId/reindex` | Requires `Idempotency-Key`; returns 202 and queues a new revision. A matching retry returns the same revision without another queue job.             |
+| `DELETE` | `/api/v1/pdfs/:pdfId`         | Returns 202, immediately revokes retrieval access, then asynchronously deletes private storage and vector revisions.                                 |
 
 Reindex keys use the shared 1–128 visible ASCII character policy. The newest
 100 reindex operations are retained per source; a matching retry returns its

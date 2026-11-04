@@ -18,9 +18,10 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ApiRoutes, ClerkAuthGuard, CurrentUser, RolesGuard } from '@/common/index.js';
 import { PdfService } from './pdf.service.js';
 import { PdfListDto } from './dto/pdf-list.dto.js';
@@ -81,6 +82,28 @@ export class PdfController {
   @ApiOperation({ summary: 'Get the status of an owned PDF source' })
   async get(@Param('pdfId') pdfId: string, @CurrentUser('id') userId: string) {
     return { message: 'PDF source fetched', data: await this.pdfs.get(pdfId, userId) };
+  }
+
+  @Get(':pdfId/content')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Read the authenticated user’s ready PDF source' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Private PDF bytes',
+    content: { 'application/pdf': {} },
+  })
+  async content(
+    @Param('pdfId') pdfId: string,
+    @CurrentUser('id') userId: string,
+    @Res() reply: FastifyReply
+  ) {
+    const content = await this.pdfs.getContent(pdfId, userId);
+    return reply
+      .header('Cache-Control', 'private, no-store')
+      .header('X-Content-Type-Options', 'nosniff')
+      .header('Content-Disposition', 'inline; filename="document.pdf"')
+      .type('application/pdf')
+      .send(content);
   }
 
   @Post(':pdfId/reindex')

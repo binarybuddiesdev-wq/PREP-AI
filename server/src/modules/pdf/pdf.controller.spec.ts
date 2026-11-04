@@ -97,4 +97,27 @@ describe('PdfController', () => {
     expect(pdfs.reindex).toHaveBeenCalledWith('pdf_1', 'u', 'request-1');
     expect(await controller.delete('pdf_1', 'u')).toMatchObject({ data: { status: 'deleting' } });
   });
+
+  it('sends private PDF bytes inline without exposing a storage URL', async () => {
+    const content = Buffer.from('%PDF-1.7');
+    const pdfs = { getContent: vi.fn().mockResolvedValue(content) };
+    const controller = new PdfController(pdfs as never);
+    const reply = {
+      header: vi.fn().mockReturnThis(),
+      type: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+    };
+
+    await controller.content('pdf_1', 'user_1', reply as never);
+
+    expect(pdfs.getContent).toHaveBeenCalledWith('pdf_1', 'user_1');
+    expect(reply.header).toHaveBeenCalledWith('Cache-Control', 'private, no-store');
+    expect(reply.header).toHaveBeenCalledWith('X-Content-Type-Options', 'nosniff');
+    expect(reply.header).toHaveBeenCalledWith(
+      'Content-Disposition',
+      'inline; filename="document.pdf"'
+    );
+    expect(reply.type).toHaveBeenCalledWith('application/pdf');
+    expect(reply.send).toHaveBeenCalledWith(content);
+  });
 });

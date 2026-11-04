@@ -238,6 +238,21 @@ export class PdfService {
     return this.toPublicSource(source);
   }
 
+  async getContent(sourceId: string, userId: string): Promise<Buffer> {
+    const source = await this.prisma.pdfSource.findFirst({
+      where: { id: sourceId, userId, status: { not: 'deleted' } },
+    });
+    if (!source) throw new NotFoundException('PDF source not found');
+    if (source.status !== 'ready' || !source.assetId) {
+      throw new ConflictException('PDF source is not ready for preview');
+    }
+
+    return this.storage.download(
+      source.assetId,
+      this.config.get<number>('PDF_MAX_FILE_BYTES', 10 * 1024 * 1024)
+    );
+  }
+
   async reindex(sourceId: string, userId: string, idempotencyKey: string | undefined) {
     const key = requireIdempotencyKey(idempotencyKey);
     const operationId = createIdempotencyOperationId(userId, `pdf-reindex:${sourceId}`, key);

@@ -24,7 +24,11 @@ import {
 describe('PdfService', () => {
   let service: PdfService;
   let prisma: { pdfSource: Record<string, ReturnType<typeof vi.fn>> };
-  let storage: { upload: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
+  let storage: {
+    upload: ReturnType<typeof vi.fn>;
+    download: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  };
   let extractor: { extract: ReturnType<typeof vi.fn> };
   let jobs: { enqueue: ReturnType<typeof vi.fn> };
   let redis: { reserveQuota: ReturnType<typeof vi.fn>; releaseQuota: ReturnType<typeof vi.fn> };
@@ -41,7 +45,11 @@ describe('PdfService', () => {
         updateMany: vi.fn(),
       },
     };
-    storage = { upload: vi.fn().mockResolvedValue('private-asset'), delete: vi.fn() };
+    storage = {
+      upload: vi.fn().mockResolvedValue('private-asset'),
+      download: vi.fn().mockResolvedValue(Buffer.from('%PDF-1.7')),
+      delete: vi.fn(),
+    };
     extractor = {
       extract: vi.fn().mockResolvedValue({ pageCount: 1, pages: [{ page: 1, text: 'text' }] }),
     };
@@ -96,6 +104,43 @@ describe('PdfService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
+  });
+
+  it('serves content only for an owned ready source and bounds the private download', async () => {
+    const buffer = Buffer.from('%PDF-1.7');
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(
+      uploadSource(buffer, { status: 'ready', activeRevision: 1 })
+    );
+
+    await expect(service.getContent('source_1', 'user_1')).resolves.toBeInstanceOf(Buffer);
+    expect(prisma.pdfSource.findFirst).toHaveBeenCalledWith({
+      where: { id: 'source_1', userId: 'user_1', status: { not: 'deleted' } },
+    });
+    expect(storage.download).toHaveBeenCalledWith('private-asset', 10 * 1024 * 1024);
+  });
+
+  it('does not reveal missing or non-owned sources through private content retrieval', async () => {
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(null);
+
+    await expect(service.getContent('source_1', 'other_user')).rejects.toBeInstanceOf(
+      NotFoundException
+    );
+    expect(storage.download).not.toHaveBeenCalled();
+  });
+
+  it('rejects sources that are not ready for private content retrieval', async () => {
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(null);
+    prisma.pdfSource.findFirst.mockResolvedValueOnce(
+      uploadSource(Buffer.from('%PDF-1.7'), { status: 'processing' })
+    );
+
+    await expect(service.getContent('source_1', 'user_1')).rejects.toBeInstanceOf(
+      NotFoundException
+    );
+    await expect(service.getContent('source_1', 'user_1')).rejects.toBeInstanceOf(
+      ConflictException
+    );
+    expect(storage.download).not.toHaveBeenCalled();
   });
 
   it('replays a matching upload before parsing, quota, storage, or queue work', async () => {
