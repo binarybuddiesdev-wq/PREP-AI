@@ -14,6 +14,26 @@ test('Prometheus scrape template authenticates to the application metrics endpoi
   assert.equal(job.metrics_path, '/metrics');
   assert.equal(job.authorization.credentials_file, '/etc/prometheus/secrets/prepai-metrics-token');
   assert.ok(job.static_configs.some(({ targets }) => targets.includes('server:3000')));
+  const probeJob = config.scrape_configs.find(({ job_name }) => job_name === 'prepai-probes');
+
+  assert.ok(probeJob, 'health probe scrape job exists');
+  assert.equal(probeJob.metrics_path, '/probe');
+  assert.ok(
+    probeJob.static_configs.some(
+      ({ targets }) =>
+        targets.includes('http://server:3000/healthz') &&
+        targets.includes('http://server:3000/readyz')
+    ),
+    'liveness and readiness endpoints are probed'
+  );
+});
+
+test('Blackbox Exporter uses a bounded HTTP probe module', async () => {
+  const config = await readYaml('../deploy/observability/blackbox/blackbox.yml');
+
+  assert.equal(config.modules?.http_2xx?.prober, 'http');
+  assert.equal(config.modules.http_2xx.timeout, '5s');
+  assert.equal(config.modules.http_2xx.http.method, 'GET');
 });
 
 test('Prometheus alert rules only reference metrics exposed by the application', async () => {
@@ -23,6 +43,7 @@ test('Prometheus alert rules only reference metrics exposed by the application',
   const names = alerts.map(({ alert }) => alert);
   const expressions = alerts.map(({ expr }) => String(expr));
   const metricNames = [
+    'probe_success',
     'http_request_duration_seconds',
     'worker_job_attempts_total',
     'bullmq_job_count',
@@ -67,6 +88,7 @@ test('Grafana dashboard is portable and has panels for the service signals', asy
   assert.equal(dashboard.uid, 'prepai-overview');
   assert.equal(dashboard.timezone, 'browser');
   for (const metric of [
+    'probe_success',
     'http_request_duration_seconds',
     'worker_job_attempts_total',
     'bullmq_job_count',

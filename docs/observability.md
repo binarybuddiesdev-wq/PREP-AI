@@ -212,14 +212,19 @@ Portable starter files are in [`deploy/observability`](../deploy/observability/)
   endpoint every 15 seconds and loads the included alert rules.
 - `prometheus/alerts.yml` defines API availability/error/latency, worker
   failures and backlog, Redis memory, provider failovers, PostgreSQL query
-  latency, and webhook signature failure alerts.
+  latency, webhook signature failure, and HTTP liveness/readiness probe alerts.
+- `blackbox/blackbox.yml` configures bounded HTTP GET probes for `/healthz` and
+  `/readyz`; Prometheus sends requests through a `blackbox-exporter:9115`
+  service on the same Podman network.
 - `grafana/prepai-overview.json` is an importable dashboard for API traffic,
   latency, in-flight requests, worker queues, Redis, provider failovers,
   database latency, and webhook failures.
 
-Run Prometheus on the same Podman network as the API and keep `server:3000` as
-the target (the Compose service name). If Prometheus runs outside that network,
-replace the target with an address it can reach. Provide the exact same value as
+Run Prometheus and Blackbox Exporter on the same Podman network as the API and
+keep `server:3000` as the target (the Compose service name). The Blackbox
+Exporter must resolve as `blackbox-exporter` on that network and load
+`deploy/observability/blackbox/blackbox.yml`. If any service runs outside that
+network, replace the targets with addresses it can reach. Provide the exact same value as
 `METRICS_BEARER_TOKEN` in the file mounted at
 `/etc/prometheus/secrets/prepai-metrics-token`; do not put the token directly in
 the scrape configuration. Mount `alerts.yml` at
@@ -227,17 +232,37 @@ the scrape configuration. Mount `alerts.yml` at
 Alertmanager separately to deliver notifications; the rule file alone only
 evaluates and exposes firing alerts.
 
+To run Blackbox Exporter separately in Podman, attach it to the same network as
+`prepai-server` and give it the `blackbox-exporter` network alias used by the
+Prometheus config. For example, in PowerShell:
+
+```powershell
+$observabilityNetwork = "<network attached to prepai-server>"
+$blackboxConfig = (Resolve-Path "deploy/observability/blackbox/blackbox.yml").Path
+podman run -d --name prepai-blackbox-exporter `
+  --network $observabilityNetwork --network-alias blackbox-exporter `
+  --volume "${blackboxConfig}:/etc/blackbox_exporter/config.yml:ro" `
+  docker.io/prom/blackbox-exporter:v0.27.0 `
+  --config.file=/etc/blackbox_exporter/config.yml
+```
+
+Replace the network placeholder with the network reported by
+`podman inspect prepai-server`. This optional service is not part of the
+application's `pnpm podman:full` stack.
+
 Import the Grafana JSON and select the Prometheus data source when prompted.
 The dashboard uses the `DS_PROMETHEUS` data source variable and a `prepai-api`
 Prometheus job. Alert thresholds are starter operational defaults; tune them
-against observed production traffic and route-specific SLOs. The server's
-`/readyz` and `/healthz` return JSON rather than Prometheus samples, so use an
-external HTTP probe/blackbox exporter for dependency readiness and liveness.
-The included `up` alert only detects scrape target availability.
+against observed production traffic and route-specific SLOs. Blackbox treats
+non-2xx responses as probe failures. `/readyz` returns 503 when a required
+dependency is unavailable, while `/healthz` reports process liveness. The
+`PrepAIHealthProbeFailed` alert covers both endpoints;
+`PrepAIApiTargetDown` separately detects missing or failed metrics scrapes.
 
 Validate the YAML structure and dashboard metric coverage locally with
-`pnpm test:observability-config`. This check does not replace `promtool check
-rules` or review against the deployed Prometheus/Grafana versions.
+`pnpm test:observability-config`. Before deployment, also run `promtool check
+config` and `promtool check rules` with the configured secret file mounted, then
+verify the probe exporter is reachable from Prometheus.
 
 ## Local development
 

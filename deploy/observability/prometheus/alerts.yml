@@ -10,6 +10,15 @@ groups:
           summary: PrepAI API metrics target is unavailable
           description: Prometheus cannot scrape the PrepAI API. Check API health, networking, and the metrics bearer token.
 
+      - alert: PrepAIHealthProbeFailed
+        expr: probe_success{job="prepai-probes"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: PrepAI liveness or readiness probe is failing
+          description: 'The HTTP probe for {{ $labels.instance }} has failed for two minutes. Check API process health and dependency readiness.'
+
       - alert: PrepAIApiServerErrorRateHigh
         expr: |
           (

@@ -1,5 +1,10 @@
 # Worklog
 
+## 2026-11-04 - Blackbox probes for API health endpoints
+
+- Added a bounded Blackbox Exporter HTTP module and Prometheus probes/alerts for `/healthz` and `/readyz`, plus a Grafana health status panel. Documented the optional Podman exporter and updated the backend/architecture trackers.
+- Verification: observability config tests passed; Prometheus 3.5 `promtool check config` validated the scrape configuration and 10 alert rules; Blackbox Exporter 0.27.0 accepted its config; full server gate passed.
+
 # 2026-11-04 - Packaged Prometheus alerts and Grafana dashboard
 
 - Added an authenticated Prometheus scrape configuration, nine alert rules for API availability/latency/errors, workers, Redis, provider failovers, PostgreSQL latency, and webhook signature failures, plus a portable Grafana service dashboard. Added config checks to the repository gate and updated the observability/backend trackers. Production Alertmanager delivery, external readiness/liveness probes, and Sentry source-map upload remain deployment work.
