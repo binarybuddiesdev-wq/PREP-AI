@@ -152,4 +152,4 @@
 - [ ] Exercise the authenticated Topic and Weak Areas flows, errors, skip, submit, evaluation, end, and completion at mobile and desktop sizes in a browser. No signed-in browser session was available; public Edge smoke was run separately.
 - [x] Run UI lint, type-check, build, changed-file format check, root lint, root format check, root type-check, and the Playwright UI project; document unrelated dirty-worktree failures without touching those files. The root has no `build` script, and `pnpm test -- --run` is not a valid Playwright command.
 - [x] Run the UI architecture review on the practice slice; no boundary violations were reported. Two non-blocking page/hook grouping nits remain.
-- [ ] Review the staged diff; commit with a conventional `feat(ui): ...` message and push to `main` as authorized.
+- [x] Review the staged diff; commit `333c2f6 feat(ui): add theory practice lifecycle` and push to `main`. The authenticated browser walkthrough remains pending because no signed-in browser session was available.
