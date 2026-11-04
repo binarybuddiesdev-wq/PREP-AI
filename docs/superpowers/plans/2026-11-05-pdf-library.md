@@ -79,6 +79,7 @@
 
 ### Task 6: Full verification and tracker
 
-- [x] Run complete UI and server test suites, UI lint, typecheck, and build. Browser visual checks at desktop/mobile sizes remain to be completed with an authenticated browser session.
+- [x] Run complete UI and server test suites, UI lint, typecheck, and build.
+- [ ] Capture live desktop/mobile browser views with an authenticated browser session; this session has no browser surface for signed-in QA.
 - [x] Update the project tracker with completed scope and remaining limitations.
-- [ ] Review the final diff, commit, and push to `main`.
+- [x] Review the final diff, commit, and push to `main`.

@@ -137,6 +137,8 @@ fullscreen controls. PDF Study selects one to five ready documents, uses the
 existing theory session lifecycle, waits for background question generation,
 and links returned citations to the source page. Production RLS and provider
 rollout remain separate readiness work.
+Live browser review at desktop and mobile sizes remains pending because this
+session had no authenticated browser surface.
 
 - [x] Build document upload with drag/drop, validation, upload progress, and
       processing/ready/failed states.
