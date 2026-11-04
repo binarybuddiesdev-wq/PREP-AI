@@ -3,6 +3,13 @@ import { MetricsService } from '../metrics/metrics.service.js';
 import { mastra } from '../../mastra/mastra.config.js';
 import { chatWithFailover, getModel, streamWithFailover } from '../../mastra/providers.js';
 import {
+  createPromptInjectionGuard,
+  PROMPT_INJECTION_BLOCKED_MESSAGE,
+  PROMPT_INJECTION_GUARD_UNAVAILABLE_MESSAGE,
+  isPromptInjectionGuardFailure,
+  PromptInjectionBlockedError,
+} from '../../mastra/prompt-injection-guard.js';
+import {
   ITechExpertRequest,
   ITechExpertResponse,
   techAnswerSchema,
@@ -16,8 +23,9 @@ export class TechExpertService {
   constructor(private readonly metrics: MetricsService) {}
 
   public async askQuestion(payload: ITechExpertRequest): Promise<ITechExpertResponse> {
+    let injectionDetected = false;
     try {
-      this.logger.log(`Question: "${payload.question}"`);
+      this.logger.log('Tech Expert question received');
 
       const agent = mastra.getAgent('techExpertAgent');
       const fallback: TechAnswer = {
@@ -29,16 +37,28 @@ export class TechExpertService {
       };
 
       const response = await chatWithFailover(
-        (provider) =>
-          agent.generate(payload.question, {
-            model: getModel(provider),
-            structuredOutput: {
-              schema: techAnswerSchema,
-              jsonPromptInjection: true,
-              errorStrategy: 'fallback',
-              fallbackValue: fallback,
-            },
-          }),
+        async (provider) => {
+          if (injectionDetected) throw new PromptInjectionBlockedError();
+          try {
+            return await agent.generate(JSON.stringify({ question: payload.question }), {
+              model: getModel(provider),
+              inputProcessors: [
+                createPromptInjectionGuard(provider, ({ flagged }) => {
+                  if (flagged) injectionDetected = true;
+                }),
+              ],
+              structuredOutput: {
+                schema: techAnswerSchema,
+                jsonPromptInjection: true,
+                errorStrategy: 'fallback',
+                fallbackValue: fallback,
+              },
+            });
+          } catch (error) {
+            if (injectionDetected) throw new PromptInjectionBlockedError();
+            throw error;
+          }
+        },
         (from, to) => this.metrics.recordProviderFailover(from, to),
         (provider, fallback, duration) =>
           this.metrics.recordMastraAgentDuration('tech_expert', provider, fallback, duration)
@@ -55,8 +75,19 @@ export class TechExpertService {
         meta: {},
       };
     } catch (error: unknown) {
+      if (injectionDetected || error instanceof PromptInjectionBlockedError) {
+        this.logger.warn('Tech Expert request blocked by the prompt-injection guard');
+        return { data: null, error: PROMPT_INJECTION_BLOCKED_MESSAGE, meta: {} };
+      }
+      if (isPromptInjectionGuardFailure(error)) {
+        this.logger.warn('Tech Expert request rejected because the prompt-injection guard failed');
+        return { data: null, error: PROMPT_INJECTION_GUARD_UNAVAILABLE_MESSAGE, meta: {} };
+      }
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Error: ${errorMessage}`, error instanceof Error ? error.stack : undefined);
+      this.logger.error(
+        'Tech Expert answer generation failed',
+        error instanceof Error ? error.stack : undefined
+      );
 
       return {
         data: null,
@@ -70,26 +101,46 @@ export class TechExpertService {
     payload: ITechExpertRequest,
     abortSignal?: AbortSignal
   ): AsyncGenerator<string> {
-    this.logger.log(`Streaming question: "${payload.question}"`);
+    this.logger.log('Tech Expert streaming question received');
     const agent = mastra.getAgent('techExpertAgent');
+    let injectionDetected = false;
 
     try {
       yield* streamWithFailover(
-        async (provider) =>
-          (
-            await agent.stream(payload.question, {
-              model: getModel(provider),
-              ...(abortSignal ? { abortSignal } : {}),
-            })
-          ).textStream,
+        async (provider) => {
+          if (injectionDetected) throw new PromptInjectionBlockedError();
+          try {
+            return (
+              await agent.stream(JSON.stringify({ question: payload.question }), {
+                model: getModel(provider),
+                inputProcessors: [
+                  createPromptInjectionGuard(provider, ({ flagged }) => {
+                    if (flagged) injectionDetected = true;
+                  }),
+                ],
+                ...(abortSignal ? { abortSignal } : {}),
+              })
+            ).textStream;
+          } catch (error) {
+            if (injectionDetected) throw new PromptInjectionBlockedError();
+            throw error;
+          }
+        },
         (from, to) => this.metrics.recordProviderFailover(from, to),
         (provider, fallback, duration) =>
           this.metrics.recordMastraAgentDuration('tech_expert', provider, fallback, duration)
       );
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (injectionDetected || error instanceof PromptInjectionBlockedError) {
+        this.logger.warn('Tech Expert streaming request blocked by the prompt-injection guard');
+        throw new PromptInjectionBlockedError();
+      }
+      if (isPromptInjectionGuardFailure(error)) {
+        this.logger.warn('Tech Expert stream rejected because the prompt-injection guard failed');
+        throw new Error(PROMPT_INJECTION_GUARD_UNAVAILABLE_MESSAGE, { cause: error });
+      }
       this.logger.error(
-        `Streaming error: ${errorMessage}`,
+        'Tech Expert streaming generation failed',
         error instanceof Error ? error.stack : undefined
       );
       throw error;

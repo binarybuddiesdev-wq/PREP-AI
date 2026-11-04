@@ -1,9 +1,14 @@
 import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+
+export const TECH_EXPERT_QUESTION_MAX_LENGTH = 8_000;
 
 export const techExpertRequestSchema = z.object({
-  question: z.string().min(1, 'Question must not be empty'),
+  question: z
+    .string()
+    .min(1, 'Question must not be empty')
+    .max(TECH_EXPERT_QUESTION_MAX_LENGTH, 'Question must not exceed 8,000 characters'),
 });
 
 export interface ITechExpertRequest {
@@ -16,9 +21,11 @@ export class TechExpertRequestDto implements ITechExpertRequest {
       'Ask any technology-related question - programming, cloud, AI/ML, databases, DevOps, etc.',
     example: 'Explain the difference between REST and GraphQL APIs.',
     type: String,
+    maxLength: TECH_EXPERT_QUESTION_MAX_LENGTH,
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(TECH_EXPERT_QUESTION_MAX_LENGTH)
   public question!: string;
 }
 

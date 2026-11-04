@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Body,
+  BadRequestException,
   UsePipes,
   HttpCode,
   Res,
@@ -17,6 +18,10 @@ import {
 } from './tech-expert.types.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiProduces } from '@nestjs/swagger';
+import {
+  PROMPT_INJECTION_BLOCKED_MESSAGE,
+  PromptInjectionBlockedError,
+} from '../../mastra/prompt-injection-guard.js';
 
 @ApiTags('Tech Expert')
 @Controller('tech-expert')
@@ -69,11 +74,15 @@ export class TechExpertController {
     let first: IteratorResult<string>;
     try {
       first = await iterator.next();
-    } catch {
+    } catch (error) {
       reply.raw.off('close', onClose);
       if (disconnected) {
         await iterator.return?.(undefined);
         return;
+      }
+      if (error instanceof PromptInjectionBlockedError) {
+        await iterator.return?.(undefined);
+        throw new BadRequestException(PROMPT_INJECTION_BLOCKED_MESSAGE);
       }
       throw new ServiceUnavailableException('Unable to start answer stream. Please try again.');
     }

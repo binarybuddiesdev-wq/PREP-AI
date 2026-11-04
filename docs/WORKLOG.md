@@ -9,6 +9,12 @@
 - Extended the disposable Podman isolation suite with real API/worker role checks. RLS remains off in development and production; documented schema and policy rollout order and staging gates.
 - Verification: payment/Prisma unit tests passed; `pnpm test:database:isolation` passed (10 files, 50 tests).# Worklog
 
+## 2026-11-04 - Add Tech Expert prompt-injection guard
+
+- Added Mastra's fail-closed prompt-injection input processor to the structured and streaming Tech Expert endpoints, using the same provider for detector and answer. Questions are JSON-encoded, explicitly treated as untrusted, limited to 8,000 characters, and omitted from logs.
+- Detected stream requests return HTTP 400 before SSE begins; detector failures do not pass the input through. Updated the API contract and AI pipeline trackers. Other AI paths remain listed for separate review because their quota and input-size costs differ.
+- Verification: focused service/controller and processor tests, database isolation suite, and full server gate.
+
 ## 2026-11-04 - Expire Study Chat idempotency snapshots
 
 - Completed Study Chat operation records now expire 24 hours after completion. The hourly Mongo cleanup removes expired completed records, including legacy records without `expiresAt` using their `updatedAt` timestamp.

@@ -4,6 +4,11 @@ Base path: `/api/v1/tech-expert`
 
 Both routes are public and do not read or modify user-owned records. They use
 the configured Mastra tech-expert agent and NVIDIA/Groq provider routing.
+Questions are limited to 8,000 characters. Mastra's prompt-injection detector
+runs before the answer model; detected requests are blocked. Detector
+unavailability fails closed. Questions are treated as untrusted input, and
+their contents are not written to server logs. Detection reduces risk but is
+not a guarantee; this agent has no tools or access to private user records.
 
 ## Structured answer
 
@@ -19,6 +24,8 @@ Request:
 
 Returns the existing structured answer envelope with `topic`, `summary`,
 `keyPoints`, `examples`, and `relatedTopics`.
+When the detector blocks a question, `data` is `null` and `error` explains that
+the user should rephrase. The existing response envelope is preserved.
 
 ## Streaming answer
 
@@ -41,6 +48,8 @@ with a generic message and closes the stream. Errors before the first chunk
 return HTTP 503 in the regular API error envelope. The server may fail over
 from NVIDIA to Groq only before emitting the first chunk. A client disconnect
 aborts the upstream Mastra generation.
+An input blocked by the prompt-injection detector returns HTTP 400 before SSE
+headers are sent. A question over 8,000 characters also returns HTTP 400.
 
 Example browser request:
 
