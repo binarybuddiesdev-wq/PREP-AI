@@ -23,75 +23,77 @@ body:has(.onboarding-screen) {
   white-space: nowrap;
 }
 
-@media (max-height: 700px) {
-  .onboarding-screen {
-    padding-block: 0.5rem;
-  }
-
-  .onboarding-card {
-    padding: 0.75rem 1rem;
-  }
-
-  .onboarding-header {
-    margin-bottom: 0.5rem;
-  }
-
-  .onboarding-header > div:first-child {
-    margin-bottom: 0;
-  }
-
-  .onboarding-header h1 {
-    font-size: 1.15rem;
-  }
-
-  .onboarding-header p,
-  #onboarding-step-title + p {
-    font-size: 0.8rem;
-  }
-
-  .onboarding-progress {
-    margin-bottom: 0.5rem;
-  }
-
-  .onboarding-fields,
-  .onboarding-content-section,
-  .onboarding-difficulty,
-  .onboarding-actions {
-    margin-top: 0.5rem;
-  }
-
-  .onboarding-skip {
-    margin-top: 0.125rem;
-  }
-
-  .onboarding-topic {
-    padding: 0.2rem 0.5rem;
-  }
-
-  .onboarding-actions button {
-    min-height: 2.5rem;
-    padding-block: 0.5rem;
-  }
-
-  .onboarding-skip {
-    font-size: 0.75rem;
-  }
+.onboarding-screen .onboarding-card {
+  max-height: calc(100dvh - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.75rem 1rem;
 }
 
-@media (min-height: 701px) {
-  .onboarding-header {
-    margin-bottom: 0.625rem;
-  }
+.onboarding-header {
+  margin-bottom: 0.5rem;
+}
 
-  .onboarding-progress {
-    margin-bottom: 0.625rem;
-  }
+.onboarding-header > div:first-child {
+  margin-bottom: 0;
+}
 
-  .onboarding-fields,
-  .onboarding-content-section,
-  .onboarding-difficulty {
-    margin-top: 0.625rem;
-  }
+.onboarding-header h1 {
+  font-size: 1.15rem;
+}
+
+.onboarding-header p,
+#onboarding-step-title + p {
+  font-size: 0.8rem;
+}
+
+.onboarding-progress {
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-progress > li > span:first-child {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+#onboarding-step-title {
+  font-size: 1rem;
+}
+
+.onboarding-fields,
+.onboarding-content-section,
+.onboarding-difficulty,
+.onboarding-actions {
+  margin-top: 0.5rem;
+}
+
+.onboarding-skip {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+}
+
+.onboarding-topic {
+  padding: 0.2rem 0.5rem;
+}
+
+.onboarding-actions button {
+  min-height: 2.25rem;
+  padding-block: 0.375rem;
+}
+
+.onboarding-screen .settings-select-trigger {
+  height: 2.125rem;
+  min-height: 2.125rem;
+  border-radius: 0.625rem;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+.onboarding-screen .settings-select-item {
+  min-height: 1.875rem;
+  border-radius: 0.45rem;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8125rem;
 }
 
 @media (max-height: 480px) {
@@ -99,7 +101,8 @@ body:has(.onboarding-screen) {
     padding-block: 0.25rem;
   }
 
-  .onboarding-card {
+  .onboarding-screen .onboarding-card {
+    max-height: calc(100dvh - 0.5rem);
     padding: 0.625rem 0.875rem;
   }
 
@@ -126,5 +129,10 @@ body:has(.onboarding-screen) {
   .onboarding-screen {
     align-items: flex-start;
     overflow-y: auto;
+  }
+
+  .onboarding-screen .onboarding-card {
+    max-height: none;
+    overflow-y: visible;
   }
 }
