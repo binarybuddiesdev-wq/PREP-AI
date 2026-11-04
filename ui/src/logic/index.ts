@@ -1,5 +1,6 @@
 export * from './api';
 export * from './auth';
+export * from './coding';
 export * from './dashboard';
 export * from './pdf';
 export * from './theory';

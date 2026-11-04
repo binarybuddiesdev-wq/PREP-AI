@@ -1,4 +1,5 @@
 export * from './api';
+export * from './coding';
 export * from './dashboard';
 export * from './theory';
 export * from './onboarding';

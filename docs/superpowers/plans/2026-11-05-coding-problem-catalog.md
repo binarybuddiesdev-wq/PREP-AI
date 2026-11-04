@@ -17,9 +17,9 @@ problem detail view using real backend data.
 
 ## Task 2: Typed UI API and query readers
 
-- [ ] Add core problem summary/detail/example types and list/detail service API
+- [x] Add core problem summary/detail/example types and list/detail service API
       functions with API tests.
-- [ ] Add user-scoped coding query keys/readers and tests for auth gating,
+- [x] Add user-scoped coding query keys/readers and tests for auth gating,
       params, detail ids/slugs, and failures.
 
 ## Task 3: Catalog and detail UI
