@@ -48,17 +48,19 @@ Status meanings:
 
 ## Suggested next work
 
-PostgreSQL RLS implementation and disposable-database verification now cover the PostgreSQL tenant data, including payments. Remaining RLS work is staged deployment: apply the schema and policy SQL, configure restricted runtime roles, and verify policies against staging before enabling them in a deployed environment. Other pending work includes production/provider checks that require external credentials or operational setup. The retry-safety audit
-found no additional set-style writes that need a durable response ledger;
-notification and conversation deletes now return success on repeat attempts.
-The different-key duplicate-question race now has a unique claim and a backfill
-command. Study Chat response snapshots expire after 24 hours; future routes with repeatable external
-side effects remain open. Continue with repository-buildable backend gaps
-before returning to the staged rollout.
-PDF production enablement and public Piston
-execution both depend on the final RLS and runtime-boundary rollout gates; see
-the [RLS rollout guide](backend/postgresql-rls-rollout.md) and
-[Piston runbook](runbooks/piston.md).
+The backend feature implementation is largely complete. The remaining work is
+production readiness: staging PostgreSQL RLS rollout, PDF provider/schema
+validation, a reviewed production code-execution boundary, live Razorpay and
+Resend checks, production monitoring and alert delivery, backup/restore proof,
+and independent AI evaluation review. These require the target environment,
+provider accounts, or human review; local unit tests cannot mark them complete.
+
+Use the [backend production-readiness checklist](architecture/TODO.md#backend-production-readiness-checklist)
+as the ordered action list and record evidence there before changing these
+items to done. The existing disposable restricted-role database suite remains
+available via `pnpm test:database:isolation`. The frontend notification inbox
+can be built against the completed API independently of these backend rollout
+gates.
 
 Update this tracker when scope or priorities change.
 

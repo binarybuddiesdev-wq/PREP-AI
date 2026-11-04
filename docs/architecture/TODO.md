@@ -64,6 +64,142 @@ design decision that has to be made before the feature ships.
 
 ---
 
+## Backend production-readiness checklist
+
+The backend feature code is implemented. The remaining backend work is mostly
+environment-specific rollout and verification; do not mark these items done
+based on local unit tests or the disposable database harness alone. The
+[backend tracker](../backend-status.md) is the concise status view. Keep
+credentials and customer data out of committed evidence.
+
+### 1. PostgreSQL RLS and tenant isolation — staging gate
+
+- [ ] Take and verify a staging backup; record the change owner and rollback
+      procedure before changing schema or runtime roles.
+- [ ] Apply the current PostgreSQL Prisma schema with a migration-capable
+      account, then apply RLS SQL in the order in
+      [the RLS rollout guide](../backend/postgresql-rls-rollout.md): tenant
+      policies, audit controls, PDF policies, and payment policies.
+- [ ] Configure distinct `prepai_api` and `prepai_worker` credentials in the
+      staging API and worker environments. Keep schema-owner credentials out of
+      runtime configuration.
+- [ ] Deploy and confirm `/readyz` verifies the expected runtime roles,
+      forced-RLS tables, policies, and worker function grants.
+- [ ] Run `pnpm test:database:isolation` and separately perform staging smoke
+      checks with two users, including API reads/writes, queued work, PDF access,
+      payment reconciliation, and the admin refund lookup.
+- [ ] Record the schema revision, policy revision, readiness result, isolation
+      results, and rollback outcome in the deployment record before scheduling
+      production rollout.
+
+### 2. MongoDB schema and claim rollout
+
+- [ ] Apply additive MongoDB models and indexes to the target database using
+      `pnpm --filter server prisma:push:mongodb` after reviewing the generated
+      schema changes and taking a backup.
+- [ ] Before enabling the question fingerprint claim on existing data, pause
+      admin question writes and run
+      `pnpm --filter server prisma:questions:backfill-uniqueness`. Resolve any
+      duplicate tuples reported by the command, then verify the claim collection
+      and unique indexes before resuming writes.
+- [ ] In staging, verify Study Chat and notification/idempotency collections
+      and indexes are present, then smoke-test create/send retries, concurrent
+      duplicate question creates, and recovery after a worker interruption.
+- [ ] Record schema/index versions, backfill output, and rollback steps. Never
+      run a backfill against production without a tested backup and an approved
+      write-pause window.
+
+### 3. PDF/RAG production enablement
+
+- [ ] Complete the RLS staging gate above before enabling PDF traffic.
+- [ ] Configure production Cloudinary and NVIDIA credentials and apply the
+      required PostgreSQL schema/extensions; confirm secrets are available to the
+      API and worker only where needed.
+- [ ] In staging, verify private upload and deletion, extraction, indexing,
+      reindex retries, owner-scoped retrieval, cited page/chunk identity, budget
+      exhaustion, and worker recovery after a transient provider failure.
+- [ ] Record successful restricted-role isolation and provider smoke results.
+      OCR and retrieval-quality tuning remain explicitly outside v1 readiness.
+
+### 4. Public code-execution isolation
+
+- [ ] Keep `PISTON_EXECUTION_ENABLED=false` for public production traffic while
+      using the local privileged Piston container.
+- [ ] Select and review a production isolation boundary separate from the
+      developer runner, then perform host-level tests for network egress,
+      filesystem access, process/resource limits, concurrency, timeout handling,
+      output caps, and cleanup after hostile jobs.
+- [ ] Document the deployed image/version, host/kernel configuration, test
+      evidence, monitoring, and incident response in the
+      [Piston runbook](../runbooks/piston.md).
+- [ ] Enable public execution only after security review accepts the evidence
+      and an operational rollback has been tested.
+
+### 5. Live payment and email provider checks
+
+- [ ] Configure Razorpay plan IDs and webhook secrets outside source control;
+      deploy the payment schema/RLS changes and validate subscription creation,
+      signed webhook reconciliation, cancellation, refunds, and duplicate delivery
+      in provider test mode before live mode.
+- [ ] Configure a verified Resend sender/domain, API key, unsubscribe secret,
+      and public API base URL. Verify opt-in, local-time scheduling, retry,
+      delivery-time opt-out, and one-click unsubscribe in a controlled test inbox.
+- [ ] Record provider mode, endpoint/config version, test outcomes, alert
+      ownership, and rollback steps without recording secret values.
+
+### 6. Production observability and incident response
+
+- [ ] Deploy the packaged Prometheus scrape configuration, Grafana dashboard,
+      and Blackbox probes for `/healthz` and `/readyz`.
+- [ ] Configure Alertmanager routing and an on-call owner; trigger each critical
+      availability, queue, provider, and error-rate alert in a non-production
+      environment and record receipt/acknowledgement.
+- [ ] Configure Sentry project credentials and verify the main-branch source
+      maps resolve a test event to the correct source revision.
+- [ ] Link the tested alert and escalation steps from the relevant
+      [service runbooks](../runbooks/).
+- [ ] Profile topic list/detail cache hit/miss rates, latency, and Redis memory
+      under representative production-like traffic before widening cache scope;
+      record the decision to keep or change the current topic-only cache policy.
+
+### 7. Backup and recovery proof
+
+- [ ] Select and configure production backup providers for MongoDB,
+      PostgreSQL, Redis (if required by the recovery objectives), and Cloudinary;
+      verify encryption, retention, access control, and alerting.
+- [ ] Name an owner and record actual backup timestamps and restore access
+      without placing credentials or copied user data in the repository.
+- [ ] Restore into isolated infrastructure, verify integrity and application
+      compatibility, measure actual RPO/RTO, and update the
+      [disaster-recovery runbook](../runbooks/disaster-recovery.md) with the
+      evidence and gaps before production sign-off.
+
+### 8. AI quality and privacy review
+
+- [ ] Have a subject-matter reviewer independently review the synthetic
+      prompt-injection labels and theory evaluation baseline before using them as
+      release gates.
+- [ ] Record a reviewed baseline for the deployed model/prompt versions and
+      rerun the evaluation after model, prompt, detector, or input-processing
+      changes.
+- [ ] Keep the current PII masking scope explicit: known email, phone,
+      payment-card, Aadhaar, PAN, and US SSN patterns are masked in theory,
+      Study Chat, Tech Expert, and PDF prompts. Names, free-form addresses, and
+      unknown formats are not detected; coding source remains unmodified. Decide
+      whether those residual risks are acceptable for each new AI input surface.
+
+### 9. Frontend handoff
+
+- [ ] Build the notification inbox UI against the existing authenticated
+      notifications API. The API and backend reminder jobs are implemented; this
+      item belongs to the frontend backlog, not backend feature work.
+
+Do not invent a generalized idempotency implementation for hypothetical
+routes. When a route introduces a repeatable external side effect, add its
+idempotency design and test to that feature's plan before implementation.
+
+---
+
 ## Open design and implementation notes
 
 Each missing doc should follow the same shape: **Context, Decision,

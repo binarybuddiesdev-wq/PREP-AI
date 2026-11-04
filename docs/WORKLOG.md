@@ -513,3 +513,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Preserved caller transcript/source content and citation identity; coding review source remains unchanged to preserve semantics.
 - Corrected the tracker to describe coverage as partial and spell out pattern-matching limitations.
 - Verification: focused provider-surface suites passed (45 tests); server build and full server gate passed, including coverage. Independent review found no blocking issues.
+
+## 2026-11-04 - Consolidate backend production-readiness work
+
+- Expanded the architecture TODO into ordered acceptance checklists for PostgreSQL RLS, MongoDB schema/backfill rollout, PDF/RAG, Piston isolation, live Razorpay/Resend checks, observability, backup/restore, and AI quality/privacy review.
+- Clarified that frontend inbox UI is a frontend handoff and that backend feature code is largely implemented while production readiness still depends on staging, provider, or human-review evidence.
+- Replaced the stale suggestion to search for more repository-buildable backend gaps with the concrete rollout checklist and the existing isolated-database verification command.
+- Verification: full server gate passed; `pnpm test:database:isolation` passed (11 files, 51 tests) using its disposable Podman databases; Prettier and diff checks passed. Staging/live-provider/human-review gates remain open.
