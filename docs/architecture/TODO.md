@@ -175,8 +175,9 @@ Sentry for unhandled
 exceptions. External uptime probe (BetterStack / Cronitor) every 60s.
 Append-only PostgreSQL audit records cover sensitive payment events, role
 projections, account deletion, and webhook signature failures, with restricted
-runtime grants and two-year retention. Dashboard/alert setup and Sentry
-source-map upload remain open; see [observability.md](../observability.md).
+runtime grants and two-year retention. Production Alertmanager delivery,
+external readiness/liveness probes, and Sentry source-map upload remain open;
+see [observability.md](../observability.md).
 
 ### 9. Payment state machine
 

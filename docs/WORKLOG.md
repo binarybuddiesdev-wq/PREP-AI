@@ -1,5 +1,10 @@
 # Worklog
 
+# 2026-11-04 - Packaged Prometheus alerts and Grafana dashboard
+
+- Added an authenticated Prometheus scrape configuration, nine alert rules for API availability/latency/errors, workers, Redis, provider failovers, PostgreSQL latency, and webhook signature failures, plus a portable Grafana service dashboard. Added config checks to the repository gate and updated the observability/backend trackers. Production Alertmanager delivery, external readiness/liveness probes, and Sentry source-map upload remain deployment work.
+- Verification: observability config tests passed; Prometheus 3.5 `promtool check config` and `promtool check rules` passed (nine rules); `pnpm gate --stack server --level full` passed.
+
 ## 2026-11-04 - Concurrent duplicate question protection
 
 - Added a unique SHA-256 fingerprint claim for each `(canonical topicId, difficulty, exact question text)` tuple. Admin creates, edits, deletes, and seed upserts maintain claims in MongoDB transactions. Update attempts read current records inside the transaction and retry transient Mongo `P2034` write conflicts twice. Mongo ObjectId casing is canonicalized for fingerprinting and claim cleanup.
