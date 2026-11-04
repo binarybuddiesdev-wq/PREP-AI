@@ -179,7 +179,8 @@ describe('StudyChatIdempotencyService', () => {
       userId: 'mongo-user-1',
     };
 
-    await service.complete(claim, { id: 'conversation-1' });
+    const completedAt = new Date('2026-11-04T12:00:00.000Z');
+    await service.complete(claim, { id: 'conversation-1' }, completedAt);
     await service.release(claim);
 
     expect(prisma.studyChatOperation.updateMany).toHaveBeenCalledWith({
@@ -189,7 +190,11 @@ describe('StudyChatIdempotencyService', () => {
         status: 'PROCESSING',
         leaseToken: 'lease-token-1',
       },
-      data: { status: 'COMPLETED', response: { id: 'conversation-1' } },
+      data: {
+        status: 'COMPLETED',
+        response: { id: 'conversation-1' },
+        expiresAt: new Date('2026-11-05T12:00:00.000Z'),
+      },
     });
     expect(prisma.studyChatOperation.deleteMany).toHaveBeenCalledWith({
       where: {

@@ -99,5 +99,9 @@ Set `DATABASE_URL` to the target MongoDB database when running the command.
 The Study Chat module uses the registered Mastra study-coach agent and the
 existing NVIDIA/Groq provider failover path. It stores bounded application
 conversation history in Mongo; it does not enable Mastra's optional semantic or
-observational memory features. Operation response snapshots live as long as the
-conversation and are removed with it.
+observational memory features. Completed operation response snapshots expire
+after 24 hours and are removed by hourly cleanup. A transcript marker lets a
+later retry recover a committed turn without generating or appending it again.
+Deleting a conversation removes its operation records immediately. Apply Mongo
+schema changes with `pnpm --filter server prisma:push:mongodb` before enabling
+this retention behavior in an existing environment.

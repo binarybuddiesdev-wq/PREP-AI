@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-11-04 - Expire Study Chat idempotency snapshots
+
+- Completed Study Chat operation records now expire 24 hours after completion. The hourly Mongo cleanup removes expired completed records, including legacy records without `expiresAt` using their `updatedAt` timestamp.
+- Transcript operation markers still recover accepted turns after snapshot cleanup, avoiding another model call or duplicate message append. Active processing leases are not expired by cleanup.
+- Updated Study Chat API, backend, architecture, and shared idempotency docs. Existing Mongo databases need the schema applied with `pnpm --filter server prisma:push:mongodb`.
+- Verification: focused Study Chat/idempotency tests and the full server gate.
+
 ## 2026-11-04 - Share Fastify rate limits through Redis
 
 - Reused the managed `RedisService` client for Fastify rate-limit storage so request counters are shared across API replicas. Preserved the 10/minute auth and 100/minute general limits and fail-closed behavior when Redis storage is unavailable.

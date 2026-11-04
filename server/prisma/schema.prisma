@@ -74,11 +74,13 @@ model StudyChatOperation {
   leaseExpiresAt     DateTime
   conversationId     String?  @db.ObjectId
   response           Json?
+  expiresAt          DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   @@unique([userId, operationId])
   @@index([userId, conversationId])
+  @@index([status, expiresAt])
 }
 
 model PdfSource {

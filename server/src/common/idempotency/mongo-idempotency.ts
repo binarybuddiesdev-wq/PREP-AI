@@ -5,6 +5,7 @@ import {
   createIdempotencyRequestFingerprint,
   requireIdempotencyKey,
 } from './idempotency.js';
+import { IDEMPOTENCY_REPLAY_WINDOW_MS } from './idempotency.constants.js';
 
 interface IMongoIdempotencyInput {
   actorId: string;
@@ -14,7 +15,6 @@ interface IMongoIdempotencyInput {
 }
 
 type TIdempotencyOperation = Prisma.IdempotencyOperationGetPayload<object>;
-const IDEMPOTENCY_REPLAY_WINDOW_MS = 24 * 60 * 60 * 1_000;
 
 export async function executeMongoIdempotently<T extends object>(
   prisma: PrismaClient,

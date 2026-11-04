@@ -63,8 +63,10 @@ enqueueing duplicate work.
 - Same key plus a different fingerprint returns 409 and does not modify the
   original operation.
 - The replay window follows the lifetime of the persisted operation resource,
-  except PDF reindex, which retains the latest 100 operations per source. No
-  separate 24-hour response cache is introduced.
+  except PDF reindex, which retains the latest 100 operations per source, and
+  Study Chat response snapshots, which expire after 24 hours. A transcript
+  operation marker recovers an already committed Study Chat turn after its
+  response snapshot is cleaned.
 - Theory answer IDs retain their current deterministic format for backward
   compatibility. Coding execution IDs become deterministic for a user's
   coding-execution key; queue IDs continue to derive from the execution ID.
@@ -84,7 +86,8 @@ enqueueing duplicate work.
   unique per user and deterministic operation ID. Active duplicate requests
   return 409; completed requests replay their safe response snapshot. A
   transcript operation marker recovers turns committed before a process stops.
-  Operation snapshots are deleted with the conversation or user.
+  Completed response snapshots expire after 24 hours and are deleted with the
+  conversation or user if it is removed earlier.
 
 ## Supplemental admin creates
 

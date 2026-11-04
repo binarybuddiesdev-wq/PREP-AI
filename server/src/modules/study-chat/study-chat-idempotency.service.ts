@@ -3,6 +3,7 @@ import { ConflictException, Injectable, ServiceUnavailableException } from '@nes
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { createIdempotencyOperationId, requireIdempotencyKey } from '@/common/idempotency/index.js';
+import { IDEMPOTENCY_REPLAY_WINDOW_MS } from '@/common/idempotency/idempotency.constants.js';
 
 const OPERATION_LEASE_MS = 5 * 60 * 1_000;
 const OPERATION_PROCESSING = 'PROCESSING';
@@ -69,7 +70,11 @@ export class StudyChatIdempotencyService {
     }
   }
 
-  async complete(claim: StudyChatOperationClaim, response: Prisma.InputJsonValue): Promise<void> {
+  async complete(
+    claim: StudyChatOperationClaim,
+    response: Prisma.InputJsonValue,
+    completedAt = new Date()
+  ): Promise<void> {
     const result = await this.prisma.studyChatOperation.updateMany({
       where: {
         userId: claim.userId,
@@ -77,7 +82,11 @@ export class StudyChatIdempotencyService {
         status: OPERATION_PROCESSING,
         leaseToken: claim.leaseToken,
       },
-      data: { status: OPERATION_COMPLETED, response },
+      data: {
+        status: OPERATION_COMPLETED,
+        response,
+        expiresAt: new Date(completedAt.getTime() + IDEMPOTENCY_REPLAY_WINDOW_MS),
+      },
     });
     if (!result.count) throw new ConflictException(OPERATION_ACTIVE_ERROR);
   }
