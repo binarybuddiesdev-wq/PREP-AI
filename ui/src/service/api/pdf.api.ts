@@ -1,4 +1,10 @@
-import type { IApiEnvelope, IPdfDeleteResult, IPdfSource, IPdfUploadProgress } from '@/core';
+import type {
+  IApiEnvelope,
+  IPdfDeleteResult,
+  IPdfReindexResult,
+  IPdfSource,
+  IPdfUploadProgress,
+} from '@/core';
 import type { ApiClient } from './apiClient.types';
 
 export const getPdfSources = (api: ApiClient, limit = 20): Promise<IApiEnvelope<IPdfSource[]>> =>
@@ -32,12 +38,12 @@ export const reindexPdfSource = (
   api: ApiClient,
   pdfId: string,
   idempotencyKey: string
-): Promise<IApiEnvelope<IPdfSource>> =>
+): Promise<IApiEnvelope<IPdfReindexResult>> =>
   api
     .post(`pdfs/${encodeURIComponent(pdfId)}/reindex`, {
       headers: { 'Idempotency-Key': idempotencyKey },
     })
-    .json<IApiEnvelope<IPdfSource>>();
+    .json<IApiEnvelope<IPdfReindexResult>>();
 
 export const deletePdfSource = (
   api: ApiClient,

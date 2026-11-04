@@ -18,6 +18,12 @@ export interface IPdfDeleteResult {
   status: 'deleting' | 'deleted';
 }
 
+export interface IPdfReindexResult {
+  id: string;
+  status: 'queued';
+  requestedRevision: number;
+}
+
 export interface IPdfUploadProgress {
   percent: number;
   transferredBytes: number;

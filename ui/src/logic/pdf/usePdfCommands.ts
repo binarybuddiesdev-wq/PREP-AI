@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
-import type { IPdfSource, IPdfUploadProgress } from '@/core';
+import type { IPdfReindexResult, IPdfSource, IPdfUploadProgress } from '@/core';
 import { deletePdfSource, reindexPdfSource, uploadPdfSource } from '@/service/api';
 import { useApiClient } from '../api';
 import { useSessionReader } from '../auth';
@@ -38,7 +38,7 @@ export const usePdfUploadCommand = (): UseMutationResult<
 };
 
 export const usePdfReindexCommand = (): UseMutationResult<
-  IPdfSource,
+  IPdfReindexResult,
   Error,
   IReindexPdfVariables
 > => {

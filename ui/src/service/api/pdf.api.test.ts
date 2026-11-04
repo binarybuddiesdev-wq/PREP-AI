@@ -74,10 +74,18 @@ describe('PDF API', () => {
   });
 
   it('uses idempotent reindex and retry-safe delete endpoints', async () => {
-    const response = { success: true, message: 'ok', data: source };
-    const json = vi.fn().mockResolvedValue(response);
-    const post = vi.fn().mockReturnValue({ json });
-    const deleteRequest = vi.fn().mockReturnValue({ json });
+    const reindexJson = vi.fn().mockResolvedValue({
+      success: true,
+      message: 'ok',
+      data: { id: 'pdf-1', status: 'queued', requestedRevision: 2 },
+    });
+    const deleteJson = vi.fn().mockResolvedValue({
+      success: true,
+      message: 'ok',
+      data: { id: 'pdf-1', status: 'deleting' },
+    });
+    const post = vi.fn().mockReturnValue({ json: reindexJson });
+    const deleteRequest = vi.fn().mockReturnValue({ json: deleteJson });
     const api = { post, delete: deleteRequest };
 
     await reindexPdfSource(api as never, 'pdf-1', 'reindex-1');
