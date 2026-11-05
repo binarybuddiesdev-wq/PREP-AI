@@ -35,10 +35,11 @@ describe('SettingsFormCard', () => {
   });
 
   it('emits the full values object when a select changes', async () => {
+    const user = userEvent.setup();
     const { onChange } = renderCard();
 
-    await userEvent.click(screen.getByRole('combobox', { name: 'Experience Level' }));
-    await userEvent.click(screen.getByRole('option', { name: 'Senior' }));
+    await user.click(screen.getByRole('combobox', { name: 'Experience Level' }));
+    await user.click(await screen.findByRole('option', { name: 'Senior' }));
 
     expect(onChange).toHaveBeenCalledWith({ ...values, experienceLevel: 'Senior' });
   });
