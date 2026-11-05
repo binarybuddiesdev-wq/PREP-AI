@@ -19,20 +19,37 @@ describe('getSettingsFormValues', () => {
   it('returns defaults when settings are missing', () => {
     expect(getSettingsFormValues(undefined)).toEqual(DEFAULT_SETTINGS_FORM_VALUES);
     expect(getSettingsFormValues(settings({}))).toEqual(DEFAULT_SETTINGS_FORM_VALUES);
+    expect(DEFAULT_SETTINGS_FORM_VALUES.dailyReminder).toBe(false);
   });
 
-  it('maps stored profile and notification values', () => {
+  it('maps the supported profile, practice, and reminder values', () => {
     const values = getSettingsFormValues(
       settings({
-        profile: { targetRole: 'Backend', experienceLevel: 'Senior' },
-        notifications: { dailyReminder: false, weeklyReport: false },
+        profile: {
+          targetRole: 'Backend',
+          experienceLevel: 'Senior',
+          targetCompanies: 'Google, Stripe',
+        },
+        preferences: { preferredTopics: ['TypeScript', 'Node.js'], defaultDifficulty: 'Junior' },
+        notifications: {
+          dailyReminder: true,
+          dailyReminderTime: '20:15',
+          timezone: 'Asia/Kolkata',
+        },
+        dailyReminderEnabled: true,
+        dailyReminderTime: '20:15',
+        timezone: 'Asia/Kolkata',
       })
     );
     expect(values).toEqual({
-      targetRole: 'Backend',
+      targetRole: 'Backend Engineer',
       experienceLevel: 'Senior',
-      dailyReminder: false,
-      weeklyReport: false,
+      targetCompanies: 'Google, Stripe',
+      preferredTopics: ['TypeScript', 'Node.js'],
+      defaultDifficulty: 'Junior',
+      dailyReminder: true,
+      dailyReminderTime: '20:15',
+      timezone: 'Asia/Kolkata',
     });
   });
 
@@ -43,22 +60,52 @@ describe('getSettingsFormValues', () => {
         notifications: { dailyReminder: 'yes' as unknown as boolean },
       })
     );
-    expect(values).toEqual(DEFAULT_SETTINGS_FORM_VALUES);
+    expect(values.targetRole).toBe(DEFAULT_SETTINGS_FORM_VALUES.targetRole);
+    expect(values.dailyReminder).toBe(false);
   });
 });
 
 describe('toUpdateSettingsBody', () => {
-  it('nests form values under profile and notifications', () => {
+  it('merges the supported values without removing other saved settings', () => {
     expect(
-      toUpdateSettingsBody({
-        targetRole: 'DevOps',
-        experienceLevel: 'Mid',
-        dailyReminder: true,
-        weeklyReport: false,
-      })
+      toUpdateSettingsBody(
+        {
+          targetRole: 'DevOps Engineer',
+          experienceLevel: 'Mid',
+          targetCompanies: 'Acme',
+          preferredTopics: ['React'],
+          defaultDifficulty: 'Senior',
+          dailyReminder: true,
+          dailyReminderTime: '18:30',
+          timezone: 'Europe/London',
+        },
+        settings({
+          profile: { customProfileField: 'keep' },
+          preferences: { onboardingStep: 2, customPreference: true },
+          notifications: { weeklyReport: false, customNotification: 'keep' },
+        })
+      )
     ).toEqual({
-      profile: { targetRole: 'DevOps', experienceLevel: 'Mid' },
-      notifications: { dailyReminder: true, weeklyReport: false },
+      profile: {
+        customProfileField: 'keep',
+        targetRole: 'DevOps Engineer',
+        experienceLevel: 'Mid',
+        targetCompanies: 'Acme',
+      },
+      preferences: {
+        onboardingStep: 2,
+        customPreference: true,
+        preferredTopics: ['React'],
+        defaultDifficulty: 'Senior',
+      },
+      notifications: {
+        weeklyReport: false,
+        customNotification: 'keep',
+        dailyReminder: true,
+        email: true,
+        dailyReminderTime: '18:30',
+        timezone: 'Europe/London',
+      },
     });
   });
 });

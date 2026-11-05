@@ -36,7 +36,16 @@ export const SelectField = (props: ISelectFieldProps) => {
             isCompact && 'settings-select-trigger--dense'
           )}
         >
-          <Select.Value placeholder={placeholder} />
+          <Select.Value className="settings-select-value min-w-0 flex-1 truncate">
+            {(selectedValue: unknown) => {
+              if (typeof selectedValue !== 'string') return placeholder;
+              const selectedOption = options.find((option) => option.value === selectedValue);
+
+              return isCompact
+                ? (selectedOption?.compactLabel ?? selectedOption?.label ?? selectedValue)
+                : (selectedOption?.label ?? selectedValue);
+            }}
+          </Select.Value>
           <Select.Icon className="settings-select-icon">
             <ChevronDown aria-hidden="true" className="size-4" />
           </Select.Icon>

@@ -18,8 +18,10 @@ export interface IUserProfile {
 }
 
 export interface IUserNotifications {
+  email?: boolean;
   dailyReminder?: boolean;
-  weeklyReport?: boolean;
+  dailyReminderTime?: string;
+  timezone?: string;
   [key: string]: unknown;
 }
 
@@ -29,6 +31,9 @@ export interface IUserSettings {
   profile: IUserProfile | null;
   preferences: Record<string, unknown> | null;
   notifications: IUserNotifications | null;
+  dailyReminderEnabled?: boolean;
+  dailyReminderTime?: string;
+  timezone?: string;
 }
 
 export interface IUpdateSettingsBody {
@@ -40,8 +45,12 @@ export interface IUpdateSettingsBody {
 export interface ISettingsFormValues {
   targetRole: string;
   experienceLevel: string;
+  targetCompanies: string;
+  preferredTopics: string[];
+  defaultDifficulty: string;
   dailyReminder: boolean;
-  weeklyReport: boolean;
+  dailyReminderTime: string;
+  timezone: string;
 }
 
 export interface ISettingsSaveStatus {
@@ -52,4 +61,5 @@ export interface ISettingsSaveStatus {
 export interface ISelectOption {
   value: string;
   label: string;
+  compactLabel?: string;
 }

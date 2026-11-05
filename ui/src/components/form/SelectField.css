@@ -51,6 +51,12 @@
   color: #71717a;
 }
 
+.settings-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .settings-select-icon {
   display: flex;
   flex: none;

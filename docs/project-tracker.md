@@ -10,13 +10,13 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 
 ## Current state
 
-| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                      |
-| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                  |
-| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).           |
-| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).             |
-| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history, and persistent Study Chat are implemented. Coding stats, expanded settings, notifications, and billing remain on the roadmap. |
-| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                       |
+| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                        |
+| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                    |
+| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                             |
+| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                               |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history, persistent Study Chat, and supported settings preferences are implemented. Coding stats, notification inbox, and billing remain on the roadmap. |
+| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                         |
 
 ## Reference and implementation rules
 
@@ -207,23 +207,32 @@ check reports newline-formatting drift in this Windows checkout
 
 ### Phase 7 — Settings and notifications
 
-**Status: Partial.** Basic profile/settings read and update exist; the
-reference's tabbed settings and notification inbox UI are not implemented.
+**Status: Partial.** Supported settings now use a compact tabbed interface for
+profile, practice preferences, reminders, and document management. The
+notification inbox and dashboard notification entry remain outstanding.
 
-- [ ] Expand settings into Profile, Notifications, Practice Preferences,
-      AI & Sources, Documents, Plan, and Danger Zone sections where supported.
-- [ ] Persist profile, theme, and daily reminder preferences through existing
-      APIs; expose only preferences that have a defined backend contract.
+- [x] Expand supported settings into compact Profile, Notifications, Practice
+      Preferences, and Documents tabs; omit unsupported AI, Plan, and Danger
+      Zone actions.
+- [x] Persist profile, practice preferences, and daily reminder time/timezone
+      through existing APIs; keep daily reminder opt-in disabled by default.
 - [ ] Build the notification dropdown/inbox, unread count, pagination,
       mark-read, mark-all-read, and delete against the
       [notifications API](../routes/notifications-api-spec.md).
 - [ ] Keep the dashboard bell and inbox counts synchronized using TanStack
       Query invalidation/refetch rules.
-- [ ] Do not present unsupported prototype controls as working features.
+- [x] Do not present unsupported prototype controls as working features.
       Weekly digests, new-question/streak alerts, AI-model selection, web search,
       progress reset, and user data export need explicit product/API decisions
       before they are shown as actionable controls. Account deletion must use the
       supported Clerk deletion flow and report its real completion state.
+
+**Settings verification:** UI tests pass (105 files / 433 tests), UI lint,
+TypeScript project build, and production build pass. Chrome inspection covered
+the supported tabs at desktop and mobile sizes, including the open select menu;
+the screen had no horizontal overflow or page scroll at 320×568. The root
+format check remains red on the existing Windows checkout baseline; all files
+changed for this feature pass scoped Prettier.
 
 ### Phase 8 — Plan and billing
 

@@ -5,6 +5,28 @@ import { describe, expect, it, vi } from 'vitest';
 import { SelectField } from './SelectField';
 
 describe('SelectField', () => {
+  it('shows a compact selected label while keeping the full option name in the menu', async () => {
+    const user = userEvent.setup();
+    render(
+      <SelectField
+        id="target-role"
+        label="Target Role"
+        placeholder="Select role"
+        options={[{ value: 'backend', label: 'Backend Engineer', compactLabel: 'Backend' }]}
+        value="backend"
+        density="compact"
+        onChange={vi.fn()}
+      />
+    );
+
+    const dropdown = screen.getByRole('combobox', { name: 'Target Role' });
+    expect(dropdown).toHaveTextContent('Backend');
+
+    await user.click(dropdown);
+
+    expect(await screen.findByRole('option', { name: 'Backend Engineer' })).toBeInTheDocument();
+  });
+
   it('opens a styled option menu and reports the selected value', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

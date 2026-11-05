@@ -1,62 +1,98 @@
-import { EXPERIENCE_LEVEL_OPTIONS, TARGET_ROLE_OPTIONS } from '@/core';
-import { CheckboxField, SelectField } from '../form';
-import type { ISettingsFormCardProps } from './SettingsFormCard.types';
+import { useState } from 'react';
+
+import type { ISettingsFormCardProps, SettingsTab } from './SettingsFormCard.types';
+import { SettingsDocumentsPanel } from './SettingsDocumentsPanel';
+import { SettingsNotificationsPanel } from './SettingsNotificationsPanel';
+import { SettingsPracticePreferencesPanel } from './SettingsPracticePreferencesPanel';
+import { SettingsProfilePanel } from './SettingsProfilePanel';
+import { SETTINGS_TABS } from './settings.constants';
+import { SettingsTabList } from './SettingsTabList';
 
 export const SettingsFormCard = (props: ISettingsFormCardProps) => {
-  const { values, isSaving, status, onChange, onSave } = props;
+  const { values, userName, userEmail, isSaving, status, onChange, onSave, onOpenDocuments } =
+    props;
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const activeIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);
+  const isDocumentsTab = activeTab === 'documents';
+
+  const getPanel = () => {
+    switch (activeTab) {
+      case 'profile':
+        return (
+          <SettingsProfilePanel
+            values={values}
+            userName={userName}
+            userEmail={userEmail}
+            isSaving={isSaving}
+            onChange={onChange}
+          />
+        );
+      case 'notifications':
+        return (
+          <SettingsNotificationsPanel values={values} isSaving={isSaving} onChange={onChange} />
+        );
+      case 'preferences':
+        return (
+          <SettingsPracticePreferencesPanel
+            values={values}
+            isSaving={isSaving}
+            onChange={onChange}
+          />
+        );
+      case 'documents':
+        return <SettingsDocumentsPanel onOpenDocuments={onOpenDocuments} />;
+    }
+  };
 
   return (
-    <section className="app-shell-panel mb-6 rounded-xl border border-white/10 bg-[#18181b] p-6">
-      <h2 className="text-lg font-semibold mb-4 text-amber-400">UserSettings Model (MongoDB)</h2>
+    <section className="app-shell-panel overflow-hidden rounded-xl border border-white/10 bg-[#18181b]">
+      <header className="border-b border-white/[0.08] px-4 pt-2 sm:px-5">
+        <SettingsTabList activeTab={activeTab} onChange={setActiveTab} />
+      </header>
 
-      <div className="space-y-5">
-        <SelectField
-          id="target-role"
-          label="Target Role"
-          placeholder="Select role"
-          options={TARGET_ROLE_OPTIONS}
-          value={values.targetRole}
-          onChange={(targetRole) => onChange({ ...values, targetRole })}
-        />
-        <SelectField
-          id="experience-level"
-          label="Experience Level"
-          placeholder="Select level"
-          options={EXPERIENCE_LEVEL_OPTIONS}
-          value={values.experienceLevel}
-          onChange={(experienceLevel) => onChange({ ...values, experienceLevel })}
-        />
-        <CheckboxField
-          id="daily-reminder"
-          label="Daily Practice Reminder"
-          checked={values.dailyReminder}
-          onChange={(dailyReminder) => onChange({ ...values, dailyReminder })}
-        />
-        <CheckboxField
-          id="weekly-report"
-          label="Weekly Progress Report"
-          checked={values.weeklyReport}
-          onChange={(weeklyReport) => onChange({ ...values, weeklyReport })}
-        />
+      <div
+        id={`settings-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`settings-tab-${activeTab}`}
+        tabIndex={0}
+        className="min-h-[12rem] px-4 py-3 outline-none sm:px-5 sm:py-5"
+      >
+        {getPanel()}
       </div>
+      {SETTINGS_TABS.filter((tab) => tab.id !== activeTab).map((tab) => (
+        <div
+          key={tab.id}
+          id={`settings-panel-${tab.id}`}
+          role="tabpanel"
+          aria-labelledby={`settings-tab-${tab.id}`}
+          hidden
+        />
+      ))}
 
-      <div className="mt-6 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={isSaving}
-          className="px-4 py-2 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition-colors disabled:opacity-50 text-sm"
-        >
-          {isSaving ? 'Saving...' : 'Save Settings'}
-        </button>
-        {status && (
-          <span
-            className={`text-sm ${status.kind === 'success' ? 'text-green-400' : 'text-red-400'}`}
+      {!isDocumentsTab && (
+        <footer className="flex min-h-14 flex-wrap items-center gap-3 border-t border-white/[0.08] px-4 py-3 sm:px-5">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving}
+            className="inline-flex min-h-9 items-center rounded-lg bg-amber-400 px-3 text-sm font-semibold text-black transition hover:bg-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-wait disabled:opacity-60"
           >
-            {status.message}
-          </span>
-        )}
-      </div>
+            {isSaving ? 'Saving…' : 'Save settings'}
+          </button>
+          {status && (
+            <p
+              role={status.kind === 'error' ? 'alert' : 'status'}
+              className={`text-sm ${status.kind === 'success' ? 'text-emerald-300' : 'text-rose-300'}`}
+            >
+              {status.message}
+            </p>
+          )}
+        </footer>
+      )}
+
+      <span className="sr-only" aria-live="polite">
+        Selected tab {SETTINGS_TABS[activeIndex].label}
+      </span>
     </section>
   );
 };
