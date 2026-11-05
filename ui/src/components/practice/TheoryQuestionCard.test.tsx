@@ -37,6 +37,11 @@ describe('TheoryQuestionCard', () => {
   it('renders question progress, elapsed time, and a labeled response field', () => {
     render(<TheoryQuestionCard {...createProps()} />);
 
+    expect(screen.getByRole('heading', { name: question.question }).closest('section')).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(screen.getByRole('textbox', { name: 'Your answer' })).toHaveClass('bg-[var(--bg2)]');
     expect(screen.getByRole('heading', { name: question.question })).toBeVisible();
     expect(screen.getByRole('progressbar', { name: 'Question progress' })).toHaveAttribute(
       'aria-valuenow',

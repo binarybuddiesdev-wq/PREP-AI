@@ -57,6 +57,11 @@ describe('TheoryFeedback', () => {
       />
     );
 
+    expect(screen.getByRole('region', { name: 'Answer feedback' })).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(screen.getByText('0.0/10')).toHaveClass('text-[var(--accent-strong)]');
     expect(screen.getByText('0.0/10')).toBeVisible();
     expect(screen.getByText('Clear explanation.')).toBeVisible();
   });

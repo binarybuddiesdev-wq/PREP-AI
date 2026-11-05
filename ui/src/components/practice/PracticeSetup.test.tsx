@@ -88,6 +88,11 @@ describe('PracticeSetup', () => {
   it('offers topic, weak-area, and PDF study modes', () => {
     render(<PracticeSetup {...createProps()} />);
 
+    expect(screen.getByRole('button', { name: /Topic Practice/ })).toHaveClass(
+      'border-[var(--accent-border)]',
+      'bg-[var(--accent-bg)]'
+    );
+    expect(screen.getByRole('button', { name: /Weak Areas/ })).toHaveClass('bg-[var(--card)]');
     expect(screen.getByRole('button', { name: /Topic Practice/ })).toHaveAttribute(
       'aria-pressed',
       'true'

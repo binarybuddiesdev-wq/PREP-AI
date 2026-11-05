@@ -33,7 +33,7 @@ const MODES: Array<{
 const DIFFICULTIES: TheoryDifficulty[] = ['Junior', 'Mid', 'Senior'];
 
 const retryButtonClassName =
-  'inline-flex min-h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-sm text-zinc-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400';
+  'inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]';
 
 export const PracticeSetup = (props: IPracticeSetupProps) => {
   const {
@@ -84,7 +84,7 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
     <main className="mx-auto w-full max-w-5xl space-y-5 sm:space-y-6">
       <header>
         <h1 className="mb-1 text-2xl font-semibold text-[var(--text-h)]">Practice</h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-[var(--dim)]">
           Choose a practice mode and set the focus for your next session.
         </p>
       </header>
@@ -99,48 +99,48 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               aria-label={label}
               aria-pressed={isSelected}
               onClick={() => onModeChange(value)}
-              className={`rounded-xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 sm:p-5 ${
+              className={`rounded-xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:p-5 ${
                 isSelected
-                  ? 'border-amber-400/60 bg-amber-400/[0.07]'
-                  : 'border-white/[0.08] bg-[#18181b] hover:border-white/20 hover:bg-white/[0.04]'
+                  ? 'border-[var(--accent-border)] bg-[var(--accent-bg)]'
+                  : 'border-[var(--border)] bg-[var(--card)] hover:border-[var(--border2)] hover:bg-[var(--surface)]'
               }`}
             >
               <span
                 className={`mb-3 inline-flex size-10 items-center justify-center rounded-xl ${
                   value === 'weak'
-                    ? 'bg-sky-400/10 text-sky-300'
+                    ? 'bg-[var(--blue-bg)] text-[var(--info-strong)]'
                     : value === 'pdf'
-                      ? 'bg-rose-400/10 text-rose-300'
-                      : 'bg-amber-400/10 text-amber-300'
+                      ? 'bg-[var(--red-bg)] text-[var(--danger-strong)]'
+                      : 'bg-[var(--accent-bg)] text-[var(--accent-strong)]'
                 }`}
               >
                 <Icon aria-hidden="true" className="size-5" />
               </span>
-              <span className="block text-sm font-semibold text-zinc-100">{label}</span>
-              <span className="mt-1 block text-xs leading-5 text-zinc-400">{description}</span>
+              <span className="block text-sm font-semibold text-[var(--text-h)]">{label}</span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--dim)]">{description}</span>
             </button>
           );
         })}
       </section>
 
-      <section className="app-shell-panel rounded-xl border border-white/[0.08] bg-[#18181b] p-4 sm:p-5">
+      <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5">
         {mode === 'topic' ? (
           <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div>
               <h2 className="mb-1 text-sm font-semibold text-[var(--text-h)]">Choose a topic</h2>
-              <p className="mb-3 text-xs leading-5 text-zinc-400">
+              <p className="mb-3 text-xs leading-5 text-[var(--dim)]">
                 Your questions will focus on the topic you select.
               </p>
               {topicsError ? (
                 <div role="alert" className="space-y-3">
-                  <p className="text-sm text-rose-300">{topicsError}</p>
+                  <p className="text-sm text-[var(--danger-strong)]">{topicsError}</p>
                   <button type="button" className={retryButtonClassName} onClick={onRetryTopics}>
                     <RotateCw aria-hidden="true" className="size-3.5" />
                     Retry topics
                   </button>
                 </div>
               ) : topics.length === 0 && !isTopicsLoading ? (
-                <p className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3 text-sm text-zinc-400">
+                <p className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 text-sm text-[var(--dim)]">
                   No practice topics are available yet.
                 </p>
               ) : (
@@ -156,7 +156,7 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               )}
             </div>
             <div>
-              <p className="mb-2 text-xs font-medium text-zinc-400">Difficulty</p>
+              <p className="mb-2 text-xs font-medium text-[var(--dim)]">Difficulty</p>
               <div role="group" aria-label="Difficulty" className="flex gap-2">
                 {DIFFICULTIES.map((option) => (
                   <button
@@ -164,10 +164,10 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                     type="button"
                     aria-pressed={difficulty === option}
                     onClick={() => onDifficultyChange(option)}
-                    className={`min-h-9 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-amber-400 ${
+                    className={`min-h-9 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${
                       difficulty === option
-                        ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-                        : 'border-white/10 bg-white/[0.02] text-zinc-400 hover:text-zinc-100'
+                        ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+                        : 'border-[var(--border2)] bg-[var(--surface)] text-[var(--dim)] hover:text-[var(--text)]'
                     }`}
                   >
                     {option}
@@ -182,25 +182,25 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               <h2 className="text-sm font-semibold text-[var(--text-h)]">
                 The server will use your practice history
               </h2>
-              <p className="mt-1 text-xs leading-5 text-zinc-400">
+              <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
                 These recent results provide context. The server selects the questions when your
                 session starts.
               </p>
             </div>
             {isWeakAreasLoading ? (
-              <p role="status" className="text-sm text-zinc-400">
+              <p role="status" className="text-sm text-[var(--dim)]">
                 Loading weak areas…
               </p>
             ) : weakAreasError ? (
               <div role="alert" className="space-y-3">
-                <p className="text-sm text-rose-300">{weakAreasError}</p>
+                <p className="text-sm text-[var(--danger-strong)]">{weakAreasError}</p>
                 <button type="button" className={retryButtonClassName} onClick={onRetryWeakAreas}>
                   <RotateCw aria-hidden="true" className="size-3.5" />
                   Retry weak areas
                 </button>
               </div>
             ) : weakAreas.length === 0 ? (
-              <p className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3 text-sm text-zinc-400">
+              <p className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 text-sm text-[var(--dim)]">
                 Complete a few practice sessions to see weak areas here.
               </p>
             ) : (
@@ -208,10 +208,12 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                 {weakAreas.map((area) => (
                   <li
                     key={area.topicId}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-black/10 px-3 py-2.5"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
                   >
-                    <span className="min-w-0 truncate text-sm text-zinc-200">{area.topicName}</span>
-                    <span className="shrink-0 text-xs tabular-nums text-zinc-400">
+                    <span className="min-w-0 truncate text-sm text-[var(--text)]">
+                      {area.topicName}
+                    </span>
+                    <span className="shrink-0 text-xs tabular-nums text-[var(--dim)]">
                       {area.avgScore.toFixed(1)}/10
                     </span>
                   </li>
@@ -219,7 +221,7 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               </ul>
             )}
             <div>
-              <p className="mb-2 text-xs font-medium text-zinc-400">Difficulty</p>
+              <p className="mb-2 text-xs font-medium text-[var(--dim)]">Difficulty</p>
               <div role="group" aria-label="Difficulty" className="flex gap-2">
                 {DIFFICULTIES.map((option) => (
                   <button
@@ -227,10 +229,10 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                     type="button"
                     aria-pressed={difficulty === option}
                     onClick={() => onDifficultyChange(option)}
-                    className={`min-h-9 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-amber-400 ${
+                    className={`min-h-9 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${
                       difficulty === option
-                        ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-                        : 'border-white/10 bg-white/[0.02] text-zinc-400 hover:text-zinc-100'
+                        ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+                        : 'border-[var(--border2)] bg-[var(--surface)] text-[var(--dim)] hover:text-[var(--text)]'
                     }`}
                   >
                     {option}
@@ -244,36 +246,36 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-sm font-semibold text-[var(--text-h)]">Choose study sources</h2>
-                <p className="mt-1 text-xs leading-5 text-zinc-400">
+                <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
                   Choose 1–5 ready PDFs to focus this session.
                 </p>
               </div>
-              <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs tabular-nums text-zinc-300">
+              <span className="shrink-0 rounded-full border border-[var(--border2)] bg-[var(--surface)] px-2.5 py-1 text-xs tabular-nums text-[var(--text)]">
                 {selectedPdfIds.length} of 5 selected
               </span>
             </div>
             {isPdfSourcesLoading ? (
-              <p role="status" className="text-sm text-zinc-400">
+              <p role="status" className="text-sm text-[var(--dim)]">
                 Loading your PDFs…
               </p>
             ) : pdfSourcesError ? (
               <div role="alert" className="space-y-3">
-                <p className="text-sm text-rose-300">{pdfSourcesError}</p>
+                <p className="text-sm text-[var(--danger-strong)]">{pdfSourcesError}</p>
                 <button type="button" className={retryButtonClassName} onClick={onRetryPdfSources}>
                   <RotateCw aria-hidden="true" className="size-3.5" />
                   Retry documents
                 </button>
               </div>
             ) : readyPdfSources.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.02] p-4">
-                <p className="text-sm font-medium text-zinc-200">No ready PDFs yet</p>
-                <p className="mt-1 text-xs leading-5 text-zinc-400">
+              <div className="rounded-lg border border-dashed border-[var(--border2)] bg-[var(--surface)] p-4">
+                <p className="text-sm font-medium text-[var(--text)]">No ready PDFs yet</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
                   Upload a document and wait for it to finish processing before starting PDF study.
                 </p>
                 <button
                   type="button"
                   onClick={onManageDocuments}
-                  className="mt-3 inline-flex min-h-9 items-center rounded-lg border border-white/10 px-3 text-xs font-medium text-zinc-100 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400"
+                  className="mt-3 inline-flex min-h-9 items-center rounded-lg border border-[var(--border2)] px-3 text-xs font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                 >
                   Manage documents
                 </button>
@@ -286,7 +288,7 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                   return (
                     <li key={source.id}>
                       <label
-                        className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2 transition ${checked ? 'border-amber-400/35 bg-amber-400/[0.07]' : 'border-white/[0.08] bg-black/10 hover:border-white/20'} ${atLimit ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2 transition ${checked ? 'border-[var(--accent-border)] bg-[var(--accent-bg)]' : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border2)]'} ${atLimit ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                       >
                         <input
                           type="checkbox"
@@ -299,12 +301,12 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                                 : [...selectedPdfIds, source.id]
                             )
                           }
-                          className="size-4 accent-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                          className="size-4 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                         />
-                        <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
+                        <span className="min-w-0 flex-1 truncate text-sm text-[var(--text)]">
                           {source.displayName}
                         </span>
-                        <span className="shrink-0 text-xs text-zinc-500">
+                        <span className="shrink-0 text-xs text-[var(--dim)]">
                           {source.pageCount ?? '—'}p
                         </span>
                       </label>
@@ -314,7 +316,7 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
               </ul>
             )}
             <div>
-              <p className="mb-2 text-xs font-medium text-zinc-400">Difficulty</p>
+              <p className="mb-2 text-xs font-medium text-[var(--dim)]">Difficulty</p>
               <div role="group" aria-label="Difficulty" className="flex gap-2">
                 {DIFFICULTIES.map((option) => (
                   <button
@@ -322,10 +324,10 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                     type="button"
                     aria-pressed={difficulty === option}
                     onClick={() => onDifficultyChange(option)}
-                    className={`min-h-9 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-amber-400 ${
+                    className={`min-h-9 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${
                       difficulty === option
-                        ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-                        : 'border-white/10 bg-white/[0.02] text-zinc-400 hover:text-zinc-100'
+                        ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+                        : 'border-[var(--border2)] bg-[var(--surface)] text-[var(--dim)] hover:text-[var(--text)]'
                     }`}
                   >
                     {option}
@@ -337,10 +339,10 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
         )}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-amber-400/15 bg-amber-400/[0.04] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <section className="flex flex-col gap-4 rounded-xl border border-[var(--accent-border)] bg-[var(--accent-bg)] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-zinc-100">Ready to practice?</h2>
-          <p className="mt-1 text-xs leading-5 text-zinc-400">
+          <h2 className="text-sm font-semibold text-[var(--text-h)]">Ready to practice?</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
             {mode === 'topic'
               ? selectedTopic
                 ? `${selectedTopic.name} · ${difficulty} difficulty`
@@ -352,10 +354,12 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
             {totalQuestions} questions requested. Server limits apply.
           </p>
           {isPremium ? (
-            <span className="mt-1 block text-[0.7rem] text-amber-200/80">Premium session size</span>
+            <span className="mt-1 block text-[0.7rem] text-[var(--accent-strong)]">
+              Premium session size
+            </span>
           ) : null}
           {startError ? (
-            <p role="alert" className="mt-2 text-sm text-rose-300">
+            <p role="alert" className="mt-2 text-sm text-[var(--danger-strong)]">
               {startError}
             </p>
           ) : null}
@@ -364,7 +368,7 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
           type="button"
           disabled={cannotStart}
           onClick={onStart}
-          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-500 px-5 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-5 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Zap aria-hidden="true" className="size-4" />
           {isStarting ? 'Starting…' : 'Start practice'}

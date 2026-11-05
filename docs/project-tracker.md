@@ -286,6 +286,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move Theory Session Detail summary, saved answers, completion states, and
       missing/not-found screens onto the shared theme tokens; full-route parity
       remains open until all screens are checked.
+- [x] Move theory Practice setup, question, feedback, completion, and route
+      error states onto the shared theme tokens; full-route parity remains open
+      until all screens are checked.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -327,7 +330,11 @@ user-owned files. No dashboard 500 has appeared in the latest server logs, so
 the user-reported screen error remains unconfirmed until its failing request
 is identified. Theory Session Detail token checks pass (9 focused unit tests);
 its Playwright check passes in both UI projects with light/dark detail and
-error colors and a 390 px overflow check.
+error colors and a 390 px overflow check. The Practice setup, question,
+feedback/retry, and completion components also pass both UI Playwright
+projects in dark/light themes with a 390 px overflow check and no browser
+errors. The full UI gate remains green at 122 files / 515 tests, lint,
+type-check, and build.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

@@ -50,6 +50,7 @@ describe('TheorySessionComplete', () => {
       />
     );
 
+    expect(screen.getByRole('main')).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
     expect(screen.getByText('0.0/10')).toBeVisible();
     const metrics = document.querySelector('dl')!;
     expect(within(metrics).getByText('Answers scored').parentElement).toHaveTextContent('1');

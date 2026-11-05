@@ -109,16 +109,16 @@ export const PracticePage = () => {
     if (practice.phase === 'error') {
       if (practice.session.mode === 'pdf') {
         return (
-          <main className="mx-auto w-full max-w-3xl rounded-xl border border-rose-400/20 bg-rose-400/[0.05] p-5 sm:p-6">
-            <h1 className="text-lg font-semibold text-zinc-100">
+          <main className="mx-auto w-full max-w-3xl rounded-xl border border-[var(--red-bg)] bg-[var(--red-bg)] p-5 sm:p-6">
+            <h1 className="text-lg font-semibold text-[var(--text-h)]">
               PDF questions could not be prepared
             </h1>
-            <p className="mt-1 text-sm leading-6 text-zinc-400">
+            <p className="mt-1 text-sm leading-6 text-[var(--dim)]">
               Check the error details, retry question generation, or end this session and choose
               another source.
             </p>
             {practice.questionsQuery.error?.message ? (
-              <p className="mt-3 break-words rounded-lg bg-black/20 p-3 text-xs leading-5 text-rose-200">
+              <p className="mt-3 break-words rounded-lg bg-[var(--surface)] p-3 text-xs leading-5 text-[var(--danger-strong)]">
                 {practice.questionsQuery.error.message}
               </p>
             ) : null}
@@ -127,7 +127,7 @@ export const PracticePage = () => {
                 type="button"
                 disabled={practice.questionsQuery.isFetching}
                 onClick={() => void practice.questionsQuery.refetch()}
-                className="min-h-10 rounded-lg border border-white/10 px-4 text-sm font-medium text-zinc-100 hover:bg-white/[0.06] disabled:opacity-50"
+                className="min-h-10 rounded-lg border border-[var(--border2)] px-4 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-50"
               >
                 {practice.questionsQuery.isFetching ? 'Retrying…' : 'Retry questions'}
               </button>
@@ -135,7 +135,7 @@ export const PracticePage = () => {
                 type="button"
                 disabled={practice.isCompleting}
                 onClick={() => void practice.end()}
-                className="min-h-10 rounded-lg bg-amber-500 px-4 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-50"
+                className="min-h-10 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-50"
               >
                 {practice.isCompleting ? 'Ending session…' : 'End session'}
               </button>
@@ -158,15 +158,17 @@ export const PracticePage = () => {
 
     if (practice.phase === 'empty') {
       return (
-        <main className="mx-auto w-full max-w-3xl rounded-xl border border-white/[0.08] bg-[#18181b] p-5 sm:p-6">
-          <h1 className="mb-2 text-xl font-semibold text-zinc-100">No questions available</h1>
-          <p className="text-sm leading-6 text-zinc-400">
+        <main className="mx-auto w-full max-w-3xl rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6">
+          <h1 className="mb-2 text-xl font-semibold text-[var(--text-h)]">
+            No questions available
+          </h1>
+          <p className="text-sm leading-6 text-[var(--dim)]">
             The server returned no questions for this session. End it and choose a different topic.
           </p>
           <button
             type="button"
             onClick={practice.end}
-            className="mt-4 min-h-10 rounded-lg bg-amber-500 px-4 text-sm font-semibold text-zinc-950 hover:bg-amber-400"
+            className="mt-4 min-h-10 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
           >
             End session
           </button>
@@ -179,19 +181,19 @@ export const PracticePage = () => {
         <main className="mx-auto w-full max-w-3xl">
           <section
             role="alert"
-            className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] p-5"
+            className="rounded-xl border border-[var(--red-bg)] bg-[var(--red-bg)] p-5"
           >
-            <h1 className="text-lg font-semibold text-zinc-100">
+            <h1 className="text-lg font-semibold text-[var(--text-h)]">
               Session completion needs attention
             </h1>
-            <p className="mt-1 text-sm text-zinc-300">
+            <p className="mt-1 text-sm text-[var(--danger-strong)]">
               {practice.completionError || 'The session could not be completed.'}
             </p>
             <button
               type="button"
               disabled={practice.isCompleting}
               onClick={practice.retryCompletion}
-              className="mt-4 min-h-10 rounded-lg border border-white/10 px-4 text-sm text-zinc-100 disabled:opacity-60"
+              className="mt-4 min-h-10 rounded-lg border border-[var(--border2)] px-4 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
             >
               {practice.isCompleting ? 'Completing…' : 'Retry completion'}
             </button>
@@ -237,14 +239,14 @@ export const PracticePage = () => {
         {practice.completionError ? (
           <div
             role="alert"
-            className="mt-4 rounded-lg border border-rose-400/20 bg-rose-400/[0.06] p-3 text-sm text-rose-300"
+            className="mt-4 rounded-lg border border-[var(--red-bg)] bg-[var(--red-bg)] p-3 text-sm text-[var(--danger-strong)]"
           >
             <p>{practice.completionError}</p>
             <button
               type="button"
               disabled={practice.isCompleting}
               onClick={practice.retryCompletion}
-              className="mt-2 min-h-9 rounded-lg border border-white/10 px-3 text-sm text-zinc-200 disabled:opacity-60"
+              className="mt-2 min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
             >
               {practice.isCompleting ? 'Completing…' : 'Retry session completion'}
             </button>

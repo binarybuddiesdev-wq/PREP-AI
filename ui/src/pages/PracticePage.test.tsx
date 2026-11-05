@@ -224,6 +224,7 @@ describe('PracticePage', () => {
 
     renderPracticePage();
 
+    expect(screen.getByRole('main')).toHaveClass('border-[var(--red-bg)]', 'bg-[var(--red-bg)]');
     expect(
       screen.getByRole('heading', { name: 'PDF questions could not be prepared' })
     ).toBeVisible();

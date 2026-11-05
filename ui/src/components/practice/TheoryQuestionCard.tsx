@@ -29,17 +29,19 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="mb-1 text-2xl font-semibold text-[var(--text-h)]">Practice session</h1>
-          <p className="text-sm text-zinc-400">Answer in your own words. Your time is recorded.</p>
+          <p className="text-sm text-[var(--dim)]">
+            Answer in your own words. Your time is recorded.
+          </p>
         </div>
-        <div className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-white/[0.08] bg-[#18181b] px-3 text-sm tabular-nums text-zinc-300">
-          <Clock3 aria-hidden="true" className="size-4 text-amber-300" />
+        <div className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 text-sm tabular-nums text-[var(--text)]">
+          <Clock3 aria-hidden="true" className="size-4 text-[var(--accent-strong)]" />
           <span aria-label="Elapsed time">{formatElapsed(elapsedSeconds)}</span>
         </div>
       </header>
 
-      <section className="app-shell-panel rounded-xl border border-white/[0.08] bg-[#18181b]">
-        <div className="border-b border-white/[0.06] px-4 py-4 sm:px-6">
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs text-zinc-400">
+      <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
+        <div className="border-b border-[var(--border)] px-4 py-4 sm:px-6">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs text-[var(--dim)]">
             <span>
               Question {currentQuestion} of {totalQuestions}
             </span>
@@ -51,10 +53,10 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
             aria-valuemin={0}
             aria-valuemax={totalQuestions}
             aria-valuenow={currentQuestion}
-            className="h-1.5 overflow-hidden rounded-full bg-white/10"
+            className="h-1.5 overflow-hidden rounded-full bg-[var(--surface2)]"
           >
             <span
-              className="block h-full rounded-full bg-amber-400"
+              className="block h-full rounded-full bg-[var(--accent)]"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -62,22 +64,24 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
 
         <div className="space-y-5 p-4 sm:p-6">
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-300">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--accent-strong)]">
               Interview question
             </p>
-            <h2 className="text-lg font-semibold leading-7 text-zinc-100">{question.question}</h2>
+            <h2 className="text-lg font-semibold leading-7 text-[var(--text-h)]">
+              {question.question}
+            </h2>
           </div>
 
           {question.citations?.length ? (
             <div aria-label="Source citations" className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-zinc-500">Sources</span>
+              <span className="text-xs font-medium text-[var(--dim)]">Sources</span>
               {question.citations.map((citation) => (
                 <Link
                   key={`${citation.pdfId}:${citation.page}:${citation.chunkId}`}
                   to={`/library?pdfId=${encodeURIComponent(citation.pdfId)}&page=${citation.page}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-8 items-center rounded-md border border-sky-300/20 bg-sky-300/[0.06] px-2.5 text-xs font-medium text-sky-200 transition hover:border-sky-300/35 hover:bg-sky-300/10 focus-visible:outline-2 focus-visible:outline-amber-400"
+                  className="inline-flex min-h-8 items-center rounded-md border border-[var(--blue-bg)] bg-[var(--blue-bg)] px-2.5 text-xs font-medium text-[var(--info-strong)] transition hover:border-[var(--info-strong)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                 >
                   {citation.displayName} · Page {citation.page}
                 </Link>
@@ -86,7 +90,10 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
           ) : null}
 
           <div>
-            <label htmlFor="theory-answer" className="mb-2 block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="theory-answer"
+              className="mb-2 block text-sm font-medium text-[var(--text)]"
+            >
               Your answer
             </label>
             <textarea
@@ -96,14 +103,14 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
               disabled={submitted || isSubmitting || isAnswerFrozen}
               rows={6}
               placeholder="Write your answer here…"
-              className="w-full resize-y rounded-lg border border-white/10 bg-[#101012] px-3.5 py-3 text-sm leading-6 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/10 disabled:opacity-70"
+              className="w-full resize-y rounded-lg border border-[var(--border2)] bg-[var(--bg2)] px-3.5 py-3 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--dim)] focus:border-[var(--accent-border)] focus:ring-2 focus:ring-[var(--accent-bg)] disabled:opacity-70"
             />
           </div>
 
           {submitError ? (
             <p
               role="alert"
-              className="rounded-lg border border-rose-400/20 bg-rose-400/[0.06] p-3 text-sm text-rose-300"
+              className="rounded-lg border border-[var(--red-bg)] bg-[var(--red-bg)] p-3 text-sm text-[var(--danger-strong)]"
             >
               {submitError}
             </p>
@@ -111,20 +118,20 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
           {submitted ? (
             <p
               role="status"
-              className="rounded-lg border border-sky-400/15 bg-sky-400/[0.05] p-3 text-sm text-sky-200"
+              className="rounded-lg border border-[var(--blue-bg)] bg-[var(--blue-bg)] p-3 text-sm text-[var(--info-strong)]"
             >
               Answer saved. Evaluation is being prepared.
             </p>
           ) : null}
 
           {!submitted ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
               <div className="flex gap-2">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={onSkip}
-                  className="min-h-10 rounded-lg border border-white/10 px-3.5 text-sm text-zinc-300 transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-10 rounded-lg border border-[var(--border2)] px-3.5 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Skip question
                 </button>
@@ -132,7 +139,7 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
                   type="button"
                   disabled={isSubmitting}
                   onClick={onEnd}
-                  className="min-h-10 rounded-lg px-3.5 text-sm text-zinc-500 transition hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-50"
+                  className="min-h-10 rounded-lg px-3.5 text-sm text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-50"
                 >
                   End session
                 </button>
@@ -141,7 +148,7 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
                 type="button"
                 disabled={isSubmitting || !answerDraft.trim()}
                 onClick={onSubmit}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-500 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send aria-hidden="true" className="size-4" />
                 {isSubmitting ? 'Submitting…' : isAnswerFrozen ? 'Retry answer' : 'Submit answer'}
