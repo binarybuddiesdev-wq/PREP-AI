@@ -265,6 +265,9 @@ See the [payments API](routes/payments-api-spec.md).
 
 ### Phase 9 — Shared interactions and visual parity
 
+**Status: Shared app-shell interactions implemented; cross-screen visual
+parity and responsive/accessibility acceptance remain.**
+
 - [x] Set the global font foundation to DM Sans and JetBrains Mono and define
       explicit light/dark canvas, text, surface, amber accent, and status tokens.
 - [ ] Match screen-level surfaces, spacing, cards, and status treatments to the
@@ -273,7 +276,7 @@ See the [payments API](routes/payments-api-spec.md).
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
       result selection; search real app destinations/data, not a fixed demo list.
-- [ ] Complete toast, confirmation, user-menu, upgrade-entry, and notification
+- [x] Complete toast, confirmation, user-menu, upgrade-entry, and notification
       interactions across the app shell.
 - [ ] Match desktop, tablet, and mobile layouts; preserve keyboard focus,
       reduced-motion preferences, semantic controls, and screen-reader names.
