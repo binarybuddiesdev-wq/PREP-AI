@@ -908,3 +908,14 @@ New layout, one folder per purpose. A layer may import only from the layers list
   the full UI suite passed 123 files / 536 tests. UI lint, TypeScript build,
   production build, scoped formatting, changed-file E2E lint, and diff checks
   passed. Root lint and format remain red on unrelated/user-owned files.
+
+## 2026-11-06 - Respect reduced-motion settings across the app
+
+- Extended the global reduced-motion media rule to shorten all animations and
+  transitions and disable smooth scrolling, including the authenticated app
+  shell and shared controls.
+- Added a browser regression using a mobile viewport and the `reduce` media
+  preference. It failed before the change because the app-shell sidebar still
+  used a 200 ms transition, then passed with the global rule.
+- Verification: all UI tests passed (123 files / 536 tests), UI lint, TypeScript
+  and production build passed, and the reduced-motion browser check passed.
