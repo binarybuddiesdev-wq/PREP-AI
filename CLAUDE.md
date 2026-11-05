@@ -30,7 +30,9 @@ Per-package commands (build, test, Prisma, dev server) are in [`server/CLAUDE.md
 pnpm lint              # eslint . (root flat config for server/ and ui/) — what CI runs
 pnpm format:check      # prettier --check — what CI runs. `pnpm format` WRITES files; the gate never uses it
 pnpm commitlint        # validate a commit message
-pnpm seed              # seed MongoDB topics + questions (idempotent; local database only)
+pnpm seed              # seed local Podman MongoDB topics + questions (idempotent)
+pnpm seed:topics-only  # seed topics only
+pnpm seed:questions-only # seed questions only
 ```
 
 ### Piston (self-hosted code execution engine, from repo root)

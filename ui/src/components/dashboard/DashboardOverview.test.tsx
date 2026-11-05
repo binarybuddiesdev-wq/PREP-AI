@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { IDashboardSummary } from '@/core';
@@ -61,21 +62,36 @@ const ready = (): IDashboardPanelStatus => ({
 
 const renderOverview = (overrides: Partial<IDashboardOverviewProps> = {}) =>
   render(
-    <DashboardOverview
-      name="Asha"
-      summary={summary}
-      theoryStatus={ready()}
-      codingStatus={ready()}
-      scoreTrendStatus={ready()}
-      weakAreasStatus={ready()}
-      practiceTopicsStatus={ready()}
-      settingsStatus={ready()}
-      onOpenSession={vi.fn()}
-      {...overrides}
-    />
+    <MemoryRouter>
+      <DashboardOverview
+        name="Asha"
+        summary={summary}
+        theoryStatus={ready()}
+        codingStatus={ready()}
+        scoreTrendStatus={ready()}
+        weakAreasStatus={ready()}
+        practiceTopicsStatus={ready()}
+        settingsStatus={ready()}
+        onOpenSession={vi.fn()}
+        {...overrides}
+      />
+    </MemoryRouter>
   );
 
 describe('DashboardOverview', () => {
+  it('shows clear dashboard shortcuts to Practice and Coding', () => {
+    renderOverview();
+
+    expect(screen.getByRole('link', { name: /start practice/i })).toHaveAttribute(
+      'href',
+      '/practice'
+    );
+    expect(screen.getByRole('link', { name: /solve coding problems/i })).toHaveAttribute(
+      'href',
+      '/coding'
+    );
+  });
+
   it('shows account metrics, recent practice, weak-area suggestions, and setup progress', () => {
     renderOverview();
 

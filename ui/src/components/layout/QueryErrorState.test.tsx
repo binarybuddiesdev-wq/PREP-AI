@@ -18,7 +18,13 @@ describe('QueryErrorState', () => {
       />
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Couldn’t load your settings');
+    expect(screen.getByRole('alert')).toHaveClass('border-[var(--red-bg)]', 'bg-[var(--red-bg)]');
+    expect(screen.getByRole('heading', { name: 'Couldn’t load your settings' })).toHaveClass(
+      'text-[var(--text-h)]'
+    );
+    expect(screen.getByText('Check your connection and try again.')).toHaveClass(
+      'text-[var(--dim)]'
+    );
     expect(screen.getByText('HTTP 503: Service temporarily unavailable.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledOnce();

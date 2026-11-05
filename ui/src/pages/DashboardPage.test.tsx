@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HTTPError } from 'ky';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
@@ -195,5 +196,30 @@ describe('DashboardPage first-run routing', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Retry recent sessions' }));
     expect(await screen.findByText('No sessions yet')).toBeVisible();
     expect(serviceMocks.getTheorySessionHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it('explains a profile API 500 as a server failure and keeps retry available', async () => {
+    const user = userEvent.setup();
+    const error = new HTTPError(
+      new Response(JSON.stringify({ message: 'Internal server error' }), { status: 500 }),
+      new Request('http://api.test/api/v1/users/me'),
+      {} as never
+    );
+    error.message = 'Internal server error';
+    serviceMocks.getMe.mockRejectedValue(error);
+
+    renderDashboard();
+
+    expect(
+      await screen.findByRole('heading', { name: "Couldn't load your profile" })
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        'The server returned an internal error while loading your profile. Try again shortly.'
+      )
+    ).toBeVisible();
+    expect(screen.getByText('HTTP 500: Internal server error')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(serviceMocks.getMe).toHaveBeenCalledTimes(2);
   });
 });

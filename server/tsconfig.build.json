@@ -9,6 +9,7 @@
     "dist",
     "scripts",
     "prisma/seed-coding-local.ts",
+    "prisma/seed-practice-local.ts",
     "**/*spec.ts",
     "vitest.config.ts",
     "vitest.config.e2e.ts"

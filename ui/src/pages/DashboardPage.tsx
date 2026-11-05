@@ -44,11 +44,13 @@ export const DashboardPage = () => {
     <div className="mx-auto w-full max-w-6xl">
       {userQuery.isError ? (
         <QueryErrorState
-          title="Couldn’t load your profile"
+          title="Couldn't load your profile"
           description={
             profileErrorStatus === 503
               ? userQuery.error.message
-              : 'Your dashboard is available, but profile details could not be loaded. Check the API connection and try again.'
+              : profileErrorStatus === 500
+                ? 'The server returned an internal error while loading your profile. Try again shortly.'
+                : 'Your dashboard is available, but profile details could not be loaded. Check the API connection and try again.'
           }
           details={
             userQuery.error
