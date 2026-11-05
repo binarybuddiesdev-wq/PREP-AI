@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ICodingProblem, ICodingProblemSummary, ICodingSessionHistory } from '@/core';
+import type {
+  ICodingProblem,
+  ICodingProblemSummary,
+  ICodingSessionDetail,
+  ICodingSessionHistory,
+} from '@/core';
 
 import { createApiClient } from './apiClient';
 import {
   getCodingExecution,
   getCodingProblem,
   getCodingProblems,
+  getCodingSessionDetail,
   getCodingSessionHistory,
   requestCodingReview,
   runCodingCode,
@@ -111,6 +117,41 @@ describe('coding API', () => {
     expect(requests).toHaveLength(1);
     expect(requests[0].method).toBe('GET');
     expect(requests[0].url).toBe('http://api.test/api/v1/coding/sessions?page=3&limit=100');
+  });
+
+  it('loads saved coding submissions from the encoded owner-scoped session detail route', async () => {
+    const requests: Request[] = [];
+    const session: ICodingSessionDetail = {
+      id: 'session one',
+      userId: 'user-one',
+      problemIds: ['problem-one'],
+      problemsAttempted: 1,
+      problemsSolved: 1,
+      status: 'completed',
+      startedAt: '2026-11-01T10:00:00.000Z',
+      completedAt: '2026-11-01T10:10:00.000Z',
+      createdAt: '2026-11-01T10:00:00.000Z',
+      answers: [],
+    };
+    const api = createApiClient({
+      baseUrl: 'http://api.test',
+      getToken: async () => 'token',
+      fetchImplementation: async (request) => {
+        requests.push(request instanceof Request ? request.clone() : new Request(request));
+        return new Response(JSON.stringify({ success: true, message: 'ok', data: session }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+
+    await expect(getCodingSessionDetail(api, 'session one')).resolves.toMatchObject({
+      data: session,
+    });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].method).toBe('GET');
+    expect(requests[0].url).toBe('http://api.test/api/v1/coding/session/session%20one');
   });
 
   it('starts a problem-scoped session with a stable idempotency key', async () => {

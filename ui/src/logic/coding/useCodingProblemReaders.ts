@@ -5,7 +5,7 @@ import { useApiClient } from '../api';
 import { useSessionReader } from '../auth';
 import { codingKeys } from './coding.keys';
 
-export const useCodingProblemsReader = () => {
+export const useCodingProblemsReader = (shouldFetch = true) => {
   const api = useApiClient();
   const { isLoaded, isSignedIn, user } = useSessionReader();
   const userId = user?.id ?? '';
@@ -13,7 +13,7 @@ export const useCodingProblemsReader = () => {
   return useQuery({
     queryKey: codingKeys.problems(userId),
     queryFn: async () => (await getCodingProblems(api)).data,
-    enabled: isLoaded && isSignedIn && Boolean(userId),
+    enabled: isLoaded && isSignedIn && Boolean(userId) && shouldFetch,
   });
 };
 

@@ -107,6 +107,16 @@ describe('coding problem readers', () => {
     expect(getCodingProblem).not.toHaveBeenCalled();
   });
 
+  it('keeps the problem catalogue idle until its screen is selected', () => {
+    session.isLoaded = true;
+    const { result } = renderHook(() => useCodingProblemsReader(false), {
+      wrapper: createWrapper(new QueryClient()),
+    });
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(getCodingProblems).not.toHaveBeenCalled();
+  });
+
   it('keeps request failures available to the page retry state', async () => {
     const error = new Error('Coding catalogue unavailable');
     vi.mocked(getCodingProblems).mockRejectedValue(error);

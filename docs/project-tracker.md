@@ -153,11 +153,14 @@ session had no authenticated browser surface.
 
 ### Phase 5 — Coding challenges
 
-**Status: Catalogue, detail, editor, asynchronous Run/Submit, and AI Review flows implemented; coding history remains pending.**
-Problem listing, sessions, run/submit execution, results, history, AI review,
-and quotas exist. AI Review follows the reference toolbar-and-dialog flow and
-uses the asynchronous review job/status API. Public production execution remains
-gated on stronger Piston isolation.
+**Status: Catalogue, detail, editor, asynchronous Run/Submit, AI Review, and
+coding session history are implemented; coding stats remain pending.** Problem
+listing, sessions, run/submit execution, results, history, AI review, and quotas
+exist. The History screen has separate Practice and Coding tabs with
+independent server pagination, saved submission details, structured AI review
+results, retry states, and current-page CSV export. AI Review follows the
+reference toolbar-and-dialog flow and uses the asynchronous review job/status
+API. Public production execution remains gated on stronger Piston isolation.
 
 - [x] Build the problem list, topic/difficulty filters, user-specific solved
       state, and problem details/examples/constraints.
@@ -167,8 +170,10 @@ gated on stronger Piston isolation.
       queued/running/completed results and limits.
 - [x] Connect AI Review to the review job/status/result flow and show structured
       complexity, quality, and suggestion fields.
-- [ ] Add coding stats/history from backend results; do not use browser storage
-      as the source of truth for solved status or quotas.
+- [x] Add paginated coding session history with saved submission details and
+      current-page CSV export from backend results.
+- [ ] Add coding stats after the backend defines `/coding/stats`; do not use
+      browser storage as the source of truth for solved status or quotas.
 - [x] Select and package the editor dependency locally; avoid loading Monaco
       from a runtime CDN as the standalone prototype does.
 

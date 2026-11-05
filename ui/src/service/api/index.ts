@@ -6,6 +6,7 @@ export {
   getCodingProblem,
   getCodingProblems,
   getCodingSessionHistory,
+  getCodingSessionDetail,
   requestCodingReview,
   runCodingCode,
   startCodingSession,

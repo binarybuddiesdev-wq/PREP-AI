@@ -6,6 +6,7 @@ import type {
   ICodingProblemSummary,
   ICodingReviewResponse,
   ICodingSession,
+  ICodingSessionDetail,
   ICodingSessionHistory,
   IExecuteCodingBody,
   IPaginationRequest,
@@ -32,6 +33,14 @@ export const getCodingSessionHistory = (
   api
     .get('coding/sessions', { searchParams: { page: params.page, limit: params.limit } })
     .json<IApiEnvelope<ICodingSessionHistory>>();
+
+export const getCodingSessionDetail = (
+  api: ApiClient,
+  sessionId: string
+): Promise<IApiEnvelope<ICodingSessionDetail>> =>
+  api
+    .get(`coding/session/${encodeURIComponent(sessionId)}`)
+    .json<IApiEnvelope<ICodingSessionDetail>>();
 
 export const startCodingSession = (
   api: ApiClient,

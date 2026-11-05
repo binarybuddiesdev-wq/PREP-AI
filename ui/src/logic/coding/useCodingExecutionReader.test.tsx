@@ -136,8 +136,10 @@ describe('useCodingExecutionReader', () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const problemListKey = codingKeys.problems('user-one');
     const historyKey = dashboardKeys.codingHistory('user-one');
+    const sessionHistoryKey = codingKeys.sessionHistory('user-one', 1, 20);
     queryClient.setQueryData(problemListKey, []);
     queryClient.setQueryData(historyKey, []);
+    queryClient.setQueryData(sessionHistoryKey, { sessions: [], total: 0, page: 1, limit: 20 });
     const { result } = renderHook(() => useCodingExecutionReader('session-one', 'execution-one'), {
       wrapper: createWrapper(queryClient),
     });
@@ -150,6 +152,9 @@ describe('useCodingExecutionReader', () => {
       expect(queryClient.getQueryCache().find({ queryKey: historyKey })?.state.isInvalidated).toBe(
         true
       );
+      expect(
+        queryClient.getQueryCache().find({ queryKey: sessionHistoryKey })?.state.isInvalidated
+      ).toBe(true);
     });
   });
 

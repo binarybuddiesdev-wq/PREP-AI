@@ -47,6 +47,18 @@ export interface ICodingSession {
   createdAt: string;
 }
 
+export interface ICodingSessionHistory {
+  sessions: ICodingSession[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface ICodingSessionDetail extends ICodingSession {
+  userId: string;
+  answers: ICodingExecutionAnswer[];
+}
+
 export interface IStartCodingSessionBody {
   problemIds: string[];
 }

@@ -439,12 +439,15 @@ Get a coding session with all submitted answers.
         "testCasesTotal": 2,
         "runtime": 45,
         "memoryUsage": 12,
+        "aiReviewStatus": "completed",
         "aiReviewJson": {
+          "summary": "A clear single-pass solution.",
           "timeComplexity": "O(n)",
           "spaceComplexity": "O(n)",
-          "quality": "Clean solution.",
-          "suggestions": "Add edge case handling."
+          "strengths": ["Uses a lookup map"],
+          "improvements": ["Add edge case handling"]
         },
+        "aiReviewFailureMessage": null,
         "createdAt": "2026-07-25T10:32:00.000Z"
       }
     ]

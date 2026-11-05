@@ -1,3 +1,22 @@
+## 2026-11-05 - Add coding session history to the frontend
+
+- Added Practice/Coding tabs to Session History with independent server
+  pagination. Coding session details show saved submissions and structured AI
+  review results from the API; current-page coding rows can be exported to
+  CSV. Added user-scoped TanStack Query readers and invalidated coding history
+  when execution results are saved. Tabs support keyboard navigation. Missing
+  problem titles show a retryable fallback; pending and failed AI reviews use
+  accessible status announcements.
+- Updated the coding API example to use the current AI review response fields.
+  Coding stats remain pending because the backend `/coding/stats` endpoint is
+  deferred; the UI does not invent metrics or use browser storage for them.
+- Verification: UI lint, TypeScript project-reference check, production build,
+  and all 86 UI test files / 357 tests passed. The dev server and history
+  module returned HTTP 200. Root lint is blocked by errors in the unrelated,
+  untracked `types/piston.js`; root format check reports 12 unrelated,
+  untracked files. No authenticated browser session was available for a visual
+  check.
+
 ## 2026-11-05 - Complete theory practice lifecycle and tighten onboarding layout
 
 - Added the protected theory practice route and its topic/weak-area setup,

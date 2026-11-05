@@ -39,6 +39,7 @@ export const useCodingExecutionReader = (sessionId: string, executionId: string)
 
     void Promise.all([
       queryClient.invalidateQueries({ queryKey: codingKeys.problems(userId) }),
+      queryClient.invalidateQueries({ queryKey: codingKeys.sessionHistories(userId) }),
       queryClient.invalidateQueries({ queryKey: dashboardKeys.codingHistory(userId) }),
     ]);
   }, [execution?.operation, execution?.status, queryClient, userId]);

@@ -17,6 +17,8 @@ export type {
   ICodingProblemExample,
   ICodingProblemSummary,
   ICodingSession,
+  ICodingSessionDetail,
+  ICodingSessionHistory,
   ICodingTestCaseResult,
   IExecuteCodingBody,
   IStartCodingSessionBody,

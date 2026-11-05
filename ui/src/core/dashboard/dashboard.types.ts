@@ -1,13 +1,4 @@
 import type { ITheoryScoreTrendPoint, ITheorySession, ITheoryWeakArea } from '../theory';
-import type { ICodingSession } from '../coding';
-
-export interface ICodingSessionHistory {
-  sessions: ICodingSession[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
 export interface IPracticeTopic {
   id: string;
   name: string;

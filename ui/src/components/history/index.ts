@@ -1,8 +1,14 @@
 export { SessionHistoryRow } from './SessionHistoryRow';
 export { SessionHistoryTable } from './SessionHistoryTable';
+export { CodingSessionHistoryTable } from './CodingSessionHistoryTable';
+export { CodingSessionHistoryRow } from './CodingSessionHistoryRow';
 export { ExportSessionHistoryButton } from './ExportSessionHistoryButton';
+export { ExportCodingSessionHistoryButton } from './ExportCodingSessionHistoryButton';
 export { TheorySessionDetail } from './TheorySessionDetail';
 export type { ISessionHistoryRowProps } from './SessionHistoryRow.types';
 export type { ISessionHistoryTableProps } from './SessionHistoryTable.types';
+export type { ICodingSessionHistoryTableProps } from './CodingSessionHistoryTable.types';
+export type { ICodingSessionHistoryRowProps } from './CodingSessionHistoryRow.types';
 export type { IExportSessionHistoryButtonProps } from './ExportSessionHistoryButton.types';
+export type { IExportCodingSessionHistoryButtonProps } from './ExportCodingSessionHistoryButton.types';
 export type { ITheorySessionDetailProps } from './TheorySessionDetail.types';
