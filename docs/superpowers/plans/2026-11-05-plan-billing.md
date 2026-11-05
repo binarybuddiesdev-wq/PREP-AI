@@ -60,4 +60,4 @@
 - [x] Document the theory stats response and hosted-checkout behavior; update Phase 8.
 - [x] Run full server and UI quality gates and relevant API/runtime checks.
 - [x] Check component behavior, keyboard navigation, provider failures, and logged-out route behavior. Live signed-in visual review remains pending because no signed-in browser session is available.
-- [ ] Review the changed diff, commit the feature with a Conventional Commit, and push to `origin main`.
+- [x] Review the changed diff, commit the feature with a Conventional Commit, and push to `origin main`.
