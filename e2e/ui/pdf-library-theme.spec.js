@@ -109,10 +109,17 @@ test('renders PDF reader surfaces and errors in both themes without mobile overf
       )
       .toBe('rgb(17, 24, 39)');
 
-    await page.setViewportSize({ width: 390, height: 844 });
-    await expect
-      .poll(() => page.locator('#pdf-library-preview').evaluate((element) => element.scrollWidth))
-      .toBeLessThanOrEqual(390);
+    for (const viewport of [
+      { width: 320, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 900 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() => page.locator('#pdf-library-preview').evaluate((element) => element.scrollWidth))
+        .toBeLessThanOrEqual(viewport.width);
+    }
     expect(browserErrors).toEqual([]);
   } finally {
     await browser.close();

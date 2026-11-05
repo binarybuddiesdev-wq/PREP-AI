@@ -110,11 +110,19 @@ test('renders Settings documents with readable surfaces in both themes', async (
           .evaluate((element) => globalThis.getComputedStyle(element).color)
       )
       .not.toBe(darkDescription);
-    await expect
-      .poll(() =>
-        page.locator('#settings-documents-preview').evaluate((element) => element.scrollWidth)
-      )
-      .toBeLessThanOrEqual(390);
+    for (const viewport of [
+      { width: 320, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 900 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() =>
+          page.locator('#settings-documents-preview').evaluate((element) => element.scrollWidth)
+        )
+        .toBeLessThanOrEqual(viewport.width);
+    }
     expect(browserErrors).toEqual([]);
   } finally {
     await browser.close();

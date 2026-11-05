@@ -207,12 +207,19 @@ test('renders practice and coding history surfaces in both themes without mobile
         .toBe('rgb(255, 255, 255)');
     }
 
-    await page.setViewportSize({ width: 390, height: 844 });
-    await expect
-      .poll(() =>
-        page.locator('#session-history-preview').evaluate((element) => element.scrollWidth)
-      )
-      .toBeLessThanOrEqual(390);
+    for (const viewport of [
+      { width: 320, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 900 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() =>
+          page.locator('#session-history-preview').evaluate((element) => element.scrollWidth)
+        )
+        .toBeLessThanOrEqual(viewport.width);
+    }
     expect(browserErrors).toEqual([]);
   } finally {
     await browser.close();

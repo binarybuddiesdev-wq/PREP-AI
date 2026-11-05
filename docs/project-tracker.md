@@ -322,6 +322,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Respect reduced-motion preferences across all routes and shared controls.
 - [x] Render available app destinations as links with native route semantics;
       keep unavailable destinations as disabled controls.
+- [x] Check responsive overflow at 320, 390, 768, and 1440 px across the
+      tracked authentication, onboarding, dashboard, practice, coding, history,
+      PDF, and settings previews.
 - [ ] Match desktop, tablet, and mobile layouts; preserve keyboard focus,
       reduced-motion preferences, semantic controls, and screen-reader names.
 
@@ -361,8 +364,10 @@ error colors and a 390 px overflow check. The Practice setup, question,
 feedback/retry, and completion components also pass both UI Playwright
 projects in dark/light themes with a 390 px overflow check and no browser
 errors. The full UI gate remains green at 123 files / 536 tests, lint,
-type-check, and build. The route-wide theme suite passes 28/28 in both
-configured browser projects, including rendered Clerk sign-in/sign-up buttons.
+type-check, and build. The route-wide theme and responsive suite passes 30/30
+in both configured browser projects, including rendered Clerk sign-in/sign-up
+buttons. Tracked screen previews stay within the viewport at 320, 390, 768,
+and 1440 px.
 The app-shell reduced-motion browser check also passes with the preference set
 to `reduce`; its mobile sidebar no longer animates for 200 ms. Sidebar
 destinations now use native links; unit and browser checks cover the active

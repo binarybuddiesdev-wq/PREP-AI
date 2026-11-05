@@ -144,14 +144,17 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       )
       .toBe('rgb(190, 18, 60)');
 
-    await page.setViewportSize({ width: 390, height: 844 });
-    await expect
-      .poll(() => page.locator('#dashboard-preview').evaluate((element) => element.scrollWidth))
-      .toBeLessThanOrEqual(390);
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await expect
-      .poll(() => page.locator('#dashboard-preview').evaluate((element) => element.scrollWidth))
-      .toBeLessThanOrEqual(1440);
+    for (const viewport of [
+      { width: 320, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 900 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() => page.locator('#dashboard-preview').evaluate((element) => element.scrollWidth))
+        .toBeLessThanOrEqual(viewport.width);
+    }
   } finally {
     await browser.close();
   }

@@ -94,6 +94,14 @@ test('applies the saved PrepAI light and dark theme across reloads', async () =>
           .evaluate((element) => element.ownerDocument.documentElement.scrollWidth)
       )
       .toBeLessThanOrEqual(320);
+    await page.setViewportSize({ width: 768, height: 900 });
+    await expect
+      .poll(() =>
+        page
+          .locator('html')
+          .evaluate((element) => element.ownerDocument.documentElement.scrollWidth)
+      )
+      .toBeLessThanOrEqual(768);
     await page.setViewportSize({ width: 1440, height: 900 });
 
     await page.getByRole('button', { name: 'Switch to light theme' }).click();

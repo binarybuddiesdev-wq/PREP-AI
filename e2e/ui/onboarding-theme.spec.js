@@ -132,6 +132,17 @@ test('renders onboarding and its select menu with readable colors in both themes
     await expect
       .poll(() => page.evaluate(() => globalThis.document.documentElement.scrollHeight))
       .toBeLessThanOrEqual(844);
+    for (const viewport of [
+      { width: 320, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 900 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() => page.evaluate(() => globalThis.document.documentElement.scrollWidth))
+        .toBeLessThanOrEqual(viewport.width);
+    }
     expect(browserErrors).toEqual([]);
   } finally {
     await browser.close();

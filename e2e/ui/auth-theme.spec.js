@@ -85,6 +85,17 @@ test('renders branded authentication surfaces in both themes', async () => {
     await expect
       .poll(() => page.evaluate(() => globalThis.document.documentElement.scrollHeight))
       .toBeLessThanOrEqual(844);
+    for (const viewport of [
+      { width: 320, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 900 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() => page.evaluate(() => globalThis.document.documentElement.scrollWidth))
+        .toBeLessThanOrEqual(viewport.width);
+    }
     expect(browserErrors).toEqual([]);
   } finally {
     await browser.close();
@@ -126,6 +137,17 @@ test('renders the actual Clerk primary action with the saved theme tokens', asyn
     await expect(signUpPrimaryAction).toHaveCSS('color', 'rgb(69, 26, 3)');
     await signUpPrimaryAction.hover();
     await expect(signUpPrimaryAction).toHaveCSS('background-color', 'rgb(251, 191, 36)');
+    for (const viewport of [
+      { width: 320, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 900 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() => page.evaluate(() => globalThis.document.documentElement.scrollWidth))
+        .toBeLessThanOrEqual(viewport.width);
+    }
   } finally {
     await browser.close();
   }

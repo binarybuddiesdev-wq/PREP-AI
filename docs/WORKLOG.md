@@ -939,3 +939,15 @@ New layout, one folder per purpose. A layer may import only from the layers list
   motion. Root lint still has 14 errors in the untracked user-owned
   `types/piston.js` plus nine warnings; repo-wide formatting still flags 57
   unrelated or user-owned files.
+
+## 2026-11-06 - Verify responsive layouts across the UI routes
+
+- Expanded the existing browser acceptance checks for authentication,
+  onboarding, dashboard, Practice, Coding, history, PDF Library, and Settings
+  previews to check for horizontal overflow at 320, 390, 768, and 1440 px.
+- The checks use the existing local fixture data and render each feature's
+  presentational route components; they do not replace signed-in live API
+  acceptance.
+- Verification: all 30 tracked theme and responsive browser checks passed in
+  both configured browser projects. The tested previews had no horizontal
+  overflow at any of the four widths.
