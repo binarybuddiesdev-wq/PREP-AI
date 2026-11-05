@@ -32,6 +32,7 @@ describe('CodingSubmissionDetail', () => {
       />
     );
 
+    expect(screen.getByRole('article')).toHaveClass('bg-[var(--card)]');
     expect(screen.getByRole('status')).toHaveTextContent('AI review queued.');
   });
 

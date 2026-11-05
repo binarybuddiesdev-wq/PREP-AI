@@ -42,6 +42,9 @@ describe('SessionHistoryTable', () => {
     render(<SessionHistoryTable {...createProps({ onStartPractice })} />);
 
     expect(screen.getByRole('heading', { name: 'No sessions yet' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'No sessions yet' }).closest('section')).toHaveClass(
+      'bg-[var(--card)]'
+    );
     expect(screen.getByText(/begin tracking your progress/i)).toBeVisible();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Start practicing' })).toBeVisible();
@@ -102,6 +105,7 @@ describe('SessionHistoryTable', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('History unavailable.');
+    expect(screen.getByText('History unavailable.')).toHaveClass('text-[var(--danger-strong)]');
     await user.click(screen.getByRole('button', { name: 'Retry history' }));
 
     expect(onRetryHistory).toHaveBeenCalledOnce();

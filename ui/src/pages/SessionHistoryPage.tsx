@@ -95,7 +95,7 @@ export const SessionHistoryPage = () => {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[var(--text-h)]">Session History</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-[var(--dim)]">
             Review your practice sessions, coding attempts, and saved feedback.
           </p>
         </div>
@@ -122,10 +122,10 @@ export const SessionHistoryPage = () => {
           tabIndex={activeTab === 'practice' ? 0 : -1}
           onClick={() => setActiveTab('practice')}
           onKeyDown={(event) => handleTabKeyDown(event, 'practice')}
-          className={`min-h-9 rounded-lg border px-3 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+          className={`min-h-9 rounded-lg border px-3 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
             activeTab === 'practice'
-              ? 'border-amber-400/30 bg-amber-400/[0.08] text-amber-200'
-              : 'border-white/10 text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200'
+              ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+              : 'border-[var(--border2)] text-[var(--dim)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           Practice
@@ -140,10 +140,10 @@ export const SessionHistoryPage = () => {
           tabIndex={activeTab === 'coding' ? 0 : -1}
           onClick={() => setActiveTab('coding')}
           onKeyDown={(event) => handleTabKeyDown(event, 'coding')}
-          className={`min-h-9 rounded-lg border px-3 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+          className={`min-h-9 rounded-lg border px-3 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
             activeTab === 'coding'
-              ? 'border-amber-400/30 bg-amber-400/[0.08] text-amber-200'
-              : 'border-white/10 text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200'
+              ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+              : 'border-[var(--border2)] text-[var(--dim)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           Coding

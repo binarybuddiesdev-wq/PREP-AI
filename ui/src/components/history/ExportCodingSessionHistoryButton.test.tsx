@@ -41,7 +41,9 @@ describe('ExportCodingSessionHistoryButton', () => {
     vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
     render(<ExportCodingSessionHistoryButton sessions={sessions} page={3} />);
 
-    await user.click(screen.getByRole('button', { name: 'Export current page CSV' }));
+    const exportButton = screen.getByRole('button', { name: 'Export current page CSV' });
+    expect(exportButton).toHaveClass('border-[var(--border2)]');
+    await user.click(exportButton);
 
     expect(createObjectURL).toHaveBeenCalledOnce();
     const file = createObjectURL.mock.calls[0]?.[0];

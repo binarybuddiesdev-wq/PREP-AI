@@ -35,7 +35,7 @@ export const CodingSessionHistoryRow = (props: ICodingSessionHistoryRowProps) =>
 
   return (
     <>
-      <tr className="border-b border-white/[0.06] transition-colors hover:bg-white/[0.025]">
+      <tr className="border-b border-[var(--border)] transition-colors hover:bg-[var(--surface)]">
         <td className="px-3 py-3 text-sm sm:px-4">
           <button
             type="button"
@@ -43,31 +43,34 @@ export const CodingSessionHistoryRow = (props: ICodingSessionHistoryRowProps) =>
             aria-controls={detailsId}
             aria-label={`${isExpanded ? 'Hide' : 'Show'} submissions for ${dateLabel}`}
             onClick={() => onToggle(session.id)}
-            className="inline-flex min-h-9 items-center gap-2 rounded-md text-left text-zinc-200 transition hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+            className="inline-flex min-h-9 items-center gap-2 rounded-md text-left text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             {isExpanded ? (
-              <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-amber-300" />
+              <ChevronDown
+                aria-hidden="true"
+                className="size-4 shrink-0 text-[var(--accent-strong)]"
+              />
             ) : (
-              <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-zinc-500" />
+              <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-[var(--dim)]" />
             )}
             <time dateTime={session.startedAt}>{dateLabel}</time>
           </button>
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-zinc-300 sm:px-4">
+        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-[var(--text)] sm:px-4">
           {session.problemsAttempted}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-zinc-300 sm:px-4">
+        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-[var(--text)] sm:px-4">
           {session.problemsSolved}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm text-zinc-300 sm:px-4">
+        <td className="whitespace-nowrap px-3 py-3 text-sm text-[var(--text)] sm:px-4">
           {formatSessionDuration(session.startedAt, session.completedAt)}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm text-zinc-300 sm:px-4">
+        <td className="whitespace-nowrap px-3 py-3 text-sm text-[var(--text)] sm:px-4">
           {session.status === 'completed' && session.completedAt ? 'Completed' : 'In progress'}
         </td>
       </tr>
       <tr id={detailsId} hidden={!isExpanded}>
-        <td colSpan={5} className="border-b border-white/[0.06] bg-white/[0.015] p-3 sm:p-4">
+        <td colSpan={5} className="border-b border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4">
           <div
             role="region"
             aria-label={`Coding submissions from ${dateLabel}`}
@@ -77,25 +80,25 @@ export const CodingSessionHistoryRow = (props: ICodingSessionHistoryRowProps) =>
               <div
                 role="status"
                 aria-label="Loading saved coding submissions"
-                className="rounded-lg border border-white/[0.07] bg-[#111113] p-4"
+                className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4"
               >
                 <span className="sr-only">Loading saved coding submissions…</span>
                 <div
                   aria-hidden="true"
                   className="space-y-3 animate-pulse motion-reduce:animate-none"
                 >
-                  <div className="h-4 w-36 rounded bg-white/[0.07]" />
-                  <div className="h-3 w-24 rounded bg-white/[0.05]" />
-                  <div className="h-20 rounded bg-white/[0.05]" />
+                  <div className="h-4 w-36 rounded bg-[var(--surface2)]" />
+                  <div className="h-3 w-24 rounded bg-[var(--surface)]" />
+                  <div className="h-20 rounded bg-[var(--surface)]" />
                 </div>
               </div>
             ) : detailError ? (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-rose-300">{detailError}</p>
+                <p className="text-sm text-[var(--danger-strong)]">{detailError}</p>
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="min-h-9 rounded-lg border border-white/10 px-3 text-sm text-zinc-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                  className="min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   Retry coding session details
                 </button>
@@ -111,7 +114,7 @@ export const CodingSessionHistoryRow = (props: ICodingSessionHistoryRowProps) =>
                 />
               ))
             ) : (
-              <p className="text-sm text-zinc-400">No saved submissions in this session.</p>
+              <p className="text-sm text-[var(--dim)]">No saved submissions in this session.</p>
             )}
           </div>
         </td>

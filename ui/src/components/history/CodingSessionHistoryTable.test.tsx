@@ -25,6 +25,7 @@ describe('CodingSessionHistoryTable', () => {
     render(<CodingSessionHistoryTable {...createProps({ isLoading: true })} />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading coding session history');
+    expect(screen.getByRole('status')).toHaveClass('bg-[var(--card)]');
   });
 
   it('shows retryable errors and lets the learner retry the history request', async () => {
@@ -37,6 +38,9 @@ describe('CodingSessionHistoryTable', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Coding history is unavailable.');
+    expect(screen.getByText('Coding history is unavailable.')).toHaveClass(
+      'text-[var(--danger-strong)]'
+    );
     await user.click(screen.getByRole('button', { name: 'Retry coding history' }));
 
     expect(onRetryHistory).toHaveBeenCalledOnce();

@@ -68,6 +68,9 @@ describe('CodingSessionHistoryRow', () => {
       </table>
     );
 
+    expect(screen.getByRole('button', { name: /show submissions/i }).closest('tr')).toHaveClass(
+      'border-[var(--border)]'
+    );
     expect(screen.getByText('2')).toBeVisible();
     expect(screen.getByText('1')).toBeVisible();
     expect(screen.getByText('12 min')).toBeVisible();
@@ -102,6 +105,7 @@ describe('CodingSessionHistoryRow', () => {
     );
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading saved coding submissions');
+    expect(screen.getByRole('status')).toHaveClass('bg-[var(--card)]');
     expect(screen.getByRole('button', { name: /hide submissions/i })).toHaveAttribute(
       'aria-expanded',
       'true'

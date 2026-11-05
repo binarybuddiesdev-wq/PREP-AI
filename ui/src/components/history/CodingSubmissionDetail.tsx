@@ -22,59 +22,62 @@ export const CodingSubmissionDetail = (props: ICodingSubmissionDetailProps) => {
   const review = answer.aiReviewJson;
 
   return (
-    <article className="rounded-lg border border-white/[0.07] bg-[#111113] p-3 sm:p-4">
+    <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-100">{problemTitle}</h3>
-          <p className="mt-1 text-xs text-zinc-500">{languageLabels[answer.language]}</p>
+          <h3 className="text-sm font-semibold text-[var(--text-h)]">{problemTitle}</h3>
+          <p className="mt-1 text-xs text-[var(--dim)]">{languageLabels[answer.language]}</p>
         </div>
         <span
           className={`rounded-full px-2 py-1 text-xs font-medium ${
             answer.status === 'accepted'
-              ? 'bg-emerald-400/10 text-emerald-300'
-              : 'bg-rose-400/10 text-rose-300'
+              ? 'bg-[var(--green-bg)] text-[var(--success-strong)]'
+              : 'bg-[var(--red-bg)] text-[var(--danger-strong)]'
           }`}
         >
           {verdictLabels[answer.status]}
         </span>
       </header>
-      <p className="mt-3 text-xs text-zinc-400">
+      <p className="mt-3 text-xs text-[var(--dim)]">
         {answer.testCasesPassed} / {answer.testCasesTotal} tests passed
       </p>
       <div className="mt-3">
-        <h4 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <h4 className="text-xs font-medium uppercase tracking-wide text-[var(--dim)]">
           Submitted code
         </h4>
-        <pre className="mt-1 max-h-64 overflow-auto rounded-md bg-black/30 p-3 text-xs leading-5 text-zinc-300">
+        <pre className="mt-1 max-h-64 overflow-auto rounded-md bg-[var(--bg2)] p-3 text-xs leading-5 text-[var(--text)]">
           <code>{answer.code}</code>
         </pre>
       </div>
       {answer.aiReviewStatus === 'queued' || answer.aiReviewStatus === 'running' ? (
-        <p className="mt-3 text-sm text-zinc-400" role="status">
+        <p className="mt-3 text-sm text-[var(--dim)]" role="status">
           {answer.aiReviewStatus === 'queued' ? 'AI review queued.' : 'AI review in progress.'}
         </p>
       ) : answer.aiReviewStatus === 'failed' ? (
-        <p className="mt-3 rounded-md bg-rose-400/[0.07] p-3 text-sm text-rose-200" role="alert">
+        <p
+          className="mt-3 rounded-md bg-[var(--red-bg)] p-3 text-sm text-[var(--danger-strong)]"
+          role="alert"
+        >
           {reviewFailureMessage(answer.aiReviewFailureMessage)}
         </p>
       ) : answer.aiReviewStatus === 'completed' && review ? (
-        <section className="mt-4 border-t border-white/[0.07] pt-3">
-          <h4 className="text-sm font-semibold text-violet-200">AI review</h4>
-          <p className="mt-2 text-sm leading-6 text-zinc-300">{review.summary}</p>
+        <section className="mt-4 border-t border-[var(--border)] pt-3">
+          <h4 className="text-sm font-semibold text-[var(--purple-strong)]">AI review</h4>
+          <p className="mt-2 text-sm leading-6 text-[var(--text)]">{review.summary}</p>
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <div>
-              <dt className="text-xs text-zinc-500">Time complexity</dt>
-              <dd className="mt-1 font-mono text-zinc-200">{review.timeComplexity}</dd>
+              <dt className="text-xs text-[var(--dim)]">Time complexity</dt>
+              <dd className="mt-1 font-mono text-[var(--text)]">{review.timeComplexity}</dd>
             </div>
             <div>
-              <dt className="text-xs text-zinc-500">Space complexity</dt>
-              <dd className="mt-1 font-mono text-zinc-200">{review.spaceComplexity}</dd>
+              <dt className="text-xs text-[var(--dim)]">Space complexity</dt>
+              <dd className="mt-1 font-mono text-[var(--text)]">{review.spaceComplexity}</dd>
             </div>
           </dl>
           {review.strengths.length > 0 ? (
             <div className="mt-3">
-              <h5 className="text-xs font-semibold text-emerald-300">Strengths</h5>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-zinc-300">
+              <h5 className="text-xs font-semibold text-[var(--success-strong)]">Strengths</h5>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-[var(--text)]">
                 {review.strengths.map((strength, index) => (
                   <li key={`strength-${index}`}>{strength}</li>
                 ))}
@@ -83,8 +86,8 @@ export const CodingSubmissionDetail = (props: ICodingSubmissionDetailProps) => {
           ) : null}
           {review.improvements.length > 0 ? (
             <div className="mt-3">
-              <h5 className="text-xs font-semibold text-amber-300">Suggestions</h5>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-zinc-300">
+              <h5 className="text-xs font-semibold text-[var(--accent-strong)]">Suggestions</h5>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-[var(--text)]">
                 {review.improvements.map((improvement, index) => (
                   <li key={`improvement-${index}`}>{improvement}</li>
                 ))}

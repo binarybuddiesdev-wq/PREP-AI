@@ -22,7 +22,7 @@ export const ExportCodingSessionHistoryButton = (props: IExportCodingSessionHist
     <button
       type="button"
       onClick={handleExport}
-      className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+      className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
     >
       <Download aria-hidden="true" className="size-4" />
       Export current page CSV

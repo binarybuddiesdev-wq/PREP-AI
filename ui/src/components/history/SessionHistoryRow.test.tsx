@@ -109,6 +109,12 @@ describe('SessionHistoryRow', () => {
   it('shows saved questions, answers, scores, feedback, and evaluation failures', () => {
     renderRow(createProps());
 
+    expect(screen.getByRole('button', { name: /hide details/i }).closest('tr')).toHaveClass(
+      'border-[var(--border)]'
+    );
+    expect(
+      screen.getByRole('region', { name: /session answers/i }).querySelector('article')
+    ).toHaveClass('bg-[var(--card)]');
     expect(screen.getByText('20 min')).toBeVisible();
     expect(screen.getByText('What is a React hook?')).toBeVisible();
     expect(screen.getByText('A function that lets components use React features.')).toBeVisible();

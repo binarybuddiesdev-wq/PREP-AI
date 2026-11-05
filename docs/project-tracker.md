@@ -279,6 +279,10 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move Settings > Plan cards, usage metrics, billing errors, and plan
       selection controls onto the shared theme tokens; keep full-route parity
       open until the remaining screens are checked.
+- [x] Move Practice and Coding Session History tables, expanded details,
+      loading/error/empty states, pagination, and CSV controls onto the shared
+      theme tokens; keep the separate theory detail route in the full-route
+      parity review.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -309,7 +313,16 @@ runs total). A live backend log check found the dashboard profile, settings,
 theory history, coding history, weak-area, topic, and score-trend requests
 returning HTTP 200 with no dashboard HTTP 500 in the last 30 minutes. Payment
 worker SQL-function errors remain a separate backend issue and are not linked
-to these successful dashboard requests.
+to these successful dashboard requests. Session History's Practice and Coding
+tables and expanded details now use shared tokens; two focused Playwright
+runs verified dark/light computed colors, 390 px overflow, and no browser
+errors. Full UI verification passed (122 files / 515 tests, lint, project
+type-check, production build); scoped Prettier and `git diff --check` passed.
+Root lint still reports 14 errors in the untracked `types/piston.js` and nine
+warnings elsewhere; repository-wide formatting remains red on 57 existing or
+user-owned files. No dashboard 500 has appeared in the latest server logs, so
+the user-reported screen error remains unconfirmed until its failing request
+is identified.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
