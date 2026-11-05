@@ -265,9 +265,12 @@ See the [payments API](routes/payments-api-spec.md).
 
 ### Phase 9 — Shared interactions and visual parity
 
-- [ ] Match reference typography (DM Sans and JetBrains Mono), dark/light color
-      tokens, amber accents, surfaces, spacing, cards, and status colors.
-- [ ] Add the theme preference and persistence across routes.
+- [x] Set the global font foundation to DM Sans and JetBrains Mono and define
+      explicit light/dark canvas, text, surface, amber accent, and status tokens.
+- [ ] Match screen-level surfaces, spacing, cards, and status treatments to the
+      reference across the full route set.
+- [x] Keep the theme preference in Redux and persist it across page loads and
+      authenticated route changes.
 - [ ] Add global route/topic search with keyboard navigation and accessible
       result selection; search real app destinations/data, not a fixed demo list.
 - [ ] Complete toast, confirmation, user-menu, upgrade-entry, and notification
