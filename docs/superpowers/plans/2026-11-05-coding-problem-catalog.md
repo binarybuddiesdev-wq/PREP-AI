@@ -24,10 +24,10 @@ problem detail view using real backend data.
 
 ## Task 3: Catalog and detail UI
 
-- [ ] Add failing tests for filters, combined filtering, solved state, empty and
+- [x] Add failing tests for filters, combined filtering, solved state, empty and
       retry states, detail examples/constraints, and deep-link navigation.
-- [ ] Add presentational catalog/detail components and route-level composition.
-- [ ] Add `/coding` and `/coding/:problemId`, sidebar navigation, active title,
+- [x] Add presentational catalog/detail components and route-level composition.
+- [x] Add `/coding` and `/coding/:problemId`, sidebar navigation, active title,
       and route exports.
 
 ## Task 4: Verification and delivery

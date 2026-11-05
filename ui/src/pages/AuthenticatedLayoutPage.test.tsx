@@ -34,6 +34,8 @@ const renderAuthenticatedRoutes = (initialPath = '/dashboard') =>
         <Route element={<AuthenticatedLayoutPage />}>
           <Route path="/dashboard" element={<h2>Dashboard route content</h2>} />
           <Route path="/practice" element={<h2>Practice route content</h2>} />
+          <Route path="/coding" element={<h2>Coding route content</h2>} />
+          <Route path="/coding/:problemId" element={<h2>Coding problem route content</h2>} />
           <Route path="/history" element={<h2>History route content</h2>} />
           <Route path="/history/:sessionId" element={<h2>Session detail route content</h2>} />
           <Route path="/settings" element={<h2>Settings route content</h2>} />
@@ -87,6 +89,24 @@ describe('AuthenticatedLayoutPage', () => {
     );
     expect(screen.getByRole('heading', { name: 'Practice route content' })).toBeVisible();
   });
+
+  it.each(['/coding', '/coding/two-sum'])(
+    'marks Coding active and updates the page title for %s',
+    (path) => {
+      renderAuthenticatedRoutes(path);
+
+      expect(within(screen.getByRole('banner')).getByText('Coding')).toBeVisible();
+      expect(screen.getByRole('button', { name: 'Coding' })).toHaveAttribute(
+        'aria-current',
+        'page'
+      );
+      expect(
+        screen.getByRole('heading', {
+          name: /Coding route content|Coding problem route content/,
+        })
+      ).toBeVisible();
+    }
+  );
 
   it.each(['/history', '/history/session-one'])(
     'marks History active and updates the page title for %s',

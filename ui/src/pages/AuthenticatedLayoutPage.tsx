@@ -25,7 +25,7 @@ const NAVIGATION: IAppShellNavigationGroup[] = [
     items: [
       { label: 'Dashboard', route: ROUTES.dashboard, icon: <LayoutDashboard size={18} /> },
       { label: 'Practice', route: ROUTES.practice, icon: <Zap size={18} /> },
-      { label: 'Coding', route: null, icon: <Code2 size={18} /> },
+      { label: 'Coding', route: ROUTES.coding, icon: <Code2 size={18} /> },
     ],
   },
   {
@@ -44,10 +44,17 @@ export const AuthenticatedLayoutPage = () => {
   const { user } = useSessionReader();
   const { theme, toggleTheme } = useThemePreference();
   const activeRoute: AppShellRoute = matchRoutes(
-    [{ path: ROUTES.historySessionDetail }, { path: ROUTES.history }],
+    [
+      { path: ROUTES.historySessionDetail },
+      { path: ROUTES.history },
+      { path: ROUTES.codingProblem },
+      { path: ROUTES.coding },
+    ],
     location
   )
-    ? ROUTES.history
+    ? location.pathname.toLowerCase().startsWith(ROUTES.coding)
+      ? ROUTES.coding
+      : ROUTES.history
     : matchRoutes([{ path: ROUTES.settings }, { path: ROUTES.settingsDocuments }], location)
       ? ROUTES.settings
       : matchRoutes([{ path: ROUTES.library }], location)
@@ -56,15 +63,17 @@ export const AuthenticatedLayoutPage = () => {
           ? ROUTES.practice
           : ROUTES.dashboard;
   const pageTitle =
-    activeRoute === ROUTES.history
-      ? 'History'
-      : activeRoute === ROUTES.settings
-        ? 'Settings'
-        : activeRoute === ROUTES.practice
-          ? 'Practice'
-          : activeRoute === ROUTES.library
-            ? 'Library'
-            : 'Dashboard';
+    activeRoute === ROUTES.coding
+      ? 'Coding'
+      : activeRoute === ROUTES.history
+        ? 'History'
+        : activeRoute === ROUTES.settings
+          ? 'Settings'
+          : activeRoute === ROUTES.practice
+            ? 'Practice'
+            : activeRoute === ROUTES.library
+              ? 'Library'
+              : 'Dashboard';
   const userName = user?.firstName ?? user?.email ?? 'Account';
 
   return (

@@ -32,6 +32,8 @@ vi.mock('@/pages', async (importOriginal) => {
   return {
     ...pages,
     DashboardPage: () => <h1>Authenticated dashboard</h1>,
+    CodingPage: () => <h1>Authenticated coding catalogue</h1>,
+    CodingProblemPage: () => <h1>Authenticated coding problem</h1>,
     PracticePage: () => <h1>Authenticated practice</h1>,
     SessionHistoryPage: () => <h1>Authenticated session history</h1>,
     TheorySessionDetailPage: () => <h1>Authenticated session detail</h1>,
@@ -53,6 +55,24 @@ describe('AppRoutes', () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  it.each([
+    ['/coding', 'Authenticated coding catalogue'],
+    ['/coding/two-sum', 'Authenticated coding problem'],
+  ])('serves the protected coding route %s', (path, heading) => {
+    authenticationState.isSignedIn = true;
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      [path]
+    );
+
+    expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent(path);
+    expect(screen.getByLabelText('Primary navigation')).toBeInTheDocument();
+  });
 
   it('serves the landing page at the public root route', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);

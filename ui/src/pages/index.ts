@@ -1,5 +1,7 @@
 export { AuthenticatedLayoutPage } from './AuthenticatedLayoutPage';
 export { DashboardPage } from './DashboardPage';
+export { CodingPage } from './CodingPage';
+export { CodingProblemPage } from './CodingProblemPage';
 export { LandingPage } from './LandingPage';
 export { LibraryPage } from './LibraryPage';
 export { OnboardingPage } from './OnboardingPage';

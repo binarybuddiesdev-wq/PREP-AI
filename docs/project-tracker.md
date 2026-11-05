@@ -153,12 +153,13 @@ session had no authenticated browser surface.
 
 ### Phase 5 — Coding challenges
 
-**Status: Backend ready; frontend not started.** Problem listing, sessions,
-run/submit execution, results, history, AI review, and quotas exist. Public
-production execution remains gated on stronger Piston isolation.
+**Status: Catalogue and detail screens implemented; editor and execution flows
+pending.** Problem listing, sessions, run/submit execution, results, history,
+AI review, and quotas exist. Public production execution remains gated on
+stronger Piston isolation.
 
-- [ ] Build the problem list, topic/difficulty filters, solved state, and
-      problem details/examples/constraints.
+- [x] Build the problem list, topic/difficulty filters, user-specific solved
+      state, and problem details/examples/constraints.
 - [ ] Add the editor for JavaScript, TypeScript, and Python with output and
       test-case tabs, reset, fullscreen, and collapsible problem description.
 - [ ] Connect Run and Submit to the asynchronous coding API and render real

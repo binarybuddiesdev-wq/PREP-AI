@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router';
 import { ROUTES } from '@/core';
 import {
   AuthenticatedLayoutPage,
+  CodingPage,
+  CodingProblemPage,
   DashboardPage,
   LandingPage,
   LibraryPage,
@@ -50,6 +52,8 @@ export const AppRoutes = () => (
       }
     >
       <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+      <Route path={ROUTES.coding} element={<CodingPage />} />
+      <Route path={ROUTES.codingProblem} element={<CodingProblemPage />} />
       <Route path={ROUTES.practice} element={<PracticePage />} />
       <Route path={ROUTES.history} element={<SessionHistoryPage />} />
       <Route path={ROUTES.historySessionDetail} element={<TheorySessionDetailPage />} />

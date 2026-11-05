@@ -6,6 +6,6 @@ export * from './onboarding';
 export * from './pdf';
 export * from './user';
 export { API_BASE_URL, CLERK_PUBLISHABLE_KEY, IS_CLERK_CONFIGURATION_VALID } from './env';
-export { APP_SHELL_ROUTES, historySessionDetailPath, ROUTES } from './routes';
+export { APP_SHELL_ROUTES, codingProblemPath, historySessionDetailPath, ROUTES } from './routes';
 export type { AppShellRoute } from './routes';
 export * from './theme';
