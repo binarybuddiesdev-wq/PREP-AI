@@ -54,6 +54,13 @@ export interface ICodingSessionHistory {
   limit: number;
 }
 
+export interface ICodingStats {
+  solved: number;
+  dailySolved: { used: number; limit: number };
+  dailyReviews: { used: number; limit: number };
+  streakDays: number;
+}
+
 export interface ICodingSessionDetail extends ICodingSession {
   userId: string;
   answers: ICodingExecutionAnswer[];

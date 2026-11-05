@@ -9,6 +9,7 @@ import type {
 
 import { createApiClient } from './apiClient';
 import {
+  getCodingStats,
   getCodingExecution,
   getCodingProblem,
   getCodingProblems,
@@ -21,6 +22,32 @@ import {
 } from './coding.api';
 
 describe('coding API', () => {
+  it('requests authenticated coding stats from the canonical stats endpoint', async () => {
+    const requests: Request[] = [];
+    const stats = {
+      solved: 7,
+      dailySolved: { used: 2, limit: 5 },
+      dailyReviews: { used: 1, limit: 3 },
+      streakDays: 4,
+    };
+    const api = createApiClient({
+      baseUrl: 'http://api.test',
+      getToken: async () => 'token',
+      fetchImplementation: async (request) => {
+        requests.push(request instanceof Request ? request.clone() : new Request(request));
+        return new Response(JSON.stringify({ success: true, message: 'ok', data: stats }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+
+    await expect(getCodingStats(api)).resolves.toMatchObject({ data: stats });
+    expect(requests).toHaveLength(1);
+    expect(requests[0].method).toBe('GET');
+    expect(requests[0].url).toBe('http://api.test/api/v1/coding/stats');
+  });
+
   it('requests the authenticated coding problem catalogue', async () => {
     const requests: Request[] = [];
     const problems: ICodingProblemSummary[] = [

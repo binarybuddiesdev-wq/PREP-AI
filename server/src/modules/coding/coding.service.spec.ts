@@ -33,6 +33,7 @@ describe('CodingService', () => {
     withTenantContext: (userId: string, operation: (tx: unknown) => unknown) => Promise<unknown>;
   };
   let redis: {
+    getQuotaUsage: ReturnType<typeof vi.fn>;
     reserveQuota: ReturnType<typeof vi.fn>;
     releaseQuota: ReturnType<typeof vi.fn>;
     reserveUniqueQuota: ReturnType<typeof vi.fn>;
@@ -116,6 +117,7 @@ describe('CodingService', () => {
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       count: vi.fn().mockResolvedValue(1),
     };
+    const rawQuery = vi.fn().mockResolvedValue([]);
     const codingExecution = {
       create: vi.fn(({ data }: { data: Record<string, unknown> }) =>
         Promise.resolve({ ...queuedExecution, ...data })
@@ -125,7 +127,7 @@ describe('CodingService', () => {
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     };
     const transaction = vi.fn(async (callback: (tx: unknown) => unknown) =>
-      callback({ codingSession, codingAnswer, codingExecution })
+      callback({ codingSession, codingAnswer, codingExecution, $queryRaw: rawQuery })
     );
     postgres = {
       withTenantContext: vi.fn((_userId: string, callback: (tx: unknown) => unknown) =>
@@ -145,6 +147,7 @@ describe('CodingService', () => {
     };
 
     redis = {
+      getQuotaUsage: vi.fn().mockResolvedValue(0),
       reserveQuota: vi.fn().mockResolvedValue({ allowed: true, count: 1 }),
       releaseQuota: vi.fn().mockResolvedValue(undefined),
       reserveUniqueQuota: vi.fn().mockResolvedValue({ status: 'reserved', count: 1 }),
@@ -180,6 +183,86 @@ describe('CodingService', () => {
     }).compile();
 
     service = module.get<CodingService>(CodingService);
+  });
+
+  it('aggregates unique accepted problems, UTC streak and server quota usage for the owner', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const rawQuery = vi.fn().mockResolvedValue([{ activeDate: today }, { activeDate: yesterday }]);
+    const acceptedProblems = [{ problemId }, { problemId: secondProblemId }];
+    const acceptedProblemQuery = vi.fn().mockResolvedValue(acceptedProblems);
+    postgres.withTenantContext = vi.fn((_userId: string, callback: (tx: unknown) => unknown) =>
+      Promise.resolve(
+        callback({
+          codingAnswer: { findMany: acceptedProblemQuery },
+          $queryRaw: rawQuery,
+        })
+      )
+    );
+    (
+      postgres.client_ as { codingQuestion: { findMany: ReturnType<typeof vi.fn> } }
+    ).codingQuestion.findMany = vi
+      .fn()
+      .mockResolvedValue([problem, { ...problem, id: secondProblemId }]);
+    redis.getQuotaUsage.mockResolvedValueOnce(2).mockResolvedValueOnce(1);
+
+    await expect(service.getStats(userId)).resolves.toEqual({
+      solved: 2,
+      dailySolved: { used: 2, limit: 5 },
+      dailyReviews: { used: 1, limit: 3 },
+      streakDays: 2,
+    });
+
+    expect(postgres.withTenantContext).toHaveBeenCalledWith(userId, expect.any(Function));
+    expect(acceptedProblemQuery).toHaveBeenCalledWith({
+      where: { userId, status: 'accepted' },
+      select: { problemId: true },
+      distinct: ['problemId'],
+    });
+    expect(redis.getQuotaUsage).toHaveBeenNthCalledWith(1, `coding-solved:${userId}:${today}`);
+    expect(redis.getQuotaUsage).toHaveBeenNthCalledWith(2, `coding-reviews:${userId}:${today}`);
+    expect(rawQuery).toHaveBeenCalledWith(expect.anything(), userId);
+  });
+
+  it('returns zero counts when the user has no accepted submissions or quota usage', async () => {
+    postgres.withTenantContext = vi.fn((_userId: string, callback: (tx: unknown) => unknown) =>
+      Promise.resolve(
+        callback({
+          codingAnswer: { findMany: vi.fn().mockResolvedValue([]) },
+          $queryRaw: vi.fn().mockResolvedValue([]),
+        })
+      )
+    );
+
+    await expect(service.getStats(userId)).resolves.toMatchObject({
+      solved: 0,
+      dailySolved: { used: 0, limit: 5 },
+      dailyReviews: { used: 0, limit: 3 },
+      streakDays: 0,
+    });
+  });
+
+  it('does not return stats when the Redis quota service is unavailable', async () => {
+    redis.getQuotaUsage.mockRejectedValueOnce(new Error('Redis unavailable'));
+
+    await expect(service.getStats(userId)).rejects.toThrow(
+      'Coding usage stats are temporarily unavailable'
+    );
+  });
+
+  it('does not return stats for a user without a local account', async () => {
+    mongo.user.findUnique.mockResolvedValueOnce(null);
+
+    await expect(service.getStats(userId)).rejects.toThrow('User not found');
+    expect(postgres.withTenantContext).not.toHaveBeenCalled();
+  });
+
+  it('reports the coding database unavailable when the scoped query fails', async () => {
+    postgres.withTenantContext = vi.fn().mockRejectedValueOnce(new Error('PostgreSQL unavailable'));
+
+    await expect(service.getStats(userId)).rejects.toThrow(
+      'Coding database is temporarily unavailable'
+    );
   });
 
   const pg = () => postgres.client_ as unknown as TMockPostgresClient;

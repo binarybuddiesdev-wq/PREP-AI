@@ -15,12 +15,14 @@ const queries = vi.hoisted(() => ({
   executeCoding: vi.fn(),
   requestReview: vi.fn(),
   readExecution: vi.fn(),
+  stats: vi.fn(),
   executionData: undefined as unknown,
 }));
 
 vi.mock('@/logic', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/logic')>()),
   useCodingProblemsReader: queries.list,
+  useCodingStatsReader: queries.stats,
   useCodingProblemReader: queries.detail,
   useCodingSessionCommand: () => ({ mutateAsync: queries.startCodingSession, isPending: false }),
   useCodingExecutionCommand: () => ({ mutateAsync: queries.executeCoding, isPending: false }),
@@ -105,7 +107,50 @@ describe('coding pages', () => {
       aiReviewFailureMessage: null,
     });
     queries.executionData = undefined;
+    queries.stats.mockReturnValue({
+      data: {
+        solved: 7,
+        dailySolved: { used: 2, limit: 5 },
+        dailyReviews: { used: 1, limit: 3 },
+        streakDays: 4,
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
     queries.readExecution.mockClear();
+  });
+
+  it('shows the server stats bar above the coding catalogue', async () => {
+    renderCodingRoutes('/coding');
+
+    expect(await screen.findByRole('group', { name: 'Coding statistics' })).toHaveTextContent('7');
+    expect(screen.getByText('Today')).toBeVisible();
+    expect(screen.getByText('2 / 5')).toBeVisible();
+    expect(screen.getByRole('button', { name: /Two Sum/ })).toBeVisible();
+  });
+
+  it('keeps the problem catalogue visible and retries when coding stats fail', async () => {
+    const user = userEvent.setup();
+    const refetch = vi.fn();
+    queries.stats.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error('Stats service unavailable'),
+      isFetching: false,
+      refetch,
+    });
+    renderCodingRoutes('/coding');
+
+    const statsError = await screen.findByRole('alert');
+    expect(statsError).toHaveTextContent('Coding stats could not be loaded');
+    expect(statsError).toHaveTextContent('Stats service unavailable');
+    expect(screen.getByRole('button', { name: /Two Sum/ })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Retry coding stats' }));
+    expect(refetch).toHaveBeenCalledOnce();
   });
 
   it('opens a real detail route from the catalogue', async () => {

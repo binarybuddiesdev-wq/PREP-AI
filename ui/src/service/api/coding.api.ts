@@ -8,12 +8,16 @@ import type {
   ICodingSession,
   ICodingSessionDetail,
   ICodingSessionHistory,
+  ICodingStats,
   IExecuteCodingBody,
   IPaginationRequest,
   IStartCodingSessionBody,
 } from '@/core';
 
 import type { ApiClient } from './apiClient.types';
+
+export const getCodingStats = (api: ApiClient): Promise<IApiEnvelope<ICodingStats>> =>
+  api.get('coding/stats').json<IApiEnvelope<ICodingStats>>();
 
 export const getCodingProblems = (api: ApiClient): Promise<IApiEnvelope<ICodingProblemSummary[]>> =>
   api.get('coding/problems').json<IApiEnvelope<ICodingProblemSummary[]>>();

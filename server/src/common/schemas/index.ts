@@ -57,4 +57,5 @@ export {
   CodingSessionDetailResponse,
   CodingSessionCompletedResponse,
   CodingSessionHistoryResponse,
+  CodingStatsResponse,
 } from './coding/coding.response.schema.js';

@@ -135,9 +135,16 @@ describe('useCodingExecutionReader', () => {
     vi.mocked(getCodingExecution).mockResolvedValue(envelope(execution('completed', 'submit')));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const problemListKey = codingKeys.problems('user-one');
+    const statsKey = codingKeys.stats('user-one');
     const historyKey = dashboardKeys.codingHistory('user-one');
     const sessionHistoryKey = codingKeys.sessionHistory('user-one', 1, 20);
     queryClient.setQueryData(problemListKey, []);
+    queryClient.setQueryData(statsKey, {
+      solved: 0,
+      dailySolved: { used: 0, limit: 5 },
+      dailyReviews: { used: 0, limit: 3 },
+      streakDays: 0,
+    });
     queryClient.setQueryData(historyKey, []);
     queryClient.setQueryData(sessionHistoryKey, { sessions: [], total: 0, page: 1, limit: 20 });
     const { result } = renderHook(() => useCodingExecutionReader('session-one', 'execution-one'), {
@@ -149,6 +156,9 @@ describe('useCodingExecutionReader', () => {
       expect(
         queryClient.getQueryCache().find({ queryKey: problemListKey })?.state.isInvalidated
       ).toBe(true);
+      expect(queryClient.getQueryCache().find({ queryKey: statsKey })?.state.isInvalidated).toBe(
+        true
+      );
       expect(queryClient.getQueryCache().find({ queryKey: historyKey })?.state.isInvalidated).toBe(
         true
       );
@@ -162,7 +172,14 @@ describe('useCodingExecutionReader', () => {
     vi.mocked(getCodingExecution).mockResolvedValue(envelope(execution('completed', 'run')));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const problemListKey = codingKeys.problems('user-one');
+    const statsKey = codingKeys.stats('user-one');
     queryClient.setQueryData(problemListKey, []);
+    queryClient.setQueryData(statsKey, {
+      solved: 0,
+      dailySolved: { used: 0, limit: 5 },
+      dailyReviews: { used: 0, limit: 3 },
+      streakDays: 0,
+    });
     const { result } = renderHook(() => useCodingExecutionReader('session-one', 'execution-one'), {
       wrapper: createWrapper(queryClient),
     });
@@ -171,5 +188,8 @@ describe('useCodingExecutionReader', () => {
     expect(
       queryClient.getQueryCache().find({ queryKey: problemListKey })?.state.isInvalidated
     ).toBe(false);
+    expect(queryClient.getQueryCache().find({ queryKey: statsKey })?.state.isInvalidated).toBe(
+      false
+    );
   });
 });

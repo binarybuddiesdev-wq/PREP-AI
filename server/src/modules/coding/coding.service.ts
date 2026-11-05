@@ -13,6 +13,7 @@ import { RedisService } from '@/common/redis/redis.service.js';
 import { JobQueueService } from '@/common/jobs/job-queue.service.js';
 import { JOB_QUEUE_NAMES } from '@/common/jobs/job-queue.constants.js';
 import { getCodingLimits } from '@/common/utils/role-limits.js';
+import { getCodingStreakDays } from './coding-stats.js';
 import {
   createIdempotencyOperationId,
   createIdempotencyRequestFingerprint,
@@ -28,6 +29,8 @@ import {
   CODING_SESSION_NOT_FOUND,
   CODING_SUBMISSION_IN_PROGRESS,
   IDEMPOTENCY_KEY_REUSED,
+  CODING_STATS_UNAVAILABLE,
+  ERROR_MESSAGES,
 } from '@/common/constants/api.constants.js';
 import type { ICodingExecutionJobData } from './coding-execution.types.js';
 import type { PrismaClient as PostgresPrismaClient } from '../../generated/postgresql-client/index.js';
@@ -493,6 +496,69 @@ export class CodingService {
     }
   }
 
+  async getStats(userId: string) {
+    let roleUser;
+    try {
+      roleUser = await this.prisma.user.findUnique({
+        where: { clerkUserId: userId },
+        select: { role: true },
+      });
+    } catch (error) {
+      throw new ServiceUnavailableException(CODING_STATS_UNAVAILABLE, { cause: error });
+    }
+    if (!roleUser) throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+
+    let acceptedProblems: Array<{ problemId: string }>;
+    let acceptedDates: Array<{ activeDate: string }>;
+    try {
+      this.database();
+      [acceptedProblems, acceptedDates] = await this.postgres.withTenantContext(
+        userId,
+        (transaction) =>
+          Promise.all([
+            transaction.codingAnswer.findMany({
+              where: { userId, status: 'accepted' },
+              select: { problemId: true },
+              distinct: ['problemId'],
+            }),
+            transaction.$queryRaw<Array<{ activeDate: string }>>`
+              SELECT TO_CHAR(DATE_TRUNC('day', "createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS "activeDate"
+              FROM "CodingAnswer"
+              WHERE "userId" = ${userId} AND "status" = 'accepted'
+              GROUP BY DATE_TRUNC('day', "createdAt" AT TIME ZONE 'UTC')
+              ORDER BY DATE_TRUNC('day', "createdAt" AT TIME ZONE 'UTC') DESC
+            `,
+          ])
+      );
+    } catch (error) {
+      throw this.databaseError(error);
+    }
+
+    const now = new Date();
+    let dailySolvedUsage: number;
+    let dailyReviewUsage: number;
+    try {
+      const utcDate = this.utcDate(now);
+      [dailySolvedUsage, dailyReviewUsage] = await Promise.all([
+        this.redis.getQuotaUsage(`coding-solved:${userId}:${utcDate}`),
+        this.redis.getQuotaUsage(`coding-reviews:${userId}:${utcDate}`),
+      ]);
+    } catch (error) {
+      throw new ServiceUnavailableException(CODING_STATS_UNAVAILABLE, { cause: error });
+    }
+
+    const limits = getCodingLimits(roleUser.role, this.config);
+    return {
+      solved: acceptedProblems.length,
+      dailySolved: { used: dailySolvedUsage, limit: limits.dailySolved },
+      dailyReviews: { used: dailyReviewUsage, limit: limits.dailyReviews },
+      streakDays: getCodingStreakDays(
+        acceptedDates.map(({ activeDate }) => activeDate),
+        now
+      ),
+    };
+  }
+
   private async loadOwnedSession(sessionId: string, userId: string) {
     let session;
     try {
@@ -728,8 +794,8 @@ export class CodingService {
     }
   }
 
-  private utcDate() {
-    return new Date().toISOString().slice(0, 10);
+  private utcDate(currentTime = new Date()) {
+    return currentTime.toISOString().slice(0, 10);
   }
 
   private secondsUntilUtcMidnight() {

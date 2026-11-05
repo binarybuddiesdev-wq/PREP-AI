@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CodingController } from './coding.controller.js';
 import { CodingService } from './coding.service.js';
 import { ClerkAuthGuard, RolesGuard } from '@/common/index.js';
+import { CODING_STATS_FETCHED } from '@/common/constants/api.constants.js';
 const GUARDS_METADATA = '__guards__';
 import { Reflector } from '@nestjs/core';
 import type { ExecuteCodingDto } from './dto/coding.dto.js';
@@ -47,6 +48,7 @@ describe('CodingController', () => {
       getSessionDetail: vi.fn(),
       completeSession: vi.fn(),
       getSessionHistory: vi.fn(),
+      getStats: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -76,6 +78,65 @@ describe('CodingController', () => {
       'user_001'
     );
     expect(codingService.getProblem).toHaveBeenCalledWith('two-sum');
+  });
+
+  it('returns coding stats for the authenticated user', async () => {
+    const stats = {
+      solved: 4,
+      dailySolved: { used: 2, limit: 5 },
+      dailyReviews: { used: 1, limit: 3 },
+      streakDays: 3,
+    };
+    codingService.getStats.mockResolvedValue(stats);
+
+    await expect(controller.getStats('user_001')).resolves.toEqual({
+      message: expect.any(String),
+      data: stats,
+    });
+    expect(codingService.getStats).toHaveBeenCalledWith('user_001');
+  });
+
+  it('documents the coding stats response in Swagger', () => {
+    const responses = Reflect.getMetadata(
+      'swagger/apiResponse',
+      CodingController.prototype.getStats
+    );
+
+    expect(responses).toMatchObject({
+      200: {
+        description: CODING_STATS_FETCHED,
+        schema: {
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: CODING_STATS_FETCHED },
+            data: {
+              type: 'object',
+              required: ['solved', 'dailySolved', 'dailyReviews', 'streakDays'],
+              properties: {
+                solved: { type: 'integer', minimum: 0 },
+                dailySolved: {
+                  type: 'object',
+                  required: ['used', 'limit'],
+                  properties: {
+                    used: { type: 'integer', minimum: 0 },
+                    limit: { type: 'integer', minimum: 0 },
+                  },
+                },
+                dailyReviews: {
+                  type: 'object',
+                  required: ['used', 'limit'],
+                  properties: {
+                    used: { type: 'integer', minimum: 0 },
+                    limit: { type: 'integer', minimum: 0 },
+                  },
+                },
+                streakDays: { type: 'integer', minimum: 0 },
+              },
+            },
+          },
+        },
+      },
+    });
   });
 
   it('starts a session using the authenticated user ID', async () => {

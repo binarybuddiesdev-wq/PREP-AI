@@ -10,13 +10,13 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 
 ## Current state
 
-| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                                         |
-| ---------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                                     |
-| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                                              |
-| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                                                |
-| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history, persistent Study Chat, supported settings preferences, and the authenticated notification inbox are implemented. Coding stats and billing remain on the roadmap. |
-| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                                          |
+| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                               |
+| ---------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                           |
+| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                                    |
+| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                                      |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history/stats, persistent Study Chat, supported settings preferences, and the authenticated notification inbox are implemented. Billing remains on the roadmap. |
+| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                                |
 
 ## Reference and implementation rules
 
@@ -153,10 +153,9 @@ session had no authenticated browser surface.
 
 ### Phase 5 — Coding challenges
 
-**Status: Catalogue, detail, editor, asynchronous Run/Submit, AI Review, and
-coding session history are implemented; coding stats remain pending.** Problem
-listing, sessions, run/submit execution, results, history, AI review, and quotas
-exist. The History screen has separate Practice and Coding tabs with
+**Status: Complete.** Problem listing, sessions, run/submit execution,
+results, history, AI review, quotas, and server-backed coding statistics are
+implemented. The History screen has separate Practice and Coding tabs with
 independent server pagination, saved submission details, structured AI review
 results, retry states, and current-page CSV export. AI Review follows the
 reference toolbar-and-dialog flow and uses the asynchronous review job/status
@@ -172,8 +171,10 @@ API. Public production execution remains gated on stronger Piston isolation.
       complexity, quality, and suggestion fields.
 - [x] Add paginated coding session history with saved submission details and
       current-page CSV export from backend results.
-- [ ] Add coding stats after the backend defines `/coding/stats`; do not use
-      browser storage as the source of truth for solved status or quotas.
+- [x] Add the authenticated `/coding/stats` endpoint and compact stats bar;
+      derive solved counts and streaks from accepted submissions and daily
+      usage from server quota counters, never browser storage. See the
+      [coding API](../routes/coding-api-spec.md).
 - [x] Select and package the editor dependency locally; avoid loading Monaco
       from a runtime CDN as the standalone prototype does.
 

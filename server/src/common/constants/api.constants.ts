@@ -77,6 +77,7 @@ export enum ApiOperation {
   CODING_GET_SESSION = 'Get coding session details',
   CODING_COMPLETE_SESSION = 'Complete a coding session',
   CODING_GET_HISTORY = 'Get coding session history',
+  CODING_GET_STATS = 'Get coding practice statistics',
   PAYMENT_START_SUBSCRIPTION = 'Start a monthly or yearly Premium subscription',
   PAYMENT_GET_CURRENT_SUBSCRIPTION = 'Get the current Premium subscription',
   PAYMENT_CANCEL_SUBSCRIPTION = 'Schedule cancellation of the current Premium subscription',
@@ -196,6 +197,7 @@ export const CODING_REVIEW_QUEUED = 'AI code review queued successfully';
 export const CODING_SESSION_FETCHED = 'Coding session fetched successfully';
 export const CODING_SESSION_COMPLETED = 'Coding session completed successfully';
 export const CODING_SESSIONS_FETCHED = 'Coding sessions fetched successfully';
+export const CODING_STATS_FETCHED = 'Coding stats fetched successfully';
 export const CODING_SESSION_NOT_FOUND = 'Coding session not found';
 export const CODING_SESSION_COMPLETED_ERROR = 'Coding session is already completed';
 export const CODING_PROBLEM_NOT_ASSIGNED = 'Problem is not part of this coding session';
@@ -203,6 +205,7 @@ export const CODING_DAILY_LIMIT_REACHED = 'Daily solved-problem limit reached';
 export const CODING_DAILY_REVIEW_LIMIT_REACHED = 'Daily AI code review limit reached';
 export const CODING_SUBMISSION_IN_PROGRESS = 'A submission for this problem is already in progress';
 export const CODING_DATABASE_UNAVAILABLE = 'Coding database is temporarily unavailable';
+export const CODING_STATS_UNAVAILABLE = 'Coding usage stats are temporarily unavailable';
 export const CODING_EXECUTION_FAILED = 'Code execution could not be completed. Please retry.';
 
 export const successResponseSchema = (dataSchema: Record<string, unknown>, message: string) => ({

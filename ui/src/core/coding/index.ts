@@ -19,6 +19,7 @@ export type {
   ICodingSession,
   ICodingSessionDetail,
   ICodingSessionHistory,
+  ICodingStats,
   ICodingTestCaseResult,
   IExecuteCodingBody,
   IStartCodingSessionBody,

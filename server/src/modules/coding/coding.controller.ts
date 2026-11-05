@@ -33,6 +33,7 @@ import {
   CODING_SESSION_FETCHED,
   CODING_SESSION_STARTED,
   CODING_SESSIONS_FETCHED,
+  CODING_STATS_FETCHED,
   CODING_SUBMISSION_QUEUED,
 } from '@/common/constants/api.constants.js';
 import { ClerkAuthGuard, CurrentUser, RolesGuard } from '@/common/index.js';
@@ -46,6 +47,7 @@ import {
   CodingReviewResponse,
   CodingSessionHistoryResponse,
   CodingSessionStartedResponse,
+  CodingStatsResponse,
   CodingSubmitResponse,
 } from '@/common/schemas/index.js';
 
@@ -54,6 +56,18 @@ import {
 @UseGuards(ClerkAuthGuard, RolesGuard)
 export class CodingController {
   constructor(private readonly codingService: CodingService) {}
+
+  @ApiBearerAuth()
+  @Get('stats')
+  @HttpCode(200)
+  @ApiOperation({ summary: ApiOperationEnum.CODING_GET_STATS })
+  @ApiResponse(CodingStatsResponse)
+  async getStats(@CurrentUser('id') userId: string) {
+    return {
+      message: CODING_STATS_FETCHED,
+      data: await this.codingService.getStats(userId),
+    };
+  }
 
   @ApiBearerAuth()
   @Get('problems')

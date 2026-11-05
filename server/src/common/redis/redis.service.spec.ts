@@ -39,6 +39,34 @@ describe('RedisService unique quota reservations', () => {
   const limit = 5;
   const ttlSeconds = 3_600;
 
+  it('reads a missing quota counter as zero', async () => {
+    redisMocks.client.get.mockResolvedValueOnce(null);
+    await expect(service.getQuotaUsage(quotaKey)).resolves.toBe(0);
+  });
+
+  it.each(['0', '5', String(Number.MAX_SAFE_INTEGER)])(
+    'reads a valid quota counter value %s',
+    async (usage) => {
+      redisMocks.client.get.mockResolvedValueOnce(usage);
+      await expect(service.getQuotaUsage(quotaKey)).resolves.toBe(Number(usage));
+    }
+  );
+
+  it.each(['-1', '1.5', 'NaN', '', ' ', '1e2', '9007199254740992'])(
+    'rejects an invalid quota counter value %s',
+    async (usage) => {
+      redisMocks.client.get.mockResolvedValueOnce(usage);
+      await expect(service.getQuotaUsage(quotaKey)).rejects.toThrow(
+        'invalid quota usage counter value'
+      );
+    }
+  );
+
+  it('preserves Redis errors when reading a quota counter', async () => {
+    redisMocks.client.get.mockRejectedValueOnce(new Error('Redis unavailable'));
+    await expect(service.getQuotaUsage(quotaKey)).rejects.toThrow('Redis unavailable');
+  });
+
   beforeEach(async () => {
     redisMocks.client.eval.mockReset();
     redisMocks.client.get.mockReset();

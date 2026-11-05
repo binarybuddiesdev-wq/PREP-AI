@@ -16,3 +16,4 @@ export type {
   IStartCodingSessionVariables,
 } from './useCodingCommands';
 export { useCodingProblemReader, useCodingProblemsReader } from './useCodingProblemReaders';
+export { useCodingStatsReader } from './useCodingStatsReader';

@@ -1,17 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { CodingProblemCatalog } from '@/components/coding';
+import { CodingProblemCatalog, CodingStatsBar } from '@/components/coding';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
 import type { CodingDifficulty } from '@/core';
 import { codingProblemPath } from '@/core';
-import { useCodingProblemsReader } from '@/logic';
+import { useCodingProblemsReader, useCodingStatsReader } from '@/logic';
 
 export const CodingPage = () => {
   const navigate = useNavigate();
   const problemsQuery = useCodingProblemsReader();
+  const statsQuery = useCodingStatsReader();
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<CodingDifficulty | null>(null);
+  const statsErrorDetail = statsQuery.error instanceof Error ? statsQuery.error.message.trim() : '';
+  const statsErrorMessage = statsQuery.isError
+    ? statsErrorDetail
+      ? `Coding stats could not be loaded: ${statsErrorDetail}`
+      : 'Coding stats could not be loaded.'
+    : null;
 
   if (problemsQuery.isPending && !problemsQuery.data) {
     return <LoadingScreen label="Loading coding problems..." layout="embedded" />;
@@ -43,6 +50,13 @@ export const CodingPage = () => {
           Practice algorithm and data structure problems with AI feedback.
         </p>
       </header>
+      <CodingStatsBar
+        stats={statsQuery.data ?? null}
+        isLoading={statsQuery.isPending}
+        isRetrying={statsQuery.isFetching && !statsQuery.isPending}
+        errorMessage={statsErrorMessage}
+        onRetry={() => void statsQuery.refetch()}
+      />
       <CodingProblemCatalog
         problems={problems}
         selectedTopic={selectedTopic}

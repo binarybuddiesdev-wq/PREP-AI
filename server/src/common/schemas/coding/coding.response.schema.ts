@@ -8,6 +8,7 @@ import {
   CODING_SESSION_FETCHED,
   CODING_SESSION_STARTED,
   CODING_SESSIONS_FETCHED,
+  CODING_STATS_FETCHED,
   CODING_SUBMISSION_QUEUED,
   successResponseSchema,
 } from '@/common/constants/api.constants.js';
@@ -175,6 +176,31 @@ const codingHistorySchema = {
   },
 };
 
+const codingStatsSchema = {
+  type: 'object',
+  required: ['solved', 'dailySolved', 'dailyReviews', 'streakDays'],
+  properties: {
+    solved: { type: 'integer', minimum: 0 },
+    dailySolved: {
+      type: 'object',
+      required: ['used', 'limit'],
+      properties: {
+        used: { type: 'integer', minimum: 0 },
+        limit: { type: 'integer', minimum: 0 },
+      },
+    },
+    dailyReviews: {
+      type: 'object',
+      required: ['used', 'limit'],
+      properties: {
+        used: { type: 'integer', minimum: 0 },
+        limit: { type: 'integer', minimum: 0 },
+      },
+    },
+    streakDays: { type: 'integer', minimum: 0 },
+  },
+};
+
 export const CodingProblemsResponse = {
   status: 200,
   description: CODING_PROBLEMS_FETCHED,
@@ -224,4 +250,9 @@ export const CodingSessionHistoryResponse = {
   status: 200,
   description: CODING_SESSIONS_FETCHED,
   ...successResponseSchema(codingHistorySchema, CODING_SESSIONS_FETCHED),
+};
+export const CodingStatsResponse = {
+  status: 200,
+  description: CODING_STATS_FETCHED,
+  ...successResponseSchema(codingStatsSchema, CODING_STATS_FETCHED),
 };

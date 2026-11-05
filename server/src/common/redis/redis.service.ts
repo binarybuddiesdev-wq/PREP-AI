@@ -390,6 +390,19 @@ export class RedisService implements OnModuleDestroy {
     return { status: mappedStatus, count };
   }
 
+  async getQuotaUsage(quotaKey: string): Promise<number> {
+    const rawUsage = await this.client.get(quotaKey);
+    if (rawUsage === null) return 0;
+    if (!/^\d+$/.test(rawUsage)) {
+      throw new Error('invalid quota usage counter value');
+    }
+    const usage = Number(rawUsage);
+    if (!Number.isSafeInteger(usage) || usage < 0) {
+      throw new Error('invalid quota usage counter value');
+    }
+    return usage;
+  }
+
   async finalizeUniqueQuota(
     quotaKey: string,
     itemKey: string,

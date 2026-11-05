@@ -10,3 +10,5 @@ export { CodingProblemWorkspace } from './CodingProblemWorkspace';
 export { CodingReviewDialog } from './CodingReviewDialog';
 export type { ICodingReviewDialogProps } from './CodingReviewDialog.types';
 export type { ICodingProblemWorkspaceProps } from './CodingProblemWorkspace.types';
+export { CodingStatsBar } from './CodingStatsBar';
+export type { ICodingStatsBarProps } from './CodingStatsBar.types';
