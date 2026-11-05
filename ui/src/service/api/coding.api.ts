@@ -4,6 +4,7 @@ import type {
   ICodingExecutionAccepted,
   ICodingProblem,
   ICodingProblemSummary,
+  ICodingReviewResponse,
   ICodingSession,
   ICodingSessionHistory,
   IExecuteCodingBody,
@@ -80,3 +81,14 @@ export const getCodingExecution = (
       `coding/session/${encodeURIComponent(sessionId)}/executions/${encodeURIComponent(executionId)}`
     )
     .json<IApiEnvelope<ICodingExecution>>();
+
+export const requestCodingReview = (
+  api: ApiClient,
+  sessionId: string,
+  executionId: string
+): Promise<IApiEnvelope<ICodingReviewResponse>> =>
+  api
+    .post(
+      `coding/session/${encodeURIComponent(sessionId)}/executions/${encodeURIComponent(executionId)}/review`
+    )
+    .json<IApiEnvelope<ICodingReviewResponse>>();

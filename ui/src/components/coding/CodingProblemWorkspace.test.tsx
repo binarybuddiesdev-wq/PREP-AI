@@ -59,6 +59,9 @@ const createProps = () => ({
   onSubmit: vi.fn(),
   onRetry: vi.fn(),
   onRetryExecutionRead: vi.fn(),
+  reviewActionPending: false,
+  reviewActionError: null as { message: string; canRetry: boolean } | null,
+  onRequestReview: vi.fn(),
 });
 
 describe('CodingProblemWorkspace', () => {
@@ -238,5 +241,270 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Execution status could not be loaded.');
     await user.click(screen.getByRole('button', { name: 'Retry status check' }));
     expect(props.onRetryExecutionRead).toHaveBeenCalledOnce();
+  });
+
+  it('offers an AI review only for a completed submission and sends the request', async () => {
+    const user = userEvent.setup();
+    const props = createProps();
+    const execution: ICodingExecution = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: problem.id,
+      operation: 'submit',
+      language: 'javascript',
+      status: 'completed',
+      result: {
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        testCases: [],
+        runtime: null,
+        memoryUsage: null,
+      },
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: {
+        id: 'answer-one',
+        executionId: 'execution-one',
+        sessionId: 'session-one',
+        userId: 'user-one',
+        problemId: problem.id,
+        language: 'javascript',
+        code: problem.codeJs,
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        runtime: null,
+        memoryUsage: null,
+        createdAt: '2026-11-05T10:00:02.000Z',
+        aiReviewStatus: 'not_requested',
+        aiReviewJson: null,
+        aiReviewFailureMessage: null,
+      },
+    };
+    render(<CodingProblemWorkspace {...props} execution={execution} outputTab="testcases" />);
+    await user.click(screen.getByRole('button', { name: 'AI Review' }));
+    const reviewDialog = await screen.findByRole('dialog', { name: 'AI Review: Two Sum' });
+    await user.click(within(reviewDialog).getByRole('button', { name: 'Request AI Review' }));
+
+    expect(props.onRequestReview).toHaveBeenCalledOnce();
+  });
+
+  it('renders the completed structured AI review in the result panel', async () => {
+    const user = userEvent.setup();
+    const props = createProps();
+    const completedExecution: ICodingExecution = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: problem.id,
+      operation: 'submit',
+      language: 'javascript',
+      status: 'completed',
+      result: null,
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: {
+        id: 'answer-one',
+        executionId: 'execution-one',
+        sessionId: 'session-one',
+        userId: 'user-one',
+        problemId: problem.id,
+        language: 'javascript',
+        code: problem.codeJs,
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        runtime: null,
+        memoryUsage: null,
+        createdAt: '2026-11-05T10:00:02.000Z',
+        aiReviewStatus: 'completed',
+        aiReviewJson: {
+          summary: 'A clear single-pass solution.',
+          timeComplexity: 'O(n log n)',
+          spaceComplexity: 'O(1)',
+          strengths: ['Uses a hash map'],
+          improvements: ['Add input validation'],
+        },
+        aiReviewFailureMessage: null,
+      },
+    };
+    render(
+      <CodingProblemWorkspace {...props} execution={completedExecution} outputTab="testcases" />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'AI Review' }));
+    expect(screen.getByRole('heading', { name: 'AI Review: Two Sum' })).toBeInTheDocument();
+    expect(screen.getByText('A clear single-pass solution.')).toBeInTheDocument();
+    expect(screen.getByText('O(n log n)')).toBeInTheDocument();
+    expect(screen.getByText('O(1)')).toBeInTheDocument();
+    expect(screen.getByText('Uses a hash map')).toBeInTheDocument();
+    expect(screen.getByText('Add input validation')).toBeInTheDocument();
+  });
+
+  it('shows a failed AI review safely and offers an explicit retry', async () => {
+    const user = userEvent.setup();
+    const props = createProps();
+    const execution: ICodingExecution = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: problem.id,
+      operation: 'submit',
+      language: 'javascript',
+      status: 'completed',
+      result: null,
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: {
+        id: 'answer-one',
+        executionId: 'execution-one',
+        sessionId: 'session-one',
+        userId: 'user-one',
+        problemId: problem.id,
+        language: 'javascript',
+        code: problem.codeJs,
+        status: 'error',
+        testCasesPassed: 0,
+        testCasesTotal: 1,
+        runtime: null,
+        memoryUsage: null,
+        createdAt: '2026-11-05T10:00:02.000Z',
+        aiReviewStatus: 'failed',
+        aiReviewJson: null,
+        aiReviewFailureMessage: 'review_unavailable',
+      },
+    };
+    render(<CodingProblemWorkspace {...props} execution={execution} outputTab="testcases" />);
+
+    await user.click(screen.getByRole('button', { name: 'AI Review' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The AI review service is temporarily unavailable. Please try again.'
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent('review_unavailable');
+    await user.click(screen.getByRole('button', { name: 'Retry AI Review' }));
+    expect(props.onRequestReview).toHaveBeenCalledOnce();
+  });
+
+  it.each(['queued', 'running'] as const)(
+    'shows review progress while %s without offering duplicate review actions',
+    async (reviewStatus) => {
+      const user = userEvent.setup();
+      const props = createProps();
+      const execution: ICodingExecution = {
+        id: 'execution-one',
+        sessionId: 'session-one',
+        problemId: problem.id,
+        operation: 'submit',
+        language: 'javascript',
+        status: 'completed',
+        result: null,
+        failureMessage: null,
+        createdAt: '2026-11-05T10:00:00.000Z',
+        startedAt: '2026-11-05T10:00:01.000Z',
+        completedAt: '2026-11-05T10:00:02.000Z',
+        answer: {
+          id: 'answer-one',
+          executionId: 'execution-one',
+          sessionId: 'session-one',
+          userId: 'user-one',
+          problemId: problem.id,
+          language: 'javascript',
+          code: problem.codeJs,
+          status: 'accepted',
+          testCasesPassed: 1,
+          testCasesTotal: 1,
+          runtime: null,
+          memoryUsage: null,
+          createdAt: '2026-11-05T10:00:02.000Z',
+          aiReviewStatus: reviewStatus,
+          aiReviewJson: null,
+          aiReviewFailureMessage: null,
+        },
+      };
+      render(<CodingProblemWorkspace {...props} execution={execution} outputTab="testcases" />);
+
+      await user.click(screen.getByRole('button', { name: 'AI Review' }));
+      expect(screen.getByRole('status')).toHaveTextContent(
+        reviewStatus === 'queued' ? 'Your AI review is queued' : 'Your AI review is running'
+      );
+      expect(screen.queryByRole('button', { name: /AI Review/ })).not.toBeInTheDocument();
+    }
+  );
+
+  it.each([
+    ['run', 'completed'],
+    ['submit', 'running'],
+  ] as const)('does not offer a review for a %s execution that is %s', (operation, status) => {
+    const props = createProps();
+    const execution: ICodingExecution = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: problem.id,
+      operation,
+      language: 'javascript',
+      status,
+      result: null,
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: status === 'completed' ? '2026-11-05T10:00:02.000Z' : null,
+      answer: null,
+    };
+    render(<CodingProblemWorkspace {...props} execution={execution} outputTab="testcases" />);
+
+    expect(screen.queryByRole('button', { name: /AI Review/ })).not.toBeInTheDocument();
+  });
+
+  it('shows review request errors and keeps a retry action available', async () => {
+    const user = userEvent.setup();
+    const props = createProps();
+    render(
+      <CodingProblemWorkspace
+        {...props}
+        reviewActionError={{ message: 'Daily AI review limit reached.', canRetry: true }}
+        execution={{
+          id: 'execution-one',
+          sessionId: 'session-one',
+          problemId: problem.id,
+          operation: 'submit',
+          language: 'javascript',
+          status: 'completed',
+          result: null,
+          failureMessage: null,
+          createdAt: '2026-11-05T10:00:00.000Z',
+          startedAt: '2026-11-05T10:00:01.000Z',
+          completedAt: '2026-11-05T10:00:02.000Z',
+          answer: {
+            id: 'answer-one',
+            executionId: 'execution-one',
+            sessionId: 'session-one',
+            userId: 'user-one',
+            problemId: problem.id,
+            language: 'javascript',
+            code: problem.codeJs,
+            status: 'accepted',
+            testCasesPassed: 1,
+            testCasesTotal: 1,
+            runtime: null,
+            memoryUsage: null,
+            createdAt: '2026-11-05T10:00:02.000Z',
+            aiReviewStatus: 'not_requested',
+            aiReviewJson: null,
+            aiReviewFailureMessage: null,
+          },
+        }}
+        outputTab="testcases"
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'AI Review' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Daily AI review limit reached.');
+    await user.click(screen.getByRole('button', { name: 'Retry AI Review' }));
+    expect(props.onRequestReview).toHaveBeenCalledOnce();
   });
 });

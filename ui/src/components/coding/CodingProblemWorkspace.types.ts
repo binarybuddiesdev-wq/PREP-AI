@@ -3,6 +3,7 @@ import type {
   CodingLanguage,
   CodingOutputTab,
   ICodingExecution,
+  ICodingReviewRequestError,
   ICodingProblem,
 } from '@/core';
 
@@ -17,6 +18,8 @@ export interface ICodingProblemWorkspaceProps {
   isActionPending: boolean;
   actionError: { operation: CodingExecutionOperation; message: string } | null;
   executionReadError: string | null;
+  reviewActionPending: boolean;
+  reviewActionError: ICodingReviewRequestError | null;
   onBack: () => void;
   onLanguageChange: (language: CodingLanguage) => void;
   onCodeChange: (code: string) => void;
@@ -28,4 +31,5 @@ export interface ICodingProblemWorkspaceProps {
   onSubmit: () => void;
   onRetry: () => void;
   onRetryExecutionRead: () => void;
+  onRequestReview: () => void;
 }

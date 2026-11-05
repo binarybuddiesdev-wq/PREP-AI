@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -10,10 +10,12 @@ import {
   Play,
   RotateCcw,
   Send,
+  Sparkles,
   X,
 } from 'lucide-react';
 
 import type { CodingExecutionOperation, CodingLanguage, ICodingExecution } from '@/core';
+import { CodingReviewDialog } from './CodingReviewDialog';
 import { CodingProblemContent } from './CodingProblemContent';
 import { CodingEditor } from './CodingEditor';
 import type { ICodingProblemWorkspaceProps } from './CodingProblemWorkspace.types';
@@ -51,6 +53,8 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     isActionPending,
     actionError,
     executionReadError,
+    reviewActionPending,
+    reviewActionError,
     onBack,
     onLanguageChange,
     onCodeChange,
@@ -62,6 +66,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     onSubmit,
     onRetry,
     onRetryExecutionRead,
+    onRequestReview,
   } = props;
   const selectedLanguage = LANGUAGES.find((item) => item.value === language) ?? LANGUAGES[0];
   const fileBaseName = problem.title
@@ -77,6 +82,9 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
   const filename = `${fileBaseName}.${selectedLanguage.extension}`;
   const isExecutionActive = execution?.status === 'queued' || execution?.status === 'running';
   const isBusy = isActionPending || isExecutionActive;
+  const [isReviewOpen, setReviewOpen] = useState(false);
+  const reviewAnswer =
+    execution?.status === 'completed' && execution.operation === 'submit' ? execution.answer : null;
 
   useEffect(() => {
     if (!isFullscreen) return;
@@ -161,6 +169,16 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                 <Send aria-hidden="true" className="size-3" />
                 Submit
               </button>
+              {reviewAnswer ? (
+                <button
+                  type="button"
+                  onClick={() => setReviewOpen(true)}
+                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-violet-300 transition hover:bg-violet-400/[0.08] hover:text-violet-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300"
+                >
+                  <Sparkles aria-hidden="true" className="size-3.5" />
+                  AI Review
+                </button>
+              ) : null}
               <label className="relative inline-flex shrink-0 items-center">
                 <span className="sr-only">Programming language</span>
                 <select
@@ -367,13 +385,39 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     </section>
   );
 
-  if (!isFullscreen) return workspace;
+  const reviewDialog = reviewAnswer ? (
+    <CodingReviewDialog
+      isOpen={isReviewOpen}
+      problemTitle={problem.title}
+      answer={reviewAnswer}
+      isRequestPending={reviewActionPending}
+      requestError={reviewActionError}
+      onOpenChange={setReviewOpen}
+      onRequestReview={onRequestReview}
+    />
+  ) : null;
+
+  if (!isFullscreen)
+    return (
+      <>
+        {workspace}
+        {reviewDialog}
+      </>
+    );
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#09090b] p-2 sm:p-4">
-      <div role="dialog" aria-modal="true" aria-label="Fullscreen coding editor" className="h-full">
-        {workspace}
+    <>
+      <div className="fixed inset-0 z-50 bg-[#09090b] p-2 sm:p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Fullscreen coding editor"
+          className="h-full"
+        >
+          {workspace}
+        </div>
       </div>
-    </div>
+      {reviewDialog}
+    </>
   );
 };

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HTTPError } from 'ky';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -13,6 +13,7 @@ const queries = vi.hoisted(() => ({
   detail: vi.fn(),
   startCodingSession: vi.fn(),
   executeCoding: vi.fn(),
+  requestReview: vi.fn(),
   readExecution: vi.fn(),
   executionData: undefined as unknown,
 }));
@@ -23,6 +24,7 @@ vi.mock('@/logic', async (importOriginal) => ({
   useCodingProblemReader: queries.detail,
   useCodingSessionCommand: () => ({ mutateAsync: queries.startCodingSession, isPending: false }),
   useCodingExecutionCommand: () => ({ mutateAsync: queries.executeCoding, isPending: false }),
+  useCodingReviewCommand: () => ({ mutateAsync: queries.requestReview, isPending: false }),
   useCodingExecutionReader: (sessionId: string, executionId: string) => {
     queries.readExecution(sessionId, executionId);
     return { data: sessionId && executionId ? queries.executionData : undefined };
@@ -62,6 +64,8 @@ const detail: ICodingProblem = {
   codeTs: 'function solution(): void {}',
   codePy: 'def solution():\n    pass',
 };
+const sessionIdempotencyKey = '11111111-1111-4111-8111-111111111111';
+const executionIdempotencyKey = '22222222-2222-4222-8222-222222222222';
 
 const renderCodingRoutes = (initialPath: string) =>
   render(
@@ -94,6 +98,12 @@ describe('coding pages', () => {
     });
     queries.startCodingSession.mockResolvedValue({ id: 'session-one' });
     queries.executeCoding.mockResolvedValue({ id: 'execution-one', sessionId: 'session-one' });
+    queries.requestReview.mockResolvedValue({
+      id: 'answer-one',
+      status: 'queued',
+      aiReviewJson: null,
+      aiReviewFailureMessage: null,
+    });
     queries.executionData = undefined;
     queries.readExecution.mockClear();
   });
@@ -135,8 +145,8 @@ describe('coding pages', () => {
   it('starts a session only when Run is pressed and sends the current code snapshot', async () => {
     const user = userEvent.setup();
     vi.spyOn(globalThis.crypto, 'randomUUID')
-      .mockReturnValueOnce('session-key-one')
-      .mockReturnValueOnce('execution-key-one');
+      .mockReturnValueOnce(sessionIdempotencyKey)
+      .mockReturnValueOnce(executionIdempotencyKey);
     renderCodingRoutes('/coding/two-sum');
 
     expect(queries.startCodingSession).not.toHaveBeenCalled();
@@ -145,13 +155,13 @@ describe('coding pages', () => {
     await waitFor(() => expect(queries.executeCoding).toHaveBeenCalledOnce());
     expect(queries.startCodingSession).toHaveBeenCalledWith({
       body: { problemIds: ['problem-one'] },
-      idempotencyKey: 'session-key-one',
+      idempotencyKey: sessionIdempotencyKey,
     });
     expect(queries.executeCoding).toHaveBeenCalledWith({
       operation: 'run',
       sessionId: 'session-one',
       body: { problemId: 'problem-one', language: 'javascript', code: detail.codeJs },
-      idempotencyKey: 'execution-key-one',
+      idempotencyKey: executionIdempotencyKey,
     });
     expect(queries.readExecution).toHaveBeenLastCalledWith('session-one', 'execution-one');
   });
@@ -159,8 +169,8 @@ describe('coding pages', () => {
   it('retries the exact failed submission with the original code and idempotency key', async () => {
     const user = userEvent.setup();
     vi.spyOn(globalThis.crypto, 'randomUUID')
-      .mockReturnValueOnce('session-key-one')
-      .mockReturnValueOnce('execution-key-one');
+      .mockReturnValueOnce(sessionIdempotencyKey)
+      .mockReturnValueOnce(executionIdempotencyKey);
     queries.executeCoding
       .mockRejectedValueOnce(new Error('Code execution rate limit exceeded.'))
       .mockResolvedValueOnce({ id: 'execution-one', sessionId: 'session-one' });
@@ -179,21 +189,21 @@ describe('coding pages', () => {
       operation: 'submit',
       sessionId: 'session-one',
       body: { problemId: 'problem-one', language: 'javascript', code: detail.codeJs },
-      idempotencyKey: 'execution-key-one',
+      idempotencyKey: executionIdempotencyKey,
     });
     expect(queries.executeCoding).toHaveBeenNthCalledWith(2, {
       operation: 'submit',
       sessionId: 'session-one',
       body: { problemId: 'problem-one', language: 'javascript', code: detail.codeJs },
-      idempotencyKey: 'execution-key-one',
+      idempotencyKey: executionIdempotencyKey,
     });
   });
 
   it('retries a failed session start with the same start idempotency key', async () => {
     const user = userEvent.setup();
     vi.spyOn(globalThis.crypto, 'randomUUID')
-      .mockReturnValueOnce('session-key-one')
-      .mockReturnValueOnce('execution-key-one');
+      .mockReturnValueOnce(sessionIdempotencyKey)
+      .mockReturnValueOnce(executionIdempotencyKey);
     queries.startCodingSession
       .mockRejectedValueOnce(new Error('Could not start coding session.'))
       .mockResolvedValueOnce({ id: 'session-one' });
@@ -206,11 +216,11 @@ describe('coding pages', () => {
     await waitFor(() => expect(queries.executeCoding).toHaveBeenCalledOnce());
     expect(queries.startCodingSession).toHaveBeenNthCalledWith(1, {
       body: { problemIds: ['problem-one'] },
-      idempotencyKey: 'session-key-one',
+      idempotencyKey: sessionIdempotencyKey,
     });
     expect(queries.startCodingSession).toHaveBeenNthCalledWith(2, {
       body: { problemIds: ['problem-one'] },
-      idempotencyKey: 'session-key-one',
+      idempotencyKey: sessionIdempotencyKey,
     });
   });
 
@@ -243,6 +253,133 @@ describe('coding pages', () => {
 
     expect(await screen.findByText('Accepted')).toBeInTheDocument();
     expect(screen.getByText('1 of 1 test cases passed')).toBeInTheDocument();
+  });
+
+  it('surfaces a failed review request and lets the user retry it', async () => {
+    const user = userEvent.setup();
+    queries.requestReview
+      .mockRejectedValueOnce(new Error('Daily AI review limit reached.'))
+      .mockResolvedValueOnce({
+        id: 'answer-one',
+        status: 'queued',
+        aiReviewJson: null,
+        aiReviewFailureMessage: null,
+      });
+    queries.executionData = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: 'problem-one',
+      operation: 'submit',
+      language: 'javascript',
+      status: 'completed',
+      result: {
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        testCases: [],
+        runtime: null,
+        memoryUsage: null,
+      },
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: {
+        id: 'answer-one',
+        executionId: 'execution-one',
+        sessionId: 'session-one',
+        userId: 'user-one',
+        problemId: 'problem-one',
+        language: 'javascript',
+        code: detail.codeJs,
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        runtime: null,
+        memoryUsage: null,
+        createdAt: '2026-11-05T10:00:02.000Z',
+        aiReviewStatus: 'not_requested',
+        aiReviewJson: null,
+        aiReviewFailureMessage: null,
+      },
+    };
+    renderCodingRoutes('/coding/two-sum');
+
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    await user.click(await screen.findByRole('button', { name: 'AI Review' }));
+    const reviewDialog = await screen.findByRole('dialog', { name: 'AI Review: Two Sum' });
+    expect(
+      within(reviewDialog).getByRole('button', { name: 'Request AI Review' })
+    ).toBeInTheDocument();
+    await user.click(within(reviewDialog).getByRole('button', { name: 'Request AI Review' }));
+    expect(await within(reviewDialog).findByRole('alert')).toHaveTextContent(
+      'Daily AI review limit reached.'
+    );
+    await user.click(within(reviewDialog).getByRole('button', { name: 'Retry AI Review' }));
+
+    expect(queries.requestReview).toHaveBeenNthCalledWith(1, {
+      sessionId: 'session-one',
+      executionId: 'execution-one',
+    });
+    expect(queries.requestReview).toHaveBeenNthCalledWith(2, {
+      sessionId: 'session-one',
+      executionId: 'execution-one',
+    });
+  });
+
+  it('explains review quota exhaustion and does not offer an immediate retry', async () => {
+    const user = userEvent.setup();
+    const quotaError = new HTTPError(
+      new Response(null, { status: 409 }),
+      new Request(
+        'http://api.test/api/v1/coding/session/session-one/executions/execution-one/review'
+      ),
+      {} as never
+    );
+    quotaError.message = 'Daily AI code review limit reached';
+    queries.requestReview.mockRejectedValue(quotaError);
+    queries.executionData = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: 'problem-one',
+      operation: 'submit',
+      language: 'javascript',
+      status: 'completed',
+      result: null,
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: {
+        id: 'answer-one',
+        executionId: 'execution-one',
+        sessionId: 'session-one',
+        userId: 'user-one',
+        problemId: 'problem-one',
+        language: 'javascript',
+        code: detail.codeJs,
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        runtime: null,
+        memoryUsage: null,
+        createdAt: '2026-11-05T10:00:02.000Z',
+        aiReviewStatus: 'not_requested',
+        aiReviewJson: null,
+        aiReviewFailureMessage: null,
+      },
+    };
+    renderCodingRoutes('/coding/two-sum');
+
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    await user.click(await screen.findByRole('button', { name: 'AI Review' }));
+    const reviewDialog = await screen.findByRole('dialog', { name: 'AI Review: Two Sum' });
+    await user.click(within(reviewDialog).getByRole('button', { name: 'Request AI Review' }));
+
+    expect(await within(reviewDialog).findByRole('alert')).toHaveTextContent(
+      'You have reached your daily AI review limit. It resets at 00:00 UTC.'
+    );
+    expect(within(reviewDialog).queryByRole('button', { name: 'Retry AI Review' })).toBeNull();
   });
 
   it('exposes loading and retryable catalogue errors', async () => {

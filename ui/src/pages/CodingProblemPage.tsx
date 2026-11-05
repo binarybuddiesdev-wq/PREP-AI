@@ -8,14 +8,17 @@ import type {
   CodingLanguage,
   CodingOutputTab,
   ICodingProblem,
+  ICodingReviewRequestError,
   IExecuteCodingBody,
 } from '@/core';
 import { ROUTES } from '@/core';
 import {
   getHttpStatus,
+  getCodingReviewRequestError,
   useCodingExecutionCommand,
   useCodingExecutionReader,
   useCodingProblemReader,
+  useCodingReviewCommand,
   useCodingSessionCommand,
 } from '@/logic';
 
@@ -116,11 +119,15 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
     operation: CodingExecutionOperation;
     message: string;
   } | null>(null);
+  const [reviewActionError, setReviewActionError] = useState<ICodingReviewRequestError | null>(
+    null
+  );
   const sessionIdempotencyKey = useRef<string | null>(null);
   const attemptRef = useRef<ICodingExecutionAttempt | null>(null);
   const actionInProgress = useRef(false);
   const startSessionCommand = useCodingSessionCommand();
   const executionCommand = useCodingExecutionCommand();
+  const reviewCommand = useCodingReviewCommand();
   const executionQuery = useCodingExecutionReader(sessionId, executionId);
   const code = codeByLanguage[language] ?? starterCode(problem, language);
 
@@ -167,6 +174,7 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
 
   const handleAction = (operation: CodingExecutionOperation) => {
     if (actionInProgress.current) return;
+    setReviewActionError(null);
     if (!sessionId) sessionIdempotencyKey.current ??= crypto.randomUUID();
     const attempt: ICodingExecutionAttempt = {
       operation,
@@ -178,6 +186,15 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
 
   const retryAttempt = () => {
     if (attemptRef.current) void executeAttempt(attemptRef.current);
+  };
+  const requestReview = async () => {
+    if (!sessionId || !executionId) return;
+    setReviewActionError(null);
+    try {
+      await reviewCommand.mutateAsync({ sessionId, executionId });
+    } catch (error: unknown) {
+      setReviewActionError(getCodingReviewRequestError(error));
+    }
   };
   const executionReadError =
     executionQuery.isError && executionQuery.error instanceof Error
@@ -199,6 +216,8 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
         }
         actionError={actionError}
         executionReadError={executionReadError}
+        reviewActionPending={reviewCommand.isPending}
+        reviewActionError={reviewActionError}
         onBack={onBack}
         onLanguageChange={setLanguage}
         onCodeChange={(nextCode) =>
@@ -217,6 +236,7 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
         onSubmit={() => handleAction('submit')}
         onRetry={retryAttempt}
         onRetryExecutionRead={() => void executionQuery.refetch()}
+        onRequestReview={() => void requestReview()}
       />
     </main>
   );

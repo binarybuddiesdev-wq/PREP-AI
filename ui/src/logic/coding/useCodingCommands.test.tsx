@@ -3,9 +3,19 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { IExecuteCodingBody, IStartCodingSessionBody } from '@/core';
-import { runCodingCode, startCodingSession, submitCodingSolution } from '@/service/api';
-import { useCodingExecutionCommand, useCodingSessionCommand } from './useCodingCommands';
+import type { ICodingExecution, IExecuteCodingBody, IStartCodingSessionBody } from '@/core';
+import {
+  requestCodingReview,
+  runCodingCode,
+  startCodingSession,
+  submitCodingSolution,
+} from '@/service/api';
+import { codingKeys } from './coding.keys';
+import {
+  useCodingExecutionCommand,
+  useCodingReviewCommand,
+  useCodingSessionCommand,
+} from './useCodingCommands';
 
 const session = vi.hoisted(() => ({ isLoaded: true, isSignedIn: true, user: { id: 'user-one' } }));
 
@@ -13,6 +23,7 @@ vi.mock('../auth', () => ({ useSessionReader: () => ({ ...session }) }));
 vi.mock('../api', () => ({ useApiClient: () => ({}) }));
 vi.mock('@/service/api', () => ({
   runCodingCode: vi.fn(),
+  requestCodingReview: vi.fn(),
   startCodingSession: vi.fn(),
   submitCodingSolution: vi.fn(),
 }));
@@ -65,10 +76,7 @@ describe('coding commands', () => {
     await waitFor(() => expect(result.current.data).toEqual(startedSession));
   });
 
-  it.each([
-    ['run', 'runCodingCode'],
-    ['submit', 'submitCodingSolution'],
-  ] as const)(
+  it.each(['run', 'submit'] as const)(
     'routes the %s command with the captured body and idempotency key',
     async (operation) => {
       const request = operation === 'run' ? runCodingCode : submitCodingSolution;
@@ -116,5 +124,64 @@ describe('coding commands', () => {
 
     await waitFor(() => expect(result.current.error).toBe(networkError));
     expect(result.current.variables).toBe(variables);
+  });
+
+  it('requests a review and refreshes that execution after the server accepts it', async () => {
+    const review = {
+      id: 'answer-one',
+      status: 'queued' as const,
+      aiReviewJson: null,
+      aiReviewFailureMessage: null,
+    };
+    vi.mocked(requestCodingReview).mockResolvedValue(envelope(review));
+    const queryClient = new QueryClient();
+    const queryKey = codingKeys.execution('user-one', 'session-one', 'execution-one');
+    const currentExecution: ICodingExecution = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: 'problem-one',
+      operation: 'submit',
+      language: 'javascript',
+      status: 'completed',
+      result: null,
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: {
+        id: 'answer-one',
+        executionId: 'execution-one',
+        sessionId: 'session-one',
+        userId: 'user-one',
+        problemId: 'problem-one',
+        language: 'javascript',
+        code: 'return 1;',
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        runtime: null,
+        memoryUsage: null,
+        createdAt: '2026-11-05T10:00:02.000Z',
+        aiReviewStatus: 'not_requested',
+        aiReviewJson: null,
+        aiReviewFailureMessage: null,
+      },
+    };
+    queryClient.setQueryData(queryKey, currentExecution);
+    const { result } = renderHook(() => useCodingReviewCommand(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await act(async () =>
+      result.current.mutateAsync({ sessionId: 'session-one', executionId: 'execution-one' })
+    );
+
+    expect(requestCodingReview).toHaveBeenCalledWith({}, 'session-one', 'execution-one');
+    await waitFor(() => {
+      expect(queryClient.getQueryCache().find({ queryKey })?.state.isInvalidated).toBe(true);
+    });
+    expect(queryClient.getQueryData<ICodingExecution>(queryKey)?.answer?.aiReviewStatus).toBe(
+      'queued'
+    );
   });
 });

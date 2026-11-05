@@ -20,8 +20,11 @@ export const useCodingExecutionReader = (sessionId: string, executionId: string)
     enabled:
       isLoaded && isSignedIn && Boolean(userId) && Boolean(sessionId) && Boolean(executionId),
     refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status === 'queued' || status === 'running' ? EXECUTION_POLL_INTERVAL_MS : false;
+      const executionStatus = query.state.data?.status;
+      const reviewStatus = query.state.data?.answer?.aiReviewStatus;
+      const isExecutionActive = executionStatus === 'queued' || executionStatus === 'running';
+      const isReviewActive = reviewStatus === 'queued' || reviewStatus === 'running';
+      return isExecutionActive || isReviewActive ? EXECUTION_POLL_INTERVAL_MS : false;
     },
   });
   const execution = executionQuery.data;

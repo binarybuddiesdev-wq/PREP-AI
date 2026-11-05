@@ -4,6 +4,7 @@ export type CodingOutputTab = 'output' | 'testcases';
 export type CodingExecutionOperation = 'run' | 'submit';
 export type CodingExecutionStatus = 'queued' | 'running' | 'completed' | 'failed';
 export type CodingExecutionVerdict = 'accepted' | 'wrong_answer' | 'error';
+export type CodingReviewStatus = 'not_requested' | 'queued' | 'running' | 'completed' | 'failed';
 
 export interface ICodingProblemSummary {
   id: string;
@@ -80,6 +81,26 @@ export interface ICodingExecutionResult {
   memoryUsage: number | null;
 }
 
+export interface ICodingReviewResult {
+  summary: string;
+  timeComplexity: string;
+  spaceComplexity: string;
+  strengths: string[];
+  improvements: string[];
+}
+
+export interface ICodingReviewResponse {
+  id: string;
+  status: CodingReviewStatus;
+  aiReviewJson: ICodingReviewResult | null;
+  aiReviewFailureMessage: string | null;
+}
+
+export interface ICodingReviewRequestError {
+  message: string;
+  canRetry: boolean;
+}
+
 export interface ICodingExecutionAnswer {
   id: string;
   executionId: string | null;
@@ -94,6 +115,9 @@ export interface ICodingExecutionAnswer {
   runtime: number | null;
   memoryUsage: number | null;
   createdAt: string;
+  aiReviewStatus: CodingReviewStatus;
+  aiReviewJson: ICodingReviewResult | null;
+  aiReviewFailureMessage: string | null;
 }
 
 export interface ICodingExecution {

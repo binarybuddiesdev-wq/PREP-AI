@@ -8,6 +8,7 @@ import {
   getCodingProblem,
   getCodingProblems,
   getCodingSessionHistory,
+  requestCodingReview,
   runCodingCode,
   startCodingSession,
   submitCodingSolution,
@@ -236,5 +237,37 @@ describe('coding API', () => {
     expect(requests[0].url).toBe(
       'http://api.test/api/v1/coding/session/session%2Fone/executions/execution%2Fone'
     );
+  });
+
+  it('requests an AI review for a submitted execution without sending a client body', async () => {
+    const requests: Request[] = [];
+    const review = {
+      id: 'answer-one',
+      status: 'queued' as const,
+      aiReviewJson: null,
+      aiReviewFailureMessage: null,
+    };
+    const api = createApiClient({
+      baseUrl: 'http://api.test',
+      getToken: async () => 'token',
+      fetchImplementation: async (request) => {
+        requests.push(request instanceof Request ? request.clone() : new Request(request));
+        return new Response(JSON.stringify({ success: true, message: 'queued', data: review }), {
+          status: 202,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+
+    await expect(requestCodingReview(api, 'session/one', 'execution/one')).resolves.toEqual({
+      success: true,
+      message: 'queued',
+      data: review,
+    });
+    expect(requests[0].method).toBe('POST');
+    expect(requests[0].url).toBe(
+      'http://api.test/api/v1/coding/session/session%2Fone/executions/execution%2Fone/review'
+    );
+    expect(requests[0].body).toBeNull();
   });
 });

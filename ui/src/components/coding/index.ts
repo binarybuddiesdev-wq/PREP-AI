@@ -7,4 +7,6 @@ export type { ICodingProblemContentProps } from './CodingProblemContent.types';
 export { CodingEditor } from './CodingEditor';
 export type { ICodingEditorProps } from './CodingEditor.types';
 export { CodingProblemWorkspace } from './CodingProblemWorkspace';
+export { CodingReviewDialog } from './CodingReviewDialog';
+export type { ICodingReviewDialogProps } from './CodingReviewDialog.types';
 export type { ICodingProblemWorkspaceProps } from './CodingProblemWorkspace.types';

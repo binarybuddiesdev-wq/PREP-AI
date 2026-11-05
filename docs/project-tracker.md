@@ -153,10 +153,11 @@ session had no authenticated browser surface.
 
 ### Phase 5 — Coding challenges
 
-**Status: Catalogue, detail, editor, and asynchronous Run/Submit flows implemented; AI review and coding history remain pending.**
+**Status: Catalogue, detail, editor, asynchronous Run/Submit, and AI Review flows implemented; coding history remains pending.**
 Problem listing, sessions, run/submit execution, results, history, AI review,
-and quotas exist. Public production execution remains gated on stronger Piston
-isolation.
+and quotas exist. AI Review follows the reference toolbar-and-dialog flow and
+uses the asynchronous review job/status API. Public production execution remains
+gated on stronger Piston isolation.
 
 - [x] Build the problem list, topic/difficulty filters, user-specific solved
       state, and problem details/examples/constraints.
@@ -164,7 +165,7 @@ isolation.
       test-case tabs, reset, fullscreen, and collapsible problem description.
 - [x] Connect Run and Submit to the asynchronous coding API and render real
       queued/running/completed results and limits.
-- [ ] Connect AI Review to the review job/status/result flow and show structured
+- [x] Connect AI Review to the review job/status/result flow and show structured
       complexity, quality, and suggestion fields.
 - [ ] Add coding stats/history from backend results; do not use browser storage
       as the source of truth for solved status or quotas.
