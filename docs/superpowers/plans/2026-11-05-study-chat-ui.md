@@ -128,4 +128,4 @@
 - [x] Run the Impeccable detector on changed UI targets and resolve actionable findings.
 - [x] Update Phase 6 and worklog with completed scope and actual verification evidence.
 - [x] Run read-only frontend architecture, QA, and correctness reviews; fix any concrete findings and rerun affected checks.
-- [ ] Commit only Study Chat files with a lowercase Conventional Commit message and push `main`.
+- [x] Commit only Study Chat files with a lowercase Conventional Commit message and push `main`.
