@@ -1,3 +1,16 @@
+## 2026-11-05 - Add global route and topic search
+
+- Added an accessible app-shell search dialog with `Ctrl+K` / `Command+K`,
+  arrow-key selection, Escape dismissal, loading/error/retry states, and
+  theme-aware styling. Search covers implemented destinations and real topics
+  fetched on demand through the user-scoped TanStack Query reader.
+- Selecting a topic opens Practice with its validated API topic ID preselected.
+- Verification: 120 UI test files / 507 tests, UI lint, TypeScript project
+  check, production build, changed-file formatting, and `git diff --check` pass.
+  A live Chrome check of the signed-out route reported no JavaScript or console
+  errors. Playwright could not launch because its pinned headless Chromium
+  executable is not installed; search interaction is covered by component tests.
+
 ## 2026-11-05 - Add persistent Study Chat to the frontend
 
 - Added the floating assistant to the authenticated shell with compact and

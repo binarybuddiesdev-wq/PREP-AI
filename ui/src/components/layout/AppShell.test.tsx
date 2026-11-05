@@ -70,6 +70,22 @@ describe('AppShell', () => {
     expect(banner.getByRole('button', { name: 'Clerk user menu' })).toBeVisible();
   });
 
+  it('renders leading header actions before the theme control', () => {
+    render(
+      <AppShell
+        {...createShellProps({
+          headerLeadingActions: <button type="button">Search</button>,
+        })}
+      />
+    );
+
+    const banner = within(screen.getByRole('banner'));
+    const search = banner.getByRole('button', { name: 'Search' });
+    const theme = banner.getByRole('button', { name: 'Switch to light theme' });
+    expect(search).toBeVisible();
+    expect(search.compareDocumentPosition(theme) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('routes from the sidebar and closes the mobile drawer after selection', async () => {
     const user = userEvent.setup();
     const props = createShellProps();

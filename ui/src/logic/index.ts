@@ -4,6 +4,7 @@ export * from './coding';
 export * from './dashboard';
 export * from './notifications';
 export * from './payment';
+export * from './search';
 export * from './pdf';
 export * from './studyChat';
 export * from './theory';

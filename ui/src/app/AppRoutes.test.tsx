@@ -19,6 +19,7 @@ vi.mock('@/service/auth', () => ({
 }));
 
 vi.mock('@/logic', () => ({
+  useGlobalSearch: () => ({ results: [], isLoading: false, errorMessage: null, retry: vi.fn() }),
   useSessionReader: () => ({
     isLoaded: true,
     isSignedIn: true,

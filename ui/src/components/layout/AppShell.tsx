@@ -12,6 +12,7 @@ export const AppShell = (props: IAppShellProps) => {
     children,
     collapseIcon,
     expandIcon,
+    headerLeadingActions,
     headerActions,
     mobileCloseIcon,
     mobileMenuIcon,
@@ -290,6 +291,7 @@ export const AppShell = (props: IAppShellProps) => {
               </span>
             </div>
             <div className="ml-3 flex shrink-0 items-center gap-2">
+              {headerLeadingActions}
               <button
                 type="button"
                 aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}

@@ -12,11 +12,13 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { useState } from 'react';
 import { matchRoutes, Outlet, useLocation, useNavigate } from 'react-router';
 
 import { AppShell, BrandLink, type IAppShellNavigationGroup } from '@/components/layout';
-import { ROUTES, type AppShellRoute } from '@/core';
-import { useSessionReader, useThemePreference } from '@/logic';
+import { GlobalSearch } from '@/components/search';
+import { ROUTES, type AppShellRoute, type IGlobalSearchResult } from '@/core';
+import { useGlobalSearch, useSessionReader, useThemePreference } from '@/logic';
 import { UserMenu } from '@/service/auth';
 import { StudyChatWidget } from './StudyChatWidget';
 import { NotificationCenter } from './NotificationCenter';
@@ -45,6 +47,9 @@ export const AuthenticatedLayoutPage = () => {
   const navigate = useNavigate();
   const { user } = useSessionReader();
   const { theme, toggleTheme } = useThemePreference();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const search = useGlobalSearch(searchQuery, isSearchOpen);
   const activeRoute: AppShellRoute = matchRoutes(
     [
       { path: ROUTES.historySessionDetail },
@@ -78,6 +83,14 @@ export const AuthenticatedLayoutPage = () => {
               : 'Dashboard';
   const userName = user?.firstName ?? user?.email ?? 'Account';
 
+  const selectSearchResult = (result: IGlobalSearchResult) => {
+    if (result.type === 'topic') {
+      navigate(`${ROUTES.practice}?topicId=${encodeURIComponent(result.topicId)}`);
+      return;
+    }
+    navigate(result.route);
+  };
+
   return (
     <>
       <AppShell
@@ -85,6 +98,20 @@ export const AuthenticatedLayoutPage = () => {
         brand={<BrandLink to={ROUTES.dashboard} size="small" />}
         collapseIcon={<PanelLeftClose size={16} />}
         expandIcon={<PanelLeftOpen size={16} />}
+        headerLeadingActions={
+          <GlobalSearch
+            isOpen={isSearchOpen}
+            query={searchQuery}
+            results={search.results}
+            isLoading={search.isLoading}
+            errorMessage={search.errorMessage}
+            theme={theme}
+            onOpenChange={setIsSearchOpen}
+            onQueryChange={setSearchQuery}
+            onRetry={() => void search.retry()}
+            onSelect={selectSearchResult}
+          />
+        }
         headerActions={<NotificationCenter theme={theme} />}
         mobileCloseIcon={<X size={20} />}
         mobileMenuIcon={<Menu size={20} />}

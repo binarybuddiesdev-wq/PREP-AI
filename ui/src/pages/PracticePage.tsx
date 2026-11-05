@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import {
   PracticeSetup,
@@ -21,6 +21,8 @@ import {
 
 export const PracticePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedTopicId = searchParams.get('topicId');
   const { isLoaded } = useSessionReader();
   const userQuery = useUserReader();
   const { topicsQuery, weakAreasQuery } = useTheoryPracticeReader();
@@ -30,6 +32,13 @@ export const PracticePage = () => {
   const [topicId, setTopicId] = useState('');
   const [difficulty, setDifficulty] = useState<TheoryDifficulty>('Mid');
   const [selectedPdfIds, setSelectedPdfIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!requestedTopicId || !topicsQuery.data?.some((topic) => topic.id === requestedTopicId)) {
+      return;
+    }
+    setTopicId(requestedTopicId);
+  }, [requestedTopicId, topicsQuery.data]);
 
   useEffect(() => {
     if (!pdfSourcesQuery.data) return;

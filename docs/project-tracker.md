@@ -271,7 +271,7 @@ See the [payments API](routes/payments-api-spec.md).
       reference across the full route set.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
-- [ ] Add global route/topic search with keyboard navigation and accessible
+- [x] Add global route/topic search with keyboard navigation and accessible
       result selection; search real app destinations/data, not a fixed demo list.
 - [ ] Complete toast, confirmation, user-menu, upgrade-entry, and notification
       interactions across the app shell.

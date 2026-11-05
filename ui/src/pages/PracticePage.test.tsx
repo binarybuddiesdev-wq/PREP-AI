@@ -64,9 +64,9 @@ const user: IUser = {
   isNewUser: false,
 };
 
-const renderPracticePage = () =>
+const renderPracticePage = (initialEntry = '/') =>
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <PracticePage />
     </MemoryRouter>
   );
@@ -123,6 +123,12 @@ describe('PracticePage', () => {
       difficulty: 'Mid',
       totalQuestions: expectedCount,
     });
+  });
+
+  it('preselects a valid practice topic from the query string', () => {
+    renderPracticePage('/practice?topicId=topic-react');
+
+    expect(screen.getByRole('combobox', { name: 'Practice topic' })).toHaveTextContent('React');
   });
 
   it('shows the profile query error with a retry action', async () => {
