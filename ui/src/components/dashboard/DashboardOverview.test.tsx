@@ -85,6 +85,11 @@ describe('DashboardOverview', () => {
     expect(screen.getByText('3')).toBeVisible();
     expect(screen.getByText('14')).toBeVisible();
     expect(screen.getByText('7.5/10')).toBeVisible();
+    const sessionsMetric = screen.getByText('Sessions Completed').closest('article');
+    expect(sessionsMetric).toHaveClass('bg-[var(--card)]');
+    expect(within(sessionsMetric!).getByText('Sessions Completed')).toHaveClass(
+      'text-[var(--dim)]'
+    );
     const problemsSolved = screen.getByText('Problems Solved').closest('article');
     expect(within(problemsSolved!).getByText('2')).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Recent Sessions' })).toBeVisible();

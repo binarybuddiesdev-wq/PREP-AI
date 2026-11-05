@@ -18,7 +18,7 @@ const getPanelContent = (
 ): ReactNode => {
   if (status.isPending) {
     return (
-      <p role="status" className="text-sm text-zinc-400">
+      <p role="status" className="text-sm text-[var(--dim)]">
         Loading…
       </p>
     );
@@ -27,12 +27,12 @@ const getPanelContent = (
   if (status.isError) {
     return (
       <div role="alert" className="space-y-3">
-        <p className="text-sm text-rose-300">
+        <p className="text-sm text-[var(--danger-strong)]">
           {status.error?.message || 'This dashboard data could not be loaded.'}
         </p>
         <button
           type="button"
-          className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-sm text-zinc-200 hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-60"
+          className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
           disabled={status.isFetching}
           onClick={status.onRetry}
         >
@@ -46,7 +46,7 @@ const getPanelContent = (
     );
   }
 
-  return content ?? <p className="text-sm text-zinc-500">{emptyLabel}</p>;
+  return content ?? <p className="text-sm text-[var(--dim)]">{emptyLabel}</p>;
 };
 
 const formatSessionDate = (value: string): string => {
@@ -74,14 +74,26 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
     .join(', ');
 
   const metricCards = [
-    { label: 'Sessions Completed', value: metrics.completedSessions, tone: 'text-amber-300' },
-    { label: 'Questions Answered', value: metrics.questionsAnswered, tone: 'text-sky-300' },
+    {
+      label: 'Sessions Completed',
+      value: metrics.completedSessions,
+      tone: 'text-[var(--accent-strong)]',
+    },
+    {
+      label: 'Questions Answered',
+      value: metrics.questionsAnswered,
+      tone: 'text-[var(--info-strong)]',
+    },
     {
       label: 'Average Score',
       value: metrics.averageScore === null ? '—' : formatScore(metrics.averageScore),
-      tone: 'text-emerald-300',
+      tone: 'text-[var(--success-strong)]',
     },
-    { label: 'Problems Solved', value: metrics.problemsSolved, tone: 'text-violet-300' },
+    {
+      label: 'Problems Solved',
+      value: metrics.problemsSolved,
+      tone: 'text-[var(--purple-strong)]',
+    },
   ];
 
   return (
@@ -90,7 +102,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
         <h1 className="text-2xl font-bold tracking-tight text-[var(--text-h)]">
           {greetingForCurrentTime()}, {name}
         </h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-[var(--dim)]">
           {metrics.completedSessions > 0
             ? `${metrics.completedSessions} practice sessions completed. Keep building your momentum.`
             : 'Your progress will appear here as you practice.'}
@@ -101,13 +113,13 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
         {metricCards.map((metric) => (
           <article
             key={metric.label}
-            className="app-shell-panel rounded-xl border border-white/10 bg-[#18181b] p-4 sm:p-5"
+            className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5"
           >
-            <p className="text-xs font-medium text-zinc-400">{metric.label}</p>
+            <p className="text-xs font-medium text-[var(--dim)]">{metric.label}</p>
             {theoryStatus.isError && metric.label !== 'Problems Solved' ? (
               <p
                 role="status"
-                className="mt-2 text-2xl font-semibold text-zinc-500"
+                className="mt-2 text-2xl font-semibold text-[var(--dim)]"
                 aria-label="Unavailable"
               >
                 —
@@ -115,17 +127,17 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
             ) : metric.label === 'Problems Solved' && codingStatus.isError ? (
               <p
                 role="status"
-                className="mt-2 text-2xl font-semibold text-zinc-500"
+                className="mt-2 text-2xl font-semibold text-[var(--dim)]"
                 aria-label="Unavailable"
               >
                 —
               </p>
             ) : theoryStatus.isPending && metric.label !== 'Problems Solved' ? (
-              <p role="status" className="mt-2 text-2xl font-semibold text-zinc-500">
+              <p role="status" className="mt-2 text-2xl font-semibold text-[var(--dim)]">
                 …
               </p>
             ) : metric.label === 'Problems Solved' && codingStatus.isPending ? (
-              <p role="status" className="mt-2 text-2xl font-semibold text-zinc-500">
+              <p role="status" className="mt-2 text-2xl font-semibold text-[var(--dim)]">
                 …
               </p>
             ) : (
@@ -135,12 +147,12 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
             )}
             {metric.label === 'Problems Solved' && codingStatus.isError && (
               <div role="alert" className="mt-2 space-y-2">
-                <p className="text-xs text-rose-300">
+                <p className="text-xs text-[var(--danger-strong)]">
                   {codingStatus.error?.message || 'Coding history could not be loaded.'}
                 </p>
                 <button
                   type="button"
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 px-2 text-xs text-zinc-200 hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-60"
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[var(--border2)] px-2 text-xs text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
                   disabled={codingStatus.isFetching}
                   onClick={codingStatus.onRetry}
                 >
@@ -158,8 +170,8 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)]">
         <div className="space-y-5">
-          <section className="app-shell-panel rounded-xl border border-white/10 bg-[#18181b]">
-            <header className="border-b border-white/[0.06] px-4 py-3 sm:px-5">
+          <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <header className="border-b border-[var(--border)] px-4 py-3 sm:px-5">
               <h2 className="text-sm font-semibold text-[var(--text-h)]">Recent Sessions</h2>
             </header>
             <div className="p-4 sm:p-5">
@@ -168,7 +180,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                 'Retry recent sessions',
                 'No sessions yet',
                 summary.recentSessions.length > 0 ? (
-                  <ul className="divide-y divide-white/[0.06]">
+                  <ul className="divide-y divide-[var(--border)]">
                     {summary.recentSessions.map((session) => (
                       <li
                         key={session.id}
@@ -178,14 +190,14 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                           type="button"
                           aria-label={`View ${session.topicName} session`}
                           onClick={() => onOpenSession(session.id)}
-                          className="min-w-0 truncate text-left text-sm font-medium text-zinc-200 transition hover:text-amber-200 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-amber-400"
+                          className="min-h-11 min-w-0 truncate text-left text-sm font-medium text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                         >
                           {session.topicName}
                         </button>
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-[var(--dim)]">
                           {formatSessionDate(session.startedAt)}
                         </span>
-                        <span className="col-span-2 text-xs text-zinc-400 sm:col-span-1 sm:text-right">
+                        <span className="col-span-2 text-xs text-[var(--dim)] sm:col-span-1 sm:text-right">
                           {session.status === 'completed' && session.averageScore !== null
                             ? formatScore(session.averageScore)
                             : `${session.questionsAnswered}/${session.totalQuestions} answered · In progress`}
@@ -197,13 +209,13 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
               )}
               {!theoryStatus.isError && !theoryStatus.isPending && practiceTopicsStatus.isError ? (
                 <div role="alert" className="mt-3 space-y-2">
-                  <p className="text-xs text-amber-300">
+                  <p className="text-xs text-[var(--accent-strong)]">
                     {practiceTopicsStatus.error?.message ||
                       'Topic names are temporarily unavailable.'}
                   </p>
                   <button
                     type="button"
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 px-2 text-xs text-zinc-200 hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-60"
+                    className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[var(--border2)] px-2 text-xs text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
                     disabled={practiceTopicsStatus.isFetching}
                     onClick={practiceTopicsStatus.onRetry}
                   >
@@ -218,8 +230,8 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
             </div>
           </section>
 
-          <section className="app-shell-panel rounded-xl border border-white/10 bg-[#18181b]">
-            <header className="border-b border-white/[0.06] px-4 py-3 sm:px-5">
+          <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <header className="border-b border-[var(--border)] px-4 py-3 sm:px-5">
               <h2 className="text-sm font-semibold text-[var(--text-h)]">Suggested Practice</h2>
             </header>
             <div className="p-4 sm:p-5">
@@ -232,7 +244,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                     {summary.suggestions.map((area) => (
                       <li
                         key={area.topicId}
-                        className="rounded-full border border-amber-400/20 bg-amber-400/[0.07] px-3 py-1.5 text-sm text-amber-200"
+                        className="rounded-full border border-[var(--accent-border)] bg-[var(--accent-bg)] px-3 py-1.5 text-sm text-[var(--accent-strong)]"
                       >
                         {area.topicName}
                       </li>
@@ -245,16 +257,16 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
         </div>
 
         <div className="space-y-5">
-          <section className="app-shell-panel rounded-xl border border-white/10 bg-[#18181b] p-4 sm:p-5">
+          <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-[var(--text-h)]">Day Streak</h2>
             {getPanelContent(
               theoryStatus,
               'Retry streak',
               'No completed practice yet.',
               <>
-                <p className="mt-2 text-3xl font-semibold tabular-nums text-amber-300">
+                <p className="mt-2 text-3xl font-semibold tabular-nums text-[var(--accent-strong)]">
                   {metrics.currentStreak}
-                  <span className="ml-2 text-sm font-medium text-zinc-400">days</span>
+                  <span className="ml-2 text-sm font-medium text-[var(--dim)]">days</span>
                 </p>
                 <div
                   className="mt-4 flex justify-between gap-2"
@@ -266,8 +278,8 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                         aria-label={`${day.date}${day.isActive ? ', practiced' : ', no practice'}`}
                         className={`grid size-7 place-items-center rounded-full text-xs ${
                           day.isActive
-                            ? 'bg-amber-400 text-zinc-950'
-                            : 'border border-white/10 text-zinc-500'
+                            ? 'bg-[var(--accent)] text-zinc-950'
+                            : 'border border-[var(--border2)] text-[var(--dim)]'
                         }`}
                       >
                         {day.isActive ? (
@@ -276,7 +288,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                           <Circle aria-hidden="true" className="size-1.5" />
                         )}
                       </span>
-                      <span className="text-[0.65rem] text-zinc-500">{day.label}</span>
+                      <span className="text-[0.65rem] text-[var(--dim)]">{day.label}</span>
                     </div>
                   ))}
                 </div>
@@ -284,8 +296,8 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
             )}
           </section>
 
-          <section className="app-shell-panel rounded-xl border border-white/10 bg-[#18181b]">
-            <header className="border-b border-white/[0.06] px-4 py-3 sm:px-5">
+          <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <header className="border-b border-[var(--border)] px-4 py-3 sm:px-5">
               <h2 className="text-sm font-semibold text-[var(--text-h)]">Score Trend</h2>
             </header>
             <div className="p-4 sm:p-5">
@@ -297,12 +309,12 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                   <div
                     role="img"
                     aria-label={`Score trend for the last ${summary.scoreTrend.length} practice days: ${scoreTrendLabel}`}
-                    className="flex h-28 items-end gap-2 border-b border-white/10 px-1"
+                    className="flex h-28 items-end gap-2 border-b border-[var(--border2)] px-1"
                   >
                     {summary.scoreTrend.map((point) => (
                       <div
                         key={point.date}
-                        className="min-w-0 flex-1 rounded-t bg-amber-400/80"
+                        className="min-w-0 flex-1 rounded-t bg-[var(--accent)]"
                         style={{ height: `${Math.max(8, Math.min(100, point.avgScore * 10))}%` }}
                         title={`${formatSessionDate(point.date)} · ${formatScore(point.avgScore)}`}
                       />
@@ -313,8 +325,8 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
             </div>
           </section>
 
-          <section className="app-shell-panel rounded-xl border border-white/10 bg-[#18181b]">
-            <header className="border-b border-white/[0.06] px-4 py-3 sm:px-5">
+          <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <header className="border-b border-[var(--border)] px-4 py-3 sm:px-5">
               <h2 className="text-sm font-semibold text-[var(--text-h)]">Weak Areas</h2>
             </header>
             <div className="space-y-4 p-4 sm:p-5">
@@ -327,8 +339,8 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                     {summary.suggestions.map((area) => (
                       <li key={area.topicId}>
                         <div className="mb-1.5 flex justify-between gap-3 text-xs">
-                          <span className="truncate text-zinc-300">{area.topicName}</span>
-                          <span className="tabular-nums text-zinc-400">
+                          <span className="truncate text-[var(--text)]">{area.topicName}</span>
+                          <span className="tabular-nums text-[var(--dim)]">
                             {formatScore(area.avgScore)} · {area.sessionsCount} sessions
                           </span>
                         </div>
@@ -338,10 +350,10 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                           aria-valuemin={0}
                           aria-valuemax={10}
                           aria-valuenow={area.avgScore}
-                          className="h-1.5 overflow-hidden rounded-full bg-white/10"
+                          className="h-1.5 overflow-hidden rounded-full bg-[var(--surface2)]"
                         >
                           <span
-                            className="block h-full rounded-full bg-amber-400"
+                            className="block h-full rounded-full bg-[var(--accent)]"
                             style={{ width: `${Math.max(0, Math.min(100, area.avgScore * 10))}%` }}
                           />
                         </div>
@@ -355,7 +367,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
         </div>
       </section>
 
-      <section className="app-shell-panel rounded-xl border border-white/10 bg-[#18181b] p-4 sm:p-5">
+      <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-[var(--text-h)]">
           {summary.setupChecklist.every((item) => item.isComplete)
             ? 'Profile setup complete'
@@ -368,12 +380,12 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
             'Setup checklist unavailable',
             <ul className="grid gap-2 sm:grid-cols-3">
               {summary.setupChecklist.map((item) => (
-                <li key={item.label} className="flex items-center gap-2 text-sm text-zinc-300">
+                <li key={item.label} className="flex items-center gap-2 text-sm text-[var(--text)]">
                   <span
                     className={`grid size-5 shrink-0 place-items-center rounded-full ${
                       item.isComplete
-                        ? 'bg-emerald-400/15 text-emerald-300'
-                        : 'border border-white/15 text-zinc-500'
+                        ? 'bg-[var(--green-bg)] text-[var(--success-strong)]'
+                        : 'border border-[var(--border2)] text-[var(--faint)]'
                     }`}
                   >
                     {item.isComplete ? <Check aria-hidden="true" className="size-3" /> : null}

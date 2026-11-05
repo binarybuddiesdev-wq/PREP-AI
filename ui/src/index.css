@@ -6,6 +6,11 @@
   --surface2: rgb(255 255 255 / 7%);
   --accent: #f59e0b;
   --accent2: #fbbf24;
+  --accent-strong: #fbbf24;
+  --info-strong: #7dd3fc;
+  --success-strong: #6ee7b7;
+  --danger-strong: #fda4af;
+  --purple-strong: #c4b5fd;
   --accent-bg: rgb(245 158 11 / 12%);
   --accent-border: rgb(245 158 11 / 50%);
   --green: #10b981;
@@ -50,6 +55,11 @@ html[data-theme='light'] {
   --surface: rgb(0 0 0 / 4%);
   --surface2: rgb(0 0 0 / 6%);
   --accent-bg: rgb(245 158 11 / 10%);
+  --accent-strong: #92400e;
+  --info-strong: #0369a1;
+  --success-strong: #047857;
+  --danger-strong: #be123c;
+  --purple-strong: #6d28d9;
   --green-bg: rgb(16 185 129 / 10%);
   --red-bg: rgb(244 63 94 / 10%);
   --blue-bg: rgb(14 165 233 / 10%);

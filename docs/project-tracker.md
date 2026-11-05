@@ -272,6 +272,8 @@ parity and responsive/accessibility acceptance remain.**
       explicit light/dark canvas, text, surface, amber accent, and status tokens.
 - [ ] Match screen-level surfaces, spacing, cards, and status treatments to the
       reference across the full route set.
+- [x] Move Dashboard cards and status colors onto theme-aware tokens; keep the
+      route-wide visual parity item open until the remaining screens are checked.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -289,8 +291,10 @@ theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
 (1440 px) and mobile (390 px) landing captures were reviewed. The dashboard
 component was also rendered at 390, 768, and 1440 px; those previews used local
-fixture data. Signed-in route states have not yet been visually checked against
-the live API.
+fixture data. Dashboard card and status colors now use the shared light/dark
+tokens. A Chrome component render at 390 px light and 1440 px dark verified card
+and error colors with no horizontal overflow. Signed-in route states have not
+yet been visually checked against the live API.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
