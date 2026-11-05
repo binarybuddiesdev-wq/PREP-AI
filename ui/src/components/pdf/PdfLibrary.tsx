@@ -81,13 +81,13 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-[var(--text-h)]">PDF Library</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-[var(--dim)]">
             Read and revisit your indexed study documents.
           </p>
         </div>
         <Link
           to={ROUTES.settingsDocuments}
-          className="inline-flex min-h-9 w-fit items-center gap-2 rounded-lg border border-white/10 px-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400"
+          className="inline-flex min-h-9 w-fit items-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
         >
           <BookOpen aria-hidden="true" className="size-4" />
           Manage documents
@@ -97,13 +97,13 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
       {listError ? (
         <section
           role="alert"
-          className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] p-4"
+          className="rounded-xl border border-[var(--red-bg)] bg-[var(--red-bg)] p-4"
         >
-          <p className="text-sm text-rose-200">{listError}</p>
+          <p className="text-sm text-[var(--danger-strong)]">{listError}</p>
           <button
             type="button"
             onClick={onRetryList}
-            className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-rose-300/20 px-3 text-xs font-medium text-rose-100 hover:bg-rose-300/10 focus-visible:outline-2 focus-visible:outline-rose-300"
+            className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--red-bg)] px-3 text-xs font-medium text-[var(--danger-strong)] hover:bg-[var(--red-bg)] focus-visible:outline-2 focus-visible:outline-[var(--danger-strong)]"
           >
             <RotateCw aria-hidden="true" className="size-3.5" />
             Retry Library
@@ -112,17 +112,19 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
       ) : isLoading ? (
         <p
           role="status"
-          className="rounded-xl border border-white/[0.08] p-5 text-sm text-zinc-400"
+          className="rounded-xl border border-[var(--border)] p-5 text-sm text-[var(--dim)]"
         >
           Loading your Library…
         </p>
       ) : readySources.length === 0 ? (
-        <section className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.02] px-5 py-12 text-center">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-300">
+        <section className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-12 text-center">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-[var(--accent-bg)] text-[var(--accent-strong)]">
             <BookOpen aria-hidden="true" className="size-5" />
           </span>
-          <h2 className="mt-4 text-base font-semibold text-zinc-100">Your Library is empty</h2>
-          <p className="mt-1 max-w-md text-sm leading-6 text-zinc-400">
+          <h2 className="mt-4 text-base font-semibold text-[var(--text-h)]">
+            Your Library is empty
+          </h2>
+          <p className="mt-1 max-w-md text-sm leading-6 text-[var(--dim)]">
             Add a PDF with selectable text. Once indexing finishes, it will be ready to read here.
           </p>
         </section>
@@ -130,27 +132,27 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
         <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(220px,270px)_minmax(0,1fr)]">
           <aside
             aria-label="Ready PDF documents"
-            className="app-shell-panel min-h-0 overflow-hidden rounded-xl border border-white/[0.08] bg-[#18181b]"
+            className="app-shell-panel min-h-0 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]"
           >
-            <div className="border-b border-white/[0.07] px-4 py-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            <div className="border-b border-[var(--border)] px-4 py-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--dim)]">
                 Documents
               </h2>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-[var(--dim)]">
                 {readySources.length} ready {readySources.length === 1 ? 'file' : 'files'}
               </p>
             </div>
-            <ul className="max-h-64 divide-y divide-white/[0.06] overflow-y-auto p-2 lg:max-h-[calc(100dvh-17rem)]">
+            <ul className="max-h-64 divide-y divide-[var(--border)] overflow-y-auto p-2 lg:max-h-[calc(100dvh-17rem)]">
               {readySources.map((source) => (
                 <li key={source.id}>
                   <button
                     type="button"
                     aria-pressed={selectedSource?.id === source.id}
                     onClick={() => onSelectSource(source.id)}
-                    className={`flex min-h-12 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition focus-visible:outline-2 focus-visible:outline-amber-400 ${
+                    className={`flex min-h-12 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${
                       selectedSource?.id === source.id
-                        ? 'bg-amber-400/10 text-amber-100'
-                        : 'text-zinc-300 hover:bg-white/[0.04]'
+                        ? 'bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+                        : 'text-[var(--text)] hover:bg-[var(--surface)]'
                     }`}
                   >
                     <BookOpen aria-hidden="true" className="size-4 shrink-0" />
@@ -158,7 +160,7 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                       {source.displayName}
                     </span>
                     {source.pageCount !== null ? (
-                      <span className="shrink-0 text-[0.65rem] text-zinc-500">
+                      <span className="shrink-0 text-[0.65rem] text-[var(--dim)]">
                         {source.pageCount}p
                       </span>
                     ) : null}
@@ -170,15 +172,15 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
 
           <section
             aria-label="PDF reader"
-            className="flex min-h-[65dvh] min-w-0 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#18181b] lg:min-h-0"
+            className="flex min-h-[65dvh] min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] lg:min-h-0"
           >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] px-3 py-2.5 sm:px-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-3 py-2.5 sm:px-4">
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold text-zinc-100">
+                <h2 className="truncate text-sm font-semibold text-[var(--text-h)]">
                   {selectedSource?.displayName ?? 'Select a document'}
                 </h2>
                 {selectedSource ? (
-                  <p className="mt-0.5 text-xs text-zinc-500">
+                  <p className="mt-0.5 text-xs text-[var(--dim)]">
                     {selectedSource.pageCount ?? '—'} pages
                   </p>
                 ) : null}
@@ -189,7 +191,7 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                   aria-label="Previous page"
                   disabled={!selectedSource || page <= 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/10 text-zinc-300 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-[var(--border2)] text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <ChevronLeft aria-hidden="true" className="size-4" />
                 </button>
@@ -210,31 +212,31 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                       setPage(Math.min(pageCount, Math.max(1, requestedPage)));
                     }
                   }}
-                  className="h-8 w-12 rounded-md border border-white/10 bg-black/20 text-center text-xs text-zinc-200 outline-none focus:border-amber-400 disabled:opacity-50"
+                  className="h-8 w-12 rounded-md border border-[var(--border2)] bg-[var(--bg2)] text-center text-xs text-[var(--text)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
                 />
-                <span className="text-xs text-zinc-500">/ {pageCount}</span>
+                <span className="text-xs text-[var(--dim)]">/ {pageCount}</span>
                 <button
                   type="button"
                   aria-label="Next page"
                   disabled={!selectedSource || page >= pageCount}
                   onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/10 text-zinc-300 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-[var(--border2)] text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <ChevronRight aria-hidden="true" className="size-4" />
                 </button>
-                <span aria-hidden="true" className="mx-1 h-5 w-px bg-white/10" />
+                <span aria-hidden="true" className="mx-1 h-5 w-px bg-[var(--border2)]" />
                 <button
                   type="button"
                   aria-label="Zoom out"
                   disabled={!selectedSource || zoom <= 50}
                   onClick={() => setZoom((current) => Math.max(50, current - 25))}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/10 text-zinc-300 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-40"
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-[var(--border2)] text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-40"
                 >
                   <Minus aria-hidden="true" className="size-3.5" />
                 </button>
                 <span
                   aria-label="Zoom level"
-                  className="w-9 text-center text-xs tabular-nums text-zinc-400"
+                  className="w-9 text-center text-xs tabular-nums text-[var(--dim)]"
                 >
                   {zoom}%
                 </span>
@@ -243,7 +245,7 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                   aria-label="Zoom in"
                   disabled={!selectedSource || zoom >= 200}
                   onClick={() => setZoom((current) => Math.min(200, current + 25))}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/10 text-zinc-300 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-40"
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-[var(--border2)] text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-40"
                 >
                   <Plus aria-hidden="true" className="size-3.5" />
                 </button>
@@ -252,14 +254,14 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                   aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
                   disabled={!selectedSource}
                   onClick={() => void toggleFullscreen()}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/10 text-zinc-300 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-40"
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-[var(--border2)] text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-40"
                 >
                   <Maximize2 aria-hidden="true" className="size-3.5" />
                 </button>
               </div>
             </div>
 
-            <div ref={viewerRef} className="relative min-h-0 flex-1 bg-[#101012]">
+            <div ref={viewerRef} className="relative min-h-0 flex-1 bg-[var(--bg2)]">
               {contentUrl ? (
                 <iframe
                   key={selectedSource?.id}
@@ -270,7 +272,7 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
               ) : contentLoading ? (
                 <p
                   role="status"
-                  className="flex h-full items-center justify-center text-sm text-zinc-400"
+                  className="flex h-full items-center justify-center text-sm text-[var(--dim)]"
                 >
                   Loading private preview…
                 </p>
@@ -279,25 +281,25 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                   role="alert"
                   className="flex h-full flex-col items-center justify-center px-5 text-center"
                 >
-                  <p className="text-sm text-rose-200">{contentError}</p>
+                  <p className="text-sm text-[var(--danger-strong)]">{contentError}</p>
                   <button
                     type="button"
                     onClick={onRetryContent}
-                    className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-zinc-200 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400"
+                    className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                   >
                     <RotateCw aria-hidden="true" className="size-3.5" />
                     Retry preview
                   </button>
                 </div>
               ) : (
-                <p className="flex h-full items-center justify-center px-4 text-center text-sm text-zinc-500">
+                <p className="flex h-full items-center justify-center px-4 text-center text-sm text-[var(--dim)]">
                   Choose a ready document to open its private preview.
                 </p>
               )}
               {fullscreenError ? (
                 <p
                   role="alert"
-                  className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-lg bg-[#18181b] px-3 py-2 text-xs text-rose-200 shadow-lg"
+                  className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-lg bg-[var(--card)] px-3 py-2 text-xs text-[var(--danger-strong)] shadow-lg"
                 >
                   {fullscreenError}
                 </p>

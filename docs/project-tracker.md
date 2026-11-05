@@ -274,6 +274,8 @@ parity and responsive/accessibility acceptance remain.**
       reference across the full route set.
 - [x] Move Dashboard cards and status colors onto theme-aware tokens; keep the
       route-wide visual parity item open until the remaining screens are checked.
+- [x] Move PDF Library reader surfaces, controls, and error states onto shared
+      theme tokens while keeping the document page white in the native viewer.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -293,8 +295,10 @@ viewport, visible hero-preview text, and readable heading colors. Desktop
 component was also rendered at 390, 768, and 1440 px; those previews used local
 fixture data. Dashboard card and status colors now use the shared light/dark
 tokens. A Chrome component render at 390 px light and 1440 px dark verified card
-and error colors with no horizontal overflow. Signed-in route states have not
-yet been visually checked against the live API.
+and error colors with no horizontal overflow. PDF Library was rendered at 390 px
+light and 1440 px dark; reader and error colors matched both themes with no
+horizontal overflow. Signed-in route states have not yet been visually checked
+against the live API.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

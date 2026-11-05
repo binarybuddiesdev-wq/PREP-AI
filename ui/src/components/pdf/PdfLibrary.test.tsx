@@ -38,6 +38,7 @@ describe('PdfLibrary', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'PDF Library' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'PDF reader' })).toHaveClass('bg-[var(--card)]');
     expect(screen.getByRole('button', { name: /first\.pdf/ })).toHaveAttribute(
       'aria-pressed',
       'true'
