@@ -1,8 +1,22 @@
 import { Writable } from 'node:stream';
+import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { describe, expect, it, vi } from 'vitest';
 import { PdfStorageService } from './pdf-storage.service.js';
 
 describe('PdfStorageService', () => {
+  it('can be resolved by Nest when no custom Cloudinary client is provided', async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        PdfStorageService,
+        { provide: ConfigService, useValue: { get: () => undefined } },
+      ],
+    }).compile();
+
+    expect(moduleRef.get(PdfStorageService)).toBeInstanceOf(PdfStorageService);
+    await moduleRef.close();
+  });
+
   it('uploads an authenticated raw asset and returns only its stable asset ID', async () => {
     const uploadStream = vi.fn((_options, callback) => {
       const stream = new Writable({

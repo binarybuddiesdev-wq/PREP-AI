@@ -1,4 +1,4 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Inject, Injectable, Optional, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import type { UploadApiResponse } from 'cloudinary';
@@ -23,6 +23,7 @@ interface ICloudinaryPdfClient {
 
 const MAX_SIGNED_URL_SECONDS = 300;
 const DOWNLOAD_TIMEOUT_MS = 30_000;
+export const PDF_STORAGE_CLIENT = Symbol('PDF_STORAGE_CLIENT');
 
 @Injectable()
 export class PdfStorageService {
@@ -30,6 +31,8 @@ export class PdfStorageService {
 
   constructor(
     private readonly config: ConfigService,
+    @Optional()
+    @Inject(PDF_STORAGE_CLIENT)
     private readonly client: ICloudinaryPdfClient = cloudinary as unknown as ICloudinaryPdfClient
   ) {}
 
