@@ -283,6 +283,14 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
+**Latest evidence (2026-11-05):** All 515 UI unit tests pass; UI lint and
+production build pass. Chrome smoke checks pass for the landing page (2 tests)
+and theme persistence/responsiveness (1 test, including a 320 px viewport).
+The dashboard component was rendered at 390, 768, and 1440 px; those previews
+showed no horizontal overflow. The dashboard previews used local fixture data,
+and authenticated route states have not yet been visually checked against the
+live API.
+
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
 - [ ] Verify signed-out, first-run, returning-user, free, premium, and relevant
