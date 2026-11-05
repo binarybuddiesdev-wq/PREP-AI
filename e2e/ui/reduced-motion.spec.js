@@ -1,6 +1,6 @@
 import { chromium, expect, test } from '@playwright/test';
 
-test('disables app-shell motion when reduced motion is requested', async () => {
+test('uses semantic app navigation and honors reduced-motion preferences', async () => {
   let browser;
   try {
     browser = await chromium.launch();
@@ -60,6 +60,24 @@ test('disables app-shell motion when reduced motion is requested', async () => {
 
     const sidebar = page.locator('#reduced-motion-preview .app-shell aside');
     await expect(sidebar).toHaveCount(1);
+    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'href',
+      '/dashboard'
+    );
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    const dashboardLink = page.getByRole('link', { name: 'Dashboard' });
+    await page
+      .locator('#reduced-motion-preview .app-shell')
+      .evaluate((element) => (element.dataset.theme = 'light'));
+    await expect
+      .poll(() =>
+        dashboardLink.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
+      )
+      .toBe('rgb(254, 243, 199)');
     await expect
       .poll(() =>
         sidebar.evaluate((element) =>

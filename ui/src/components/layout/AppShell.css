@@ -94,7 +94,7 @@
   color: #b45309;
 }
 
-.app-shell[data-theme='light'] aside button[aria-current='page'] {
+.app-shell[data-theme='light'] aside [aria-current='page'] {
   background-color: #fef3c7;
   color: #78350f;
 }

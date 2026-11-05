@@ -149,69 +149,87 @@ export const AppShell = (props: IAppShellProps) => {
                 </p>
                 <ul className="space-y-1">
                   {group.items.map((item) => {
-                    const isActive = item.route === activeRoute;
-                    const isAvailable = item.route !== null;
+                    const route = item.route;
+                    const isActive = route === activeRoute;
+                    const isAvailable = route !== null;
+                    const itemClassName = cn(
+                      'group flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400',
+                      isActive
+                        ? 'bg-amber-400/10 text-amber-300'
+                        : isDarkTheme
+                          ? 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100'
+                          : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900',
+                      !isAvailable && 'cursor-not-allowed opacity-60',
+                      isCollapsed && 'md:justify-center md:px-0'
+                    );
+                    const itemContent = (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="flex size-5 shrink-0 items-center justify-center"
+                        >
+                          {item.icon}
+                        </span>
+                        <span
+                          className={cn('min-w-0 flex-1 truncate', isCollapsed && 'md:sr-only')}
+                        >
+                          {item.label}
+                        </span>
+                        {!isAvailable && (
+                          <span
+                            className={cn(
+                              'ml-auto rounded-full border px-1.5 py-0.5 text-[0.58rem] font-medium',
+                              isDarkTheme
+                                ? 'border-white/[0.08] text-zinc-500'
+                                : 'border-zinc-200 text-zinc-500',
+                              isCollapsed && 'md:sr-only'
+                            )}
+                          >
+                            Soon
+                          </span>
+                        )}
+                      </>
+                    );
 
                     return (
                       <li key={item.label}>
-                        <button
-                          type="button"
-                          data-mobile-drawer-focusable
-                          aria-label={!isAvailable ? `${item.label}, coming soon` : undefined}
-                          aria-current={isActive ? 'page' : undefined}
-                          aria-disabled={!isAvailable}
-                          disabled={!isAvailable}
-                          title={
-                            !isAvailable
-                              ? `${item.label} is coming soon`
-                              : isCollapsed
-                                ? item.label
-                                : undefined
-                          }
-                          className={cn(
-                            'group flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400',
-                            isActive
-                              ? 'bg-amber-400/10 text-amber-300'
-                              : isDarkTheme
-                                ? 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100'
-                                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900',
-                            !isAvailable && 'cursor-not-allowed opacity-60',
-                            isCollapsed && 'md:justify-center md:px-0'
-                          )}
-                          onClick={() => {
-                            if (item.route) {
-                              onNavigate(item.route);
+                        {route ? (
+                          <a
+                            href={route}
+                            data-mobile-drawer-focusable
+                            aria-current={isActive ? 'page' : undefined}
+                            title={isCollapsed ? item.label : undefined}
+                            className={itemClassName}
+                            onClick={(event) => {
+                              if (
+                                event.button !== 0 ||
+                                event.metaKey ||
+                                event.ctrlKey ||
+                                event.shiftKey ||
+                                event.altKey
+                              ) {
+                                return;
+                              }
+                              event.preventDefault();
+                              onNavigate(route);
                               closeMobileNavigation();
-                            }
-                          }}
-                        >
-                          <span
-                            aria-hidden="true"
-                            className="flex size-5 shrink-0 items-center justify-center"
+                            }}
                           >
-                            {item.icon}
-                          </span>
-                          <span
-                            className={cn('min-w-0 flex-1 truncate', isCollapsed && 'md:sr-only')}
+                            {itemContent}
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            data-mobile-drawer-focusable
+                            aria-label={`${item.label}, coming soon`}
+                            aria-disabled="true"
+                            disabled
+                            title={`${item.label} is coming soon`}
+                            className={itemClassName}
                           >
-                            {item.label}
-                          </span>
-                          {!isAvailable && (
-                            <span
-                              className={cn(
-                                cn(
-                                  'ml-auto rounded-full border px-1.5 py-0.5 text-[0.58rem] font-medium',
-                                  isDarkTheme
-                                    ? 'border-white/[0.08] text-zinc-500'
-                                    : 'border-zinc-200 text-zinc-500'
-                                ),
-                                isCollapsed && 'md:sr-only'
-                              )}
-                            >
-                              Soon
-                            </span>
-                          )}
-                        </button>
+                            {itemContent}
+                          </button>
+                        )}
                       </li>
                     );
                   })}

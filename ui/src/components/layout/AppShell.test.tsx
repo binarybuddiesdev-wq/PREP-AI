@@ -43,10 +43,9 @@ describe('AppShell', () => {
     render(<AppShell {...createShellProps()} />);
 
     expect(within(screen.getByRole('banner')).getByText('Dashboard')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    const dashboardLink = screen.getByRole('link', { name: 'Dashboard' });
+    expect(dashboardLink).toHaveAttribute('href', ROUTES.dashboard);
+    expect(dashboardLink).toHaveAttribute('aria-current', 'page');
     const practiceItem = screen.getByRole('button', { name: 'Practice, coming soon' });
     expect(practiceItem).toBeDisabled();
     expect(practiceItem).toHaveAttribute('title', 'Practice is coming soon');
@@ -115,8 +114,8 @@ describe('AppShell', () => {
       'aria-expanded',
       'true'
     );
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveFocus();
-    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveFocus();
+    await user.click(screen.getByRole('link', { name: 'Settings' }));
 
     expect(props.onNavigate).toHaveBeenCalledWith(ROUTES.settings);
     expect(screen.getByRole('button', { name: 'Open navigation menu' })).toBeVisible();
@@ -156,8 +155,8 @@ describe('AppShell', () => {
     render(<AppShell {...createShellProps()} />);
 
     await user.click(screen.getByRole('button', { name: 'Open navigation menu' }));
-    const dashboardItem = screen.getByRole('button', { name: 'Dashboard' });
-    const settingsItem = screen.getByRole('button', { name: 'Settings' });
+    const dashboardItem = screen.getByRole('link', { name: 'Dashboard' });
+    const settingsItem = screen.getByRole('link', { name: 'Settings' });
     settingsItem.focus();
     await user.keyboard('{Tab}');
 

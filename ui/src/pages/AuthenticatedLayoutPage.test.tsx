@@ -67,20 +67,14 @@ describe('AuthenticatedLayoutPage', () => {
     renderAuthenticatedRoutes();
 
     expect(within(screen.getByRole('banner')).getByText('Dashboard')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('button', { name: 'Clerk user menu' })).toBeVisible();
     expect(screen.getByText('asha@example.com')).toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('link', { name: 'Settings' }));
 
     expect(await within(screen.getByRole('banner')).findByText('Settings')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings');
   });
 
@@ -115,10 +109,7 @@ describe('AuthenticatedLayoutPage', () => {
     renderAuthenticatedRoutes('/practice');
 
     expect(within(screen.getByRole('banner')).getByText('Practice')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Practice' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(screen.getByRole('link', { name: 'Practice' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('heading', { name: 'Practice route content' })).toBeVisible();
   });
 
@@ -128,10 +119,7 @@ describe('AuthenticatedLayoutPage', () => {
       renderAuthenticatedRoutes(path);
 
       expect(within(screen.getByRole('banner')).getByText('Coding')).toBeVisible();
-      expect(screen.getByRole('button', { name: 'Coding' })).toHaveAttribute(
-        'aria-current',
-        'page'
-      );
+      expect(screen.getByRole('link', { name: 'Coding' })).toHaveAttribute('aria-current', 'page');
       expect(
         screen.getByRole('heading', {
           name: /Coding route content|Coding problem route content/,
@@ -146,10 +134,7 @@ describe('AuthenticatedLayoutPage', () => {
       renderAuthenticatedRoutes(path);
 
       expect(within(screen.getByRole('banner')).getByText('History')).toBeVisible();
-      expect(screen.getByRole('button', { name: 'History' })).toHaveAttribute(
-        'aria-current',
-        'page'
-      );
+      expect(screen.getByRole('link', { name: 'History' })).toHaveAttribute('aria-current', 'page');
       expect(
         screen.getByRole('heading', { name: /History route content|Session detail route content/ })
       ).toBeVisible();
@@ -161,9 +146,6 @@ describe('AuthenticatedLayoutPage', () => {
     renderAuthenticatedRoutes('/Settings');
 
     expect(within(screen.getByRole('banner')).getByText('Settings')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Settings' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
   });
 });

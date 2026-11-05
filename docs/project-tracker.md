@@ -320,6 +320,8 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Complete toast, confirmation, user-menu, upgrade-entry, and notification
       interactions across the app shell.
 - [x] Respect reduced-motion preferences across all routes and shared controls.
+- [x] Render available app destinations as links with native route semantics;
+      keep unavailable destinations as disabled controls.
 - [ ] Match desktop, tablet, and mobile layouts; preserve keyboard focus,
       reduced-motion preferences, semantic controls, and screen-reader names.
 
@@ -362,7 +364,9 @@ errors. The full UI gate remains green at 123 files / 536 tests, lint,
 type-check, and build. The route-wide theme suite passes 28/28 in both
 configured browser projects, including rendered Clerk sign-in/sign-up buttons.
 The app-shell reduced-motion browser check also passes with the preference set
-to `reduce`; its mobile sidebar no longer animates for 200 ms.
+to `reduce`; its mobile sidebar no longer animates for 200 ms. Sidebar
+destinations now use native links; unit and browser checks cover the active
+route, light-theme styling, client-side navigation, and mobile drawer focus.
 
 Coding problem detail, workspace controls/results, review dialog, and missing
 or not-found states now use shared theme tokens. Focused tests and browser

@@ -919,3 +919,23 @@ New layout, one folder per purpose. A layer may import only from the layers list
   used a 200 ms transition, then passed with the global rule.
 - Verification: all UI tests passed (123 files / 536 tests), UI lint, TypeScript
   and production build passed, and the reduced-motion browser check passed.
+
+## 2026-11-06 - Use link semantics for app navigation
+
+- Changed available sidebar destinations from navigation buttons to real links
+  with `href` routes and `aria-current="page"` for the active destination.
+  Normal clicks still use the app's client-side navigation callback; modified
+  clicks retain browser link behavior. Unavailable destinations remain disabled
+  buttons.
+- Updated the light-theme active-route selector and added DOM assertions for
+  link names, destinations, mobile focus, route changes, and disabled entries.
+  The revised tests failed against the button-based navigation, then passed.
+  A browser check also failed against the old active-route selector and passed
+  once it was updated for links.
+- Verification: full UI suite passed (123 files / 536 tests), focused AppShell
+  and authenticated-layout tests passed (20 tests), UI lint, type-check,
+  production build, scoped Prettier, and diff checks passed. The app-shell
+  browser check passed for native links, active light-theme styling, and reduced
+  motion. Root lint still has 14 errors in the untracked user-owned
+  `types/piston.js` plus nine warnings; repo-wide formatting still flags 57
+  unrelated or user-owned files.
