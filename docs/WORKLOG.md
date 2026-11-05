@@ -1,3 +1,18 @@
+## 2026-11-05 - Theme Settings documents
+
+- Replaced hard-coded dark styling across PDF upload, document rows, empty and
+  loading states, status labels, errors, and delete confirmation with shared
+  dark/light theme tokens. Kept upload, preview, reindex, and delete behavior
+  unchanged, and labelled the document list for assistive technology.
+- Added component regression tests and a Playwright render at 390 px in both
+  configured UI projects. Computed colors change between themes, the page has
+  no horizontal overflow, and the browser reports no errors.
+- Verification: all 122 UI test files / 523 tests, UI lint, TypeScript project
+  check, production build, two focused Playwright runs, changed-file Prettier,
+  and `git diff --check` pass. Root lint still reports 14 errors in the
+  user-owned untracked `types/piston.js`; repository formatting reports 58
+  unrelated or user-owned files.
+
 ## 2026-11-05 - Theme coding problem detail and workspace
 
 - Moved coding problem detail and examples, workspace panels/controls/results,

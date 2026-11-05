@@ -150,6 +150,8 @@ session had no authenticated browser surface.
       answer evaluation, and visible source/page citations.
 - [x] Use the backend's private document access mechanism; do not substitute
       local placeholder PDFs or expose permanent private storage URLs.
+- [x] Match Settings > Documents upload, list, empty/loading, status, and
+      delete-confirmation surfaces to the shared dark/light theme tokens.
 
 ### Phase 5 — Coding challenges
 
@@ -276,6 +278,8 @@ parity and responsive/accessibility acceptance remain.**
       route-wide visual parity item open until the remaining screens are checked.
 - [x] Move PDF Library reader surfaces, controls, and error states onto shared
       theme tokens while keeping the document page white in the native viewer.
+- [x] Move Settings > Documents upload and list surfaces, states, and actions
+      onto shared theme tokens; verify theme changes and mobile overflow.
 - [x] Move Settings > Plan cards, usage metrics, billing errors, and plan
       selection controls onto the shared theme tokens; keep full-route parity
       open until the remaining screens are checked.
@@ -346,6 +350,14 @@ Coding problem detail, workspace controls/results, review dialog, and missing
 or not-found states now use shared theme tokens. Focused tests and browser
 renders verified both themes and mobile overflow; the code editor remains a
 dark IDE surface.
+
+Settings > Documents upload and list surfaces now respond to the app theme,
+including empty/loading, errors, status labels, and delete confirmation. Focused
+component tests and a 390 px Playwright render in both configured UI projects
+verify dark/light colors, no horizontal overflow, and no browser errors. The
+full UI suite passes at 122 files / 523 tests; UI lint, type-check, and build
+pass. Root lint and repository-wide formatting remain red on unrelated or
+user-owned files.
 
 Settings > Practice Preferences and its tab/save dividers use theme tokens. A
 focused component test and a 390 px Playwright render verified these surfaces

@@ -49,6 +49,65 @@ const renderManager = (overrides: Partial<ComponentProps<typeof PdfDocumentManag
   );
 
 describe('PdfDocumentManager', () => {
+  it('uses theme-aware surfaces and text for upload and document lists', () => {
+    renderManager();
+
+    const uploadPanel = screen.getByRole('region', { name: 'Add a study document' });
+    const documentList = screen.getByRole('list', { name: 'Uploaded documents' });
+
+    expect(uploadPanel).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
+    expect(
+      screen.getByText('Upload searchable PDFs to read and use in a study session.')
+    ).toHaveClass('text-[var(--dim)]');
+    expect(documentList).toHaveClass(
+      'divide-[var(--border)]',
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(screen.getByText('ready.pdf')).toHaveClass('text-[var(--text)]');
+  });
+
+  it('uses theme-aware surfaces and text for empty and loading document states', () => {
+    const { rerender } = renderManager({ sources: [] });
+
+    expect(screen.getByText('No documents yet').parentElement).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(screen.getByText('Your uploaded PDFs will appear here.')).toHaveClass(
+      'text-[var(--dim)]'
+    );
+
+    rerender(
+      <MemoryRouter>
+        <PdfDocumentManager
+          sources={[]}
+          isLoading
+          listError={null}
+          isUploading={false}
+          uploadFileName={null}
+          uploadProgress={0}
+          uploadError={null}
+          validationError={null}
+          reindexingId={null}
+          deletingId={null}
+          confirmingDeleteId={null}
+          actionError={null}
+          onFilesSelected={vi.fn()}
+          onUpload={vi.fn()}
+          onRetryUpload={vi.fn()}
+          onRetryList={vi.fn()}
+          onReindex={vi.fn()}
+          onRequestDelete={vi.fn()}
+          onCancelDelete={vi.fn()}
+          onConfirmDelete={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('status')).toHaveClass('border-[var(--border)]', 'text-[var(--dim)]');
+  });
+
   it('shows upload progress and real document status details', () => {
     renderManager({ isUploading: true, uploadFileName: 'notes.pdf', uploadProgress: 45 });
 
@@ -89,6 +148,10 @@ describe('PdfDocumentManager', () => {
     await user.click(screen.getByRole('button', { name: 'Delete PDF' }));
     expect(onConfirmDelete).toHaveBeenCalledOnce();
     expect(screen.getByText('Delete ready.pdf?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete PDF' })).toHaveClass(
+      'bg-[var(--red-bg)]',
+      'text-[var(--danger-strong)]'
+    );
   });
 
   it('keeps failed upload retryable and exposes list recovery', async () => {

@@ -89,24 +89,24 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
     <main className="mx-auto w-full max-w-4xl space-y-6">
       <header>
         <h1 className="text-2xl font-semibold text-[var(--text-h)]">Your documents</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-[var(--dim)]">
           Upload searchable PDFs to read and use in a study session.
         </p>
       </header>
 
       <section
         aria-labelledby="pdf-upload-title"
-        className="app-shell-panel rounded-2xl border border-white/[0.08] bg-[#18181b] p-4 sm:p-5"
+        className="app-shell-panel rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5"
       >
         <div className="mb-4 flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/10 text-amber-300">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-bg)] text-[var(--accent-strong)]">
             <CloudUpload aria-hidden="true" className="size-4" />
           </span>
           <div>
             <h2 id="pdf-upload-title" className="text-sm font-semibold text-[var(--text-h)]">
               Add a study document
             </h2>
-            <p className="mt-0.5 text-xs leading-5 text-zinc-400">
+            <p className="mt-0.5 text-xs leading-5 text-[var(--dim)]">
               PDF with selectable text, up to 10 MB and 100 pages.
             </p>
           </div>
@@ -118,7 +118,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
             event.preventDefault();
             if (!isUploading) selectFirstPdf(event.dataTransfer.files);
           }}
-          className="rounded-xl border border-dashed border-white/15 bg-black/10 px-4 py-5 text-center transition-colors hover:border-amber-400/40 sm:py-6"
+          className="rounded-xl border border-dashed border-[var(--border2)] bg-[var(--surface)] px-4 py-5 text-center transition-colors hover:border-[var(--accent-border)] sm:py-6"
         >
           <input
             ref={inputRef}
@@ -132,48 +132,48 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
               event.currentTarget.value = '';
             }}
           />
-          <FileText aria-hidden="true" className="mx-auto size-6 text-zinc-500" />
-          <p className="mt-2 text-sm font-medium text-zinc-200">
+          <FileText aria-hidden="true" className="mx-auto size-6 text-[var(--dim)]" />
+          <p className="mt-2 text-sm font-medium text-[var(--text)]">
             Drop a PDF here or{' '}
             <button
               type="button"
               disabled={isUploading}
               onClick={() => inputRef.current?.click()}
-              className="font-semibold text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-50"
+              className="font-semibold text-[var(--accent-strong)] underline decoration-[var(--accent-border)] underline-offset-4 hover:text-[var(--text-h)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-50"
             >
               browse files
             </button>
           </p>
-          <p className="mt-1 text-xs text-zinc-500">One document per upload</p>
+          <p className="mt-1 text-xs text-[var(--dim)]">One document per upload</p>
         </div>
 
         {validationError ? (
-          <p role="alert" className="mt-3 text-sm text-rose-300">
+          <p role="alert" className="mt-3 text-sm text-[var(--danger-strong)]">
             {validationError}
           </p>
         ) : null}
 
         {uploadFileName ? (
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-black/15 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-zinc-200">{uploadFileName}</p>
+              <p className="truncate text-sm font-medium text-[var(--text)]">{uploadFileName}</p>
               {isUploading ? (
                 <div
                   aria-label={`Uploading ${uploadFileName}`}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={uploadProgress}
-                  className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"
+                  className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface2)]"
                   role="progressbar"
                 >
                   <span
-                    className="block h-full rounded-full bg-amber-400 transition-[width] duration-150"
+                    className="block h-full rounded-full bg-[var(--accent)] transition-[width] duration-150"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
               ) : null}
               {uploadError ? (
-                <p role="alert" className="mt-1 text-xs text-rose-300">
+                <p role="alert" className="mt-1 text-xs text-[var(--danger-strong)]">
                   {uploadError}
                 </p>
               ) : null}
@@ -182,7 +182,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
               <button
                 type="button"
                 onClick={onRetryUpload}
-                className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-zinc-200 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400"
+                className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
               >
                 <RotateCw aria-hidden="true" className="size-3.5" />
                 Retry upload
@@ -192,7 +192,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                 type="button"
                 disabled={isUploading}
                 onClick={onUpload}
-                className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 text-xs font-semibold text-zinc-950 hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-amber-300 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-xs font-semibold text-zinc-950 hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
               >
                 {isUploading ? 'Uploading…' : 'Upload PDF'}
               </button>
@@ -207,19 +207,22 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
             Uploaded documents
           </h2>
           {!isLoading && !listError ? (
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-[var(--dim)]">
               {sources.length} {sources.length === 1 ? 'document' : 'documents'}
             </span>
           ) : null}
         </div>
 
         {listError ? (
-          <div role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
-            <p className="text-sm text-rose-200">{listError}</p>
+          <div
+            role="alert"
+            className="rounded-xl border border-[var(--red-bg)] bg-[var(--red-bg)] p-4"
+          >
+            <p className="text-sm text-[var(--danger-strong)]">{listError}</p>
             <button
               type="button"
               onClick={onRetryList}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-rose-300/20 px-3 text-xs font-medium text-rose-100 hover:bg-rose-300/10 focus-visible:outline-2 focus-visible:outline-rose-300"
+              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
             >
               <RotateCw aria-hidden="true" className="size-3.5" />
               Retry documents
@@ -228,18 +231,21 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
         ) : isLoading ? (
           <p
             role="status"
-            className="rounded-xl border border-white/[0.07] p-5 text-sm text-zinc-400"
+            className="rounded-xl border border-[var(--border)] p-5 text-sm text-[var(--dim)]"
           >
             Loading your documents…
           </p>
         ) : sources.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-8 text-center">
-            <FileText aria-hidden="true" className="mx-auto size-6 text-zinc-500" />
-            <p className="mt-2 text-sm font-medium text-zinc-200">No documents yet</p>
-            <p className="mt-1 text-xs text-zinc-500">Your uploaded PDFs will appear here.</p>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-8 text-center">
+            <FileText aria-hidden="true" className="mx-auto size-6 text-[var(--dim)]" />
+            <p className="mt-2 text-sm font-medium text-[var(--text-h)]">No documents yet</p>
+            <p className="mt-1 text-xs text-[var(--dim)]">Your uploaded PDFs will appear here.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-white/[0.07] rounded-xl border border-white/[0.08] bg-[#18181b] px-4 sm:px-5">
+          <ul
+            aria-labelledby="pdf-documents-title"
+            className="divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 sm:px-5"
+          >
             {sources.map((source) => {
               const canReindex = source.status === 'ready' || source.status === 'failed';
               const isConfirming = confirmingDeleteId === source.id;
@@ -247,23 +253,26 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                 <li key={source.id} className="py-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-400">
+                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface)] text-[var(--dim)]">
                         {source.status === 'ready' ? (
-                          <Check aria-hidden="true" className="size-4 text-emerald-300" />
+                          <Check
+                            aria-hidden="true"
+                            className="size-4 text-[var(--success-strong)]"
+                          />
                         ) : (
                           <FileText aria-hidden="true" className="size-4" />
                         )}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-zinc-100">
+                        <p className="truncate text-sm font-medium text-[var(--text)]">
                           {source.displayName}
                         </p>
-                        <p className="mt-1 text-xs text-zinc-500">
+                        <p className="mt-1 text-xs text-[var(--dim)]">
                           {formatBytes(source.byteSize)}
                           {source.pageCount === null ? '' : ` · ${source.pageCount} pages`}
                         </p>
                         {source.status === 'failed' ? (
-                          <p className="mt-1 max-w-2xl text-xs leading-5 text-rose-300">
+                          <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--danger-strong)]">
                             {failureDescription(source.failureCode)}
                           </p>
                         ) : null}
@@ -273,10 +282,10 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                       <span
                         className={`rounded-full px-2.5 py-1 text-[0.68rem] font-medium ${
                           source.status === 'ready'
-                            ? 'bg-emerald-400/10 text-emerald-300'
+                            ? 'bg-[var(--green-bg)] text-[var(--success-strong)]'
                             : source.status === 'failed'
-                              ? 'bg-rose-400/10 text-rose-300'
-                              : 'bg-amber-300/10 text-amber-200'
+                              ? 'bg-[var(--red-bg)] text-[var(--danger-strong)]'
+                              : 'bg-[var(--accent-bg)] text-[var(--accent-strong)]'
                         }`}
                       >
                         {statusLabel(source.status)}
@@ -285,7 +294,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                         <Link
                           to={`${ROUTES.library}?pdfId=${encodeURIComponent(source.id)}`}
                           aria-label={`Open ${source.displayName} in Library`}
-                          className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-xs font-medium text-zinc-200 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400"
+                          className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-[var(--border2)] px-2.5 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                         >
                           <BookOpen aria-hidden="true" className="size-3.5" />
                           Open
@@ -296,7 +305,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                           type="button"
                           disabled={reindexingId === source.id}
                           onClick={() => onReindex(source.id)}
-                          className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-xs font-medium text-zinc-300 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-60"
+                          className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-[var(--border2)] px-2.5 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
                         >
                           <RotateCw aria-hidden="true" className="size-3.5" />
                           {reindexingId === source.id ? 'Queueing…' : 'Reindex'}
@@ -308,7 +317,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                           disabled={deletingId === source.id}
                           aria-label={`Delete ${source.displayName}`}
                           onClick={() => onRequestDelete(source.id)}
-                          className="inline-flex size-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-rose-400/10 hover:text-rose-300 focus-visible:outline-2 focus-visible:outline-rose-300 disabled:opacity-60"
+                          className="inline-flex size-8 items-center justify-center rounded-lg text-[var(--dim)] hover:bg-[var(--red-bg)] hover:text-[var(--danger-strong)] focus-visible:outline-2 focus-visible:outline-[var(--danger-strong)] disabled:opacity-60"
                         >
                           <Trash2 aria-hidden="true" className="size-4" />
                         </button>
@@ -316,13 +325,13 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                     </div>
                   </div>
                   {isConfirming ? (
-                    <div className="mt-3 flex flex-col gap-2 rounded-lg border border-rose-300/15 bg-rose-300/[0.04] p-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-sm text-zinc-200">Delete {source.displayName}?</p>
+                    <div className="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--red-bg)] bg-[var(--red-bg)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm text-[var(--text)]">Delete {source.displayName}?</p>
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={onCancelDelete}
-                          className="inline-flex min-h-8 items-center gap-1 rounded-md border border-white/10 px-2.5 text-xs text-zinc-300 hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-amber-400"
+                          className="inline-flex min-h-8 items-center gap-1 rounded-md border border-[var(--border2)] px-2.5 text-xs text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                         >
                           <X aria-hidden="true" className="size-3.5" />
                           Keep document
@@ -331,7 +340,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
                           type="button"
                           disabled={deletingId === source.id}
                           onClick={onConfirmDelete}
-                          className="inline-flex min-h-8 items-center rounded-md bg-rose-500/90 px-3 text-xs font-semibold text-white hover:bg-rose-500 focus-visible:outline-2 focus-visible:outline-rose-300 disabled:opacity-60"
+                          className="inline-flex min-h-8 items-center rounded-md border border-[var(--danger-strong)] bg-[var(--red-bg)] px-3 text-xs font-semibold text-[var(--danger-strong)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--danger-strong)] disabled:opacity-60"
                         >
                           {deletingId === source.id ? 'Removing…' : 'Delete PDF'}
                         </button>
@@ -345,7 +354,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
         )}
 
         {actionError ? (
-          <p role="alert" className="mt-3 text-sm text-rose-300">
+          <p role="alert" className="mt-3 text-sm text-[var(--danger-strong)]">
             {actionError}
           </p>
         ) : null}
