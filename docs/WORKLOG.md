@@ -1,3 +1,30 @@
+## 2026-11-05 - Add persistent Study Chat to the frontend
+
+- Added the floating assistant to the authenticated shell with compact and
+  fullscreen layouts, saved conversation browsing, transcript rendering, and
+  create/send/delete actions through the existing Clerk-aware API client and
+  TanStack Query. Failed sends keep their message and idempotency key for an
+  explicit retry; conflicts refresh the transcript; quota and provider errors
+  keep the draft available. The backend returns complete replies, so the UI
+  shows pending state without simulating token streaming.
+- Added a regression test for dialog-heading contrast in both themes and fixed
+  the existing Playwright landing smoke selector to target the hero heading.
+- Moved chat queries, mutations, focus handling, and operation workflows into a
+  logic controller hook. Added safe create-conflict guidance and operation
+  context guards so stale requests cannot replace a new or deleted conversation.
+- Added tests for one-character and maximum-length messages, create conflicts,
+  failed delete recovery, and pending-send races during navigation/deletion.
+- Stabilized the Settings dropdown interaction test by waiting for its option
+  to become accessible before selecting it.
+- Verification: UI lint, TypeScript project-reference check, production build,
+  and 100 UI test files / 421 tests passed. Root lint passed with 0 errors and
+  six existing server warnings. Chrome visual checks covered desktop compact,
+  mobile light fullscreen, and delete confirmation. Playwright UI smoke passed
+  (2/2); the authenticated UI tier could not run because the backend health
+  endpoint timed out. The detector, scoped Prettier, agent-doc check, and diff
+  checks passed. Repository-wide format check reports newline drift in this
+  Windows `core.autocrlf=true` checkout (943 files).
+
 ## 2026-11-05 - Add coding session history to the frontend
 
 - Added Practice/Coding tabs to Session History with independent server

@@ -22,6 +22,10 @@ vi.mock('@/service/auth', () => ({
   UserMenu: () => <button aria-label="Clerk user menu">Account</button>,
 }));
 
+vi.mock('./StudyChatWidget', () => ({
+  StudyChatWidget: () => <button aria-label="Study Chat assistant launcher">Ask PrepAI</button>,
+}));
+
 const CurrentPath = () => {
   const location = useLocation();
   return <output aria-label="Current route">{location.pathname}</output>;
@@ -77,6 +81,15 @@ describe('AuthenticatedLayoutPage', () => {
     await user.click(screen.getByRole('button', { name: 'Switch to light theme' }));
 
     expect(state.toggleTheme).toHaveBeenCalledOnce();
+  });
+
+  it('mounts exactly one Study Chat launcher beside the authenticated route content', () => {
+    renderAuthenticatedRoutes('/dashboard');
+
+    expect(screen.getAllByRole('button', { name: 'Study Chat assistant launcher' })).toHaveLength(
+      1
+    );
+    expect(screen.getByRole('heading', { name: 'Dashboard route content' })).toBeVisible();
   });
 
   it('marks Practice active and updates the page title for its route', () => {

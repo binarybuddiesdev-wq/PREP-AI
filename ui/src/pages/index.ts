@@ -1,4 +1,6 @@
 export { AuthenticatedLayoutPage } from './AuthenticatedLayoutPage';
+export { StudyChatWidget } from './StudyChatWidget';
+export type { IStudyChatWidgetProps } from './StudyChatWidget.types';
 export { DashboardPage } from './DashboardPage';
 export { CodingPage } from './CodingPage';
 export { CodingProblemPage } from './CodingProblemPage';

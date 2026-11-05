@@ -18,6 +18,7 @@ import { AppShell, BrandLink, type IAppShellNavigationGroup } from '@/components
 import { ROUTES, type AppShellRoute } from '@/core';
 import { useSessionReader, useThemePreference } from '@/logic';
 import { UserMenu } from '@/service/auth';
+import { StudyChatWidget } from './StudyChatWidget';
 
 const NAVIGATION: IAppShellNavigationGroup[] = [
   {
@@ -77,24 +78,27 @@ export const AuthenticatedLayoutPage = () => {
   const userName = user?.firstName ?? user?.email ?? 'Account';
 
   return (
-    <AppShell
-      activeRoute={activeRoute}
-      brand={<BrandLink to={ROUTES.dashboard} size="small" />}
-      collapseIcon={<PanelLeftClose size={16} />}
-      expandIcon={<PanelLeftOpen size={16} />}
-      mobileCloseIcon={<X size={20} />}
-      mobileMenuIcon={<Menu size={20} />}
-      navigation={NAVIGATION}
-      onNavigate={(route) => navigate(route)}
-      onThemeToggle={toggleTheme}
-      pageTitle={pageTitle}
-      theme={theme}
-      themeIcon={theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-      userEmail={user?.email ?? ''}
-      userMenu={<UserMenu />}
-      userName={userName}
-    >
-      <Outlet />
-    </AppShell>
+    <>
+      <AppShell
+        activeRoute={activeRoute}
+        brand={<BrandLink to={ROUTES.dashboard} size="small" />}
+        collapseIcon={<PanelLeftClose size={16} />}
+        expandIcon={<PanelLeftOpen size={16} />}
+        mobileCloseIcon={<X size={20} />}
+        mobileMenuIcon={<Menu size={20} />}
+        navigation={NAVIGATION}
+        onNavigate={(route) => navigate(route)}
+        onThemeToggle={toggleTheme}
+        pageTitle={pageTitle}
+        theme={theme}
+        themeIcon={theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+        userEmail={user?.email ?? ''}
+        userMenu={<UserMenu />}
+        userName={userName}
+      >
+        <Outlet />
+      </AppShell>
+      <StudyChatWidget theme={theme} />
+    </>
   );
 };

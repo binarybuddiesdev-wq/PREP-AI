@@ -13,6 +13,13 @@ export {
   submitCodingSolution,
 } from './coding.api';
 export {
+  createStudyChatConversation,
+  deleteStudyChatConversation,
+  getStudyChatConversation,
+  getStudyChatConversations,
+  sendStudyChatMessage,
+} from './studyChat.api';
+export {
   deletePdfSource,
   getPdfContent,
   getPdfSource,

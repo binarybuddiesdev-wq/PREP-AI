@@ -10,13 +10,13 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 
 ## Current state
 
-| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                            |
-| ---------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                        |
-| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist). |
-| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).   |
-| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, and PDF Study are implemented. Coding, chat, expanded settings, notifications, and billing remain on the roadmap.                                              |
-| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                             |
+| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                  |
+| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).           |
+| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).             |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history, and persistent Study Chat are implemented. Coding stats, expanded settings, notifications, and billing remain on the roadmap. |
+| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                       |
 
 ## Reference and implementation rules
 
@@ -179,16 +179,31 @@ API. Public production execution remains gated on stronger Piston isolation.
 
 ### Phase 6 — Study Chat
 
-**Status: Backend ready; frontend not started.** Persistent Study Chat
-conversation APIs use the Mastra study-coach agent. See the
+**Status: Complete.** The authenticated shell now includes the persistent
+Study Chat assistant backed by the conversation API and Mastra study-coach
+agent. The widget supports the reference's compact popup and fullscreen mode,
+conversation history, create/read/send/delete, retry-safe idempotency, and
+explicit loading, empty, pending, error, quota, turn-limit, and delete-confirm
+states. The API returns completed replies rather than a token stream, so the UI
+shows a pending state and never simulates streamed text. See the
 [Study Chat API](../routes/study-chat-api-spec.md).
 
-- [ ] Build the floating chat launcher and popup/fullscreen layouts.
-- [ ] Add conversation list/create/read/send/delete and transcript rendering.
-- [ ] Reuse idempotency keys for retries of the same create/send action and
+- [x] Build the floating chat launcher and popup/fullscreen layouts.
+- [x] Add conversation list/create/read/send/delete and transcript rendering.
+- [x] Reuse idempotency keys for retries of the same create/send action and
       handle revision conflicts, provider errors, and token quota responses.
-- [ ] Support loading, empty, streaming or pending, retry, and delete-confirm
-      states while preserving the reference's compact chat presentation.
+- [x] Support loading, empty, pending, retry, and delete-confirm states while
+      preserving the reference's compact chat presentation.
+
+**Verification:** UI lint, TypeScript project-reference check, production
+build, and all 100 UI test files / 421 tests passed. Root lint passed with no
+errors and six existing server warnings. Chrome visual checks covered the
+desktop compact transcript, mobile light fullscreen, and delete confirmation
+states. Playwright UI smoke passed (2/2); the authenticated tier could not run
+because the backend health endpoint timed out. The Impeccable detector,
+agent-doc check, scoped Prettier, and diff checks passed. The repo-wide format
+check reports newline-formatting drift in this Windows checkout
+(`core.autocrlf=true`, 943 files).
 
 ### Phase 7 — Settings and notifications
 

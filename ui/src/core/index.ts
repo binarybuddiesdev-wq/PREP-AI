@@ -4,6 +4,7 @@ export * from './dashboard';
 export * from './theory';
 export * from './onboarding';
 export * from './pdf';
+export * from './studyChat';
 export * from './user';
 export { API_BASE_URL, CLERK_PUBLISHABLE_KEY, IS_CLERK_CONFIGURATION_VALID } from './env';
 export { APP_SHELL_ROUTES, codingProblemPath, historySessionDetailPath, ROUTES } from './routes';

@@ -27,6 +27,10 @@ vi.mock('@/logic', () => ({
   useThemePreference: () => ({ theme: 'dark', toggleTheme: vi.fn() }),
 }));
 
+vi.mock('@/pages/StudyChatWidget', () => ({
+  StudyChatWidget: () => <button aria-label="Study Chat assistant launcher">Ask PrepAI</button>,
+}));
+
 vi.mock('@/pages', async (importOriginal) => {
   const pages = await importOriginal<typeof import('@/pages')>();
   return {
@@ -41,6 +45,7 @@ vi.mock('@/pages', async (importOriginal) => {
     SettingsPage: () => <h1>Authenticated settings</h1>,
     SettingsDocumentsPage: () => <h1>Authenticated documents</h1>,
     LibraryPage: () => <h1>Authenticated Library</h1>,
+    StudyChatWidget: () => <button aria-label="Study Chat assistant launcher">Ask PrepAI</button>,
   };
 });
 
@@ -83,6 +88,9 @@ describe('AppRoutes', () => {
     );
     expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/sign-in');
     expect(screen.getByRole('link', { name: 'Start Free' })).toHaveAttribute('href', '/sign-up');
+    expect(
+      screen.queryByRole('button', { name: 'Study Chat assistant launcher' })
+    ).not.toBeInTheDocument();
   });
 
   it('redirects signed-in users from the root route to their dashboard', () => {
