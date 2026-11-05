@@ -45,7 +45,7 @@ describe('authentication pages', () => {
     expect(screen.getByRole('link', { name: /PrepAI/ })).toHaveAttribute('href', '/');
     expect(screen.getByRole('form', { name: 'Clerk sign-in form' })).toHaveAttribute(
       'data-appearance-primary',
-      'bg-[var(--accent)] font-semibold text-[var(--accent-foreground)] shadow-none transition hover:bg-[var(--accent2)] hover:shadow-[0_6px_24px_rgba(245,158,11,0.24)]'
+      'prepai-auth-primary-button bg-[var(--prepai-accent)] font-semibold text-[var(--accent-foreground)] shadow-none transition hover:bg-[var(--prepai-accent-hover)] hover:shadow-[0_6px_24px_rgba(245,158,11,0.24)]'
     );
   });
 
@@ -56,7 +56,7 @@ describe('authentication pages', () => {
     expect(screen.getByRole('link', { name: /PrepAI/ })).toHaveAttribute('href', '/');
     expect(screen.getByRole('form', { name: 'Clerk sign-up form' })).toHaveAttribute(
       'data-appearance-primary',
-      'bg-[var(--accent)] font-semibold text-[var(--accent-foreground)] shadow-none transition hover:bg-[var(--accent2)] hover:shadow-[0_6px_24px_rgba(245,158,11,0.24)]'
+      'prepai-auth-primary-button bg-[var(--prepai-accent)] font-semibold text-[var(--accent-foreground)] shadow-none transition hover:bg-[var(--prepai-accent-hover)] hover:shadow-[0_6px_24px_rgba(245,158,11,0.24)]'
     );
   });
 

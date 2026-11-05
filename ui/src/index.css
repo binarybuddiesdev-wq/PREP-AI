@@ -6,6 +6,8 @@
   --surface2: rgb(255 255 255 / 7%);
   --accent: #f59e0b;
   --accent2: #fbbf24;
+  --prepai-accent: var(--accent);
+  --prepai-accent-hover: var(--accent2);
   --accent-foreground: #451a03;
   --accent-strong: #fbbf24;
   --info-strong: #7dd3fc;

@@ -9,3 +9,12 @@ html[data-theme='light'] .auth-page-shell {
 .auth-page-card {
   box-shadow: var(--auth-card-shadow);
 }
+
+.auth-page-shell .cl-formButtonPrimary.prepai-auth-primary-button {
+  background-color: var(--prepai-accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+.auth-page-shell .cl-formButtonPrimary.prepai-auth-primary-button:hover {
+  background-color: var(--prepai-accent-hover) !important;
+}

@@ -1,6 +1,6 @@
 export const authAppearance = {
   variables: {
-    colorPrimary: 'var(--accent)',
+    colorPrimary: 'var(--prepai-accent)',
     colorForeground: 'var(--text)',
     colorMutedForeground: 'var(--dim)',
     colorBackground: 'var(--card)',
@@ -27,7 +27,7 @@ export const authAppearance = {
     formFieldInput:
       'border-[var(--border2)] bg-[var(--bg2)] text-[var(--text)] placeholder:text-[var(--dim)] focus:border-[var(--accent-strong)] focus:ring-[var(--accent-bg)]',
     formButtonPrimary:
-      'bg-[var(--accent)] font-semibold text-[var(--accent-foreground)] shadow-none transition hover:bg-[var(--accent2)] hover:shadow-[0_6px_24px_rgba(245,158,11,0.24)]',
+      'prepai-auth-primary-button bg-[var(--prepai-accent)] font-semibold text-[var(--accent-foreground)] shadow-none transition hover:bg-[var(--prepai-accent-hover)] hover:shadow-[0_6px_24px_rgba(245,158,11,0.24)]',
     footerAction: 'mt-5 text-sm text-[var(--dim)]',
     footerActionLink: 'font-medium text-[var(--accent-strong)] hover:brightness-90',
     identityPreview: 'border-[var(--border)] bg-[var(--surface)]',

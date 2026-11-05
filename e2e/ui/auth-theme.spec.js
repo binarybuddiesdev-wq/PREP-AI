@@ -90,3 +90,43 @@ test('renders branded authentication surfaces in both themes', async () => {
     await browser.close();
   }
 });
+
+test('renders the actual Clerk primary action with the saved theme tokens', async () => {
+  let browser;
+  try {
+    browser = await chromium.launch();
+  } catch {
+    browser = await chromium.launch({ channel: 'chrome' });
+  }
+
+  const page = await browser.newPage();
+  try {
+    await page.goto('http://localhost:5173/sign-in', { waitUntil: 'domcontentloaded' });
+    let primaryAction = page.locator('.cl-formButtonPrimary');
+    await expect(primaryAction).toBeVisible({ timeout: 15_000 });
+    await expect(primaryAction).toHaveCSS('background-color', 'rgb(245, 158, 11)');
+    await expect(primaryAction).toHaveCSS('color', 'rgb(69, 26, 3)');
+    await primaryAction.hover();
+    await expect(primaryAction).toHaveCSS('background-color', 'rgb(251, 191, 36)');
+    await page.mouse.move(0, 0);
+
+    await page.evaluate(() => globalThis.localStorage.setItem('prepai-theme', 'light'));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    primaryAction = page.locator('.cl-formButtonPrimary');
+    await expect(primaryAction).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(primaryAction).toHaveCSS('background-color', 'rgb(245, 158, 11)');
+    await expect(primaryAction).toHaveCSS('color', 'rgb(69, 26, 3)');
+
+    await page.goto('http://localhost:5173/sign-up', { waitUntil: 'domcontentloaded' });
+    const signUpPrimaryAction = page.locator('.cl-formButtonPrimary');
+    await expect(signUpPrimaryAction).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(signUpPrimaryAction).toHaveCSS('background-color', 'rgb(245, 158, 11)');
+    await expect(signUpPrimaryAction).toHaveCSS('color', 'rgb(69, 26, 3)');
+    await signUpPrimaryAction.hover();
+    await expect(signUpPrimaryAction).toHaveCSS('background-color', 'rgb(251, 191, 36)');
+  } finally {
+    await browser.close();
+  }
+});

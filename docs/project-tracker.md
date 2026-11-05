@@ -304,6 +304,9 @@ parity and responsive/accessibility acceptance remain.**
       and a 390 px viewport.
 - [x] Move the Clerk sign-in/sign-up shell and appearance onto shared theme
       tokens; restore the saved theme on direct auth routes.
+- [x] Verify Clerk's rendered sign-in and sign-up primary buttons in dark and
+      light themes; namespace PrepAI accent variables to avoid Clerk's internal
+      `--accent` collision.
 - [x] Move Coding Questions statistics, difficulty/topic filters, problem
       cards, empty states, and stats retry errors onto the shared theme tokens;
       verify dark/light colors and a 390 px viewport in Playwright.
@@ -321,7 +324,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-05):** All 536 UI unit tests (123 files) pass; UI
+**Latest evidence (2026-11-06):** All 536 UI unit tests (123 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -355,7 +358,8 @@ error colors and a 390 px overflow check. The Practice setup, question,
 feedback/retry, and completion components also pass both UI Playwright
 projects in dark/light themes with a 390 px overflow check and no browser
 errors. The full UI gate remains green at 123 files / 536 tests, lint,
-type-check, and build.
+type-check, and build. The route-wide theme suite passes 28/28 in both
+configured browser projects, including rendered Clerk sign-in/sign-up buttons.
 
 Coding problem detail, workspace controls/results, review dialog, and missing
 or not-found states now use shared theme tokens. Focused tests and browser

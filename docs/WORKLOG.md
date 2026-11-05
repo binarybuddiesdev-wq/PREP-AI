@@ -893,3 +893,18 @@ New layout, one folder per purpose. A layer may import only from the layers list
   classes and ignored widget props, then passed after the changes. Full UI
   verification remains green at 123 files / 536 tests; auth theme browser
   checks passed in both configured projects.
+
+## 2026-11-06 - Verify the real Clerk button theme
+
+- Added a browser check against Clerk's rendered sign-in and sign-up widgets,
+  including dark and restored-light theme colors for the primary action.
+- The check exposed a CSS variable name collision: Clerk maps `colorPrimary` to
+  its own `--accent` variable, so passing PrepAI's `var(--accent)` made that
+  variable self-reference and left the button transparent with white text.
+  Added namespaced PrepAI accent aliases and a scoped auth button rule so
+  Clerk's generated styles keep the correct button colors.
+- The browser check failed before the fix and passes for both auth routes.
+  The route-wide theme suite passed 28/28 checks across both browser projects;
+  the full UI suite passed 123 files / 536 tests. UI lint, TypeScript build,
+  production build, scoped formatting, changed-file E2E lint, and diff checks
+  passed. Root lint and format remain red on unrelated/user-owned files.
