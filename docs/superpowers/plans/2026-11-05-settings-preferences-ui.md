@@ -48,4 +48,4 @@ Execution: inline implementation, authorized by the project objective to continu
 - [x] Compose the tabbed screen with Clerk identity and settings readers/command; remove debug database and raw JSON cards.
 - [x] Run UI verification, changed-file formatting, detector, and inspect the rendered app at desktop/mobile sizes.
 - [x] Mark only the Settings preferences portion complete; keep Phase 7 partial while notification inbox is outstanding.
-- [ ] Commit with Conventional Commits and push to `main` after review and verification.
+- [x] Commit with Conventional Commits and push to `main` after review and verification.
