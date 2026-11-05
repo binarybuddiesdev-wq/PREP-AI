@@ -19,6 +19,7 @@ import { ROUTES, type AppShellRoute } from '@/core';
 import { useSessionReader, useThemePreference } from '@/logic';
 import { UserMenu } from '@/service/auth';
 import { StudyChatWidget } from './StudyChatWidget';
+import { NotificationCenter } from './NotificationCenter';
 
 const NAVIGATION: IAppShellNavigationGroup[] = [
   {
@@ -84,6 +85,7 @@ export const AuthenticatedLayoutPage = () => {
         brand={<BrandLink to={ROUTES.dashboard} size="small" />}
         collapseIcon={<PanelLeftClose size={16} />}
         expandIcon={<PanelLeftOpen size={16} />}
+        headerActions={<NotificationCenter theme={theme} />}
         mobileCloseIcon={<X size={20} />}
         mobileMenuIcon={<Menu size={20} />}
         navigation={NAVIGATION}

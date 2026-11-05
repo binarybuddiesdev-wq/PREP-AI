@@ -10,13 +10,13 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 
 ## Current state
 
-| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                        |
-| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                    |
-| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                             |
-| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                               |
-| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history, persistent Study Chat, and supported settings preferences are implemented. Coding stats, notification inbox, and billing remain on the roadmap. |
-| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                         |
+| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                                     |
+| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                                              |
+| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                                                |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history, persistent Study Chat, supported settings preferences, and the authenticated notification inbox are implemented. Coding stats and billing remain on the roadmap. |
+| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                                          |
 
 ## Reference and implementation rules
 
@@ -207,19 +207,20 @@ check reports newline-formatting drift in this Windows checkout
 
 ### Phase 7 — Settings and notifications
 
-**Status: Partial.** Supported settings now use a compact tabbed interface for
-profile, practice preferences, reminders, and document management. The
-notification inbox and dashboard notification entry remain outstanding.
+**Status: Complete.** Supported settings use a compact tabbed interface for
+profile, practice preferences, reminders, and document management. The shared
+authenticated header provides a user-scoped notification inbox and unread
+count. See the [notifications API](../routes/notifications-api-spec.md).
 
 - [x] Expand supported settings into compact Profile, Notifications, Practice
       Preferences, and Documents tabs; omit unsupported AI, Plan, and Danger
       Zone actions.
 - [x] Persist profile, practice preferences, and daily reminder time/timezone
       through existing APIs; keep daily reminder opt-in disabled by default.
-- [ ] Build the notification dropdown/inbox, unread count, pagination,
+- [x] Build the notification dropdown/inbox, unread count, pagination,
       mark-read, mark-all-read, and delete against the
       [notifications API](../routes/notifications-api-spec.md).
-- [ ] Keep the dashboard bell and inbox counts synchronized using TanStack
+- [x] Keep the dashboard bell and inbox counts synchronized using TanStack
       Query invalidation/refetch rules.
 - [x] Do not present unsupported prototype controls as working features.
       Weekly digests, new-question/streak alerts, AI-model selection, web search,
@@ -233,6 +234,15 @@ the supported tabs at desktop and mobile sizes, including the open select menu;
 the screen had no horizontal overflow or page scroll at 320×568. The root
 format check remains red on the existing Windows checkout baseline; all files
 changed for this feature pass scoped Prettier.
+
+**Notification verification:** UI tests pass (112 files / 472 tests), UI lint,
+`tsc -b`, production build, changed-file Prettier, and `git diff --check` pass.
+Chrome preview checks at 1440x900 and 320x568 in dark and light themes show
+the popover inside the viewport with readable heading contrast and no page
+overflow. The authenticated API flow is covered with mocked API responses; it
+was not exercised against a signed-in live backend. The Impeccable detector's
+four notices are false positives for gray text on hover-only states and
+near-black text on amber controls.
 
 ### Phase 8 — Plan and billing
 

@@ -12,6 +12,7 @@ export const AppShell = (props: IAppShellProps) => {
     children,
     collapseIcon,
     expandIcon,
+    headerActions,
     mobileCloseIcon,
     mobileMenuIcon,
     navigation,
@@ -303,6 +304,7 @@ export const AppShell = (props: IAppShellProps) => {
               >
                 {themeIcon}
               </button>
+              {headerActions}
               {userMenu}
             </div>
           </header>

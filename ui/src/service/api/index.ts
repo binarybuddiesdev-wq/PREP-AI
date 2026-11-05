@@ -28,6 +28,13 @@ export {
   uploadPdfSource,
 } from './pdf.api';
 export {
+  deleteNotification,
+  getNotificationUnreadCount,
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from './notifications.api';
+export {
   completeTheorySession,
   getPracticeTopics,
   getTheoryAnswerEvaluation,

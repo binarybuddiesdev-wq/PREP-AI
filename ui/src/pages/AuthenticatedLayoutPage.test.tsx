@@ -26,6 +26,10 @@ vi.mock('./StudyChatWidget', () => ({
   StudyChatWidget: () => <button aria-label="Study Chat assistant launcher">Ask PrepAI</button>,
 }));
 
+vi.mock('./NotificationCenter', () => ({
+  NotificationCenter: () => <button aria-label="Notifications">Notifications</button>,
+}));
+
 const CurrentPath = () => {
   const location = useLocation();
   return <output aria-label="Current route">{location.pathname}</output>;

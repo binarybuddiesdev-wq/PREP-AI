@@ -31,6 +31,10 @@ vi.mock('@/pages/StudyChatWidget', () => ({
   StudyChatWidget: () => <button aria-label="Study Chat assistant launcher">Ask PrepAI</button>,
 }));
 
+vi.mock('@/pages/NotificationCenter', () => ({
+  NotificationCenter: () => <button aria-label="Notifications">Notifications</button>,
+}));
+
 vi.mock('@/pages', async (importOriginal) => {
   const pages = await importOriginal<typeof import('@/pages')>();
   return {

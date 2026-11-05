@@ -55,6 +55,21 @@ describe('AppShell', () => {
     expect(screen.getByText('Asha')).toBeVisible();
   });
 
+  it('renders optional header actions beside theme and account controls', () => {
+    render(
+      <AppShell
+        {...createShellProps({
+          headerActions: <button type="button">Notifications</button>,
+        })}
+      />
+    );
+
+    const banner = within(screen.getByRole('banner'));
+    expect(banner.getByRole('button', { name: 'Notifications' })).toBeVisible();
+    expect(banner.getByRole('button', { name: 'Switch to light theme' })).toBeVisible();
+    expect(banner.getByRole('button', { name: 'Clerk user menu' })).toBeVisible();
+  });
+
   it('routes from the sidebar and closes the mobile drawer after selection', async () => {
     const user = userEvent.setup();
     const props = createShellProps();

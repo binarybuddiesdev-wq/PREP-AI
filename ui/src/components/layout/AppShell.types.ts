@@ -19,6 +19,7 @@ export interface IAppShellProps {
   children: ReactNode;
   collapseIcon: ReactNode;
   expandIcon: ReactNode;
+  headerActions?: ReactNode;
   mobileCloseIcon: ReactNode;
   mobileMenuIcon: ReactNode;
   navigation: IAppShellNavigationGroup[];
