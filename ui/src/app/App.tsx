@@ -3,6 +3,7 @@ import { AppRoutes } from './AppRoutes';
 import { IS_CLERK_CONFIGURATION_VALID } from '@/core';
 import { ConfigurationErrorScreen } from '@/components/layout';
 import { AppErrorBoundary } from './AppErrorBoundary';
+import { AppToastViewport } from './AppToastViewport';
 
 export const App = () => {
   if (!IS_CLERK_CONFIGURATION_VALID) {
@@ -21,6 +22,7 @@ export const App = () => {
     <AppErrorBoundary>
       <AppProviders>
         <AppRoutes />
+        <AppToastViewport />
       </AppProviders>
     </AppErrorBoundary>
   );

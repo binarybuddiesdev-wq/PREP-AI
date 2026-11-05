@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
 import { SettingsFormCard, SettingsPlanPanel, type SettingsTab } from '@/components/settings';
 import { ROUTES, type ISettingsFormValues, type ISettingsSaveStatus } from '@/core';
@@ -13,16 +13,29 @@ import {
   useSettingsReader,
   useTheoryStatsReader,
   useUpdateSettingsCommand,
+  useToastCommand,
   useUserReader,
 } from '@/logic';
 
+const isSettingsTab = (value: string | null): value is SettingsTab =>
+  value === 'profile' ||
+  value === 'notifications' ||
+  value === 'preferences' ||
+  value === 'documents' ||
+  value === 'plan';
+
 export const SettingsPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
   const { isLoaded, user } = useSessionReader();
   const userQuery = useUserReader();
   const settingsQuery = useSettingsReader();
   const updateSettings = useUpdateSettingsCommand();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const toast = useToastCommand();
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
+    isSettingsTab(requestedTab) ? requestedTab : 'profile'
+  );
   const [checkoutRequest, setCheckoutRequest] = useState<{
     plan: 'monthly' | 'yearly';
     idempotencyKey: string;
@@ -34,6 +47,10 @@ export const SettingsPage = () => {
   const paymentCommands = usePaymentCommands();
   const [draft, setDraft] = useState<ISettingsFormValues | null>(null);
   const [status, setStatus] = useState<ISettingsSaveStatus | null>(null);
+
+  useEffect(() => {
+    if (isSettingsTab(requestedTab)) setActiveTab(requestedTab);
+  }, [requestedTab]);
 
   if (!isLoaded || userQuery.isPending || settingsQuery.isPending) {
     return <LoadingScreen label="Loading settings..." layout="embedded" />;
@@ -74,7 +91,8 @@ export const SettingsPage = () => {
     updateSettings.mutate(toUpdateSettingsBody(values, settingsQuery.data), {
       onSuccess: () => {
         setDraft(null);
-        setStatus({ kind: 'success', message: 'Settings saved successfully!' });
+        setStatus(null);
+        toast.success('Settings saved successfully.');
       },
       onError: (error) =>
         setStatus({

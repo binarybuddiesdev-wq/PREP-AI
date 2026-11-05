@@ -1,10 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsPage } from './SettingsPage';
+import { renderWithProviders } from '@/test/renderWithProviders';
 
 vi.mock('@clerk/clerk-react', () => ({
   useAuth: () => ({
@@ -49,15 +48,8 @@ describe('SettingsPage', () => {
     timezone: 'Asia/Kolkata',
   };
 
-  const renderSettingsPage = () => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    return render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/settings']}>
-          <SettingsPage />
-        </MemoryRouter>
-      </QueryClientProvider>
-    );
+  const renderSettingsPage = (initialEntry = '/settings') => {
+    return renderWithProviders(<SettingsPage />, [initialEntry], { includeToastViewport: true });
   };
 
   it('shows a retryable message when profile and settings requests fail', async () => {
@@ -65,15 +57,7 @@ describe('SettingsPage', () => {
       'fetch',
       vi.fn(async () => new Response('Unauthorized', { status: 401 }))
     );
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <SettingsPage />
-        </MemoryRouter>
-      </QueryClientProvider>
-    );
+    renderWithProviders(<SettingsPage />, ['/settings'], { includeToastViewport: true });
 
     const errorAlert = await screen.findByRole('alert');
     expect(errorAlert).toHaveTextContent('Couldn’t load your profile');
@@ -180,6 +164,51 @@ describe('SettingsPage', () => {
         true
       );
     });
+  });
+
+  it('opens the Plan tab for a plan shortcut query parameter', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request) => {
+        if (request.url.endsWith('/users/me')) {
+          return Response.json({ success: true, message: 'ok', data: userProfile });
+        }
+        if (request.url.endsWith('/users/settings')) {
+          return Response.json({ success: true, message: 'ok', data: userSettings });
+        }
+        if (request.url.endsWith('/theory/stats')) {
+          return Response.json({
+            success: true,
+            message: 'ok',
+            data: { dailySessions: { used: 1, limit: 3 }, questionsPerSession: 5 },
+          });
+        }
+        if (request.url.endsWith('/coding/stats')) {
+          return Response.json({
+            success: true,
+            message: 'ok',
+            data: {
+              solvedProblems: 2,
+              currentStreak: 1,
+              dailySolved: { used: 2, limit: 5 },
+              dailyReviews: { used: 1, limit: 2 },
+            },
+          });
+        }
+        if (request.url.endsWith('/payments/subscriptions/current')) {
+          return Response.json({ success: true, message: 'ok', data: null });
+        }
+        return Response.json({ success: false, message: 'Not found' }, { status: 404 });
+      })
+    );
+
+    renderSettingsPage('/settings?tab=plan');
+
+    expect(await screen.findByRole('tab', { name: 'Plan' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(await screen.findByText('Practice sessions today')).toBeVisible();
   });
 
   it('shows the API validation message when saving settings fails', async () => {

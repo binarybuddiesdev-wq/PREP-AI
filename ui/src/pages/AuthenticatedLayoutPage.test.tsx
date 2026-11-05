@@ -33,7 +33,12 @@ vi.mock('./NotificationCenter', () => ({
 
 const CurrentPath = () => {
   const location = useLocation();
-  return <output aria-label="Current route">{location.pathname}</output>;
+  return (
+    <output aria-label="Current route">
+      {location.pathname}
+      {location.search}
+    </output>
+  );
 };
 
 const renderAuthenticatedRoutes = (initialPath = '/dashboard') =>
@@ -86,6 +91,15 @@ describe('AuthenticatedLayoutPage', () => {
     await user.click(screen.getByRole('button', { name: 'Switch to light theme' }));
 
     expect(state.toggleTheme).toHaveBeenCalledOnce();
+  });
+
+  it('opens Plan and billing from the sidebar shortcut', async () => {
+    const user = userEvent.setup();
+    renderAuthenticatedRoutes();
+
+    await user.click(screen.getByRole('button', { name: 'Plan & billing' }));
+
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings?tab=plan');
   });
 
   it('mounts exactly one Study Chat launcher beside the authenticated route content', () => {

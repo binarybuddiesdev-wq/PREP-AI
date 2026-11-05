@@ -86,6 +86,22 @@ describe('AppShell', () => {
     expect(search.compareDocumentPosition(theme) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('renders the optional plan action in the sidebar above the account details', () => {
+    render(
+      <AppShell
+        {...createShellProps({
+          sidebarAction: <button type="button">Plan &amp; billing</button>,
+        })}
+      />
+    );
+
+    const sidebar = screen.getByRole('complementary', { name: 'Primary navigation' });
+    const action = within(sidebar).getByRole('button', { name: 'Plan & billing' });
+    const account = within(sidebar).getByText('Asha');
+    expect(action).toBeVisible();
+    expect(action.compareDocumentPosition(account) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('routes from the sidebar and closes the mobile drawer after selection', async () => {
     const user = userEvent.setup();
     const props = createShellProps();

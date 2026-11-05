@@ -14,6 +14,7 @@ export const AppShell = (props: IAppShellProps) => {
     expandIcon,
     headerLeadingActions,
     headerActions,
+    sidebarAction,
     mobileCloseIcon,
     mobileMenuIcon,
     navigation,
@@ -218,6 +219,8 @@ export const AppShell = (props: IAppShellProps) => {
               </div>
             ))}
           </nav>
+
+          {sidebarAction && <div className="px-3 pb-3">{sidebarAction}</div>}
 
           <div
             className={cn(

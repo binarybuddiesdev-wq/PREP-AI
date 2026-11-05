@@ -1,5 +1,6 @@
 import {
   Code2,
+  CreditCard,
   History,
   LayoutDashboard,
   LibraryBig,
@@ -113,6 +114,20 @@ export const AuthenticatedLayoutPage = () => {
           />
         }
         headerActions={<NotificationCenter theme={theme} />}
+        sidebarAction={
+          <button
+            type="button"
+            aria-label="Plan & billing"
+            title="Plan & billing"
+            className={`app-shell-sidebar-action flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-amber-400 ${theme === 'dark' ? 'border-amber-400/20 bg-amber-400/[0.06] text-amber-200 hover:bg-amber-400/10' : 'border-amber-500/25 bg-amber-50 text-amber-900 hover:bg-amber-100'}`}
+            onClick={() => navigate(`${ROUTES.settings}?tab=plan`)}
+          >
+            <CreditCard aria-hidden="true" className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate" data-sidebar-action-label>
+              Plan &amp; billing
+            </span>
+          </button>
+        }
         mobileCloseIcon={<X size={20} />}
         mobileMenuIcon={<Menu size={20} />}
         navigation={NAVIGATION}

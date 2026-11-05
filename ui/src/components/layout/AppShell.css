@@ -30,6 +30,13 @@
   .app-shell[data-collapsed='true'] [data-app-shell-brand] .app-shell-brand-label {
     display: none;
   }
+  .app-shell[data-collapsed='true'] .app-shell-sidebar-action {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .app-shell[data-collapsed='true'] [data-sidebar-action-label] {
+    display: none;
+  }
 }
 
 .app-shell[data-theme='light'] .app-shell-panel {
