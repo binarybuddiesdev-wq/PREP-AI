@@ -54,7 +54,7 @@ export class TheoryService {
 
   async getStats(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { clerkUserId: userId },
       select: { role: true },
     });
     if (!user) throw new NotFoundException('User not found');

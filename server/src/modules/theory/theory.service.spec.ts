@@ -214,15 +214,19 @@ describe('TheoryService', () => {
 
       const utcDate = new Date().toISOString().slice(0, 10);
 
-      await expect(service.getStats('user_001')).resolves.toEqual({
+      const clerkUserId = 'user_3LVaCrucNvWS0OtgQ3rvJjoBAHW';
+
+      await expect(service.getStats(clerkUserId)).resolves.toEqual({
         dailySessions: { used: 2, limit: 42 },
         questionsPerSession: 24,
       });
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: 'user_001' },
+        where: { clerkUserId },
         select: { role: true },
       });
-      expect(redis.getQuotaUsage).toHaveBeenCalledWith(`quota:user_001:${utcDate}:theory_sessions`);
+      expect(redis.getQuotaUsage).toHaveBeenCalledWith(
+        `quota:${clerkUserId}:${utcDate}:theory_sessions`
+      );
     });
 
     it('returns not found when the authenticated user has no local record', async () => {
