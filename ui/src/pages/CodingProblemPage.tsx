@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { CodingProblemDetail } from '@/components/coding';
+import { CodingProblemWorkspace } from '@/components/coding';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
+import type { CodingLanguage, CodingOutputTab, ICodingProblem } from '@/core';
 import { ROUTES } from '@/core';
 import { getHttpStatus, useCodingProblemReader } from '@/logic';
 
@@ -68,8 +70,53 @@ export const CodingProblemPage = () => {
   if (!detailQuery.data) return null;
 
   return (
-    <main className="w-full">
-      <CodingProblemDetail problem={detailQuery.data} onBack={returnToList} />
+    <CodingProblemWorkspacePage
+      key={detailQuery.data.id}
+      problem={detailQuery.data}
+      onBack={returnToList}
+    />
+  );
+};
+
+const starterCode = (problem: ICodingProblem, language: CodingLanguage) => {
+  if (language === 'typescript') return problem.codeTs;
+  if (language === 'python') return problem.codePy;
+  return problem.codeJs;
+};
+
+const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: () => void }) => {
+  const { problem, onBack } = props;
+  const [language, setLanguage] = useState<CodingLanguage>('javascript');
+  const [codeByLanguage, setCodeByLanguage] = useState<Partial<Record<CodingLanguage, string>>>({});
+  const [outputTab, setOutputTab] = useState<CodingOutputTab>('output');
+  const [isProblemCollapsed, setProblemCollapsed] = useState(false);
+  const [isFullscreen, setFullscreen] = useState(false);
+  const code = codeByLanguage[language] ?? starterCode(problem, language);
+
+  return (
+    <main className="h-[calc(100svh-116px)] min-h-[420px] w-full min-w-0">
+      <CodingProblemWorkspace
+        problem={problem}
+        language={language}
+        code={code}
+        outputTab={outputTab}
+        isProblemCollapsed={isProblemCollapsed}
+        isFullscreen={isFullscreen}
+        onBack={onBack}
+        onLanguageChange={setLanguage}
+        onCodeChange={(nextCode) =>
+          setCodeByLanguage((current) => ({ ...current, [language]: nextCode }))
+        }
+        onResetCode={() =>
+          setCodeByLanguage((current) => ({
+            ...current,
+            [language]: starterCode(problem, language),
+          }))
+        }
+        onOutputTabChange={setOutputTab}
+        onToggleProblem={() => setProblemCollapsed((current) => !current)}
+        onToggleFullscreen={() => setFullscreen((current) => !current)}
+      />
     </main>
   );
 };

@@ -1,4 +1,6 @@
 export type CodingDifficulty = 'Easy' | 'Medium' | 'Hard';
+export type CodingLanguage = 'javascript' | 'typescript' | 'python';
+export type CodingOutputTab = 'output' | 'testcases';
 
 export interface ICodingProblemSummary {
   id: string;

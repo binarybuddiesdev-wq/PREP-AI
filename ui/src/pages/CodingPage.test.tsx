@@ -19,6 +19,17 @@ vi.mock('@/logic', async (importOriginal) => ({
   useCodingProblemReader: queries.detail,
 }));
 
+vi.mock('@/components/coding/CodingEditor', () => ({
+  CodingEditor: (props: { language: string; value: string; onChange: (value: string) => void }) => (
+    <textarea
+      aria-label="Code editor"
+      data-language={props.language}
+      value={props.value}
+      onChange={(event) => props.onChange(event.currentTarget.value)}
+    />
+  ),
+}));
+
 const summary: ICodingProblemSummary = {
   id: 'problem-one',
   title: 'Two Sum',
@@ -90,6 +101,21 @@ describe('coding pages', () => {
     expect(queries.detail).toHaveBeenCalledWith('problem-one');
     await user.click(screen.getByRole('button', { name: 'Back to problems' }));
     expect(await screen.findByRole('heading', { name: 'Coding Questions' })).toBeInTheDocument();
+  });
+
+  it('keeps the workspace compact and switches between language starter templates', async () => {
+    const user = userEvent.setup();
+    renderCodingRoutes('/coding/two-sum');
+
+    expect(screen.getByRole('main')).toHaveClass('h-[calc(100svh-116px)]');
+    expect(screen.getByRole('textbox', { name: 'Code editor' })).toHaveValue(detail.codeJs);
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Programming language' }),
+      'python'
+    );
+    expect(screen.getByRole('textbox', { name: 'Code editor' })).toHaveValue(detail.codePy);
+    expect(screen.getByText('twoSum.py')).toBeInTheDocument();
   });
 
   it('exposes loading and retryable catalogue errors', async () => {

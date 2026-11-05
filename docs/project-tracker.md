@@ -153,14 +153,14 @@ session had no authenticated browser surface.
 
 ### Phase 5 — Coding challenges
 
-**Status: Catalogue and detail screens implemented; editor and execution flows
-pending.** Problem listing, sessions, run/submit execution, results, history,
-AI review, and quotas exist. Public production execution remains gated on
-stronger Piston isolation.
+**Status: Catalogue, detail, and editor implemented; execution flows pending.**
+Problem listing, sessions, run/submit execution, results, history, AI review,
+and quotas exist. Public production execution remains gated on stronger Piston
+isolation.
 
 - [x] Build the problem list, topic/difficulty filters, user-specific solved
       state, and problem details/examples/constraints.
-- [ ] Add the editor for JavaScript, TypeScript, and Python with output and
+- [x] Add the editor for JavaScript, TypeScript, and Python with output and
       test-case tabs, reset, fullscreen, and collapsible problem description.
 - [ ] Connect Run and Submit to the asynchronous coding API and render real
       queued/running/completed results and limits.
@@ -168,7 +168,7 @@ stronger Piston isolation.
       complexity, quality, and suggestion fields.
 - [ ] Add coding stats/history from backend results; do not use browser storage
       as the source of truth for solved status or quotas.
-- [ ] Select and package the editor dependency locally; avoid loading Monaco
+- [x] Select and package the editor dependency locally; avoid loading Monaco
       from a runtime CDN as the standalone prototype does.
 
 ### Phase 6 — Study Chat

@@ -1,5 +1,7 @@
 export type {
   CodingDifficulty,
+  CodingLanguage,
+  CodingOutputTab,
   ICodingProblem,
   ICodingProblemExample,
   ICodingProblemSummary,
