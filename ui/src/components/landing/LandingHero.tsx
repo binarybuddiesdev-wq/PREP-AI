@@ -1,7 +1,6 @@
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { LandingMetrics } from './LandingMetrics';
 import type { ILandingHeroProps } from './LandingHero.types';
 
 export const LandingHero = (props: ILandingHeroProps) => {
@@ -14,17 +13,17 @@ export const LandingHero = (props: ILandingHeroProps) => {
       <div className="landing-hero__copy">
         <p className="landing-chip">
           <span className="landing-chip__dot" aria-hidden="true" />
-          NVIDIA NIM powered — now in beta
+          AI-powered interview practice
         </p>
         <h1 id="landing-title">
           The smarter way to
           <br />
           prepare for <em>interviews</em>
-          <span>AI-crafted questions. Real-time feedback. Track every session.</span>
+          <span>Topic-focused questions. Clear feedback. Progress you can review.</span>
         </h1>
         <p className="landing-hero__description">
-          Stop guessing what interviewers will ask. Practice with questions generated specifically
-          for your target role, tech stack, and experience level.
+          Practice with questions focused on the topic and difficulty you choose, or study from your
+          own documents.
         </p>
         <div className="landing-hero__actions">
           <Link
@@ -40,49 +39,58 @@ export const LandingHero = (props: ILandingHeroProps) => {
             See how it works <ArrowDown aria-hidden="true" />
           </a>
         </div>
-        <LandingMetrics
-          metrics={[
-            { label: 'Questions', suffix: '+', target: 500 },
-            { label: 'Sessions', suffix: 'k+', target: 12 },
-            { decimal: true, label: 'User Rating', suffix: '', target: 4.9 },
-          ]}
-        />
+        <ul aria-label="PrepAI capabilities" className="landing-proof-points">
+          <li>
+            <strong>Focus</strong>
+            <span>Choose topics and difficulty</span>
+          </li>
+          <li>
+            <strong>Feedback</strong>
+            <span>Understand your answers</span>
+          </li>
+          <li>
+            <strong>Progress</strong>
+            <span>Review your practice history</span>
+          </li>
+        </ul>
       </div>
       <div className="landing-hero__preview">
         <div className="landing-terminal-glow" aria-hidden="true" />
-        <div aria-label="Example PrepAI practice session" className="landing-terminal" role="group">
+        <div aria-label="PrepAI practice flow" className="landing-terminal" role="group">
           <div className="landing-terminal__bar">
             <span className="landing-terminal__dot landing-terminal__dot--red" />
             <span className="landing-terminal__dot landing-terminal__dot--yellow" />
             <span className="landing-terminal__dot landing-terminal__dot--green" />
-            <span className="landing-terminal__title">prepai — session</span>
+            <span className="landing-terminal__title">prepai - practice flow</span>
           </div>
-          <div className="landing-terminal__body" aria-hidden="true">
+          <div className="landing-terminal__body">
             <p>
-              <span className="landing-terminal__prompt">$</span>{' '}
+              <span className="landing-terminal__prompt">01</span>{' '}
               <span className="landing-terminal__command">
-                prepai start --topic react --level senior
+                Choose a topic and target difficulty
               </span>
             </p>
-            <p className="landing-terminal__muted">Loading questions for React (Senior)...</p>
+            <p className="landing-terminal__muted">
+              Questions match the topic and difficulty you chose.
+            </p>
             <p aria-hidden="true">&nbsp;</p>
             <p>
-              <span className="landing-terminal__highlight">Q1:</span>{' '}
-              <span className="landing-terminal__command">
-                Explain the difference between useEffect and useLayoutEffect.
-              </span>
+              <span className="landing-terminal__highlight">02</span>{' '}
+              <span className="landing-terminal__command">Answer in your own words</span>
             </p>
-            <p className="landing-terminal__muted">Your answer submitted →</p>
+            <p className="landing-terminal__muted">
+              Use your own experience to explain your thinking.
+            </p>
             <p aria-hidden="true">&nbsp;</p>
             <p>
-              <span className="landing-terminal__success">✓ Score: 8.5/10</span>{' '}
-              <span className="landing-terminal__muted">
-                — Solid understanding. Add browser paint timing for depth.
+              <span className="landing-terminal__success">03</span>{' '}
+              <span className="landing-terminal__command">
+                Review feedback and choose a next step
               </span>
             </p>
             <p>
-              <span className="landing-terminal__prompt">$</span>{' '}
-              <span className="landing-terminal__cursor">_</span>
+              <span className="landing-terminal__prompt">&gt;</span>{' '}
+              <span className="landing-terminal__cursor">Your progress stays in your history.</span>
             </p>
           </div>
         </div>

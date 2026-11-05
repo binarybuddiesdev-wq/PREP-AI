@@ -1,3 +1,20 @@
+## 2026-11-05 - Remove unsupported frontend demo claims
+
+- Removed fabricated landing-page counts and sample answer scores. Replaced the
+  fake session transcript with an accurate topic/difficulty practice flow and
+  clarified the evaluation, elapsed-time, and history descriptions. Updated
+  onboarding copy so it says role and experience data are saved to the profile
+  without promising that they personalize generated questions.
+- Reduced the hero preview reveal to one brief entrance and replaced gradient
+  text with readable solid accent colors. Production UI search found no fake
+  result data; remaining random values are decorative particles and a fallback
+  idempotency identifier.
+- Verification: 122 UI test files / 515 tests, UI lint, TypeScript project
+  check, production build, and the Chrome theme/landing Playwright check pass.
+  Desktop and mobile landing captures were reviewed. The Impeccable detector
+  reports one intentional warning for near-black text on an amber primary
+  button; its foreground/background combination is retained for contrast.
+
 ## 2026-11-05 - Add global route and topic search
 
 - Added an accessible app-shell search dialog with `Ctrl+K` / `Command+K`,

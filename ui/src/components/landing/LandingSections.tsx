@@ -16,11 +16,11 @@ export const LandingSections = (props: ILandingSectionsProps) => {
         <div className="landing-section__head">
           <p className="landing-section__label">See it work</p>
           <h2 className="landing-section__title" id="landing-features-title">
-            Feedback that reads like a senior engineer wrote it
+            Feedback that explains what to improve
           </h2>
           <p className="landing-section__subtitle">
-            Not a bare score. A real answer, graded, with the reasoning shown — this is an actual
-            practice session.
+            See an AI score and written feedback for each answer, then use your session history and
+            weak areas to choose what to practice next.
           </p>
         </div>
         <LandingShowcase />
@@ -32,33 +32,24 @@ export const LandingSections = (props: ILandingSectionsProps) => {
         <div className="landing-section__head">
           <p className="landing-section__label">Built differently</p>
           <h2 className="landing-section__title" id="landing-difference-title">
-            Three things a static question bank can't do
+            Practice with useful feedback and a clear next step
           </h2>
         </div>
         <div className="landing-statements">
           <article className="landing-statement">
             <span>01</span>
-            <h3>Adapts every question</h3>
-            <p>
-              Nail three in a row and the next one gets harder. Miss the fundamentals and it backs
-              off automatically — no settings screen, it just happens.
-            </p>
+            <h3>Choose your challenge</h3>
+            <p>Set a topic and target difficulty for each practice session.</p>
           </article>
           <article className="landing-statement">
             <span>02</span>
-            <h3>Explains the score</h3>
-            <p>
-              What you got right, what's missing, and the exact phrase to add next time — not just a
-              number.
-            </p>
+            <h3>Understand your feedback</h3>
+            <p>Review the score and written feedback for each answer.</p>
           </article>
           <article className="landing-statement">
             <span>03</span>
-            <h3>Finds your gaps first</h3>
-            <p>
-              No self-assessment quiz. After a few sessions we already know where you're strong and
-              where you're not.
-            </p>
+            <h3>Find your focus</h3>
+            <p>Use saved scores and weak-area results to decide what to practice next.</p>
           </article>
         </div>
       </section>
@@ -75,20 +66,20 @@ export const LandingSections = (props: ILandingSectionsProps) => {
         </div>
         <div className="landing-steps">
           <article>
-            <h3>Pick your stack</h3>
-            <p>React, TypeScript, System Design, DSA, Node, NestJS and 14 more.</p>
+            <h3>Choose a topic or document</h3>
+            <p>Choose from available interview topics or study from your own documents.</p>
           </article>
           <article>
-            <h3>Answer for real</h3>
-            <p>Timed, typed, no multiple choice — no judgment, just practice.</p>
+            <h3>Write your answer</h3>
+            <p>Answer in your own words. PrepAI records your elapsed time.</p>
           </article>
           <article>
-            <h3>Get graded</h3>
-            <p>Score plus the reasoning behind it, in seconds.</p>
+            <h3>Review your answer</h3>
+            <p>See an AI-generated score and written feedback on your answer.</p>
           </article>
           <article>
-            <h3>Watch gaps close</h3>
-            <p>Each session targets what your last one exposed.</p>
+            <h3>Review your progress</h3>
+            <p>Use your session history and weak areas to guide what you practice next.</p>
           </article>
         </div>
       </section>
@@ -98,23 +89,23 @@ export const LandingSections = (props: ILandingSectionsProps) => {
         id="ld-stats"
       >
         <div className="landing-section__head">
-          <p className="landing-section__label">In practice</p>
+          <p className="landing-section__label">A useful practice loop</p>
           <h2 className="landing-section__title" id="landing-results-title">
-            Scores that actually move
+            Practice that keeps your next step clear
           </h2>
         </div>
         <div className="landing-results">
           <article>
-            <strong>4.2→8.3</strong>
-            <span>Avg. system design score, first 10 sessions</span>
+            <strong>Focus</strong>
+            <span>Choose topics and difficulty that fit your interview goals.</span>
           </article>
           <article>
-            <strong>31→84%</strong>
-            <span>MongoDB score after two focused weeks</span>
+            <strong>Feedback</strong>
+            <span>Understand the strengths and gaps in each submitted answer.</span>
           </article>
           <article>
-            <strong>12</strong>
-            <span>Sessions to a first "you're ready" verdict</span>
+            <strong>Progress</strong>
+            <span>Review past sessions and use weak areas to plan what comes next.</span>
           </article>
         </div>
       </section>

@@ -16,7 +16,44 @@ test('applies the saved PrepAI light and dark theme across reloads', async () =>
   });
 
   try {
-    await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' });
+    await expect
+      .poll(() =>
+        page
+          .locator('.landing-hero h1 em')
+          .evaluate((element) => element.ownerDocument.defaultView.getComputedStyle(element).color)
+      )
+      .not.toBe('rgba(0, 0, 0, 0)');
+    await expect
+      .poll(() =>
+        page
+          .locator('.landing-results strong')
+          .first()
+          .evaluate((element) => element.ownerDocument.defaultView.getComputedStyle(element).color)
+      )
+      .not.toBe('rgba(0, 0, 0, 0)');
+    await expect
+      .poll(() =>
+        page
+          .getByText('Choose a topic and target difficulty')
+          .evaluate(
+            (element) =>
+              element.ownerDocument.defaultView.getComputedStyle(element.closest('p')).opacity
+          )
+      )
+      .toBe('1');
+    await expect
+      .poll(
+        () =>
+          page
+            .getByText('Review feedback and choose a next step')
+            .evaluate(
+              (element) =>
+                element.ownerDocument.defaultView.getComputedStyle(element.closest('p')).opacity
+            ),
+        { timeout: 1_500 }
+      )
+      .toBe('1');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect
       .poll(() =>

@@ -20,13 +20,18 @@ describe('LandingShowcase', () => {
     });
 
     render(<LandingShowcase />);
-    const preview = screen.getByRole('group', { name: 'Example practice question and feedback' });
+    const preview = screen.getByRole('group', { name: 'Practice feedback overview' });
 
     await user.pointer({ target: preview, coords: { clientX: 200, clientY: 0 } });
     expect(preview).toHaveStyle({ '--landing-rotate-x': '10deg', '--landing-rotate-y': '-3deg' });
 
     await user.unhover(preview);
     expect(preview).toHaveStyle({ '--landing-rotate-x': '6deg', '--landing-rotate-y': '-8deg' });
+    expect(
+      screen.getByText('Your answer is scored for accuracy, completeness, clarity, and depth.')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Written feedback on your response')).toBeInTheDocument();
+    expect(screen.queryByText('8.5')).not.toBeInTheDocument();
 
     bounds.mockRestore();
   });

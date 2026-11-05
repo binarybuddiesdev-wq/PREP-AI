@@ -283,13 +283,14 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-05):** All 515 UI unit tests pass; UI lint and
-production build pass. Chrome smoke checks pass for the landing page (2 tests)
-and theme persistence/responsiveness (1 test, including a 320 px viewport).
-The dashboard component was rendered at 390, 768, and 1440 px; those previews
-showed no horizontal overflow. The dashboard previews used local fixture data,
-and authenticated route states have not yet been visually checked against the
-live API.
+**Latest evidence (2026-11-05):** All 515 UI unit tests (122 files) pass; UI
+lint, TypeScript project check, and production build pass. The Chrome
+theme/landing check passes, including persisted theme, a 320 px no-overflow
+viewport, visible hero-preview text, and readable heading colors. Desktop
+(1440 px) and mobile (390 px) landing captures were reviewed. The dashboard
+component was also rendered at 390, 768, and 1440 px; those previews used local
+fixture data. Signed-in route states have not yet been visually checked against
+the live API.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
@@ -299,7 +300,7 @@ live API.
       states for each connected feature.
 - [ ] Run the frontend quality gate, unit tests, relevant Playwright flows,
       and a visual browser check. Record evidence in this tracker.
-- [ ] Remove demo fixtures, random results, and temporary feature flags before
+- [x] Remove demo fixtures, random results, and temporary feature flags before
       marking a ported screen complete.
 
 ## Backend and platform work

@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { useState, type CSSProperties, type PointerEvent } from 'react';
 
 import { cn } from '@/utils';
@@ -29,7 +30,7 @@ export const LandingShowcase = (props: ILandingShowcaseProps) => {
     <div className={cn('landing-showcase', className)}>
       <div className="landing-showcase__stage">
         <div
-          aria-label="Example practice question and feedback"
+          aria-label="Practice feedback overview"
           className="landing-showcase__panel"
           onPointerLeave={() => setRotation({ x: 6, y: -8 })}
           onPointerMove={handlePointerMove}
@@ -41,25 +42,30 @@ export const LandingShowcase = (props: ILandingShowcaseProps) => {
               <span className="landing-terminal__dot landing-terminal__dot--red" />
               <span className="landing-terminal__dot landing-terminal__dot--yellow" />
               <span className="landing-terminal__dot landing-terminal__dot--green" />
-              <span className="landing-showcase__title">prepai — practice session</span>
+              <span className="landing-showcase__title">prepai - feedback overview</span>
             </div>
             <div className="landing-showcase__body">
               <div className="landing-showcase__question">
-                <span className="landing-showcase__label">QUESTION 4 OF 10 — REACT, SENIOR</span>
-                <p>How would you prevent unnecessary re-renders in a list of 10,000 items?</p>
-                <p className="landing-showcase__answer">
-                  I'd wrap the component in React.memo and virtualize the list so we're not mounting
-                  every row at once...
-                </p>
+                <span className="landing-showcase__label">AFTER YOU SUBMIT AN ANSWER</span>
+                <p>Your answer is scored for accuracy, completeness, clarity, and depth.</p>
+                <ul className="landing-showcase__feedback-list">
+                  <li>
+                    <Check aria-hidden="true" />
+                    <span>An AI-generated score</span>
+                  </li>
+                  <li>
+                    <Check aria-hidden="true" />
+                    <span>Written feedback on your response</span>
+                  </li>
+                  <li>
+                    <Check aria-hidden="true" />
+                    <span>A session history you can review</span>
+                  </li>
+                </ul>
               </div>
               <div className="landing-showcase__feedback">
-                <div className="landing-score-ring">
-                  <div>
-                    <strong>8.5</strong>
-                    <span>/ 10</span>
-                  </div>
-                </div>
-                <p>Excellent answer</p>
+                <span className="landing-feedback-label">Answer evaluation</span>
+                <p>Score and written feedback</p>
               </div>
             </div>
           </div>

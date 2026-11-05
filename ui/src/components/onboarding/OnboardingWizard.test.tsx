@@ -48,6 +48,10 @@ describe('OnboardingWizard', () => {
     expect(screen.getByRole('list', { name: 'Setup progress' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Target Role' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Experience Level' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Save your target role and experience level to your profile.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/tailor questions for your target role/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
   });
 

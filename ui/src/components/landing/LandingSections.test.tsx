@@ -13,10 +13,24 @@ describe('LandingSections', () => {
     );
 
     expect(
-      screen.getByRole('heading', { name: /feedback that reads like a senior engineer wrote it/i })
+      screen.getByRole('heading', { name: /feedback that explains what to improve/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/AI score and written feedback for each answer/i)).toBeInTheDocument();
+    expect(
+      screen.getByText('See an AI-generated score and written feedback on your answer.')
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /four steps, every session/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /scores that actually move/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /practice that keeps your next step clear/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Set a topic and target difficulty for each practice session/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/PrepAI records your elapsed time/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Timed, typed/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('4.2→8.3')).not.toBeInTheDocument();
+    expect(screen.queryByText('31→84%')).not.toBeInTheDocument();
+    expect(screen.queryByText(/exact phrase to add/i)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /get started free/i })).toHaveAttribute(
       'href',
       '/sign-up'

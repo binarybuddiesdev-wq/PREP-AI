@@ -115,7 +115,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Tell us about your target role
               </h2>
               <p className="mt-1 text-sm text-zinc-400">
-                We’ll tailor questions for your target role.
+                Save your target role and experience level to your profile.
               </p>
 
               <div className="onboarding-fields mt-3 space-y-2">
