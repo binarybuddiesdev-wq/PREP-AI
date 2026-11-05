@@ -107,12 +107,18 @@ export const SettingsDocumentsPage = () => {
 
   return (
     <div className="space-y-5">
-      <nav aria-label="Settings sections" className="flex items-center gap-2 text-xs text-zinc-500">
-        <Link to={ROUTES.settings} className="hover:text-zinc-200 focus-visible:text-zinc-100">
+      <nav
+        aria-label="Settings sections"
+        className="flex items-center gap-2 text-xs text-[var(--dim)]"
+      >
+        <Link
+          to={ROUTES.settings}
+          className="text-[var(--text)] hover:text-[var(--accent-strong)] focus-visible:text-[var(--text-h)]"
+        >
           Settings
         </Link>
         <span aria-hidden="true">/</span>
-        <span aria-current="page" className="text-zinc-300">
+        <span aria-current="page" className="text-[var(--text-h)]">
           Documents
         </span>
       </nav>

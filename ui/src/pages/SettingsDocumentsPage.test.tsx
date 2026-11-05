@@ -51,6 +51,19 @@ describe('SettingsDocumentsPage', () => {
     hooks.remove.error = null;
   });
 
+  it('keeps the document breadcrumb readable with the app theme tokens', () => {
+    renderPage();
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Settings sections' });
+    expect(breadcrumb).toHaveClass('text-[var(--dim)]');
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveClass(
+      'text-[var(--text)]',
+      'hover:text-[var(--accent-strong)]',
+      'focus-visible:text-[var(--text-h)]'
+    );
+    expect(screen.getByText('Documents')).toHaveClass('text-[var(--text-h)]');
+  });
+
   it('rejects an invalid PDF signature before making an upload request', async () => {
     renderPage();
     const file = new File(['not a PDF'], 'notes.pdf', { type: 'application/pdf' });
