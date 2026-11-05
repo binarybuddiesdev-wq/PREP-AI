@@ -16,6 +16,21 @@ const values: ISettingsFormValues = {
 };
 
 describe('SettingsPracticePreferencesPanel', () => {
+  it('uses theme-aware tokens for unselected topic controls', () => {
+    render(
+      <SettingsPracticePreferencesPanel values={values} isSaving={false} onChange={vi.fn()} />
+    );
+
+    const unselectedTopic = screen.getByRole('button', { name: 'Node.js' });
+
+    expect(unselectedTopic).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--surface)]',
+      'text-[var(--dim)]'
+    );
+    expect(unselectedTopic).not.toHaveClass('border-white/10', 'bg-white/[0.03]');
+  });
+
   it('updates focus topics and keeps at least one topic selected', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

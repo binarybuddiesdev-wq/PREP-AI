@@ -306,7 +306,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-05):** All 519 UI unit tests (122 files) pass; UI
+**Latest evidence (2026-11-05):** All 521 UI unit tests (122 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -328,7 +328,7 @@ worker SQL-function errors remain a separate backend issue and are not linked
 to these successful dashboard requests. Session History's Practice and Coding
 tables and expanded details now use shared tokens; two focused Playwright
 runs verified dark/light computed colors, 390 px overflow, and no browser
-errors. Full UI verification passed (122 files / 519 tests, lint, project
+errors. Full UI verification passed (122 files / 521 tests, lint, project
 type-check, production build); scoped Prettier and `git diff --check` passed.
 Root lint still reports 14 errors in the untracked `types/piston.js` and nine
 warnings elsewhere; repository-wide formatting remains red on 57 existing or
@@ -339,13 +339,20 @@ its Playwright check passes in both UI projects with light/dark detail and
 error colors and a 390 px overflow check. The Practice setup, question,
 feedback/retry, and completion components also pass both UI Playwright
 projects in dark/light themes with a 390 px overflow check and no browser
-errors. The full UI gate remains green at 122 files / 519 tests, lint,
+errors. The full UI gate remains green at 122 files / 521 tests, lint,
 type-check, and build.
 
 Coding problem detail, workspace controls/results, review dialog, and missing
 or not-found states now use shared theme tokens. Focused tests and browser
 renders verified both themes and mobile overflow; the code editor remains a
 dark IDE surface.
+
+Settings > Practice Preferences and its tab/save dividers use theme tokens. A
+focused component test and a 390 px Playwright render verified these surfaces
+in dark and light themes. The dashboard visual test now mounts its
+router-dependent component inside a MemoryRouter; the route visual suite passes
+10/10. Four generic smoke tests still require the missing Playwright-managed
+Chromium binary. The live signed-in route review remains open.
 
 Practice and Coding content is now seeded in the local Podman databases so the
 existing flows can be tried: 23 topics, 12 theory questions, and the Two Sum

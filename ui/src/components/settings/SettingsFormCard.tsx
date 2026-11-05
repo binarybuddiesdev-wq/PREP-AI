@@ -61,7 +61,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
 
   return (
     <section className="app-shell-panel overflow-hidden rounded-xl border border-white/10 bg-[#18181b]">
-      <header className="border-b border-white/[0.08] px-4 pt-2 sm:px-5">
+      <header className="border-b border-[var(--border)] px-4 pt-2 sm:px-5">
         <SettingsTabList activeTab={activeTab} onChange={changeActiveTab} />
       </header>
 
@@ -85,7 +85,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
       ))}
 
       {showSaveFooter && (
-        <footer className="flex min-h-14 flex-wrap items-center gap-3 border-t border-white/[0.08] px-4 py-3 sm:px-5">
+        <footer className="flex min-h-14 flex-wrap items-center gap-3 border-t border-[var(--border)] px-4 py-3 sm:px-5">
           <button
             type="button"
             onClick={onSave}

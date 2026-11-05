@@ -54,6 +54,18 @@ describe('SettingsFormCard', () => {
     }
   });
 
+  it('uses theme-aware dividers around the settings panel and save actions', () => {
+    renderCard();
+
+    const tabHeader = screen.getByRole('tablist').closest('header');
+    const saveFooter = screen.getByRole('button', { name: 'Save settings' }).closest('footer');
+
+    expect(tabHeader).toHaveClass('border-[var(--border)]');
+    expect(saveFooter).toHaveClass('border-[var(--border)]');
+    expect(tabHeader).not.toHaveClass('border-white/[0.08]');
+    expect(saveFooter).not.toHaveClass('border-white/[0.08]');
+  });
+
   it('switches panels accessibly and edits supported practice preferences', async () => {
     const user = userEvent.setup();
     const { onChange } = renderCard();

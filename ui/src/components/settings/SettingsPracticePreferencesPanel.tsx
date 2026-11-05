@@ -34,8 +34,8 @@ export const SettingsPracticePreferencesPanel = (props: ISettingsPracticePrefere
                 onClick={() => toggleTopic(topic)}
                 className={`min-h-7 rounded-full border px-2.5 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50 ${
                   isSelected
-                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
-                    : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-100'
+                    ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+                    : 'border-[var(--border)] bg-[var(--surface)] text-[var(--dim)] hover:border-[var(--border2)] hover:text-[var(--text)]'
                 }`}
               >
                 {topic}

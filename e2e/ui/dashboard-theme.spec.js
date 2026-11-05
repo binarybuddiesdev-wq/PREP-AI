@@ -12,10 +12,21 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
   try {
     await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(async () => {
-      const react = await import('/node_modules/.vite/deps/react.js');
+      const loadViteDependency = (name) => {
+        const resource = globalThis.performance
+          .getEntriesByType('resource')
+          .find((entry) =>
+            new globalThis.URL(entry.name).pathname.endsWith(`/node_modules/.vite/deps/${name}.js`)
+          );
+        if (!resource) throw new Error(`Vite dependency was not loaded: ${name}`);
+        return import(resource.name);
+      };
+      const react = await loadViteDependency('react');
       const createElement = react.createElement ?? react.default?.createElement;
-      const reactDom = await import('/node_modules/.vite/deps/react-dom_client.js');
+      const reactDom = await loadViteDependency('react-dom_client');
       const createRoot = reactDom.createRoot ?? reactDom.default?.createRoot;
+      const router = await loadViteDependency('react-router');
+      const MemoryRouter = router.MemoryRouter ?? router.default?.MemoryRouter;
       if (typeof createRoot !== 'function') {
         throw new Error(`React DOM client exports: ${Object.keys(reactDom).join(', ')}`);
       }
@@ -54,17 +65,21 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       content.className = 'px-4 py-6 sm:px-6 lg:px-8';
       preview.append(content);
       createRoot(content).render(
-        createElement(DashboardOverview, {
-          name: 'Asha',
-          summary,
-          theoryStatus: failed,
-          codingStatus: ready,
-          scoreTrendStatus: ready,
-          weakAreasStatus: ready,
-          practiceTopicsStatus: ready,
-          settingsStatus: ready,
-          onOpenSession: () => {},
-        })
+        createElement(
+          MemoryRouter,
+          { initialEntries: ['/dashboard'] },
+          createElement(DashboardOverview, {
+            name: 'Asha',
+            summary,
+            theoryStatus: failed,
+            codingStatus: ready,
+            scoreTrendStatus: ready,
+            weakAreasStatus: ready,
+            practiceTopicsStatus: ready,
+            settingsStatus: ready,
+            onOpenSession: () => {},
+          })
+        )
       );
     });
 
