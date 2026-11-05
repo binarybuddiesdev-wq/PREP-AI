@@ -67,6 +67,7 @@ export enum ApiOperation {
   THEORY_GET_SESSIONS = 'Get theory session history',
   THEORY_GET_WEAK_AREAS = 'Get topics below 70% score',
   THEORY_GET_SCORE_TREND = 'Get score trend for dashboard chart',
+  THEORY_GET_STATS = 'Get theory usage statistics and limits',
   CODING_LIST_PROBLEMS = 'List coding problems',
   CODING_GET_PROBLEM = 'Get coding problem details',
   CODING_START_SESSION = 'Start a coding session',
@@ -169,6 +170,7 @@ export const THEORY_SESSION_FETCHED = 'Session fetched successfully';
 export const THEORY_SESSIONS_FETCHED = 'Sessions fetched successfully';
 export const THEORY_WEAK_AREAS_FETCHED = 'Weak areas fetched successfully';
 export const THEORY_SCORE_TREND_FETCHED = 'Score trend fetched successfully';
+export const THEORY_STATS_FETCHED = 'Theory usage statistics fetched successfully';
 
 // Theory error messages
 export const THEORY_SESSION_NOT_FOUND = 'Session not found';

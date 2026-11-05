@@ -40,6 +40,7 @@ export {
   getPracticeTopics,
   getTheoryAnswerEvaluation,
   getTheoryScoreTrend,
+  getTheoryStats,
   getTheorySessionDetail,
   getTheorySessionHistory,
   getTheorySessionQuestions,
@@ -48,3 +49,8 @@ export {
   submitTheoryAnswer,
 } from './theory.api';
 export { getMe, getSettings, setupComplete, updateSettings } from './user.api';
+export {
+  cancelCurrentSubscription,
+  createSubscription,
+  getCurrentSubscription,
+} from './payment.api';

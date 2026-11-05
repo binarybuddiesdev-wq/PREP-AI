@@ -9,6 +9,7 @@ import {
   THEORY_SESSIONS_FETCHED,
   THEORY_WEAK_AREAS_FETCHED,
   THEORY_SCORE_TREND_FETCHED,
+  THEORY_STATS_FETCHED,
 } from '@/common/constants/api.constants.js';
 import {
   questionDataSchema,
@@ -100,6 +101,22 @@ export const theoryScoreTrendDataSchema = {
   },
 };
 
+export const theoryStatsDataSchema = {
+  type: 'object',
+  required: ['dailySessions', 'questionsPerSession'],
+  properties: {
+    dailySessions: {
+      type: 'object',
+      required: ['used', 'limit'],
+      properties: {
+        used: { type: 'integer', minimum: 0 },
+        limit: { type: 'integer', minimum: 0 },
+      },
+    },
+    questionsPerSession: { type: 'integer', minimum: 1 },
+  },
+};
+
 // --- Swagger Responses ---
 
 export const StartSessionResponse = {
@@ -160,4 +177,10 @@ export const GetScoreTrendResponse = {
     { type: 'array', items: theoryScoreTrendDataSchema },
     THEORY_SCORE_TREND_FETCHED
   ),
+};
+
+export const GetTheoryStatsResponse = {
+  status: 200,
+  description: THEORY_STATS_FETCHED,
+  ...successResponseSchema(theoryStatsDataSchema, THEORY_STATS_FETCHED),
 };

@@ -10,10 +10,14 @@ import type {
   ITheorySession,
   ITheorySessionDetail,
   ITheorySessionHistory,
+  ITheoryStats,
   ITheoryWeakArea,
 } from '@/core';
 
 import type { ApiClient } from './apiClient.types';
+
+export const getTheoryStats = (api: ApiClient): Promise<IApiEnvelope<ITheoryStats>> =>
+  api.get('theory/stats').json<IApiEnvelope<ITheoryStats>>();
 
 export const getPracticeTopics = (api: ApiClient): Promise<IApiEnvelope<IPracticeTopic[]>> =>
   api

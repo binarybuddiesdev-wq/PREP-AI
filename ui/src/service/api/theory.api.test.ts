@@ -8,6 +8,7 @@ import {
   getPracticeTopics,
   getTheoryAnswerEvaluation,
   getTheoryScoreTrend,
+  getTheoryStats,
   getTheorySessionDetail,
   getTheorySessionHistory,
   getTheorySessionQuestions,
@@ -34,6 +35,15 @@ const makeApi = () => {
 };
 
 describe('theory API', () => {
+  it('requests authenticated theory quota statistics', async () => {
+    const { api, requests } = makeApi();
+
+    await getTheoryStats(api);
+
+    expect(requests[0].method).toBe('GET');
+    expect(requests[0].url).toBe('http://api.test/api/v1/theory/stats');
+  });
+
   it('starts a session with the supplied idempotency key and request body', async () => {
     const { api, requests } = makeApi();
     const body: IStartTheorySessionBody = {

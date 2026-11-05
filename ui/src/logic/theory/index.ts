@@ -14,3 +14,4 @@ export { useTheorySessionCommand } from './useTheorySessionCommand';
 export type { IStartTheorySessionVariables } from './useTheorySessionCommand';
 export { useTheorySessionHistoryReader } from './useTheorySessionHistoryReader';
 export { useTheorySessionDetailReader } from './useTheorySessionDetailReader';
+export { useTheoryStatsReader } from './useTheoryStatsReader';

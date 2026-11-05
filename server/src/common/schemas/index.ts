@@ -44,6 +44,7 @@ export {
   GetSessionHistoryResponse,
   GetWeakAreasResponse,
   GetScoreTrendResponse,
+  GetTheoryStatsResponse,
 } from './theory/theory.response.schema.js';
 
 export {

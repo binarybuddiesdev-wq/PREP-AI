@@ -51,6 +51,7 @@ describe('TheoryService', () => {
   let redis: {
     reserveQuota: ReturnType<typeof vi.fn>;
     releaseQuota: ReturnType<typeof vi.fn>;
+    getQuotaUsage: ReturnType<typeof vi.fn>;
   };
   let jobs: { enqueue: ReturnType<typeof vi.fn>; getJobId: ReturnType<typeof vi.fn> };
   let config: {
@@ -159,6 +160,7 @@ describe('TheoryService', () => {
     redis = {
       reserveQuota: vi.fn().mockResolvedValue({ allowed: true, count: 1 }),
       releaseQuota: vi.fn().mockResolvedValue(undefined),
+      getQuotaUsage: vi.fn().mockResolvedValue(2),
     };
     jobs = {
       enqueue: vi.fn().mockResolvedValue('job_001'),
@@ -201,6 +203,44 @@ describe('TheoryService', () => {
     userId: string,
     idempotencyKey = `test-theory-session-${++sessionKeySequence}`
   ) => service.startSession(dto, userId, idempotencyKey);
+
+  describe('getStats', () => {
+    it('returns UTC daily usage and role limits from server configuration', async () => {
+      prisma.user.findUnique.mockResolvedValue({ role: 'PREMIUM' });
+      config.get.mockImplementation(
+        (key: string) =>
+          ({ THEORY_DAILY_SESSIONS_PREMIUM: 42, THEORY_QUESTIONS_PER_SESSION_PREMIUM: 24 })[key]
+      );
+
+      const utcDate = new Date().toISOString().slice(0, 10);
+
+      await expect(service.getStats('user_001')).resolves.toEqual({
+        dailySessions: { used: 2, limit: 42 },
+        questionsPerSession: 24,
+      });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 'user_001' },
+        select: { role: true },
+      });
+      expect(redis.getQuotaUsage).toHaveBeenCalledWith(`quota:user_001:${utcDate}:theory_sessions`);
+    });
+
+    it('returns not found when the authenticated user has no local record', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.getStats('missing-user')).rejects.toBeInstanceOf(NotFoundException);
+      expect(redis.getQuotaUsage).not.toHaveBeenCalled();
+    });
+
+    it('fails with service unavailable when Redis usage cannot be read', async () => {
+      prisma.user.findUnique.mockResolvedValue({ role: 'USER' });
+      redis.getQuotaUsage.mockRejectedValue(new Error('Redis unavailable'));
+
+      await expect(service.getStats('user_001')).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      );
+    });
+  });
 
   it.each([
     ['getSessionQuestions', () => service.getSessionQuestions('session_001', 'user_001', {})],

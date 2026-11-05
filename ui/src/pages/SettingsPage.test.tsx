@@ -124,6 +124,64 @@ describe('SettingsPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Settings saved successfully');
   });
 
+  it('loads plan and usage data only after the Plan tab is opened', async () => {
+    const requestedUrls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request) => {
+        requestedUrls.push(request.url);
+        if (request.url.endsWith('/users/me')) {
+          return Response.json({ success: true, message: 'ok', data: userProfile });
+        }
+        if (request.url.endsWith('/users/settings')) {
+          return Response.json({ success: true, message: 'ok', data: userSettings });
+        }
+        if (request.url.endsWith('/theory/stats')) {
+          return Response.json({
+            success: true,
+            message: 'ok',
+            data: { dailySessions: { used: 1, limit: 3 }, questionsPerSession: 5 },
+          });
+        }
+        if (request.url.endsWith('/coding/stats')) {
+          return Response.json({
+            success: true,
+            message: 'ok',
+            data: {
+              solvedProblems: 2,
+              currentStreak: 1,
+              dailySolved: { used: 2, limit: 5 },
+              dailyReviews: { used: 1, limit: 2 },
+            },
+          });
+        }
+        if (request.url.endsWith('/payments/subscriptions/current')) {
+          return Response.json({ success: true, message: 'ok', data: null });
+        }
+        return Response.json({ success: false, message: 'Not found' }, { status: 404 });
+      })
+    );
+    const user = userEvent.setup();
+    renderSettingsPage();
+
+    await screen.findByText('Asha Rao');
+    expect(requestedUrls.some((url) => /\/(theory|coding)\/stats$/.test(url))).toBe(false);
+    expect(requestedUrls.some((url) => url.endsWith('/payments/subscriptions/current'))).toBe(
+      false
+    );
+
+    await user.click(screen.getByRole('tab', { name: 'Plan' }));
+    await screen.findByText('Practice sessions today');
+
+    await waitFor(() => {
+      expect(requestedUrls.some((url) => url.endsWith('/theory/stats'))).toBe(true);
+      expect(requestedUrls.some((url) => url.endsWith('/coding/stats'))).toBe(true);
+      expect(requestedUrls.some((url) => url.endsWith('/payments/subscriptions/current'))).toBe(
+        true
+      );
+    });
+  });
+
   it('shows the API validation message when saving settings fails', async () => {
     vi.stubGlobal(
       'fetch',

@@ -10,13 +10,13 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 
 ## Current state
 
-| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                               |
-| ---------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                           |
-| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                                    |
-| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                                      |
-| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history/stats, persistent Study Chat, supported settings preferences, and the authenticated notification inbox are implemented. Billing remains on the roadmap. |
-| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                                |
+| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                                      |
+| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                                               |
+| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                                                 |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history/stats, persistent Study Chat, supported settings preferences, authenticated notifications, and Plan and billing are implemented. Signed-in browser review remains. |
+| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                                           |
 
 ## Reference and implementation rules
 
@@ -247,18 +247,20 @@ near-black text on amber controls.
 
 ### Phase 8 — Plan and billing
 
-**Status: Backend v1 ready; frontend not started.** Monthly/yearly
-Razorpay-backed subscriptions, cancellation, webhooks, entitlements, and
-refund administration are implemented. Staging/live provider checks remain.
+**Status: Frontend implementation complete; provider rollout remains.**
+Settings now reads the current plan, server-owned usage and limits, offers
+monthly/yearly hosted Razorpay checkout, and schedules cancellation at the end
+of the paid period. Monthly/yearly Razorpay-backed subscriptions, webhooks,
+entitlements, and refund administration are implemented. Staging/live provider checks remain.
 See the [payments API](routes/payments-api-spec.md).
 
-- [ ] Show the current plan and server-provided feature/usage limits.
-- [ ] Build monthly/yearly plan selection and the upgrade entry points.
-- [ ] Integrate the approved Razorpay checkout flow and subscription status
+- [x] Show the current plan and server-provided feature/usage limits.
+- [x] Build monthly/yearly plan selection and the upgrade entry points.
+- [x] Integrate the approved Razorpay checkout flow and subscription status
       handling for pending, success, cancellation, and failure.
-- [ ] Add end-of-cycle cancellation and current-period messaging where the
+- [x] Add end-of-cycle cancellation and current-period messaging where the
       API permits it.
-- [ ] Never collect raw card/CVV/OTP details in PrepAI UI or simulate a
+- [x] Never collect raw card/CVV/OTP details in PrepAI UI or simulate a
       successful payment; payment credentials remain with the provider.
 
 ### Phase 9 — Shared interactions and visual parity

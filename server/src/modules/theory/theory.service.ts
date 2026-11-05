@@ -52,6 +52,32 @@ export class TheoryService {
     @InjectPinoLogger(TheoryService.name) private readonly logger: PinoLogger
   ) {}
 
+  async getStats(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const utcDay = new Date().toISOString().slice(0, 10);
+    const quotaKey = `quota:${userId}:${utcDay}:theory_sessions`;
+    let used: number;
+    try {
+      used = await this.redis.getQuotaUsage(quotaKey);
+    } catch (error: unknown) {
+      this.logger.warn({ userId, error }, 'Could not load theory session quota usage');
+      throw new ServiceUnavailableException('Practice usage is temporarily unavailable', {
+        cause: error,
+      });
+    }
+
+    const limits = getTheoryLimits(user.role, this.config);
+    return {
+      dailySessions: { used, limit: limits.dailySessions },
+      questionsPerSession: limits.questionsPerSession,
+    };
+  }
+
   async startSession(dto: StartSessionDto, userId: string, idempotencyKey: string | undefined) {
     const validatedIdempotencyKey = requireIdempotencyKey(idempotencyKey);
     const { mode, difficulty, totalQuestions, topicId, pdfIds } = dto;

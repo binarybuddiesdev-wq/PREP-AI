@@ -7,6 +7,7 @@ export const theoryKeys = {
   weakAreas: (userId: string) => [...THEORY_ROOT_KEY, userId, 'weak-areas'] as const,
   scoreTrend: (userId: string, limit?: number) =>
     [...THEORY_ROOT_KEY, userId, 'score-trend', ...(limit === undefined ? [] : [limit])] as const,
+  stats: (userId: string) => [...THEORY_ROOT_KEY, userId, 'stats'] as const,
   history: (userId: string, page?: number, limit?: number) =>
     [
       ...THEORY_ROOT_KEY,

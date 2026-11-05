@@ -17,6 +17,7 @@ import {
   THEORY_SESSIONS_FETCHED,
   THEORY_WEAK_AREAS_FETCHED,
   THEORY_SCORE_TREND_FETCHED,
+  THEORY_STATS_FETCHED,
 } from '@/common/constants/api.constants.js';
 
 class MockAuthGuard implements CanActivate {
@@ -44,6 +45,7 @@ describe('TheoryController', () => {
     getSessionHistory: ReturnType<typeof vi.fn>;
     getWeakAreas: ReturnType<typeof vi.fn>;
     getScoreTrend: ReturnType<typeof vi.fn>;
+    getStats: ReturnType<typeof vi.fn>;
   };
 
   const mockSession = {
@@ -113,6 +115,7 @@ describe('TheoryController', () => {
       getSessionHistory: vi.fn(),
       getWeakAreas: vi.fn(),
       getScoreTrend: vi.fn(),
+      getStats: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -275,6 +278,19 @@ describe('TheoryController', () => {
 
       expect(result).toEqual({ message: THEORY_SCORE_TREND_FETCHED, data: mockTrend });
       expect(theoryService.getScoreTrend).toHaveBeenCalledWith('user_001', { limit: 7 });
+    });
+  });
+
+  describe('getStats', () => {
+    it('returns quota stats for the authenticated user', async () => {
+      const stats = { dailySessions: { used: 2, limit: 3 }, questionsPerSession: 10 };
+      theoryService.getStats.mockResolvedValue(stats);
+
+      await expect(controller.getStats('user_001')).resolves.toEqual({
+        message: THEORY_STATS_FETCHED,
+        data: stats,
+      });
+      expect(theoryService.getStats).toHaveBeenCalledWith('user_001');
     });
   });
 });

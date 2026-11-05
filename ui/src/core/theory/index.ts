@@ -5,6 +5,7 @@ export type {
   ITheoryQuestion,
   ITheoryQuestionCitation,
   ITheoryScoreTrendPoint,
+  ITheoryStats,
   ITheorySession,
   ITheorySessionDetail,
   ITheorySessionHistory,

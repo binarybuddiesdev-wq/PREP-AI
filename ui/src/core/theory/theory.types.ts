@@ -89,3 +89,8 @@ export interface ITheoryScoreTrendPoint {
   date: string;
   avgScore: number;
 }
+
+export interface ITheoryStats {
+  dailySessions: { used: number; limit: number };
+  questionsPerSession: number;
+}

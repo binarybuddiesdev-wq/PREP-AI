@@ -10,6 +10,7 @@ export const SETTINGS_TABS: readonly { id: SettingsTab; label: string }[] = [
   { id: 'notifications', label: 'Notifications' },
   { id: 'preferences', label: 'Practice Preferences' },
   { id: 'documents', label: 'Documents' },
+  { id: 'plan', label: 'Plan' },
 ];
 
 export const SETTINGS_ROLE_OPTIONS = ONBOARDING_ROLE_OPTIONS.map(({ value }) => ({

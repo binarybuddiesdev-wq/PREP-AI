@@ -9,11 +9,24 @@ import { SETTINGS_TABS } from './settings.constants';
 import { SettingsTabList } from './SettingsTabList';
 
 export const SettingsFormCard = (props: ISettingsFormCardProps) => {
-  const { values, userName, userEmail, isSaving, status, onChange, onSave, onOpenDocuments } =
-    props;
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const {
+    values,
+    userName,
+    userEmail,
+    isSaving,
+    status,
+    onChange,
+    onSave,
+    onOpenDocuments,
+    planPanel,
+    onActiveTabChange,
+  } = props;
+  const [internalActiveTab, setInternalActiveTab] = useState<SettingsTab>('profile');
+  const activeTab = props.activeTab ?? internalActiveTab;
+  const changeActiveTab = onActiveTabChange ?? setInternalActiveTab;
   const activeIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);
   const isDocumentsTab = activeTab === 'documents';
+  const showSaveFooter = !isDocumentsTab && activeTab !== 'plan';
 
   const getPanel = () => {
     switch (activeTab) {
@@ -41,13 +54,15 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
         );
       case 'documents':
         return <SettingsDocumentsPanel onOpenDocuments={onOpenDocuments} />;
+      case 'plan':
+        return planPanel;
     }
   };
 
   return (
     <section className="app-shell-panel overflow-hidden rounded-xl border border-white/10 bg-[#18181b]">
       <header className="border-b border-white/[0.08] px-4 pt-2 sm:px-5">
-        <SettingsTabList activeTab={activeTab} onChange={setActiveTab} />
+        <SettingsTabList activeTab={activeTab} onChange={changeActiveTab} />
       </header>
 
       <div
@@ -69,7 +84,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
         />
       ))}
 
-      {!isDocumentsTab && (
+      {showSaveFooter && (
         <footer className="flex min-h-14 flex-wrap items-center gap-3 border-t border-white/[0.08] px-4 py-3 sm:px-5">
           <button
             type="button"

@@ -43,6 +43,8 @@ import {
   THEORY_WEAK_AREAS_FETCHED,
   GetScoreTrendResponse,
   THEORY_SCORE_TREND_FETCHED,
+  GetTheoryStatsResponse,
+  THEORY_STATS_FETCHED,
   ClerkAuthGuard,
   RolesGuard,
 } from '@/common/index.js';
@@ -168,5 +170,15 @@ export class TheoryController {
   async getScoreTrend(@CurrentUser('id') userId: string, @Query() dto: GetScoreTrendDto) {
     const data = await this.theoryService.getScoreTrend(userId, dto);
     return { message: THEORY_SCORE_TREND_FETCHED, data };
+  }
+
+  @ApiBearerAuth()
+  @Get('stats')
+  @HttpCode(200)
+  @ApiOperation({ summary: ApiOperationEnum.THEORY_GET_STATS })
+  @ApiResponse(GetTheoryStatsResponse)
+  async getStats(@CurrentUser('id') userId: string) {
+    const data = await this.theoryService.getStats(userId);
+    return { message: THEORY_STATS_FETCHED, data };
   }
 }
