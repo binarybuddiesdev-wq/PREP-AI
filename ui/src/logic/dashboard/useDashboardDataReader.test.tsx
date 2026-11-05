@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ITheorySession } from '@/core';
 import {
   getCodingSessionHistory,
+  getCodingProblems,
   getPracticeTopics,
   getTheoryScoreTrend,
   getTheorySessionHistory,
@@ -28,6 +29,7 @@ vi.mock('../api', () => ({ useApiClient: () => ({}) }));
 vi.mock('@/service/api', () => ({
   getTheorySessionHistory: vi.fn(),
   getCodingSessionHistory: vi.fn(),
+  getCodingProblems: vi.fn(),
   getTheoryScoreTrend: vi.fn(),
   getTheoryWeakAreas: vi.fn(),
   getPracticeTopics: vi.fn(),
@@ -61,6 +63,8 @@ describe('useDashboardDataReader', () => {
     session.isLoaded = true;
     session.isSignedIn = true;
     session.user = { id: 'user-one' };
+    vi.mocked(getCodingProblems).mockResolvedValue(envelope([]));
+    vi.mocked(getPracticeTopics).mockResolvedValue(envelope([]));
   });
 
   it('loads empty account history and returns neutral dashboard metrics', async () => {
@@ -70,6 +74,7 @@ describe('useDashboardDataReader', () => {
     vi.mocked(getCodingSessionHistory).mockResolvedValue(
       envelope({ sessions: [], total: 0, page: 1, limit: 100 })
     );
+    vi.mocked(getCodingProblems).mockResolvedValue(envelope([]));
     vi.mocked(getTheoryScoreTrend).mockResolvedValue(envelope([]));
     vi.mocked(getTheoryWeakAreas).mockResolvedValue(envelope([]));
     vi.mocked(getPracticeTopics).mockResolvedValue(envelope([]));
@@ -96,6 +101,22 @@ describe('useDashboardDataReader', () => {
     const { result } = renderHook(() => useDashboardDataReader(), { wrapper: createWrapper() });
 
     expect(result.current.theorySessionsQuery.fetchStatus).toBe('idle');
+    expect(getTheorySessionHistory).not.toHaveBeenCalled();
+    expect(getCodingProblems).not.toHaveBeenCalled();
+  });
+
+  it('loads practice and coding catalogues even when profile-dependent dashboard data is paused', async () => {
+    vi.mocked(getCodingProblems).mockResolvedValue(envelope([]));
+    vi.mocked(getPracticeTopics).mockResolvedValue(envelope([]));
+
+    const { result } = renderHook(() => useDashboardDataReader(undefined, false), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.codingProblemsQuery.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.practiceTopicsQuery.isSuccess).toBe(true));
+    expect(getCodingProblems).toHaveBeenCalledOnce();
+    expect(getPracticeTopics).toHaveBeenCalledOnce();
     expect(getTheorySessionHistory).not.toHaveBeenCalled();
   });
 

@@ -9,7 +9,6 @@ describe('dashboardKeys', () => {
       dashboardKeys.codingHistory(userId),
       dashboardKeys.scoreTrend(userId),
       dashboardKeys.weakAreas(userId),
-      dashboardKeys.practiceTopics(userId),
     ];
 
     expect(keysFor('user-one')).not.toEqual(keysFor('user-two'));

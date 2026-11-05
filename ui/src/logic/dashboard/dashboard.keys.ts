@@ -6,5 +6,4 @@ export const dashboardKeys = {
   codingHistory: (userId: string) => [...DASHBOARD_ROOT_KEY, userId, 'coding-history'] as const,
   scoreTrend: (userId: string) => [...DASHBOARD_ROOT_KEY, userId, 'score-trend'] as const,
   weakAreas: (userId: string) => [...DASHBOARD_ROOT_KEY, userId, 'weak-areas'] as const,
-  practiceTopics: (userId: string) => [...DASHBOARD_ROOT_KEY, userId, 'practice-topics'] as const,
 };

@@ -1,7 +1,11 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import { Navigate, useNavigate } from 'react-router';
 
-import { DashboardOverview, type IDashboardPanelStatus } from '@/components/dashboard';
+import {
+  DashboardOverview,
+  DashboardPracticeCoding,
+  type IDashboardPanelStatus,
+} from '@/components/dashboard';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
 import { historySessionDetailPath, ROUTES } from '@/core';
 import {
@@ -41,35 +45,48 @@ export const DashboardPage = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="mx-auto w-full max-w-6xl space-y-4">
       {userQuery.isError ? (
-        <QueryErrorState
-          title="Couldn't load your profile"
-          description={
-            profileErrorStatus === 503
-              ? userQuery.error.message
-              : profileErrorStatus === 500
-                ? 'The server returned an internal error while loading your profile. Try again shortly.'
-                : 'Your dashboard is available, but profile details could not be loaded. Check the API connection and try again.'
-          }
-          details={
-            userQuery.error
-              ? profileErrorStatus
-                ? profileErrorStatus === 503
-                  ? `HTTP ${profileErrorStatus}`
-                  : `HTTP ${profileErrorStatus}: ${userQuery.error.message}`
-                : `Network error: ${userQuery.error.message}`
-              : undefined
-          }
-          onRetry={() => void userQuery.refetch()}
-          isRetrying={userQuery.isFetching}
-        />
+        <>
+          <DashboardPracticeCoding
+            practiceTopics={dashboard.practiceTopics}
+            practiceTopicsStatus={toPanelStatus(dashboard.practiceTopicsQuery)}
+            codingProblems={dashboard.codingProblems}
+            codingProblemsStatus={toPanelStatus(dashboard.codingProblemsQuery)}
+          />
+          <main className="mx-auto w-full max-w-3xl">
+            <QueryErrorState
+              title="Couldn't load your profile"
+              description={
+                profileErrorStatus === 503
+                  ? userQuery.error.message
+                  : profileErrorStatus === 500
+                    ? 'The server returned an internal error while loading your profile. Try again shortly.'
+                    : 'Your dashboard is available, but profile details could not be loaded. Check the API connection and try again.'
+              }
+              details={
+                userQuery.error
+                  ? profileErrorStatus
+                    ? profileErrorStatus === 503
+                      ? `HTTP ${profileErrorStatus}`
+                      : `HTTP ${profileErrorStatus}: ${userQuery.error.message}`
+                    : `Network error: ${userQuery.error.message}`
+                  : undefined
+              }
+              onRetry={() => void userQuery.refetch()}
+              isRetrying={userQuery.isFetching}
+            />
+          </main>
+        </>
       ) : (
         <DashboardOverview
           name={user?.firstName || user?.email || ''}
           summary={dashboard.summary}
+          practiceTopics={dashboard.practiceTopics}
+          codingProblems={dashboard.codingProblems}
           theoryStatus={toPanelStatus(dashboard.theorySessionsQuery)}
           codingStatus={toPanelStatus(dashboard.codingSessionsQuery)}
+          codingProblemsStatus={toPanelStatus(dashboard.codingProblemsQuery)}
           scoreTrendStatus={toPanelStatus(dashboard.scoreTrendQuery)}
           weakAreasStatus={toPanelStatus(dashboard.weakAreasQuery)}
           practiceTopicsStatus={toPanelStatus(dashboard.practiceTopicsQuery)}

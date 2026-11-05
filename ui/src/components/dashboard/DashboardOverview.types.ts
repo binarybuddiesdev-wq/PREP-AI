@@ -1,4 +1,4 @@
-import type { IDashboardSummary } from '@/core';
+import type { ICodingProblemSummary, IDashboardSummary, IPracticeTopic } from '@/core';
 
 export interface IDashboardPanelStatus {
   isPending: boolean;
@@ -11,8 +11,11 @@ export interface IDashboardPanelStatus {
 export interface IDashboardOverviewProps {
   name: string;
   summary: IDashboardSummary;
+  practiceTopics: IPracticeTopic[];
+  codingProblems: ICodingProblemSummary[];
   theoryStatus: IDashboardPanelStatus;
   codingStatus: IDashboardPanelStatus;
+  codingProblemsStatus: IDashboardPanelStatus;
   scoreTrendStatus: IDashboardPanelStatus;
   weakAreasStatus: IDashboardPanelStatus;
   practiceTopicsStatus: IDashboardPanelStatus;

@@ -1,8 +1,7 @@
-import { ArrowRight, BookOpenCheck, Check, Circle, Code2, RotateCw } from 'lucide-react';
+import { Check, Circle, RotateCw } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
 
-import { ROUTES } from '@/core';
+import { DashboardPracticeCoding } from './DashboardPracticeCoding';
 import type { IDashboardPanelStatus, IDashboardOverviewProps } from './DashboardOverview.types';
 
 const greetingForCurrentTime = (): string => {
@@ -62,8 +61,11 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
   const {
     name,
     summary,
+    practiceTopics,
+    codingProblems,
     theoryStatus,
     codingStatus,
+    codingProblemsStatus,
     scoreTrendStatus,
     weakAreasStatus,
     practiceTopicsStatus,
@@ -170,46 +172,12 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
         ))}
       </section>
 
-      <section aria-label="Start learning" className="grid gap-3 sm:grid-cols-2">
-        <Link
-          to={ROUTES.practice}
-          className="app-shell-panel group flex min-h-24 items-center gap-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 transition hover:border-[var(--accent-border)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:p-5"
-        >
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-bg)] text-[var(--accent-strong)]">
-            <BookOpenCheck aria-hidden="true" className="size-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-[var(--text-h)]">Start practice</span>
-            <span className="mt-1 block text-xs text-[var(--dim)]">
-              Build knowledge with guided questions
-            </span>
-          </span>
-          <ArrowRight
-            aria-hidden="true"
-            className="size-4 shrink-0 text-[var(--dim)] transition group-hover:translate-x-0.5 group-hover:text-[var(--accent-strong)]"
-          />
-        </Link>
-        <Link
-          to={ROUTES.coding}
-          className="app-shell-panel group flex min-h-24 items-center gap-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 transition hover:border-[var(--purple-strong)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:p-5"
-        >
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--purple-bg)] text-[var(--purple-strong)]">
-            <Code2 aria-hidden="true" className="size-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-[var(--text-h)]">
-              Solve coding problems
-            </span>
-            <span className="mt-1 block text-xs text-[var(--dim)]">
-              Solve problems and run your code
-            </span>
-          </span>
-          <ArrowRight
-            aria-hidden="true"
-            className="size-4 shrink-0 text-[var(--dim)] transition group-hover:translate-x-0.5 group-hover:text-[var(--purple-strong)]"
-          />
-        </Link>
-      </section>
+      <DashboardPracticeCoding
+        practiceTopics={practiceTopics}
+        practiceTopicsStatus={practiceTopicsStatus}
+        codingProblems={codingProblems}
+        codingProblemsStatus={codingProblemsStatus}
+      />
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)]">
         <div className="space-y-5">
@@ -250,26 +218,6 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                   </ul>
                 ) : null
               )}
-              {!theoryStatus.isError && !theoryStatus.isPending && practiceTopicsStatus.isError ? (
-                <div role="alert" className="mt-3 space-y-2">
-                  <p className="text-xs text-[var(--accent-strong)]">
-                    {practiceTopicsStatus.error?.message ||
-                      'Topic names are temporarily unavailable.'}
-                  </p>
-                  <button
-                    type="button"
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[var(--border2)] px-2 text-xs text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
-                    disabled={practiceTopicsStatus.isFetching}
-                    onClick={practiceTopicsStatus.onRetry}
-                  >
-                    <RotateCw
-                      aria-hidden="true"
-                      className={`size-3 ${practiceTopicsStatus.isFetching ? 'animate-spin' : ''}`}
-                    />
-                    {practiceTopicsStatus.isFetching ? 'Retrying…' : 'Retry topic names'}
-                  </button>
-                </div>
-              ) : null}
             </div>
           </section>
 

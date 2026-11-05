@@ -105,6 +105,11 @@ dashboard loading slow as accounts grow, add a server summary endpoint.
 - [x] Show recent sessions from the session APIs and link each recent session
       to its Phase 3 history detail route.
 - [x] Add suggested practice based on backend weak-area results.
+- [x] Show live Practice topics and unsolved Coding problems as direct dashboard
+      launch links, including when the profile request fails; catalogue requests
+      reuse each feature's TanStack Query key.
+- [x] Keep Practice setup available with free-plan defaults and a retryable
+      profile error when account role details cannot be loaded.
 - [x] Add the streak, score trend, and weak-area panels using backend data.
 - [x] Recreate the welcome/setup checklist, empty states, and responsive card
       layout without sample KPI values.

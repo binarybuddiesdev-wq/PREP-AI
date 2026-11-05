@@ -57,6 +57,28 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
         suggestions: [],
         setupChecklist: [],
       };
+      const practiceTopics = [
+        {
+          id: 'topic-react',
+          name: 'React',
+          slug: 'react',
+          category: 'practice',
+          icon: null,
+          createdAt: '2026-11-01T00:00:00.000Z',
+          updatedAt: '2026-11-01T00:00:00.000Z',
+        },
+      ];
+      const codingProblems = [
+        {
+          id: 'two-sum',
+          title: 'Two Sum',
+          slug: 'two-sum',
+          description: 'Find two values that add up to the target.',
+          difficulty: 'Easy',
+          topic: 'Arrays',
+          isSolved: false,
+        },
+      ];
       const preview = globalThis.document.createElement('div');
       preview.id = 'dashboard-preview';
       globalThis.document.querySelector('#root').hidden = true;
@@ -71,8 +93,11 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
           createElement(DashboardOverview, {
             name: 'Asha',
             summary,
+            practiceTopics,
+            codingProblems,
             theoryStatus: failed,
             codingStatus: ready,
+            codingProblemsStatus: ready,
             scoreTrendStatus: ready,
             weakAreasStatus: ready,
             practiceTopicsStatus: ready,
@@ -85,6 +110,14 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
 
     const metricLabel = page.getByText('Sessions Completed', { exact: true });
     await expect(metricLabel).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Practice React' })).toHaveAttribute(
+      'href',
+      '/practice?topicId=topic-react'
+    );
+    await expect(page.getByRole('link', { name: /Try Two Sum/ })).toHaveAttribute(
+      'href',
+      '/coding/two-sum'
+    );
     const card = metricLabel.locator('..');
     await expect
       .poll(() => card.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor))

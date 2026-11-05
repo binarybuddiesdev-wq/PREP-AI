@@ -835,3 +835,20 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Added a DOM regression test. It failed against the old fixed-dark classes and passed after the token change. Added a browser render check for computed dark/light control colors, 390 px overflow, and browser errors.
 - Fixed the dashboard theme test setup to render `DashboardOverview` inside `MemoryRouter`; the component contains route links and could not render without router context. Its browser check now passes.
 - Verification: UI lint, project type-check, production build, and all UI tests passed (122 files / 521 tests). Ten theme-focused Playwright checks passed, including the Settings card's topic controls and dividers in both themes. Scoped formatting, `git diff --check`, and the Impeccable detector passed. The broader Playwright run also picked up four generic smoke tests that cannot launch because the Playwright-managed Chromium binary is not installed; the theme checks use the installed Chrome fallback. Root lint remains blocked by errors in the user-owned untracked `types/piston.js`, and repo-wide formatting flags unrelated or user-owned files. Signed-in route acceptance remains open.
+
+## 2026-11-05 - Put real Practice and Coding starts on the dashboard
+
+- Replaced generic dashboard shortcuts with compact, live Practice topic and
+  unsolved Coding problem choices that open the existing session setup and
+  coding workspace routes. Catalogue requests use their feature query keys and
+  keep independent loading, retry, and empty states.
+- When `/users/me` fails, the dashboard still shows these launch cards above
+  the profile error and retry screen instead of hiding the feature routes.
+- Practice setup also remains usable with the conservative free-plan limit of
+  10 questions while profile details fail, with a visible retry and server-side
+  limits still enforced.
+- Verification: 122 UI test files / 531 tests, UI lint, TypeScript project
+  check, production build, dashboard and Practice Playwright checks in both UI
+  projects, and scoped Prettier pass. Root lint still reports 14 errors in
+  untracked `types/piston.js`; root format check reports 58 files outside this
+  change.

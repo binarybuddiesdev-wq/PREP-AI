@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
-import type { ICodingSession, ITheorySession, IUserSettings } from '@/core';
+import type { ICodingProblemSummary, ICodingSession, ITheorySession, IUserSettings } from '@/core';
 import {
+  getCodingProblems,
   getCodingSessionHistory,
   getPracticeTopics,
   getTheoryScoreTrend,
@@ -10,6 +11,8 @@ import {
 } from '@/service/api';
 import { useApiClient } from '../api';
 import { useSessionReader } from '../auth';
+import { codingKeys } from '../coding/coding.keys';
+import { theoryKeys } from '../theory/theory.keys';
 import { buildDashboardSummary } from './dashboardSummary';
 import { dashboardKeys } from './dashboard.keys';
 
@@ -66,6 +69,7 @@ export const useDashboardDataReader = (settings?: IUserSettings | null, shouldFe
   const { isLoaded, isSignedIn, user } = useSessionReader();
   const userId = user?.id ?? '';
   const enabled = isLoaded && isSignedIn && Boolean(userId) && shouldFetch;
+  const catalogEnabled = isLoaded && isSignedIn && Boolean(userId);
 
   const theorySessionsQuery = useQuery({
     queryKey: dashboardKeys.theoryHistory(userId),
@@ -76,6 +80,11 @@ export const useDashboardDataReader = (settings?: IUserSettings | null, shouldFe
     queryKey: dashboardKeys.codingHistory(userId),
     queryFn: () => getAllCodingSessions(api),
     enabled,
+  });
+  const codingProblemsQuery = useQuery({
+    queryKey: codingKeys.problems(userId),
+    queryFn: async () => (await getCodingProblems(api)).data,
+    enabled: catalogEnabled,
   });
   const scoreTrendQuery = useQuery({
     queryKey: dashboardKeys.scoreTrend(userId),
@@ -88,23 +97,27 @@ export const useDashboardDataReader = (settings?: IUserSettings | null, shouldFe
     enabled,
   });
   const practiceTopicsQuery = useQuery({
-    queryKey: dashboardKeys.practiceTopics(userId),
+    queryKey: theoryKeys.practiceTopics(userId),
     queryFn: async () => (await getPracticeTopics(api)).data,
-    enabled,
+    enabled: catalogEnabled,
   });
 
   const theorySessions = theorySessionsQuery.data ?? [];
   const codingSessions = codingSessionsQuery.data ?? [];
   const topics = practiceTopicsQuery.data ?? [];
+  const codingProblems: ICodingProblemSummary[] = codingProblemsQuery.data ?? [];
   const scoreTrend = scoreTrendQuery.data ?? [];
   const weakAreas = weakAreasQuery.data ?? [];
 
   return {
     theorySessionsQuery,
     codingSessionsQuery,
+    codingProblemsQuery,
     scoreTrendQuery,
     weakAreasQuery,
     practiceTopicsQuery,
+    practiceTopics: topics,
+    codingProblems,
     summary: buildDashboardSummary({
       theorySessions,
       codingSessions,

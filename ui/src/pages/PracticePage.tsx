@@ -55,21 +55,8 @@ export const PracticePage = () => {
     return <LoadingScreen label="Loading practice setup…" layout="embedded" />;
   }
 
-  if (userQuery.isError || !userQuery.data) {
-    return (
-      <main className="mx-auto w-full max-w-3xl">
-        <QueryErrorState
-          title="Couldn’t load your profile"
-          description="Your account role is needed to set the requested session size. Check the API connection and try again."
-          details={userQuery.error?.message}
-          onRetry={() => void userQuery.refetch()}
-          isRetrying={userQuery.isFetching}
-        />
-      </main>
-    );
-  }
-
-  const { isPremium, totalQuestions } = getPracticePolicy(userQuery.data.role);
+  const profileUnavailable = userQuery.isError || !userQuery.data;
+  const { isPremium, totalQuestions } = getPracticePolicy(userQuery.data?.role ?? 'USER');
 
   const handleStart = () => {
     const body: IStartTheorySessionBody = {
@@ -257,33 +244,62 @@ export const PracticePage = () => {
   }
 
   return (
-    <PracticeSetup
-      mode={mode}
-      topicId={topicId}
-      difficulty={difficulty}
-      totalQuestions={totalQuestions}
-      isPremium={isPremium}
-      topics={topicsQuery.data ?? []}
-      weakAreas={weakAreasQuery.data ?? []}
-      pdfSources={pdfSourcesQuery.data ?? []}
-      selectedPdfIds={selectedPdfIds}
-      isPdfSourcesLoading={pdfSourcesQuery.isPending}
-      pdfSourcesError={pdfSourcesQuery.isError ? pdfSourcesQuery.error.message : null}
-      onRetryPdfSources={() => void pdfSourcesQuery.refetch()}
-      onPdfSelectionChange={setSelectedPdfIds}
-      onManageDocuments={() => navigate(ROUTES.settingsDocuments)}
-      isTopicsLoading={topicsQuery.isPending}
-      topicsError={topicsQuery.isError ? topicsQuery.error.message : null}
-      onRetryTopics={() => void topicsQuery.refetch()}
-      isWeakAreasLoading={weakAreasQuery.isPending}
-      weakAreasError={weakAreasQuery.isError ? weakAreasQuery.error.message : null}
-      onRetryWeakAreas={() => void weakAreasQuery.refetch()}
-      isStarting={practice.isStarting}
-      startError={practice.startError}
-      onModeChange={setMode}
-      onTopicChange={setTopicId}
-      onDifficultyChange={setDifficulty}
-      onStart={handleStart}
-    />
+    <div className="mx-auto w-full max-w-4xl space-y-4">
+      {profileUnavailable ? (
+        <section
+          role="alert"
+          className="rounded-xl border border-[var(--red-bg)] bg-[var(--red-bg)] p-4 sm:p-5"
+        >
+          <h2 className="text-sm font-semibold text-[var(--text-h)]">
+            Profile details unavailable
+          </h2>
+          <p className="mt-1 text-sm leading-5 text-[var(--dim)]">
+            Practice setup remains available with the free-plan limit of {totalQuestions} questions.
+            Retry your profile to load your account limits. Server limits still apply.
+          </p>
+          {userQuery.error?.message ? (
+            <p className="mt-2 break-words text-xs text-[var(--danger-strong)]">
+              {userQuery.error.message}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            disabled={userQuery.isFetching}
+            onClick={() => void userQuery.refetch()}
+            className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border2)] bg-[var(--surface)] px-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
+          >
+            {userQuery.isFetching ? 'Retrying...' : 'Retry profile'}
+          </button>
+        </section>
+      ) : null}
+      <PracticeSetup
+        mode={mode}
+        topicId={topicId}
+        difficulty={difficulty}
+        totalQuestions={totalQuestions}
+        isPremium={isPremium}
+        topics={topicsQuery.data ?? []}
+        weakAreas={weakAreasQuery.data ?? []}
+        pdfSources={pdfSourcesQuery.data ?? []}
+        selectedPdfIds={selectedPdfIds}
+        isPdfSourcesLoading={pdfSourcesQuery.isPending}
+        pdfSourcesError={pdfSourcesQuery.isError ? pdfSourcesQuery.error.message : null}
+        onRetryPdfSources={() => void pdfSourcesQuery.refetch()}
+        onPdfSelectionChange={setSelectedPdfIds}
+        onManageDocuments={() => navigate(ROUTES.settingsDocuments)}
+        isTopicsLoading={topicsQuery.isPending}
+        topicsError={topicsQuery.isError ? topicsQuery.error.message : null}
+        onRetryTopics={() => void topicsQuery.refetch()}
+        isWeakAreasLoading={weakAreasQuery.isPending}
+        weakAreasError={weakAreasQuery.isError ? weakAreasQuery.error.message : null}
+        onRetryWeakAreas={() => void weakAreasQuery.refetch()}
+        isStarting={practice.isStarting}
+        startError={practice.startError}
+        onModeChange={setMode}
+        onTopicChange={setTopicId}
+        onDifficultyChange={setDifficulty}
+        onStart={handleStart}
+      />
+    </div>
   );
 };

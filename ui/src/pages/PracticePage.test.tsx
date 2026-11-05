@@ -131,7 +131,7 @@ describe('PracticePage', () => {
     expect(screen.getByRole('combobox', { name: 'Practice topic' })).toHaveTextContent('React');
   });
 
-  it('shows the profile query error with a retry action', async () => {
+  it('keeps practice setup available with free-tier limits when the profile cannot load', async () => {
     const userEventInstance = userEvent.setup();
     const refetch = vi.fn();
     mocks.useUserReader.mockReturnValue({
@@ -144,9 +144,20 @@ describe('PracticePage', () => {
 
     renderPracticePage();
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/couldn’t load your profile/i);
-    await userEventInstance.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/profile details unavailable/i);
+    expect(screen.getByRole('alert')).toHaveTextContent('free-plan limit of 10 questions');
+    expect(screen.getByRole('combobox', { name: 'Practice topic' })).toBeVisible();
+    await userEventInstance.click(screen.getByRole('button', { name: 'Retry profile' }));
     expect(refetch).toHaveBeenCalledOnce();
+    await userEventInstance.click(screen.getByRole('combobox', { name: 'Practice topic' }));
+    await userEventInstance.click(await screen.findByRole('option', { name: 'React' }));
+    await userEventInstance.click(screen.getByRole('button', { name: /Start practice/ }));
+    expect(mocks.startPractice).toHaveBeenCalledWith({
+      topicId: 'topic-react',
+      mode: 'topic',
+      difficulty: 'Mid',
+      totalQuestions: 10,
+    });
   });
 
   it('starts weak-area practice without sending a topic id', async () => {

@@ -16,6 +16,7 @@ const serviceMocks = vi.hoisted(() => ({
   getTheoryScoreTrend: vi.fn(),
   getTheoryWeakAreas: vi.fn(),
   getPracticeTopics: vi.fn(),
+  getCodingProblems: vi.fn(),
 }));
 
 vi.mock('@clerk/clerk-react', () => ({
@@ -40,6 +41,7 @@ vi.mock('@/service/api', async (importOriginal) => ({
   getTheoryScoreTrend: serviceMocks.getTheoryScoreTrend,
   getTheoryWeakAreas: serviceMocks.getTheoryWeakAreas,
   getPracticeTopics: serviceMocks.getPracticeTopics,
+  getCodingProblems: serviceMocks.getCodingProblems,
 }));
 
 const userProfile = (isNewUser: boolean): IUser => ({
@@ -90,6 +92,7 @@ describe('DashboardPage first-run routing', () => {
     serviceMocks.getTheoryScoreTrend.mockResolvedValue({ success: true, message: 'ok', data: [] });
     serviceMocks.getTheoryWeakAreas.mockResolvedValue({ success: true, message: 'ok', data: [] });
     serviceMocks.getPracticeTopics.mockResolvedValue({ success: true, message: 'ok', data: [] });
+    serviceMocks.getCodingProblems.mockResolvedValue({ success: true, message: 'ok', data: [] });
   });
 
   it('sends a first-time user to onboarding after loading their profile', async () => {
@@ -219,6 +222,14 @@ describe('DashboardPage first-run routing', () => {
       )
     ).toBeVisible();
     expect(screen.getByText('HTTP 500: Internal server error')).toBeVisible();
+    expect(screen.getByRole('link', { name: /start practice/i })).toHaveAttribute(
+      'href',
+      '/practice'
+    );
+    expect(screen.getByRole('link', { name: /solve coding problems/i })).toHaveAttribute(
+      'href',
+      '/coding'
+    );
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(serviceMocks.getMe).toHaveBeenCalledTimes(2);
   });

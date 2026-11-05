@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { IDashboardSummary } from '@/core';
+import type { ICodingProblemSummary, IDashboardSummary, IPracticeTopic } from '@/core';
 import { DashboardOverview } from './DashboardOverview';
 import type { IDashboardOverviewProps, IDashboardPanelStatus } from './DashboardOverview.types';
 
@@ -52,6 +52,30 @@ const summary: IDashboardSummary = {
   ],
 };
 
+const practiceTopics: IPracticeTopic[] = [
+  {
+    id: 'topic-react',
+    name: 'React',
+    slug: 'react',
+    category: 'practice',
+    icon: null,
+    createdAt: '2026-11-01T00:00:00.000Z',
+    updatedAt: '2026-11-01T00:00:00.000Z',
+  },
+];
+
+const codingProblems: ICodingProblemSummary[] = [
+  {
+    id: 'two-sum',
+    title: 'Two Sum',
+    slug: 'two-sum',
+    description: 'Find two values that add up to the target.',
+    difficulty: 'Easy',
+    topic: 'Arrays',
+    isSolved: false,
+  },
+];
+
 const ready = (): IDashboardPanelStatus => ({
   isPending: false,
   isError: false,
@@ -66,11 +90,14 @@ const renderOverview = (overrides: Partial<IDashboardOverviewProps> = {}) =>
       <DashboardOverview
         name="Asha"
         summary={summary}
+        practiceTopics={practiceTopics}
+        codingProblems={codingProblems}
         theoryStatus={ready()}
         codingStatus={ready()}
         scoreTrendStatus={ready()}
         weakAreasStatus={ready()}
         practiceTopicsStatus={ready()}
+        codingProblemsStatus={ready()}
         settingsStatus={ready()}
         onOpenSession={vi.fn()}
         {...overrides}
@@ -90,6 +117,78 @@ describe('DashboardOverview', () => {
       'href',
       '/coding'
     );
+  });
+
+  it('offers real practice topics and coding problems to start from the dashboard', () => {
+    renderOverview();
+
+    expect(screen.getByRole('link', { name: /practice react/i })).toHaveAttribute(
+      'href',
+      '/practice?topicId=topic-react'
+    );
+    expect(screen.getByRole('link', { name: /try two sum/i })).toHaveAttribute(
+      'href',
+      '/coding/two-sum'
+    );
+  });
+
+  it('shows loading feedback while the topic and coding catalogues load', () => {
+    renderOverview({
+      practiceTopicsStatus: { ...ready(), isPending: true },
+      codingProblemsStatus: { ...ready(), isPending: true },
+    });
+
+    expect(screen.getByText('Loading practice topics...')).toBeVisible();
+    expect(screen.getByText('Loading coding problems...')).toBeVisible();
+  });
+
+  it('retries the practice topic catalogue after a load failure', async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    renderOverview({
+      practiceTopicsStatus: {
+        ...ready(),
+        isError: true,
+        error: new Error('Topics unavailable'),
+        onRetry,
+      },
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Topics unavailable');
+    await user.click(screen.getByRole('button', { name: 'Retry topics' }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('retries the coding problem catalogue after a load failure', async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    renderOverview({
+      codingProblemsStatus: {
+        ...ready(),
+        isError: true,
+        error: new Error('Problems unavailable'),
+        onRetry,
+      },
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Problems unavailable');
+    await user.click(screen.getByRole('button', { name: 'Retry problems' }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('explains when no practice topics or coding problems are available', () => {
+    renderOverview({ practiceTopics: [], codingProblems: [] });
+
+    expect(screen.getByText('No practice topics are available yet.')).toBeVisible();
+    expect(screen.getByText('No coding problems are available yet.')).toBeVisible();
+  });
+
+  it('shows completion feedback when every coding problem is solved', () => {
+    renderOverview({
+      codingProblems: [{ ...codingProblems[0], isSolved: true }],
+    });
+
+    expect(screen.getByText('You have solved every available challenge.')).toBeVisible();
   });
 
   it('shows account metrics, recent practice, weak-area suggestions, and setup progress', () => {
@@ -200,7 +299,7 @@ describe('DashboardOverview', () => {
     });
 
     expect(screen.getByRole('alert')).toHaveTextContent('Practice topics are unavailable');
-    await user.click(screen.getByRole('button', { name: 'Retry topic names' }));
+    await user.click(screen.getByRole('button', { name: 'Retry topics' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
 });
