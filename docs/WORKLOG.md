@@ -1,3 +1,20 @@
+## 2026-11-05 - Theme coding problem detail and workspace
+
+- Moved coding problem detail and examples, workspace panels/controls/results,
+  AI review states, and missing/not-found pages onto shared theme tokens. Kept
+  the Monaco editor dark as an IDE surface and left coding behavior unchanged.
+- Added regression assertions for the detail, workspace, retry, and error
+  states. The browser render covers the real detail and review components in
+  dark/light themes and at 390 px; workspace interaction remains covered by
+  component tests.
+- Verification: focused coding tests (5 files / 38 tests) pass; the full UI
+  suite passes (122 files / 519 tests), as do UI lint, TypeScript project check,
+  production build, both focused Playwright projects, agent-doc check, scoped
+  Prettier, and `git diff --check`. The read-only correctness review found no
+  issues. Root lint has 14 errors in the user-owned untracked `types/piston.js`
+  and 9 unrelated warnings; root formatting flags 58 unrelated or user-owned
+  files.
+
 ## 2026-11-05 - Theme Coding Questions catalog and stats
 
 - Replaced fixed dark styling in the Coding Questions filters, problem cards,
@@ -787,3 +804,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Replaced fixed dark colors across the Practice mode cards, topic/weak-area/PDF setup states, question and answer field, evaluation feedback/retry, completion summary, and PDF/no-question/completion-error route states with the existing theme and semantic tokens. Kept the practice readers, start/answer/skip/end/retry commands, evaluation gating, citations, and completion state unchanged.
 - Added component and route assertions for selected/unselected modes, setup/question/feedback/completion surfaces, and retryable PDF errors. A Playwright component render passed in both UI projects, checking dark/light surfaces and evaluation-error colors, no overflow at 390 px, and no browser errors.
 - Verification: full UI tests passed (122 files, 515 tests); UI lint, `tsc -b`, production build, agent-doc validation, scoped Prettier, and `git diff --check` passed. Root lint still reports 14 errors in the unrelated user-owned untracked `types/piston.js` and nine warnings. The root format check remains red on 57 unrelated/pre-existing or user-owned files. The build retains the existing Vite configuration and large-chunk warnings.
+
+## 2026-11-05 - Make Practice and Coding content available locally
+
+- Confirmed the authenticated Practice and Coding routes and interactions already exist, but the app's local MongoDB had no topics or theory questions and local PostgreSQL had no coding problem. Seeded the local app database with 23 topics, 12 theory questions, and the Two Sum coding problem so the flows can be tried.
+- Fixed `pnpm seed` to target the local Podman MongoDB explicitly instead of inheriting the root `.env` database URL, which pointed to Atlas. Added an explicit `--local` guard to the practice seed script so it cannot accidentally write to a remote database.
+- Verification: the first local seed inserted 12 theory questions; rerunning `pnpm seed` inserted 0, confirming idempotency. `pnpm seed:topics-only` and `pnpm --filter server seed:coding:local` completed successfully. The database contains 23 topics, 12 questions, and one seeded coding problem.
+- Dashboard API check: `/readyz` reports MongoDB, PostgreSQL, and Redis up; recent authenticated dashboard requests logged HTTP 200. I could not reproduce the reported HTTP 500 in the running service, so the dashboard now gives a specific server-error message and retry when a 500 does occur.

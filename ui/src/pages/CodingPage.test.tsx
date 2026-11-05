@@ -75,6 +75,7 @@ const renderCodingRoutes = (initialPath: string) =>
       <Routes>
         <Route path="/coding" element={<CodingPage />} />
         <Route path="/coding/:problemId" element={<CodingProblemPage />} />
+        <Route path="/problem" element={<CodingProblemPage />} />
       </Routes>
     </MemoryRouter>
   );
@@ -480,9 +481,25 @@ describe('coding pages', () => {
     });
     renderCodingRoutes('/coding/missing');
 
+    expect(screen.getByRole('main')).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
+    expect(screen.getByRole('heading', { name: 'Problem not found' })).toHaveClass(
+      'text-[var(--text-h)]'
+    );
     expect(screen.getByRole('heading', { name: 'Problem not found' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Back to problems' }));
     expect(await screen.findByRole('heading', { name: 'Coding Questions' })).toBeInTheDocument();
+  });
+
+  it('shows a themed fallback when no problem id is provided', async () => {
+    renderCodingRoutes('/problem');
+
+    expect(screen.getByRole('heading', { name: 'Problem ID is missing' })).toHaveClass(
+      'text-[var(--text-h)]'
+    );
+    expect(screen.getByRole('main')).toHaveClass('bg-[var(--card)]');
+    expect(screen.getByRole('button', { name: 'Back to problems' })).toHaveClass(
+      'focus-visible:outline-[var(--accent)]'
+    );
   });
 
   it('shows a retry action when a problem detail request fails', async () => {

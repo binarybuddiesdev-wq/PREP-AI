@@ -36,15 +36,15 @@ export const CodingProblemPage = () => {
 
   if (!problemId) {
     return (
-      <main className="mx-auto w-full max-w-3xl rounded-xl border border-white/[0.08] bg-[#18181b] p-5">
-        <h1 className="text-lg font-semibold text-zinc-100">Problem ID is missing</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+      <main className="mx-auto w-full max-w-3xl rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+        <h1 className="text-lg font-semibold text-[var(--text-h)]">Problem ID is missing</h1>
+        <p className="mt-1 text-sm text-[var(--dim)]">
           Choose a coding problem from the catalogue to view its details.
         </p>
         <button
           type="button"
           onClick={returnToList}
-          className="mt-4 min-h-9 rounded-lg border border-white/10 px-3 text-sm text-zinc-100 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+          className="mt-4 min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
         >
           Back to problems
         </button>
@@ -59,15 +59,15 @@ export const CodingProblemPage = () => {
   if (detailQuery.isError && !detailQuery.data) {
     if (getHttpStatus(detailQuery.error) === 404) {
       return (
-        <main className="mx-auto w-full max-w-3xl rounded-xl border border-white/[0.08] bg-[#18181b] p-5">
-          <h1 className="text-lg font-semibold text-zinc-100">Problem not found</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+        <main className="mx-auto w-full max-w-3xl rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h1 className="text-lg font-semibold text-[var(--text-h)]">Problem not found</h1>
+          <p className="mt-1 text-sm text-[var(--dim)]">
             This problem may have been removed or the link may be out of date.
           </p>
           <button
             type="button"
             onClick={returnToList}
-            className="mt-4 min-h-9 rounded-lg border border-white/10 px-3 text-sm text-zinc-100 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+            className="mt-4 min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             Back to problems
           </button>

@@ -11,12 +11,12 @@ export const CodingProblemDetail = (props: ICodingProblemDetailProps) => {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-medium text-zinc-400 transition hover:bg-white/[0.04] hover:text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+        className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-medium text-[var(--dim)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
         Back to problems
       </button>
-      <div className="mt-3 rounded-2xl border border-white/[0.08] bg-[#18181b]">
+      <div className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--card)]">
         <CodingProblemContent problem={problem} />
       </div>
     </article>

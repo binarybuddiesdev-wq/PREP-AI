@@ -22,6 +22,18 @@ describe('CodingProblemContent', () => {
   it('renders reusable problem metadata, description, examples, and constraints', () => {
     render(<CodingProblemContent problem={problem} />);
 
+    expect(screen.getByText('Easy')).toHaveClass(
+      'border-[var(--green-bg)]',
+      'bg-[var(--green-bg)]',
+      'text-[var(--success-strong)]'
+    );
+    expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface)]', 'text-[var(--dim)]');
+    expect(screen.getByRole('heading', { name: 'Two Sum' })).toHaveClass('text-[var(--text-h)]');
+    expect(screen.getByText('2 + 7 equals 9.').closest('figure')).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--surface)]'
+    );
+    expect(screen.getByText('Two values exist.').closest('ul')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText('Easy')).toBeInTheDocument();
     expect(screen.getByText('Arrays')).toBeInTheDocument();

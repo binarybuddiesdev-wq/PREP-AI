@@ -28,6 +28,15 @@ describe('CodingProblemDetail', () => {
     const onBack = vi.fn();
     render(<CodingProblemDetail problem={problem} onBack={onBack} />);
 
+    const detail = screen.getByRole('article');
+    expect(detail.querySelector(':scope > div')).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(screen.getByRole('button', { name: 'Back to problems' })).toHaveClass(
+      'text-[var(--dim)]',
+      'focus-visible:outline-[var(--accent)]'
+    );
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText(problem.description)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Examples' })).toBeInTheDocument();

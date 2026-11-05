@@ -10,13 +10,13 @@ gates are in [docs/architecture/TODO.md](architecture/TODO.md).
 
 ## Current state
 
-| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                                          |
-| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                                      |
-| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                                               |
-| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                                                 |
-| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history/stats, persistent Study Chat, supported settings preferences, authenticated notifications, and Plan and billing are implemented. Signed-in browser review remains. |
-| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                                           |
+| Area                         | Status                               | What exists now                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend feature APIs         | Core implementation largely complete | Clerk users/settings, theory practice and analytics, coding execution/review, PDF/RAG v1, Study Chat, notifications, and Razorpay subscription flows are implemented. See the [backend tracker](backend-status.md).                                                                                                                                                                                           |
+| Backend production readiness | Open                                 | Staging RLS, production provider validation, Piston isolation, monitoring, backups/restore, and independent AI evaluation review still need evidence from the target environment or reviewers. See the [readiness checklist](architecture/TODO.md#backend-production-readiness-checklist).                                                                                                                    |
+| Frontend architecture        | Foundation implemented               | React 19, Vite, React Router, Clerk, TanStack Query, Redux Toolkit, typed API client, route guards, error boundary, and the seven-layer import rules are in place. See [ADR-0009](adr/0009-frontend-layers.md) and the [frontend architecture guide](architecture/frontend-refactor.md).                                                                                                                      |
+| Frontend screens             | Core product screens underway        | Public landing, Clerk auth, compact onboarding, dashboard, theory practice/history, PDF Documents, private Library preview, PDF Study, coding practice/review/history/stats, persistent Study Chat, supported settings preferences, authenticated notifications, and Plan and billing are implemented. Coding detail/workspace/review surfaces now use shared theme tokens; signed-in browser review remains. |
+| Local development and CI     | Implemented baseline                 | Podman development services and project quality gates exist. Production monitoring, provider accounts, and backup configuration are separate operational work.                                                                                                                                                                                                                                                |
 
 ## Reference and implementation rules
 
@@ -292,6 +292,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move Coding Questions statistics, difficulty/topic filters, problem
       cards, empty states, and stats retry errors onto the shared theme tokens;
       verify dark/light colors and a 390 px viewport in Playwright.
+- [x] Move Coding problem details, workspace controls/results, review dialog,
+      and missing/not-found states onto shared theme tokens; preserve the
+      dark editor surface and verify the detail/review screens in both themes.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -303,7 +306,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-05):** All 515 UI unit tests (122 files) pass; UI
+**Latest evidence (2026-11-05):** All 519 UI unit tests (122 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -325,7 +328,7 @@ worker SQL-function errors remain a separate backend issue and are not linked
 to these successful dashboard requests. Session History's Practice and Coding
 tables and expanded details now use shared tokens; two focused Playwright
 runs verified dark/light computed colors, 390 px overflow, and no browser
-errors. Full UI verification passed (122 files / 515 tests, lint, project
+errors. Full UI verification passed (122 files / 519 tests, lint, project
 type-check, production build); scoped Prettier and `git diff --check` passed.
 Root lint still reports 14 errors in the untracked `types/piston.js` and nine
 warnings elsewhere; repository-wide formatting remains red on 57 existing or
@@ -336,8 +339,18 @@ its Playwright check passes in both UI projects with light/dark detail and
 error colors and a 390 px overflow check. The Practice setup, question,
 feedback/retry, and completion components also pass both UI Playwright
 projects in dark/light themes with a 390 px overflow check and no browser
-errors. The full UI gate remains green at 122 files / 515 tests, lint,
+errors. The full UI gate remains green at 122 files / 519 tests, lint,
 type-check, and build.
+
+Coding problem detail, workspace controls/results, review dialog, and missing
+or not-found states now use shared theme tokens. Focused tests and browser
+renders verified both themes and mobile overflow; the code editor remains a
+dark IDE surface.
+
+Practice and Coding content is now seeded in the local Podman databases so the
+existing flows can be tried: 23 topics, 12 theory questions, and the Two Sum
+coding problem. `pnpm seed` targets local MongoDB explicitly and is idempotent;
+the Coding seed is available as `pnpm --filter server seed:coding:local`.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

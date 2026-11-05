@@ -57,13 +57,62 @@ describe('CodingReviewDialog', () => {
     render(<CodingReviewDialog {...props} />);
 
     const dialog = await screen.findByRole('dialog', { name: 'AI Review: Two Sum' });
+    expect(dialog).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
+    expect(screen.getByRole('heading', { name: 'AI Review: Two Sum' })).toHaveClass(
+      'text-[var(--text-h)]'
+    );
     expect(dialog).toHaveTextContent('A clear, direct solution.');
     expect(dialog).toHaveTextContent('O(n)');
+    expect(screen.getAllByText('O(n)')[0].closest('section')).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--surface)]'
+    );
+    expect(screen.getByRole('heading', { name: 'Strengths' })).toHaveClass(
+      'text-[var(--success-strong)]'
+    );
     expect(dialog).toHaveTextContent('Uses a single pass');
     expect(dialog).toHaveTextContent('Validate the input length');
 
     await user.click(screen.getByRole('button', { name: 'Got it' }));
 
     expect(props.onOpenChange).toHaveBeenCalledWith(false, expect.anything());
+  });
+
+  it('shows theme-aware pending and retryable error feedback', async () => {
+    const user = userEvent.setup();
+    const onRequestReview = vi.fn();
+    const pendingAnswer = {
+      ...answer,
+      aiReviewStatus: 'not_requested' as const,
+      aiReviewJson: null,
+    };
+    const { rerender } = render(
+      <CodingReviewDialog
+        {...createProps({ answer: pendingAnswer, isRequestPending: true, onRequestReview })}
+      />
+    );
+
+    expect(await screen.findByRole('status')).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--surface)]'
+    );
+    expect(screen.getByRole('status')).toHaveTextContent('Sending your review request');
+
+    rerender(
+      <CodingReviewDialog
+        {...createProps({
+          answer: pendingAnswer,
+          requestError: { message: 'Daily AI review limit reached.', canRetry: true },
+          onRequestReview,
+        })}
+      />
+    );
+    expect(screen.getByRole('alert')).toHaveClass(
+      'border-[var(--red-bg)]',
+      'bg-[var(--red-bg)]',
+      'text-[var(--danger-strong)]'
+    );
+    await user.click(screen.getByRole('button', { name: 'Retry AI Review' }));
+    expect(onRequestReview).toHaveBeenCalledOnce();
   });
 });

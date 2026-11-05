@@ -70,6 +70,20 @@ describe('CodingProblemWorkspace', () => {
     const props = createProps();
     render(<CodingProblemWorkspace {...props} />);
 
+    expect(screen.getByRole('region', { name: 'Coding workspace' })).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--surface)]'
+    );
+    expect(screen.getAllByRole('heading', { name: 'Problem' })[0].closest('section')).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(screen.getByRole('button', { name: 'Run' })).toHaveClass('bg-[var(--accent)]');
+    expect(screen.getByRole('combobox', { name: 'Programming language' })).toHaveClass(
+      'border-[var(--border2)]',
+      'bg-[var(--surface)]',
+      'text-[var(--text)]'
+    );
     const language = screen.getByRole('combobox', { name: 'Programming language' });
     expect(language).toHaveValue('javascript');
     expect(screen.getByText('twoSum.js')).toBeInTheDocument();
@@ -102,6 +116,7 @@ describe('CodingProblemWorkspace', () => {
     const user = userEvent.setup();
     const props = createProps();
     const { rerender } = render(<CodingProblemWorkspace {...props} />);
+    expect(screen.getByRole('tab', { name: 'Output' })).toHaveClass('text-[var(--accent-strong)]');
     expect(screen.getByText('Run your code to see output.')).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Test cases' }));
@@ -160,6 +175,7 @@ describe('CodingProblemWorkspace', () => {
     };
     render(<CodingProblemWorkspace {...props} execution={execution} />);
 
+    expect(screen.getByRole('status')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('status')).toHaveTextContent(label);
     expect(screen.getByRole('button', { name: 'Run' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
@@ -194,6 +210,7 @@ describe('CodingProblemWorkspace', () => {
     };
     const { rerender } = render(<CodingProblemWorkspace {...props} execution={execution} />);
 
+    expect(screen.getByText('Wrong answer')).toHaveClass('text-[var(--accent-strong)]');
     expect(screen.getByText('Wrong answer')).toBeInTheDocument();
     expect(screen.getByText('1 of 2 test cases passed')).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: 'Test cases' }));
@@ -201,6 +218,8 @@ describe('CodingProblemWorkspace', () => {
     rerender(<CodingProblemWorkspace {...props} execution={execution} outputTab="testcases" />);
     expect(screen.getByText('Test case 1')).toBeInTheDocument();
     expect(screen.getByText('Test case 2')).toBeInTheDocument();
+    expect(screen.getByText('Passed')).toHaveClass('text-[var(--success-strong)]');
+    expect(screen.getByText('Failed')).toHaveClass('text-[var(--danger-strong)]');
     expect(screen.getByText('[1,0]')).toBeInTheDocument();
   });
 
@@ -214,6 +233,7 @@ describe('CodingProblemWorkspace', () => {
       />
     );
 
+    expect(screen.getByRole('alert').querySelector('p')).toHaveClass('text-[var(--danger-strong)]');
     expect(screen.getByRole('alert')).toHaveTextContent('Daily solved-problem limit reached.');
     await user.click(screen.getByRole('button', { name: 'Retry Submit' }));
     expect(props.onRetry).toHaveBeenCalledOnce();
