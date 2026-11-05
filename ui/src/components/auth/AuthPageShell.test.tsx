@@ -14,8 +14,17 @@ describe('AuthPageShell', () => {
       </AuthPageShell>
     );
 
-    expect(screen.getByRole('main', { name: 'Account access' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /PrepAI/ })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('main', { name: 'Account access' })).toHaveClass(
+      'bg-[var(--bg)]',
+      'text-[var(--text)]'
+    );
+    expect(screen.getByRole('region', { name: 'PrepAI authentication' })).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    const brandLink = screen.getByRole('link', { name: /PrepAI/ });
+    expect(brandLink).toHaveAttribute('href', '/');
+    expect(brandLink).toHaveClass('text-[var(--text-h)]');
     expect(screen.getByRole('form', { name: 'Sign in form' })).toBeInTheDocument();
   });
 });

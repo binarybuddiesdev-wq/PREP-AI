@@ -1,0 +1,20 @@
+import { describe, expect, it } from 'vitest';
+
+import { authAppearance } from './authAppearance';
+
+describe('authAppearance', () => {
+  it('uses shared theme tokens for Clerk surfaces and text', () => {
+    expect(authAppearance.variables).toMatchObject({
+      colorForeground: 'var(--text)',
+      colorMutedForeground: 'var(--dim)',
+      colorBackground: 'var(--card)',
+      colorInput: 'var(--bg2)',
+      colorInputForeground: 'var(--text)',
+    });
+    expect(authAppearance.elements.headerTitle).toContain('text-[var(--text-h)]');
+    expect(authAppearance.elements.formFieldInput).toContain('bg-[var(--bg2)]');
+    expect(authAppearance.elements.formButtonPrimary).toContain('bg-[var(--accent)]');
+    expect(authAppearance.elements.formButtonPrimary).toContain('text-[var(--accent-foreground)]');
+    expect(authAppearance.elements.alert).toContain('text-[var(--danger-strong)]');
+  });
+});

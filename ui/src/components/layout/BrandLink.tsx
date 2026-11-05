@@ -4,7 +4,7 @@ import type { IBrandLinkProps } from './BrandLink.types';
 
 const SIZE_CLASSES = {
   small: { link: 'text-lg', badge: 'w-7 h-7 text-xs' },
-  large: { link: 'text-xl text-white', badge: 'w-8 h-8 text-sm' },
+  large: { link: 'text-xl text-[var(--text-h)]', badge: 'w-8 h-8 text-sm' },
 } as const;
 
 export const BrandLink = (props: IBrandLinkProps) => {

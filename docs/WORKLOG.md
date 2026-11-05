@@ -870,3 +870,26 @@ New layout, one folder per purpose. A layer may import only from the layers list
   build passed. The onboarding browser check passed in both UI projects. Root
   lint remains red on existing user-owned `types/piston.js` plus 9 warnings;
   repository formatting remains red on 58 unrelated or user-owned files.
+
+## 2026-11-05 - Align authentication screens with the app theme
+
+- Replaced the fixed dark account-access shell and Clerk appearance colors with
+  the shared canvas, card, text, field, border, accent, and error tokens.
+- Restored the saved theme on direct sign-in and sign-up visits, and changed the
+  large PrepAI brand link to use the theme-aware heading color.
+- Added route and Clerk appearance regressions plus a browser render check for
+  dark/light shell, card, brand contrast, 390 x 844 viewport fit, and the Clerk
+  appearance token values. The supported Clerk login methods remain controlled
+  by Clerk configuration.
+- Verification: full UI suite passed (123 files / 536 tests), UI lint,
+  TypeScript project check, and production build passed. Both auth and onboarding
+  Playwright checks passed in the `ui` and `ui-chromium` projects. Scoped format,
+  changed-file E2E lint, and the design detector passed. Root lint still reports
+  14 errors in user-owned `types/piston.js` and 9 warnings; root formatting
+  remains red on 57 unrelated or user-owned files.
+- Follow-up review replaced the Clerk primary-button's fixed amber classes with
+  shared accent and foreground tokens. Added page assertions proving both Clerk
+  widgets receive the appearance config. The checks failed against the fixed
+  classes and ignored widget props, then passed after the changes. Full UI
+  verification remains green at 123 files / 536 tests; auth theme browser
+  checks passed in both configured projects.

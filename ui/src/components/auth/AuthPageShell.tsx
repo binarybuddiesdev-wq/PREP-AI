@@ -1,5 +1,6 @@
 import { BrandLink } from '../layout';
 import type { IAuthPageShellProps } from './AuthPageShell.types';
+import './AuthPageShell.css';
 
 export const AuthPageShell = (props: IAuthPageShellProps) => {
   const { brandTo, children } = props;
@@ -7,7 +8,7 @@ export const AuthPageShell = (props: IAuthPageShellProps) => {
   return (
     <main
       aria-label="Account access"
-      className="relative isolate flex min-h-svh items-center justify-center overflow-x-clip bg-[#09090b] px-5 py-10 font-['DM_Sans',sans-serif] text-zinc-100"
+      className="auth-page-shell relative isolate flex min-h-svh items-center justify-center overflow-x-clip bg-[var(--bg)] px-5 py-10 font-['DM_Sans',sans-serif] text-[var(--text)]"
     >
       <div
         aria-hidden="true"
@@ -15,7 +16,7 @@ export const AuthPageShell = (props: IAuthPageShellProps) => {
       />
       <section
         aria-label="PrepAI authentication"
-        className="relative w-full max-w-[420px] rounded-2xl border border-white/[0.08] bg-[#18181b] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-10"
+        className="auth-page-card relative w-full max-w-[420px] rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-10"
       >
         <div className="mb-7 text-center">
           <BrandLink to={brandTo} size="large" />

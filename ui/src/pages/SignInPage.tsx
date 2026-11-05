@@ -1,9 +1,14 @@
 import { AuthPageShell } from '@/components/auth';
 import { ROUTES } from '@/core';
+import { useThemePreference } from '@/logic';
 import { SignInWidget } from '@/service/auth';
 
-export const SignInPage = () => (
-  <AuthPageShell brandTo={ROUTES.root}>
-    <SignInWidget />
-  </AuthPageShell>
-);
+export const SignInPage = () => {
+  useThemePreference();
+
+  return (
+    <AuthPageShell brandTo={ROUTES.root}>
+      <SignInWidget />
+    </AuthPageShell>
+  );
+};
