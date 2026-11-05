@@ -1,5 +1,4 @@
 export type {
-  ICodingSession,
   ICodingSessionHistory,
   IDashboardMetrics,
   IDashboardRecentSession,

@@ -1,11 +1,29 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { CodingProblemWorkspace } from '@/components/coding';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
-import type { CodingLanguage, CodingOutputTab, ICodingProblem } from '@/core';
+import type {
+  CodingExecutionOperation,
+  CodingLanguage,
+  CodingOutputTab,
+  ICodingProblem,
+  IExecuteCodingBody,
+} from '@/core';
 import { ROUTES } from '@/core';
-import { getHttpStatus, useCodingProblemReader } from '@/logic';
+import {
+  getHttpStatus,
+  useCodingExecutionCommand,
+  useCodingExecutionReader,
+  useCodingProblemReader,
+  useCodingSessionCommand,
+} from '@/logic';
+
+interface ICodingExecutionAttempt {
+  operation: CodingExecutionOperation;
+  body: IExecuteCodingBody;
+  idempotencyKey: string;
+}
 
 export const CodingProblemPage = () => {
   const { problemId } = useParams();
@@ -91,7 +109,80 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
   const [outputTab, setOutputTab] = useState<CodingOutputTab>('output');
   const [isProblemCollapsed, setProblemCollapsed] = useState(false);
   const [isFullscreen, setFullscreen] = useState(false);
+  const [sessionId, setSessionId] = useState('');
+  const [executionId, setExecutionId] = useState('');
+  const [isActionPending, setActionPending] = useState(false);
+  const [actionError, setActionError] = useState<{
+    operation: CodingExecutionOperation;
+    message: string;
+  } | null>(null);
+  const sessionIdempotencyKey = useRef<string | null>(null);
+  const attemptRef = useRef<ICodingExecutionAttempt | null>(null);
+  const actionInProgress = useRef(false);
+  const startSessionCommand = useCodingSessionCommand();
+  const executionCommand = useCodingExecutionCommand();
+  const executionQuery = useCodingExecutionReader(sessionId, executionId);
   const code = codeByLanguage[language] ?? starterCode(problem, language);
+
+  const executeAttempt = async (attempt: ICodingExecutionAttempt) => {
+    if (actionInProgress.current) return;
+    actionInProgress.current = true;
+    attemptRef.current = attempt;
+    setActionPending(true);
+    setActionError(null);
+    setExecutionId('');
+
+    try {
+      let activeSessionId = sessionId;
+      if (!activeSessionId) {
+        sessionIdempotencyKey.current ??= crypto.randomUUID();
+        const session = await startSessionCommand.mutateAsync({
+          body: { problemIds: [problem.id] },
+          idempotencyKey: sessionIdempotencyKey.current,
+        });
+        activeSessionId = session.id;
+        setSessionId(activeSessionId);
+      }
+
+      const acceptedExecution = await executionCommand.mutateAsync({
+        operation: attempt.operation,
+        sessionId: activeSessionId,
+        body: attempt.body,
+        idempotencyKey: attempt.idempotencyKey,
+      });
+      setSessionId(acceptedExecution.sessionId);
+      setExecutionId(acceptedExecution.id);
+      setOutputTab(attempt.operation === 'submit' ? 'testcases' : 'output');
+      attemptRef.current = null;
+    } catch (error: unknown) {
+      setActionError({
+        operation: attempt.operation,
+        message: error instanceof Error ? error.message : 'The coding request could not be sent.',
+      });
+    } finally {
+      actionInProgress.current = false;
+      setActionPending(false);
+    }
+  };
+
+  const handleAction = (operation: CodingExecutionOperation) => {
+    if (actionInProgress.current) return;
+    if (!sessionId) sessionIdempotencyKey.current ??= crypto.randomUUID();
+    const attempt: ICodingExecutionAttempt = {
+      operation,
+      body: { problemId: problem.id, language, code },
+      idempotencyKey: crypto.randomUUID(),
+    };
+    void executeAttempt(attempt);
+  };
+
+  const retryAttempt = () => {
+    if (attemptRef.current) void executeAttempt(attemptRef.current);
+  };
+  const executionReadError =
+    executionQuery.isError && executionQuery.error instanceof Error
+      ? executionQuery.error.message
+      : null;
 
   return (
     <main className="h-[calc(100svh-116px)] min-h-[420px] w-full min-w-0">
@@ -102,6 +193,12 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
         outputTab={outputTab}
         isProblemCollapsed={isProblemCollapsed}
         isFullscreen={isFullscreen}
+        execution={executionQuery.data ?? null}
+        isActionPending={
+          isActionPending || startSessionCommand.isPending || executionCommand.isPending
+        }
+        actionError={actionError}
+        executionReadError={executionReadError}
         onBack={onBack}
         onLanguageChange={setLanguage}
         onCodeChange={(nextCode) =>
@@ -116,6 +213,10 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
         onOutputTabChange={setOutputTab}
         onToggleProblem={() => setProblemCollapsed((current) => !current)}
         onToggleFullscreen={() => setFullscreen((current) => !current)}
+        onRun={() => handleAction('run')}
+        onSubmit={() => handleAction('submit')}
+        onRetry={retryAttempt}
+        onRetryExecutionRead={() => void executionQuery.refetch()}
       />
     </main>
   );

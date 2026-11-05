@@ -11,12 +11,22 @@ import { CodingProblemPage } from './CodingProblemPage';
 const queries = vi.hoisted(() => ({
   list: vi.fn(),
   detail: vi.fn(),
+  startCodingSession: vi.fn(),
+  executeCoding: vi.fn(),
+  readExecution: vi.fn(),
+  executionData: undefined as unknown,
 }));
 
 vi.mock('@/logic', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/logic')>()),
   useCodingProblemsReader: queries.list,
   useCodingProblemReader: queries.detail,
+  useCodingSessionCommand: () => ({ mutateAsync: queries.startCodingSession, isPending: false }),
+  useCodingExecutionCommand: () => ({ mutateAsync: queries.executeCoding, isPending: false }),
+  useCodingExecutionReader: (sessionId: string, executionId: string) => {
+    queries.readExecution(sessionId, executionId);
+    return { data: sessionId && executionId ? queries.executionData : undefined };
+  },
 }));
 
 vi.mock('@/components/coding/CodingEditor', () => ({
@@ -82,6 +92,10 @@ describe('coding pages', () => {
       isFetching: false,
       refetch: vi.fn(),
     });
+    queries.startCodingSession.mockResolvedValue({ id: 'session-one' });
+    queries.executeCoding.mockResolvedValue({ id: 'execution-one', sessionId: 'session-one' });
+    queries.executionData = undefined;
+    queries.readExecution.mockClear();
   });
 
   it('opens a real detail route from the catalogue', async () => {
@@ -116,6 +130,119 @@ describe('coding pages', () => {
     );
     expect(screen.getByRole('textbox', { name: 'Code editor' })).toHaveValue(detail.codePy);
     expect(screen.getByText('twoSum.py')).toBeInTheDocument();
+  });
+
+  it('starts a session only when Run is pressed and sends the current code snapshot', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValueOnce('session-key-one')
+      .mockReturnValueOnce('execution-key-one');
+    renderCodingRoutes('/coding/two-sum');
+
+    expect(queries.startCodingSession).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Run' }));
+
+    await waitFor(() => expect(queries.executeCoding).toHaveBeenCalledOnce());
+    expect(queries.startCodingSession).toHaveBeenCalledWith({
+      body: { problemIds: ['problem-one'] },
+      idempotencyKey: 'session-key-one',
+    });
+    expect(queries.executeCoding).toHaveBeenCalledWith({
+      operation: 'run',
+      sessionId: 'session-one',
+      body: { problemId: 'problem-one', language: 'javascript', code: detail.codeJs },
+      idempotencyKey: 'execution-key-one',
+    });
+    expect(queries.readExecution).toHaveBeenLastCalledWith('session-one', 'execution-one');
+  });
+
+  it('retries the exact failed submission with the original code and idempotency key', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValueOnce('session-key-one')
+      .mockReturnValueOnce('execution-key-one');
+    queries.executeCoding
+      .mockRejectedValueOnce(new Error('Code execution rate limit exceeded.'))
+      .mockResolvedValueOnce({ id: 'execution-one', sessionId: 'session-one' });
+    renderCodingRoutes('/coding/two-sum');
+
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Code execution rate limit exceeded.'
+    );
+    await user.clear(screen.getByRole('textbox', { name: 'Code editor' }));
+    await user.type(screen.getByRole('textbox', { name: 'Code editor' }), 'return 99;');
+    await user.click(screen.getByRole('button', { name: 'Retry Submit' }));
+
+    await waitFor(() => expect(queries.executeCoding).toHaveBeenCalledTimes(2));
+    expect(queries.executeCoding).toHaveBeenNthCalledWith(1, {
+      operation: 'submit',
+      sessionId: 'session-one',
+      body: { problemId: 'problem-one', language: 'javascript', code: detail.codeJs },
+      idempotencyKey: 'execution-key-one',
+    });
+    expect(queries.executeCoding).toHaveBeenNthCalledWith(2, {
+      operation: 'submit',
+      sessionId: 'session-one',
+      body: { problemId: 'problem-one', language: 'javascript', code: detail.codeJs },
+      idempotencyKey: 'execution-key-one',
+    });
+  });
+
+  it('retries a failed session start with the same start idempotency key', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValueOnce('session-key-one')
+      .mockReturnValueOnce('execution-key-one');
+    queries.startCodingSession
+      .mockRejectedValueOnce(new Error('Could not start coding session.'))
+      .mockResolvedValueOnce({ id: 'session-one' });
+    renderCodingRoutes('/coding/two-sum');
+
+    await user.click(screen.getByRole('button', { name: 'Run' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not start coding session.');
+    await user.click(screen.getByRole('button', { name: 'Retry Run' }));
+
+    await waitFor(() => expect(queries.executeCoding).toHaveBeenCalledOnce());
+    expect(queries.startCodingSession).toHaveBeenNthCalledWith(1, {
+      body: { problemIds: ['problem-one'] },
+      idempotencyKey: 'session-key-one',
+    });
+    expect(queries.startCodingSession).toHaveBeenNthCalledWith(2, {
+      body: { problemIds: ['problem-one'] },
+      idempotencyKey: 'session-key-one',
+    });
+  });
+
+  it('renders polled test results after the accepted execution is returned', async () => {
+    const user = userEvent.setup();
+    queries.executionData = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: 'problem-one',
+      operation: 'submit',
+      language: 'javascript',
+      status: 'completed',
+      result: {
+        status: 'accepted',
+        testCasesPassed: 1,
+        testCasesTotal: 1,
+        testCases: [{ input: [2, 7], expected: [0, 1], got: [0, 1], passed: true }],
+        runtime: null,
+        memoryUsage: null,
+      },
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: null,
+    };
+    renderCodingRoutes('/coding/two-sum');
+
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(await screen.findByText('Accepted')).toBeInTheDocument();
+    expect(screen.getByText('1 of 1 test cases passed')).toBeInTheDocument();
   });
 
   it('exposes loading and retryable catalogue errors', async () => {

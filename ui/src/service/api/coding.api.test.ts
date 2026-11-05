@@ -3,7 +3,15 @@ import { describe, expect, it } from 'vitest';
 import type { ICodingProblem, ICodingProblemSummary, ICodingSessionHistory } from '@/core';
 
 import { createApiClient } from './apiClient';
-import { getCodingProblem, getCodingProblems, getCodingSessionHistory } from './coding.api';
+import {
+  getCodingExecution,
+  getCodingProblem,
+  getCodingProblems,
+  getCodingSessionHistory,
+  runCodingCode,
+  startCodingSession,
+  submitCodingSolution,
+} from './coding.api';
 
 describe('coding API', () => {
   it('requests the authenticated coding problem catalogue', async () => {
@@ -102,5 +110,131 @@ describe('coding API', () => {
     expect(requests).toHaveLength(1);
     expect(requests[0].method).toBe('GET');
     expect(requests[0].url).toBe('http://api.test/api/v1/coding/sessions?page=3&limit=100');
+  });
+
+  it('starts a problem-scoped session with a stable idempotency key', async () => {
+    const requests: Request[] = [];
+    const session = {
+      id: 'session-one',
+      userId: 'user-one',
+      problemIds: ['problem-one'],
+      problemsAttempted: 0,
+      problemsSolved: 0,
+      status: 'in_progress' as const,
+      startedAt: '2026-11-05T10:00:00.000Z',
+      completedAt: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+    };
+    const api = createApiClient({
+      baseUrl: 'http://api.test',
+      getToken: async () => 'token',
+      fetchImplementation: async (request) => {
+        requests.push(request instanceof Request ? request.clone() : new Request(request));
+        return new Response(JSON.stringify({ success: true, message: 'started', data: session }), {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+
+    await expect(
+      startCodingSession(api, { problemIds: ['problem-one'] }, 'session-key-one')
+    ).resolves.toMatchObject({ data: session });
+    expect(requests[0].method).toBe('POST');
+    expect(requests[0].url).toBe('http://api.test/api/v1/coding/session/start');
+    expect(requests[0].headers.get('Idempotency-Key')).toBe('session-key-one');
+    await expect(requests[0].clone().json()).resolves.toEqual({
+      problemIds: ['problem-one'],
+    });
+  });
+
+  it.each([
+    ['run', runCodingCode],
+    ['submit', submitCodingSolution],
+  ] as const)(
+    'queues a coding %s with its request snapshot and idempotency key',
+    async (operation, requestOperation) => {
+      const requests: Request[] = [];
+      const execution = {
+        id: 'execution-one',
+        sessionId: 'session-one',
+        operation,
+        status: 'queued' as const,
+        createdAt: '2026-11-05T10:00:00.000Z',
+      };
+      const api = createApiClient({
+        baseUrl: 'http://api.test',
+        getToken: async () => 'token',
+        fetchImplementation: async (request) => {
+          requests.push(request instanceof Request ? request.clone() : new Request(request));
+          return new Response(
+            JSON.stringify({ success: true, message: 'queued', data: execution }),
+            {
+              status: 202,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        },
+      });
+      const body = {
+        problemId: 'problem-one',
+        language: 'typescript' as const,
+        code: 'const x = 42;',
+      };
+
+      await expect(
+        requestOperation(api, 'session-one', body, 'execution-key-one')
+      ).resolves.toMatchObject({ data: execution });
+      expect(requests[0].method).toBe('POST');
+      expect(requests[0].url).toBe(
+        `http://api.test/api/v1/coding/session/session-one/${operation}`
+      );
+      expect(requests[0].headers.get('Idempotency-Key')).toBe('execution-key-one');
+      await expect(requests[0].clone().json()).resolves.toEqual(body);
+    }
+  );
+
+  it('reads an execution by encoded session and execution IDs', async () => {
+    const requests: Request[] = [];
+    const execution = {
+      id: 'execution/one',
+      sessionId: 'session/one',
+      problemId: 'problem-one',
+      operation: 'run' as const,
+      language: 'javascript' as const,
+      status: 'completed' as const,
+      result: {
+        status: 'wrong_answer' as const,
+        testCasesPassed: 0,
+        testCasesTotal: 1,
+        testCases: [{ input: [1], expected: 2, got: 1, passed: false }],
+        runtime: null,
+        memoryUsage: null,
+      },
+      failureMessage: null,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: '2026-11-05T10:00:01.000Z',
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: null,
+    };
+    const api = createApiClient({
+      baseUrl: 'http://api.test',
+      getToken: async () => 'token',
+      fetchImplementation: async (request) => {
+        requests.push(request instanceof Request ? request.clone() : new Request(request));
+        return new Response(JSON.stringify({ success: true, message: 'loaded', data: execution }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+
+    await expect(getCodingExecution(api, 'session/one', 'execution/one')).resolves.toMatchObject({
+      data: execution,
+    });
+    expect(requests[0].method).toBe('GET');
+    expect(requests[0].url).toBe(
+      'http://api.test/api/v1/coding/session/session%2Fone/executions/execution%2Fone'
+    );
   });
 });

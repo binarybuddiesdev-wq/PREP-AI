@@ -1,15 +1,5 @@
 import type { ITheoryScoreTrendPoint, ITheorySession, ITheoryWeakArea } from '../theory';
-
-export interface ICodingSession {
-  id: string;
-  problemIds: string[];
-  problemsAttempted: number;
-  problemsSolved: number;
-  status: 'in_progress' | 'completed';
-  startedAt: string;
-  completedAt: string | null;
-  createdAt: string;
-}
+import type { ICodingSession } from '../coding';
 
 export interface ICodingSessionHistory {
   sessions: ICodingSession[];

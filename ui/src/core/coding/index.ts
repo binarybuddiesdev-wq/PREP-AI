@@ -1,8 +1,18 @@
 export type {
   CodingDifficulty,
+  CodingExecutionOperation,
+  CodingExecutionStatus,
+  CodingExecutionVerdict,
   CodingLanguage,
   CodingOutputTab,
+  ICodingExecution,
+  ICodingExecutionAccepted,
+  ICodingExecutionAnswer,
+  ICodingExecutionResult,
   ICodingProblem,
   ICodingProblemExample,
   ICodingProblemSummary,
+  ICodingTestCaseResult,
+  IExecuteCodingBody,
+  IStartCodingSessionBody,
 } from './coding.types';

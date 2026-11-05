@@ -1,4 +1,10 @@
-import type { CodingLanguage, CodingOutputTab, ICodingProblem } from '@/core';
+import type {
+  CodingExecutionOperation,
+  CodingLanguage,
+  CodingOutputTab,
+  ICodingExecution,
+  ICodingProblem,
+} from '@/core';
 
 export interface ICodingProblemWorkspaceProps {
   problem: ICodingProblem;
@@ -7,6 +13,10 @@ export interface ICodingProblemWorkspaceProps {
   outputTab: CodingOutputTab;
   isProblemCollapsed: boolean;
   isFullscreen: boolean;
+  execution: ICodingExecution | null;
+  isActionPending: boolean;
+  actionError: { operation: CodingExecutionOperation; message: string } | null;
+  executionReadError: string | null;
   onBack: () => void;
   onLanguageChange: (language: CodingLanguage) => void;
   onCodeChange: (code: string) => void;
@@ -14,4 +24,8 @@ export interface ICodingProblemWorkspaceProps {
   onOutputTabChange: (tab: CodingOutputTab) => void;
   onToggleProblem: () => void;
   onToggleFullscreen: () => void;
+  onRun: () => void;
+  onSubmit: () => void;
+  onRetry: () => void;
+  onRetryExecutionRead: () => void;
 }

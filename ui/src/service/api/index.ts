@@ -1,7 +1,15 @@
 export type { ApiClient, ICreateApiClientInput } from './apiClient.types';
 export { createApiClient } from './apiClient';
 export { getHttpStatus } from './getHttpStatus';
-export { getCodingProblem, getCodingProblems, getCodingSessionHistory } from './coding.api';
+export {
+  getCodingExecution,
+  getCodingProblem,
+  getCodingProblems,
+  getCodingSessionHistory,
+  runCodingCode,
+  startCodingSession,
+  submitCodingSolution,
+} from './coding.api';
 export {
   deletePdfSource,
   getPdfContent,

@@ -15,4 +15,19 @@ describe('codingKeys', () => {
     ]);
     expect(codingKeys.problems('user-one')).not.toEqual(codingKeys.problems('user-two'));
   });
+
+  it('scopes execution caches by user and execution context', () => {
+    expect(codingKeys.execution('user-one', 'session-one', 'execution-one')).toEqual([
+      'prepai',
+      'coding',
+      'user-one',
+      'session',
+      'session-one',
+      'execution',
+      'execution-one',
+    ]);
+    expect(codingKeys.execution('user-one', 'session-one', 'execution-one')).not.toEqual(
+      codingKeys.execution('user-two', 'session-one', 'execution-one')
+    );
+  });
 });

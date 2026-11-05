@@ -1,9 +1,14 @@
 import type {
   IApiEnvelope,
+  ICodingExecution,
+  ICodingExecutionAccepted,
   ICodingProblem,
   ICodingProblemSummary,
+  ICodingSession,
   ICodingSessionHistory,
+  IExecuteCodingBody,
   IPaginationRequest,
+  IStartCodingSessionBody,
 } from '@/core';
 
 import type { ApiClient } from './apiClient.types';
@@ -26,3 +31,52 @@ export const getCodingSessionHistory = (
   api
     .get('coding/sessions', { searchParams: { page: params.page, limit: params.limit } })
     .json<IApiEnvelope<ICodingSessionHistory>>();
+
+export const startCodingSession = (
+  api: ApiClient,
+  body: IStartCodingSessionBody,
+  idempotencyKey: string
+): Promise<IApiEnvelope<ICodingSession>> =>
+  api
+    .post('coding/session/start', {
+      json: body,
+      headers: { 'Idempotency-Key': idempotencyKey },
+    })
+    .json<IApiEnvelope<ICodingSession>>();
+
+export const runCodingCode = (
+  api: ApiClient,
+  sessionId: string,
+  body: IExecuteCodingBody,
+  idempotencyKey: string
+): Promise<IApiEnvelope<ICodingExecutionAccepted>> =>
+  api
+    .post(`coding/session/${encodeURIComponent(sessionId)}/run`, {
+      json: body,
+      headers: { 'Idempotency-Key': idempotencyKey },
+    })
+    .json<IApiEnvelope<ICodingExecutionAccepted>>();
+
+export const submitCodingSolution = (
+  api: ApiClient,
+  sessionId: string,
+  body: IExecuteCodingBody,
+  idempotencyKey: string
+): Promise<IApiEnvelope<ICodingExecutionAccepted>> =>
+  api
+    .post(`coding/session/${encodeURIComponent(sessionId)}/submit`, {
+      json: body,
+      headers: { 'Idempotency-Key': idempotencyKey },
+    })
+    .json<IApiEnvelope<ICodingExecutionAccepted>>();
+
+export const getCodingExecution = (
+  api: ApiClient,
+  sessionId: string,
+  executionId: string
+): Promise<IApiEnvelope<ICodingExecution>> =>
+  api
+    .get(
+      `coding/session/${encodeURIComponent(sessionId)}/executions/${encodeURIComponent(executionId)}`
+    )
+    .json<IApiEnvelope<ICodingExecution>>();

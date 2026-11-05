@@ -1,7 +1,19 @@
 import { useEffect } from 'react';
-import { ArrowLeft, ChevronDown, Maximize2, Minimize2, RotateCcw } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  CircleX,
+  LoaderCircle,
+  Maximize2,
+  Minimize2,
+  Play,
+  RotateCcw,
+  Send,
+  X,
+} from 'lucide-react';
 
-import type { CodingLanguage } from '@/core';
+import type { CodingExecutionOperation, CodingLanguage, ICodingExecution } from '@/core';
 import { CodingProblemContent } from './CodingProblemContent';
 import { CodingEditor } from './CodingEditor';
 import type { ICodingProblemWorkspaceProps } from './CodingProblemWorkspace.types';
@@ -12,6 +24,21 @@ const LANGUAGES: readonly { value: CodingLanguage; label: string; extension: str
   { value: 'python', label: 'Python', extension: 'py' },
 ];
 
+const formatResultValue = (value: unknown) => {
+  const serialized = JSON.stringify(value);
+  return serialized ?? String(value);
+};
+
+const executionActionLabel = (operation: CodingExecutionOperation) =>
+  operation === 'run' ? 'Run' : 'Submit';
+
+const executionVerdict = (execution: ICodingExecution) => {
+  if (!execution.result) return 'Execution completed without a result';
+  if (execution.result.status === 'accepted') return 'Accepted';
+  if (execution.result.status === 'wrong_answer') return 'Wrong answer';
+  return 'Execution error';
+};
+
 export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
   const {
     problem,
@@ -20,6 +47,10 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     outputTab,
     isProblemCollapsed,
     isFullscreen,
+    execution,
+    isActionPending,
+    actionError,
+    executionReadError,
     onBack,
     onLanguageChange,
     onCodeChange,
@@ -27,6 +58,10 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     onOutputTabChange,
     onToggleProblem,
     onToggleFullscreen,
+    onRun,
+    onSubmit,
+    onRetry,
+    onRetryExecutionRead,
   } = props;
   const selectedLanguage = LANGUAGES.find((item) => item.value === language) ?? LANGUAGES[0];
   const fileBaseName = problem.title
@@ -40,6 +75,8 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     )
     .join('');
   const filename = `${fileBaseName}.${selectedLanguage.extension}`;
+  const isExecutionActive = execution?.status === 'queued' || execution?.status === 'running';
+  const isBusy = isActionPending || isExecutionActive;
 
   useEffect(() => {
     if (!isFullscreen) return;
@@ -106,6 +143,24 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                 <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-amber-400" />
                 <span className="truncate">{filename}</span>
               </span>
+              <button
+                type="button"
+                onClick={onRun}
+                disabled={isBusy}
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-amber-400 px-2.5 text-xs font-semibold text-black transition hover:bg-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-wait disabled:opacity-50"
+              >
+                <Play aria-hidden="true" className="size-3" />
+                Run
+              </button>
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={isBusy}
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-white/[0.12] px-2.5 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-50"
+              >
+                <Send aria-hidden="true" className="size-3" />
+                Submit
+              </button>
               <label className="relative inline-flex shrink-0 items-center">
                 <span className="sr-only">Programming language</span>
                 <select
@@ -181,11 +236,129 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
               </div>
               <div
                 role="tabpanel"
-                className="flex min-h-0 flex-1 items-center justify-center px-4 text-center text-xs text-zinc-500"
+                className={`min-h-0 flex-1 overflow-y-auto px-3 py-2 text-xs text-zinc-400 ${execution?.status === 'completed' && execution.result && outputTab === 'testcases' ? 'text-left' : 'flex items-center justify-center text-center'}`}
               >
-                {outputTab === 'output'
-                  ? 'Run your code to see output.'
-                  : 'Run your code to inspect each test case.'}
+                {actionError ? (
+                  <div
+                    role="alert"
+                    className="flex h-full flex-col items-center justify-center gap-2 text-center"
+                  >
+                    <p className="max-w-lg text-rose-300">{actionError.message}</p>
+                    <button
+                      type="button"
+                      onClick={onRetry}
+                      className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/[0.1] px-2.5 text-xs font-medium text-zinc-200 transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-amber-400"
+                    >
+                      <RotateCcw aria-hidden="true" className="size-3" />
+                      Retry {executionActionLabel(actionError.operation)}
+                    </button>
+                  </div>
+                ) : executionReadError ? (
+                  <div
+                    role="alert"
+                    className="flex h-full flex-col items-center justify-center gap-2 text-center"
+                  >
+                    <p className="max-w-lg text-rose-300">{executionReadError}</p>
+                    <button
+                      type="button"
+                      onClick={onRetryExecutionRead}
+                      className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/[0.1] px-2.5 text-xs font-medium text-zinc-200 transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-amber-400"
+                    >
+                      <RotateCcw aria-hidden="true" className="size-3" />
+                      Retry status check
+                    </button>
+                  </div>
+                ) : isActionPending ? (
+                  <p role="status" className="inline-flex items-center gap-2 text-zinc-400">
+                    <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
+                    Starting your request…
+                  </p>
+                ) : execution?.status === 'queued' || execution?.status === 'running' ? (
+                  <p role="status" className="inline-flex items-center gap-2 text-zinc-400">
+                    <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
+                    {executionActionLabel(execution.operation)}{' '}
+                    {execution.status === 'queued' ? 'queued…' : 'is running…'}
+                  </p>
+                ) : execution?.status === 'failed' ? (
+                  <div role="alert" className="inline-flex items-center gap-2 text-rose-300">
+                    <CircleX aria-hidden="true" className="size-4 shrink-0" />
+                    {execution.failureMessage || 'The code execution could not be completed.'}
+                  </div>
+                ) : execution?.status === 'completed' ? (
+                  execution.result ? (
+                    <div className="w-full space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-white/[0.07] bg-[#111113] px-2.5 py-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 font-semibold ${execution.result.status === 'accepted' ? 'text-emerald-300' : execution.result.status === 'wrong_answer' ? 'text-amber-300' : 'text-rose-300'}`}
+                        >
+                          {execution.result.status === 'accepted' ? (
+                            <Check aria-hidden="true" className="size-3.5" />
+                          ) : (
+                            <X aria-hidden="true" className="size-3.5" />
+                          )}
+                          {executionVerdict(execution)}
+                        </span>
+                        <span className="text-zinc-500">
+                          {execution.result.testCasesPassed} of {execution.result.testCasesTotal}{' '}
+                          test cases passed
+                        </span>
+                      </div>
+                      {outputTab === 'testcases' ? (
+                        <ol className="space-y-1.5">
+                          {execution.result.testCases.map((testCase, index) => (
+                            <li
+                              key={`${execution.id}-case-${index + 1}`}
+                              className="rounded-md border border-white/[0.07] bg-[#111113] p-2"
+                            >
+                              <div className="mb-1.5 flex items-center justify-between gap-2">
+                                <span className="font-medium text-zinc-300">
+                                  Test case {index + 1}
+                                </span>
+                                <span
+                                  className={testCase.passed ? 'text-emerald-300' : 'text-rose-300'}
+                                >
+                                  {testCase.passed ? 'Passed' : 'Failed'}
+                                </span>
+                              </div>
+                              <dl className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-3">
+                                <div>
+                                  <dt className="text-[10px] uppercase tracking-wide text-zinc-600">
+                                    Input
+                                  </dt>
+                                  <dd className="break-all font-mono text-[11px] text-zinc-300">
+                                    {formatResultValue(testCase.input)}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-[10px] uppercase tracking-wide text-zinc-600">
+                                    Expected
+                                  </dt>
+                                  <dd className="break-all font-mono text-[11px] text-zinc-300">
+                                    {formatResultValue(testCase.expected)}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-[10px] uppercase tracking-wide text-zinc-600">
+                                    Your output
+                                  </dt>
+                                  <dd className="break-all font-mono text-[11px] text-zinc-300">
+                                    {formatResultValue(testCase.got)}
+                                  </dd>
+                                </div>
+                              </dl>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : null}
+                    </div>
+                  ) : (
+                    'Execution completed without a result.'
+                  )
+                ) : outputTab === 'output' ? (
+                  'Run your code to see output.'
+                ) : (
+                  'Run your code to inspect each test case.'
+                )}
               </div>
             </section>
           ) : null}

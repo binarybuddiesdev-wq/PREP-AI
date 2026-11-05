@@ -153,7 +153,7 @@ session had no authenticated browser surface.
 
 ### Phase 5 — Coding challenges
 
-**Status: Catalogue, detail, and editor implemented; execution flows pending.**
+**Status: Catalogue, detail, editor, and asynchronous Run/Submit flows implemented; AI review and coding history remain pending.**
 Problem listing, sessions, run/submit execution, results, history, AI review,
 and quotas exist. Public production execution remains gated on stronger Piston
 isolation.
@@ -162,7 +162,7 @@ isolation.
       state, and problem details/examples/constraints.
 - [x] Add the editor for JavaScript, TypeScript, and Python with output and
       test-case tabs, reset, fullscreen, and collapsible problem description.
-- [ ] Connect Run and Submit to the asynchronous coding API and render real
+- [x] Connect Run and Submit to the asynchronous coding API and render real
       queued/running/completed results and limits.
 - [ ] Connect AI Review to the review job/status/result flow and show structured
       complexity, quality, and suggestion fields.
