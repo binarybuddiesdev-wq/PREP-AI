@@ -8,6 +8,8 @@ test.describe('Frontend Smoke Tests', () => {
 
   test('landing page renders hero section', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('text=PrepAI')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'The smarter way to prepare for interviews' })
+    ).toBeVisible();
   });
 });
