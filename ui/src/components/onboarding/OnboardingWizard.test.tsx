@@ -55,6 +55,39 @@ describe('OnboardingWizard', () => {
     expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
   });
 
+  it('uses the shared theme tokens for onboarding surfaces, fields, and errors', () => {
+    const { container } = render(
+      <OnboardingWizard
+        {...createWizardProps({
+          step: 2,
+          errorMessage: 'Could not save your progress.',
+        })}
+      />
+    );
+
+    expect(screen.getByRole('main', { name: 'Profile setup' })).toHaveClass(
+      'bg-[var(--bg)]',
+      'text-[var(--text)]'
+    );
+    expect(container.querySelector('.onboarding-card')).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(screen.getByRole('heading', { name: 'Let’s set up your profile' })).toHaveClass(
+      'text-[var(--text-h)]'
+    );
+    expect(screen.getByRole('textbox', { name: /Target Companies/ })).toHaveClass(
+      'border-[var(--border2)]',
+      'bg-[var(--bg2)]',
+      'text-[var(--text)]'
+    );
+    expect(screen.getByRole('alert')).toHaveClass(
+      'border-[var(--red-bg)]',
+      'bg-[var(--red-bg)]',
+      'text-[var(--danger-strong)]'
+    );
+  });
+
   it('toggles a topic and reports the updated draft', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

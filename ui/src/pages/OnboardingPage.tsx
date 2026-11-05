@@ -10,6 +10,7 @@ import {
   useSessionReader,
   useSettingsReader,
   useSetupCompleteCommand,
+  useThemePreference,
   useUpdateSettingsCommand,
   useUserReader,
 } from '@/logic';
@@ -18,6 +19,7 @@ const SAVE_ERROR_MESSAGE = 'We couldn’t save your progress. Check your connect
 const COMPLETE_ERROR_MESSAGE = 'We couldn’t complete setup. Please try again.';
 
 export const OnboardingPage = () => {
+  useThemePreference();
   const navigate = useNavigate();
   const { isLoaded } = useSessionReader();
   const userQuery = useUserReader();

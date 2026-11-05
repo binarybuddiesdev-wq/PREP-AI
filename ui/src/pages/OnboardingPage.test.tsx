@@ -1,12 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { UserEvent } from '@testing-library/user-event';
-import type { PropsWithChildren } from 'react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import { Route, Routes, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IUser, IUserSettings } from '@/core';
+import { renderWithProviders } from '@/test/renderWithProviders';
 import { OnboardingPage } from './OnboardingPage';
 
 const serviceMocks = vi.hoisted(() => ({
@@ -57,28 +56,23 @@ const chooseOption = async (user: UserEvent, label: string, option: string) => {
   await user.click(await screen.findByRole('option', { name: option }));
 };
 
-const renderOnboarding = (initialPath = '/onboarding') => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const Wrapper = ({ children }: PropsWithChildren) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+const renderOnboarding = (initialPath = '/onboarding') =>
+  renderWithProviders(
+    <>
+      <Routes>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/dashboard" element={<h1>Dashboard destination</h1>} />
+      </Routes>
+      <CurrentPath />
+    </>,
+    [initialPath]
   );
-
-  return render(
-    <Wrapper>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Routes>
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/dashboard" element={<h1>Dashboard destination</h1>} />
-        </Routes>
-        <CurrentPath />
-      </MemoryRouter>
-    </Wrapper>
-  );
-};
 
 describe('OnboardingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.removeItem('prepai-theme');
+    document.documentElement.dataset.theme = 'dark';
     serviceMocks.getMe.mockResolvedValue({ success: true, message: 'ok', data: newUser });
     serviceMocks.getSettings.mockResolvedValue({ success: true, message: 'ok', data: null });
     serviceMocks.updateSettings.mockResolvedValue({ success: true, message: 'ok', data: null });
@@ -87,6 +81,15 @@ describe('OnboardingPage', () => {
       message: 'ok',
       data: { ...newUser, isNewUser: false },
     });
+  });
+
+  it('restores the saved theme when onboarding is opened directly', async () => {
+    localStorage.setItem('prepai-theme', 'light');
+
+    renderOnboarding();
+
+    expect(await screen.findByRole('main', { name: 'Profile setup' })).toBeVisible();
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
   });
 
   it('restores saved step and values so a user can resume setup', async () => {

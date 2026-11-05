@@ -16,12 +16,12 @@ const STEPS = [
 ] as const;
 
 const fieldClassName =
-  'mt-1.5 w-full rounded-lg border border-white/10 bg-[#09090b] px-4 py-2 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15';
+  'mt-1.5 w-full rounded-lg border border-[var(--border2)] bg-[var(--bg2)] px-4 py-2 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--dim)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-bg)]';
 const primaryButtonClassName =
-  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
+  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-amber-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
 
 const secondaryButtonClassName =
-  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-5 py-2 text-sm font-medium text-zinc-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
+  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-5 py-2 text-sm font-medium text-[var(--text)] transition hover:border-[var(--border2)] hover:bg-[var(--surface2)] hover:text-[var(--text-h)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60';
 
 export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   const {
@@ -49,7 +49,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   return (
     <main
       aria-label="Profile setup"
-      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-clip bg-[#09090b] px-3 py-2 font-['DM_Sans',sans-serif] text-zinc-100 sm:px-4"
+      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-clip bg-[var(--bg)] px-3 py-2 font-['DM_Sans',sans-serif] text-[var(--text)] sm:px-4"
     >
       <div
         aria-hidden="true"
@@ -57,17 +57,17 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card onboarding-card--compact onboarding-card--viewport-fit relative w-full min-w-0 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#18181b] shadow-[0_24px_80px_rgba(0,0,0,0.38)]"
+        className="onboarding-card onboarding-card--compact onboarding-card--viewport-fit relative w-full min-w-0 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]"
       >
         <header className="onboarding-header mb-3 text-center">
           <div className="mb-1 flex justify-center">{brand}</div>
           <h1
             id="onboarding-title"
-            className="m-0 text-[1.3rem] font-semibold leading-tight tracking-tight text-zinc-50"
+            className="m-0 text-[1.3rem] font-semibold leading-tight tracking-tight text-[var(--text-h)]"
           >
             Let’s set up your profile
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">Practice that fits your goals.</p>
+          <p className="mt-1 text-sm text-[var(--dim)]">Practice that fits your goals.</p>
         </header>
 
         <ol
@@ -85,9 +85,12 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 aria-hidden="true"
                 className={cn(
                   'flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
-                  step === currentStep.value && 'border-amber-500 bg-amber-500/10 text-amber-300',
-                  step > currentStep.value && 'border-emerald-500 bg-emerald-500 text-white',
-                  step < currentStep.value && 'border-white/10 bg-[#09090b] text-zinc-500'
+                  step === currentStep.value &&
+                    'border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent-strong)]',
+                  step > currentStep.value &&
+                    'border-[var(--green)] bg-[var(--green-bg)] text-[var(--success-strong)]',
+                  step < currentStep.value &&
+                    'border-[var(--border2)] bg-[var(--bg)] text-[var(--dim)]'
                 )}
               >
                 {step > currentStep.value ? '✓' : currentStep.value}
@@ -97,7 +100,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   aria-hidden="true"
                   className={cn(
                     'ml-2 h-0.5 min-w-3 flex-1 rounded-full transition-colors sm:ml-3',
-                    step > currentStep.value ? 'bg-emerald-500' : 'bg-white/10'
+                    step > currentStep.value ? 'bg-[var(--green)]' : 'bg-[var(--border2)]'
                   )}
                 />
               )}
@@ -110,11 +113,11 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
             <section aria-labelledby="onboarding-step-title">
               <h2
                 id="onboarding-step-title"
-                className="m-0 text-[1.05rem] font-semibold text-zinc-50"
+                className="m-0 text-[1.05rem] font-semibold text-[var(--text-h)]"
               >
                 Tell us about your target role
               </h2>
-              <p className="mt-1 text-sm text-zinc-400">
+              <p className="mt-1 text-sm text-[var(--dim)]">
                 Save your target role and experience level to your profile.
               </p>
 
@@ -165,20 +168,20 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
             <section aria-labelledby="onboarding-step-title">
               <h2
                 id="onboarding-step-title"
-                className="m-0 text-[1.05rem] font-semibold text-zinc-50"
+                className="m-0 text-[1.05rem] font-semibold text-[var(--text-h)]"
               >
                 Where are you applying?
               </h2>
-              <p className="mt-1 text-sm text-zinc-400">
+              <p className="mt-1 text-sm text-[var(--dim)]">
                 Optional — focus questions on companies you want to join.
               </p>
 
               <div className="onboarding-content-section mt-3">
                 <label
                   htmlFor="onboarding-target-companies"
-                  className="text-[0.8rem] font-medium text-zinc-300"
+                  className="text-[0.8rem] font-medium text-[var(--text)]"
                 >
-                  Target Companies <span className="font-normal text-zinc-500">(optional)</span>
+                  Target Companies <span className="font-normal text-[var(--dim)]">(optional)</span>
                 </label>
                 <input
                   id="onboarding-target-companies"
@@ -217,14 +220,16 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
             <section aria-labelledby="onboarding-step-title">
               <h2
                 id="onboarding-step-title"
-                className="m-0 text-[1.05rem] font-semibold text-zinc-50"
+                className="m-0 text-[1.05rem] font-semibold text-[var(--text-h)]"
               >
                 Pick your focus areas
               </h2>
-              <p className="mt-1 text-sm text-zinc-400">Choose your focus topics for practice.</p>
+              <p className="mt-1 text-sm text-[var(--dim)]">
+                Choose your focus topics for practice.
+              </p>
 
               <div className="onboarding-content-section mt-3">
-                <p id="onboarding-topics-label" className="text-sm font-medium text-zinc-300">
+                <p id="onboarding-topics-label" className="text-sm font-medium text-[var(--text)]">
                   Preferred Topics
                 </p>
                 <div
@@ -243,10 +248,10 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                         disabled={isSaving}
                         onClick={() => toggleTopic(topic)}
                         className={cn(
-                          'onboarding-topic rounded-full border px-3 py-1 text-[0.78rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50',
+                          'onboarding-topic rounded-full border px-3 py-1 text-[0.78rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50',
                           isSelected
-                            ? 'border-amber-500/40 bg-amber-500/10 font-medium text-amber-300'
-                            : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-100'
+                            ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] font-medium text-[var(--accent-strong)]'
+                            : 'border-[var(--border)] bg-[var(--surface)] text-[var(--dim)] hover:border-[var(--border2)] hover:text-[var(--text)]'
                         )}
                       >
                         {topic}
@@ -299,11 +304,11 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
         {errorMessage && (
           <div
             role="alert"
-            className="mt-3 rounded-lg border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-200"
+            className="mt-3 rounded-lg border border-[var(--red-bg)] bg-[var(--red-bg)] p-3 text-sm text-[var(--danger-strong)]"
           >
             <p>{errorMessage}</p>
             {errorDetails && (
-              <details className="mt-2 text-xs text-red-200/70">
+              <details className="mt-2 text-xs opacity-80">
                 <summary className="cursor-pointer font-medium">Technical detail</summary>
                 <p className="mt-1 break-words">{errorDetails}</p>
               </details>
@@ -313,7 +318,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
 
         <button
           type="button"
-          className="onboarding-skip mt-2 w-full rounded-md py-1 text-center text-sm text-zinc-500 transition-colors hover:text-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60"
+          className="onboarding-skip mt-2 w-full rounded-md py-1 text-center text-sm text-[var(--dim)] transition-colors hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
           disabled={isSaving}
           onClick={onSkip}
         >

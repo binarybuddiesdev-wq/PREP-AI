@@ -852,3 +852,21 @@ New layout, one folder per purpose. A layer may import only from the layers list
   projects, and scoped Prettier pass. Root lint still reports 14 errors in
   untracked `types/piston.js`; root format check reports 58 files outside this
   change.
+
+## 2026-11-05 - Align onboarding and select controls with the app theme
+
+- Replaced fixed dark colors in the compact onboarding wizard with shared
+  canvas, card, text, surface, accent, and status tokens. The form flow,
+  viewport fit, and compact spacing remain unchanged.
+- Updated the shared select control so its labels, trigger, highlighted and
+  selected options use theme tokens outside the authenticated app shell too.
+- Restored the persisted theme on direct visits to onboarding. Improved the
+  select placeholder contrast and added a high-contrast keyboard focus outline.
+- Added component regression assertions and a browser render check covering the
+  wizard card, selected topic, error message, difficulty menu, focus outline,
+  both themes, and the 390 x 844 viewport.
+- Verification: focused UI tests passed (19 tests); the full UI suite passed
+  (122 files / 533 tests); UI lint, TypeScript project check, and production
+  build passed. The onboarding browser check passed in both UI projects. Root
+  lint remains red on existing user-owned `types/piston.js` plus 9 warnings;
+  repository formatting remains red on 58 unrelated or user-owned files.

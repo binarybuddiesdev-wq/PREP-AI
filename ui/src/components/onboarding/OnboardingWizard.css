@@ -1,6 +1,11 @@
 .onboarding-screen {
   box-sizing: border-box;
   scrollbar-width: none;
+  --onboarding-shadow: 0 16px 44px rgb(0 0 0 / 34%);
+}
+
+html[data-theme='light'] .onboarding-screen {
+  --onboarding-shadow: 0 14px 36px rgb(24 24 27 / 14%);
 }
 
 :root:has(.onboarding-screen) {
@@ -26,7 +31,7 @@ body:has(.onboarding-screen) {
   max-height: calc(100dvh - 1rem);
   padding: clamp(0.625rem, 1.35dvh, 0.85rem) clamp(0.75rem, 2vw, 1rem);
   border-radius: 0.9rem;
-  box-shadow: 0 16px 44px rgb(0 0 0 / 34%);
+  box-shadow: var(--onboarding-shadow);
 }
 
 .onboarding-header {
@@ -108,8 +113,8 @@ body:has(.onboarding-screen) {
 }
 
 .onboarding-topic[aria-pressed='true'] {
-  border-color: rgb(245 158 11 / 55%);
-  background: rgb(245 158 11 / 13%);
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
 }
 
 .onboarding-screen input {

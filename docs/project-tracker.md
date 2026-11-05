@@ -299,6 +299,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move theory Practice setup, question, feedback, completion, and route
       error states onto the shared theme tokens; full-route parity remains open
       until all screens are checked.
+- [x] Move the compact onboarding wizard and shared select menu onto theme
+      tokens; restore persisted theme and verify both themes, keyboard focus,
+      and a 390 px viewport.
 - [x] Move Coding Questions statistics, difficulty/topic filters, problem
       cards, empty states, and stats retry errors onto the shared theme tokens;
       verify dark/light colors and a 390 px viewport in Playwright.

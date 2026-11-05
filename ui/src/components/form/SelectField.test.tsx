@@ -45,6 +45,7 @@ describe('SelectField', () => {
     );
 
     const dropdown = screen.getByRole('combobox', { name: 'Target Role' });
+    expect(screen.getByText('Target Role')).toHaveClass('text-[var(--dim)]');
     expect(dropdown).toHaveClass('settings-select-trigger', 'h-9');
     expect(dropdown.parentElement?.querySelector('svg')).toBeInTheDocument();
 

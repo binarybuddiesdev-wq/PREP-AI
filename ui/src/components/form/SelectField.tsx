@@ -20,7 +20,7 @@ export const SelectField = (props: ISelectFieldProps) => {
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-[0.8rem] font-medium text-zinc-400">
+      <label htmlFor={id} className="block text-[0.8rem] font-medium text-[var(--dim)]">
         {label}
       </label>
       <Select.Root
