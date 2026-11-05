@@ -61,25 +61,25 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
   return (
     <section aria-label="Plan and billing" className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-100">Your Plan</h2>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h2 className="text-lg font-semibold text-[var(--text-h)]">Your Plan</h2>
+        <p className="mt-1 text-sm text-[var(--dim)]">
           Your access and daily limits are managed by PrepAI.
         </p>
       </div>
 
       <section
         aria-label="Current plan"
-        className="rounded-xl border border-white/[0.08] bg-[#141416] p-4 sm:p-5"
+        className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5"
       >
         <div className="flex items-start gap-3">
           <span
-            className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-[11px] font-bold uppercase tracking-wide ${role === 'PREMIUM' || role === 'ADMIN' ? 'bg-amber-400/15 text-amber-300' : 'bg-white/[0.06] text-zinc-300'}`}
+            className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-[11px] font-bold uppercase tracking-wide ${role === 'PREMIUM' || role === 'ADMIN' ? 'bg-[var(--accent-bg)] text-[var(--accent-strong)]' : 'bg-[var(--surface)] text-[var(--text)]'}`}
           >
             {role === 'ADMIN' ? 'Admin' : role === 'PREMIUM' ? 'Premium' : 'Free'}
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-zinc-100">{getPlanLabel(role)}</h3>
-            <p className="mt-1 text-xs leading-5 text-zinc-400">
+            <h3 className="font-semibold text-[var(--text-h)]">{getPlanLabel(role)}</h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
               {role === 'PREMIUM'
                 ? 'Your Premium access is controlled by the server and payment status.'
                 : role === 'ADMIN'
@@ -88,38 +88,41 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             </p>
           </div>
           {(role === 'PREMIUM' || role === 'ADMIN') && (
-            <ShieldCheck aria-hidden="true" className="size-5 shrink-0 text-amber-300" />
+            <ShieldCheck
+              aria-hidden="true"
+              className="size-5 shrink-0 text-[var(--accent-strong)]"
+            />
           )}
         </div>
 
         {billing.isLoading ? (
-          <p role="status" className="mt-4 flex items-center gap-2 text-xs text-zinc-400">
+          <p role="status" className="mt-4 flex items-center gap-2 text-xs text-[var(--dim)]">
             <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
             Loading subscription details
           </p>
         ) : billing.errorMessage ? (
           <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-rose-200">{billing.errorMessage}</p>
+            <p className="text-xs text-[var(--danger-strong)]">{billing.errorMessage}</p>
             <button
               type="button"
               onClick={billing.onRetry}
-              className="min-h-8 rounded-md px-2 text-xs font-semibold text-amber-300 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-amber-300"
+              className="min-h-8 rounded-md px-2 text-xs font-semibold text-[var(--accent-strong)] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
             >
               Retry subscription
             </button>
           </div>
         ) : subscription ? (
-          <div className="mt-4 border-t border-white/[0.08] pt-3">
-            <p className="text-xs font-medium text-zinc-200">
+          <div className="mt-4 border-t border-[var(--border)] pt-3">
+            <p className="text-xs font-medium text-[var(--text)]">
               {getSubscriptionLabel(subscription)}
             </p>
             {subscription.cancelAtPeriodEnd && premiumEndDate && (
-              <p className="mt-1 text-xs leading-5 text-zinc-400">
+              <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
                 Premium access remains available until {premiumEndDate}.
               </p>
             )}
             {subscription.status === 'active' && role !== 'PREMIUM' && (
-              <p className="mt-1 text-xs leading-5 text-zinc-400">
+              <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
                 Razorpay reports an active subscription. PrepAI will apply Premium access after
                 server verification.
               </p>
@@ -127,7 +130,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             {['creating', 'created', 'authenticated', 'pending', 'halted'].includes(
               subscription.status
             ) && (
-              <p className="mt-1 text-xs leading-5 text-zinc-400">
+              <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
                 Payment is not confirmed yet. Your plan updates after Razorpay confirms it.
               </p>
             )}
@@ -139,7 +142,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             href={checkoutUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-lg border border-amber-400/30 px-3 text-xs font-semibold text-amber-300 transition hover:bg-amber-400/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+            className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--accent-border)] px-3 text-xs font-semibold text-[var(--accent-strong)] transition hover:bg-[var(--accent-bg)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             Continue to secure checkout
             <ArrowUpRight aria-hidden="true" className="size-3.5" />
@@ -147,13 +150,13 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
         )}
         {subscription && !checkoutUrl && ['creating', 'created'].includes(subscription.status) && (
           <div role="alert" className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-rose-200">
+            <p className="text-xs text-[var(--danger-strong)]">
               A secure checkout link is not available. Refresh the subscription before continuing.
             </p>
             <button
               type="button"
               onClick={billing.onRetry}
-              className="min-h-8 rounded-md px-2 text-xs font-semibold text-amber-300 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-amber-300"
+              className="min-h-8 rounded-md px-2 text-xs font-semibold text-[var(--accent-strong)] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
             >
               Refresh subscription
             </button>
@@ -161,10 +164,10 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
         )}
 
         {canCancel && (
-          <div className="mt-4 border-t border-white/[0.08] pt-3">
+          <div className="mt-4 border-t border-[var(--border)] pt-3">
             {isConfirmingCancellation ? (
               <div className="space-y-3" role="group" aria-label="Confirm cancellation">
-                <p className="text-xs leading-5 text-zinc-300">
+                <p className="text-xs leading-5 text-[var(--text)]">
                   Cancellation takes effect at the end of the current paid period
                   {premiumEndDate ? ` on ${premiumEndDate}` : ''}. Premium remains available until
                   then.
@@ -177,7 +180,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
                       billing.onCancelSubscription();
                       setIsConfirmingCancellation(false);
                     }}
-                    className="min-h-9 rounded-lg border border-rose-400/30 px-3 text-xs font-semibold text-rose-200 hover:bg-rose-400/10 focus-visible:outline-2 focus-visible:outline-rose-300 disabled:opacity-60"
+                    className="min-h-9 rounded-lg border border-[var(--red-bg)] px-3 text-xs font-semibold text-[var(--danger-strong)] hover:bg-[var(--red-bg)] focus-visible:outline-2 focus-visible:outline-[var(--danger-strong)] disabled:opacity-60"
                   >
                     {billing.isCancelling ? 'Scheduling cancellation…' : 'Confirm cancellation'}
                   </button>
@@ -185,7 +188,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
                     type="button"
                     disabled={billing.isCancelling}
                     onClick={() => setIsConfirmingCancellation(false)}
-                    className="min-h-9 rounded-lg px-3 text-xs font-semibold text-zinc-300 hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-60"
+                    className="min-h-9 rounded-lg px-3 text-xs font-semibold text-[var(--text)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
                   >
                     Keep Premium
                   </button>
@@ -195,13 +198,13 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
               <button
                 type="button"
                 onClick={() => setIsConfirmingCancellation(true)}
-                className="min-h-9 rounded-lg px-2 text-xs font-semibold text-zinc-400 underline decoration-zinc-600 underline-offset-2 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-amber-300"
+                className="min-h-9 rounded-lg px-2 text-xs font-semibold text-[var(--dim)] underline decoration-[var(--faint)] underline-offset-2 hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
               >
                 Cancel subscription
               </button>
             )}
             {billing.cancelErrorMessage && (
-              <p role="alert" className="mt-2 text-xs text-rose-200">
+              <p role="alert" className="mt-2 text-xs text-[var(--danger-strong)]">
                 {billing.cancelErrorMessage}
               </p>
             )}
@@ -211,21 +214,23 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
 
       <section aria-label="Daily limits" className="space-y-3">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-100">Daily limits</h3>
-          <p className="mt-1 text-xs text-zinc-500">Usage and limits from your account today.</p>
+          <h3 className="text-sm font-semibold text-[var(--text-h)]">Daily limits</h3>
+          <p className="mt-1 text-xs text-[var(--dim)]">
+            Usage and limits from your account today.
+          </p>
         </div>
         {usage.isLoading ? (
-          <div role="status" className="flex min-h-20 items-center gap-2 text-xs text-zinc-400">
+          <div role="status" className="flex min-h-20 items-center gap-2 text-xs text-[var(--dim)]">
             <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
             Loading usage
           </div>
         ) : usage.errorMessage ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-rose-200">{usage.errorMessage}</p>
+            <p className="text-xs text-[var(--danger-strong)]">{usage.errorMessage}</p>
             <button
               type="button"
               onClick={usage.onRetry}
-              className="min-h-8 rounded-md px-2 text-xs font-semibold text-amber-300 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-amber-300"
+              className="min-h-8 rounded-md px-2 text-xs font-semibold text-[var(--accent-strong)] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
             >
               Retry usage
             </button>
@@ -250,7 +255,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             />
           </dl>
         ) : (
-          <p className="rounded-lg border border-white/[0.08] px-3 py-3 text-xs text-zinc-400">
+          <p className="rounded-lg border border-[var(--border)] px-3 py-3 text-xs text-[var(--dim)]">
             Usage details are not available yet.
           </p>
         )}
@@ -259,8 +264,8 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
       {role !== 'PREMIUM' && role !== 'ADMIN' && !isSubscriptionInProgress && (
         <section aria-label="Upgrade plan" className="space-y-3">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-100">Upgrade to Premium</h3>
-            <p className="mt-1 text-xs text-zinc-500">
+            <h3 className="text-sm font-semibold text-[var(--text-h)]">Upgrade to Premium</h3>
+            <p className="mt-1 text-xs text-[var(--dim)]">
               Higher daily limits and access to the Premium features available in PrepAI.
             </p>
           </div>
@@ -271,19 +276,19 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
                 type="button"
                 aria-pressed={selectedPlan === option.plan}
                 onClick={() => setSelectedPlan(option.plan)}
-                className={`min-h-20 rounded-xl border p-3 text-left transition focus-visible:outline-2 focus-visible:outline-amber-300 ${selectedPlan === option.plan ? 'border-amber-400/60 bg-amber-400/[0.06]' : 'border-white/[0.08] bg-[#141416] hover:border-white/20'}`}
+                className={`min-h-20 rounded-xl border p-3 text-left transition focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${selectedPlan === option.plan ? 'border-[var(--accent-border)] bg-[var(--accent-bg)]' : 'border-[var(--border)] bg-[var(--card)] hover:border-[var(--border2)]'}`}
               >
-                <span className="flex items-center justify-between text-sm font-semibold text-zinc-100">
+                <span className="flex items-center justify-between text-sm font-semibold text-[var(--text-h)]">
                   {option.period}
                   {selectedPlan === option.plan && (
-                    <Check aria-hidden="true" className="size-4 text-amber-300" />
+                    <Check aria-hidden="true" className="size-4 text-[var(--accent-strong)]" />
                   )}
                 </span>
-                <span className="mt-1 block text-xs text-zinc-500">{option.detail}</span>
+                <span className="mt-1 block text-xs text-[var(--dim)]">{option.detail}</span>
               </button>
             ))}
           </div>
-          <p className="flex items-center gap-1.5 text-[11px] leading-5 text-zinc-500">
+          <p className="flex items-center gap-1.5 text-[11px] leading-5 text-[var(--dim)]">
             <ShieldCheck aria-hidden="true" className="size-3.5 shrink-0" />
             Price is shown by Razorpay in its secure checkout.
           </p>
@@ -291,7 +296,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             type="button"
             disabled={billing.isCreating || Boolean(billing.createdSubscription)}
             onClick={() => billing.onCreateCheckout(selectedPlan)}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-semibold text-black transition hover:bg-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
           >
             {billing.isCreating ? (
               <>
@@ -303,7 +308,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             )}
           </button>
           {billing.createErrorMessage && (
-            <p role="alert" className="text-xs leading-5 text-rose-200">
+            <p role="alert" className="text-xs leading-5 text-[var(--danger-strong)]">
               {billing.createErrorMessage}
             </p>
           )}

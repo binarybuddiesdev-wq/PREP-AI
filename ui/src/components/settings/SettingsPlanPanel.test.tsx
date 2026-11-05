@@ -59,6 +59,10 @@ describe('SettingsPlanPanel', () => {
     render(<SettingsPlanPanel {...makeProps()} />);
 
     expect(screen.getByRole('heading', { name: 'Your Plan' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Current plan' })).toHaveClass('bg-[var(--card)]');
+    expect(screen.getByText('Practice sessions today').closest('div')).toHaveClass(
+      'bg-[var(--card)]'
+    );
     expect(screen.getByText('Free plan')).toBeVisible();
     expect(screen.getByText('2 / 3')).toBeVisible();
     expect(screen.getByText('10 questions')).toBeVisible();

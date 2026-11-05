@@ -276,6 +276,9 @@ parity and responsive/accessibility acceptance remain.**
       route-wide visual parity item open until the remaining screens are checked.
 - [x] Move PDF Library reader surfaces, controls, and error states onto shared
       theme tokens while keeping the document page white in the native viewer.
+- [x] Move Settings > Plan cards, usage metrics, billing errors, and plan
+      selection controls onto the shared theme tokens; keep full-route parity
+      open until the remaining screens are checked.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -298,7 +301,15 @@ tokens. A Chrome component render at 390 px light and 1440 px dark verified card
 and error colors with no horizontal overflow. PDF Library was rendered at 390 px
 light and 1440 px dark; reader and error colors matched both themes with no
 horizontal overflow. Signed-in route states have not yet been visually checked
-against the live API.
+against the live API. Settings > Plan is covered by component assertions and
+Playwright renders in both themes; its plan and usage cards, billing error
+color, and 390 px layout pass. The Dashboard and PDF Library theme browser
+regressions pass alongside the Settings and global theme checks (8 Playwright
+runs total). A live backend log check found the dashboard profile, settings,
+theory history, coding history, weak-area, topic, and score-trend requests
+returning HTTP 200 with no dashboard HTTP 500 in the last 30 minutes. Payment
+worker SQL-function errors remain a separate backend issue and are not linked
+to these successful dashboard requests.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
