@@ -25,6 +25,9 @@ describe('CodingStatsBar', () => {
     );
 
     const metrics = screen.getByRole('group', { name: 'Coding statistics' });
+    expect(metrics).toHaveClass('border-[var(--border)]', 'bg-[var(--border)]');
+    expect(metrics.firstElementChild).toHaveClass('bg-[var(--card)]');
+    expect(within(metrics).getByText('7')).toHaveClass('text-[var(--accent-strong)]');
     expect(within(metrics).getByText('Solved')).toBeVisible();
     expect(within(metrics).getByText('7')).toBeVisible();
     expect(within(metrics).getByText('Today')).toBeVisible();
@@ -63,6 +66,7 @@ describe('CodingStatsBar', () => {
       />
     );
 
+    expect(screen.getByRole('alert')).toHaveClass('border-[var(--red-bg)]', 'bg-[var(--red-bg)]');
     expect(screen.getByRole('alert')).toHaveTextContent('Coding stats could not be loaded.');
     await user.click(screen.getByRole('button', { name: 'Retry coding stats' }));
     expect(onRetry).toHaveBeenCalledOnce();

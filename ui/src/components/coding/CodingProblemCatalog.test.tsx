@@ -41,6 +41,8 @@ describe('CodingProblemCatalog', () => {
     const props = baseProps();
     render(<CodingProblemCatalog {...props} />);
 
+    expect(screen.getByRole('button', { name: /Two Sum/ })).toHaveClass('bg-[var(--card)]');
+    expect(screen.getByText('Solved')).toHaveClass('text-[var(--success-strong)]');
     expect(screen.getByText('2 problems')).toBeInTheDocument();
     expect(screen.getByText('Solved')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Two Sum/ }));
@@ -58,6 +60,10 @@ describe('CodingProblemCatalog', () => {
 
     const topicFilters = within(screen.getByRole('group', { name: 'Filter by topic' }));
     const difficultyFilters = within(screen.getByRole('group', { name: 'Filter by difficulty' }));
+    expect(topicFilters.getByRole('button', { name: 'Trees' })).toHaveClass(
+      'border-[var(--accent-border)]',
+      'bg-[var(--accent-bg)]'
+    );
     expect(topicFilters.getByRole('button', { name: 'Trees' })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -75,6 +81,10 @@ describe('CodingProblemCatalog', () => {
   it('shows an explicit empty catalogue message without filter controls', () => {
     render(<CodingProblemCatalog {...baseProps()} problems={[]} />);
 
+    expect(screen.getByRole('region', { name: 'Coding problem catalogue' })).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
     expect(screen.getByText('Coding problems are not available yet')).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Filter by topic' })).not.toBeInTheDocument();
   });

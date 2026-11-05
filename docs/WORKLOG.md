@@ -1,3 +1,18 @@
+## 2026-11-05 - Theme Coding Questions catalog and stats
+
+- Replaced fixed dark styling in the Coding Questions filters, problem cards,
+  empty states, metrics, loading state, and stats error/retry treatments with
+  the shared light/dark theme tokens. Kept filtering, selection, navigation,
+  and retry behavior unchanged.
+- Added component and page assertions plus a focused browser render in both
+  configured Chromium projects. Dark/light computed card colors, stats error
+  rendering, and a 390 px no-overflow viewport pass.
+- Verification: all 122 UI test files / 515 tests, UI lint, UI TypeScript
+  project check, UI production build, changed-file Prettier, agent-doc check,
+  `git diff --check`, and 2 focused Playwright runs pass. Root lint remains
+  blocked by 14 `no-undef` errors in the unrelated untracked `types/piston.js`;
+  the repository-wide format check reports 57 files outside this slice.
+
 ## 2026-11-05 - Remove unsupported frontend demo claims
 
 - Removed fabricated landing-page counts and sample answer scores. Replaced the

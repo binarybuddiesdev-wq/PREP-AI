@@ -46,7 +46,7 @@ export const CodingPage = () => {
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-h)]">
           Coding Questions
         </h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-[var(--dim)]">
           Practice algorithm and data structure problems with AI feedback.
         </p>
       </header>

@@ -289,6 +289,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move theory Practice setup, question, feedback, completion, and route
       error states onto the shared theme tokens; full-route parity remains open
       until all screens are checked.
+- [x] Move Coding Questions statistics, difficulty/topic filters, problem
+      cards, empty states, and stats retry errors onto the shared theme tokens;
+      verify dark/light colors and a 390 px viewport in Playwright.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible

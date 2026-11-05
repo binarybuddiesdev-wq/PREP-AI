@@ -7,16 +7,16 @@ import type { ICodingProblemCatalogProps } from './CodingProblemCatalog.types';
 const DIFFICULTIES: readonly CodingDifficulty[] = ['Easy', 'Medium', 'Hard'];
 
 const difficultyClassName: Record<CodingDifficulty, string> = {
-  Easy: 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300',
-  Medium: 'border-amber-400/20 bg-amber-400/[0.07] text-amber-300',
-  Hard: 'border-rose-400/20 bg-rose-400/[0.07] text-rose-300',
+  Easy: 'border-[var(--green-bg)] bg-[var(--green-bg)] text-[var(--success-strong)]',
+  Medium: 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]',
+  Hard: 'border-[var(--red-bg)] bg-[var(--red-bg)] text-[var(--danger-strong)]',
 };
 
 const filterButtonClassName = (active: boolean) =>
-  `min-h-8 rounded-full border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+  `min-h-8 rounded-full border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
     active
-      ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-      : 'border-white/[0.08] bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-zinc-100'
+      ? 'border-[var(--accent-border)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+      : 'border-[var(--border)] bg-[var(--surface)] text-[var(--dim)] hover:border-[var(--border2)] hover:text-[var(--text)]'
   }`;
 
 export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
@@ -36,13 +36,13 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
     return (
       <section
         aria-label="Coding problem catalogue"
-        className="rounded-2xl border border-white/[0.08] bg-[#18181b] px-5 py-12 text-center sm:px-8"
+        className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-12 text-center sm:px-8"
       >
-        <Code2 aria-hidden="true" className="mx-auto size-7 text-zinc-500" />
-        <h2 className="mt-3 text-lg font-semibold text-zinc-100">
+        <Code2 aria-hidden="true" className="mx-auto size-7 text-[var(--dim)]" />
+        <h2 className="mt-3 text-lg font-semibold text-[var(--text-h)]">
           Coding problems are not available yet
         </h2>
-        <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-zinc-400">
+        <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-[var(--dim)]">
           Check back soon for practice problems curated for your interview preparation.
         </p>
       </section>
@@ -51,9 +51,9 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
 
   return (
     <section aria-label="Coding problem catalogue" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-[#141416] px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-xs font-medium text-zinc-500">Topic</span>
+          <span className="text-xs font-medium text-[var(--dim)]">Topic</span>
           <div role="group" aria-label="Filter by topic" className="flex flex-wrap gap-1.5">
             <button
               type="button"
@@ -77,7 +77,7 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-xs font-medium text-zinc-500">Difficulty</span>
+          <span className="text-xs font-medium text-[var(--dim)]">Difficulty</span>
           <div role="group" aria-label="Filter by difficulty" className="flex flex-wrap gap-1.5">
             <button
               type="button"
@@ -103,21 +103,26 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-        <p aria-live="polite" className="text-xs text-zinc-500">
+        <p aria-live="polite" className="text-xs text-[var(--dim)]">
           {filteredProblems.length} {filteredProblems.length === 1 ? 'problem' : 'problems'}
         </p>
-        <p className="text-xs text-zinc-500">
-          <span className="font-medium tabular-nums text-emerald-300">{solvedCount}</span> solved
+        <p className="text-xs text-[var(--dim)]">
+          <span className="font-medium tabular-nums text-[var(--success-strong)]">
+            {solvedCount}
+          </span>{' '}
+          solved
         </p>
       </div>
 
       {filteredProblems.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/10 px-5 py-10 text-center">
-          <h2 className="text-base font-semibold text-zinc-200">No problems match these filters</h2>
-          <p className="mt-1 text-sm text-zinc-500">Choose another topic or difficulty.</p>
+        <div className="rounded-xl border border-dashed border-[var(--border2)] bg-[var(--card)] px-5 py-10 text-center">
+          <h2 className="text-base font-semibold text-[var(--text-h)]">
+            No problems match these filters
+          </h2>
+          <p className="mt-1 text-sm text-[var(--dim)]">Choose another topic or difficulty.</p>
           <button
             type="button"
-            className="mt-4 min-h-9 rounded-lg border border-white/10 px-3 text-sm font-medium text-zinc-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+            className="mt-4 min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             onClick={() => {
               onSelectTopic(null);
               onSelectDifficulty(null);
@@ -132,24 +137,24 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
             <li key={problem.id}>
               <button
                 type="button"
-                className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-[#18181b] p-4 text-left transition hover:border-white/20 hover:bg-[#1c1c1f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 sm:px-5"
+                className="group relative w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-left transition hover:border-[var(--border2)] hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:px-5"
                 onClick={() => onSelectProblem(problem.slug || problem.id)}
               >
                 <span
                   aria-hidden="true"
                   className={`absolute inset-y-0 left-0 w-[3px] ${
                     problem.isSolved
-                      ? 'bg-emerald-400/70'
+                      ? 'bg-[var(--green)]'
                       : problem.difficulty === 'Easy'
-                        ? 'bg-emerald-400/45'
+                        ? 'bg-[var(--green)]'
                         : problem.difficulty === 'Medium'
-                          ? 'bg-amber-400/45'
-                          : 'bg-rose-400/45'
+                          ? 'bg-[var(--accent)]'
+                          : 'bg-[var(--red)]'
                   }`}
                 />
                 <span className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
-                    <span className="rounded bg-white/[0.04] px-1.5 py-0.5 font-mono text-[0.65rem] text-zinc-500">
+                    <span className="rounded bg-[var(--surface)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[var(--dim)]">
                       #{index + 1}
                     </span>
                     <span
@@ -159,24 +164,24 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
                     </span>
                   </span>
                   {problem.isSolved ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-300">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--success-strong)]">
                       <Check aria-hidden="true" className="size-3.5" />
                       Solved
                     </span>
                   ) : (
                     <ArrowUpRight
                       aria-hidden="true"
-                      className="size-4 text-zinc-600 transition group-hover:text-amber-300"
+                      className="size-4 text-[var(--dim)] transition group-hover:text-[var(--accent-strong)]"
                     />
                   )}
                 </span>
-                <span className="mt-2 block text-[0.95rem] font-semibold text-zinc-100 transition group-hover:text-amber-200">
+                <span className="mt-2 block text-[0.95rem] font-semibold text-[var(--text-h)] transition group-hover:text-[var(--accent-strong)]">
                   {problem.title}
                 </span>
-                <span className="mt-1 line-clamp-2 block max-w-3xl text-sm leading-5 text-zinc-400">
+                <span className="mt-1 line-clamp-2 block max-w-3xl text-sm leading-5 text-[var(--dim)]">
                   {problem.description}
                 </span>
-                <span className="mt-3 flex items-center gap-2 border-t border-white/[0.06] pt-2.5 text-xs text-zinc-500">
+                <span className="mt-3 flex items-center gap-2 border-t border-[var(--border)] pt-2.5 text-xs text-[var(--dim)]">
                   <Code2 aria-hidden="true" className="size-3.5" />
                   {problem.topic}
                 </span>
