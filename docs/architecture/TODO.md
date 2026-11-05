@@ -190,9 +190,11 @@ credentials and customer data out of committed evidence.
 
 ### 9. Frontend handoff
 
-- [ ] Build the notification inbox UI against the existing authenticated
-      notifications API. The API and backend reminder jobs are implemented; this
-      item belongs to the frontend backlog, not backend feature work.
+- [x] Build the notification inbox UI against the existing authenticated
+      notifications API. The UI supports unread counts, paginated loading,
+      marking one or all notifications read, deleting notifications, retryable
+      error states, and opening safe internal links. Tests cover the UI and API
+      integration; see `ui/src/pages/NotificationCenter.tsx`.
 
 Do not invent a generalized idempotency implementation for hypothetical
 routes. When a route introduces a repeatable external side effect, add its
