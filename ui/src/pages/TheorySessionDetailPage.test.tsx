@@ -97,6 +97,7 @@ describe('TheorySessionDetailPage', () => {
     mocks.getHttpStatus.mockReturnValue(404);
     renderPage();
 
+    expect(screen.getByRole('main')).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
     expect(screen.getByRole('heading', { name: 'Session not found' })).toBeVisible();
     expect(screen.queryByRole('button', { name: /retry/i })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Back to history' }));
@@ -107,6 +108,7 @@ describe('TheorySessionDetailPage', () => {
   it('does not request a blank session ID', () => {
     renderPage('/history/%20%20');
 
+    expect(screen.getByRole('main')).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
     expect(screen.getByRole('heading', { name: 'Session ID is missing' })).toBeVisible();
     expect(mocks.useTheorySessionDetailReader).toHaveBeenCalledWith('');
   });
@@ -139,6 +141,7 @@ describe('TheorySessionDetailPage', () => {
     });
     renderPage();
 
+    expect(screen.getByRole('status')).toHaveClass('text-[var(--accent-strong)]');
     expect(screen.getByRole('status')).toHaveTextContent(/evaluation is still in progress/i);
     expect(screen.queryByRole('button', { name: 'Finish saved session' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /resume/i })).not.toBeInTheDocument();
@@ -185,7 +188,10 @@ describe('TheorySessionDetailPage', () => {
     });
     renderPage();
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Session could not be completed.');
+    expect(screen.getByRole('alert')).toHaveClass('border-[var(--red-bg)]', 'bg-[var(--red-bg)]');
+    expect(screen.getByText('Session could not be completed.')).toHaveClass(
+      'text-[var(--danger-strong)]'
+    );
     await user.click(screen.getByRole('button', { name: 'Finish saved session' }));
 
     expect(mutate).toHaveBeenCalledWith('session-1');

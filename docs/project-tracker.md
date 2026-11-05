@@ -283,6 +283,9 @@ parity and responsive/accessibility acceptance remain.**
       loading/error/empty states, pagination, and CSV controls onto the shared
       theme tokens; keep the separate theory detail route in the full-route
       parity review.
+- [x] Move Theory Session Detail summary, saved answers, completion states, and
+      missing/not-found screens onto the shared theme tokens; full-route parity
+      remains open until all screens are checked.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -322,7 +325,9 @@ Root lint still reports 14 errors in the untracked `types/piston.js` and nine
 warnings elsewhere; repository-wide formatting remains red on 57 existing or
 user-owned files. No dashboard 500 has appeared in the latest server logs, so
 the user-reported screen error remains unconfirmed until its failing request
-is identified.
+is identified. Theory Session Detail token checks pass (9 focused unit tests);
+its Playwright check passes in both UI projects with light/dark detail and
+error colors and a 390 px overflow check.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

@@ -56,7 +56,12 @@ describe('TheorySessionDetail', () => {
   it('shows session facts, saved answers, and a real zero score', () => {
     render(<TheorySessionDetail {...createProps()} />);
 
-    expect(screen.getByRole('heading', { name: 'Session details' })).toBeVisible();
+    const summary = screen.getByRole('heading', { name: 'Session details' }).closest('section');
+    expect(summary).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
+    expect(screen.getByRole('button', { name: 'Back to history' })).toHaveClass(
+      'text-[var(--dim)]'
+    );
+    expect(screen.getByRole('article')).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
     expect(screen.getByText('0.0 / 10')).toBeVisible();
     expect(screen.getByText('What is a hook?')).toBeVisible();
     expect(screen.getByText('A function for using React features.')).toBeVisible();

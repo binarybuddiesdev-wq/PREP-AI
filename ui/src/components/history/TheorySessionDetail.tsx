@@ -39,23 +39,25 @@ export const TheorySessionDetail = (props: ITheorySessionDetailProps) => {
       <button
         type="button"
         onClick={onReturnToHistory}
-        className="inline-flex min-h-9 items-center gap-2 rounded-md text-sm text-zinc-400 transition hover:text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+        className="inline-flex min-h-9 items-center gap-2 rounded-md text-sm text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
         Back to history
       </button>
 
-      <section className="rounded-xl border border-white/[0.08] bg-[#18181b] p-4 sm:p-6">
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-100">Session details</h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <h1 className="text-2xl font-semibold text-[var(--text-h)]">Session details</h1>
+            <p className="mt-1 text-sm text-[var(--dim)]">
               Started <time dateTime={session.startedAt}>{formatDate(session.startedAt)}</time>
             </p>
           </div>
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              isInProgress ? 'bg-amber-400/10 text-amber-200' : 'bg-emerald-400/10 text-emerald-200'
+              isInProgress
+                ? 'bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+                : 'bg-[var(--green-bg)] text-[var(--success-strong)]'
             }`}
           >
             {isInProgress ? 'In progress' : 'Completed'}
@@ -63,29 +65,31 @@ export const TheorySessionDetail = (props: ITheorySessionDetailProps) => {
         </header>
 
         <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg bg-black/15 p-3">
-            <dt className="text-xs text-zinc-500">Practice type</dt>
-            <dd className="mt-1 text-sm font-medium text-zinc-200">{modeLabel}</dd>
+          <div className="rounded-lg bg-[var(--surface)] p-3">
+            <dt className="text-xs text-[var(--dim)]">Practice type</dt>
+            <dd className="mt-1 text-sm font-medium text-[var(--text)]">{modeLabel}</dd>
           </div>
-          <div className="rounded-lg bg-black/15 p-3">
-            <dt className="text-xs text-zinc-500">Topic</dt>
-            <dd className="mt-1 truncate text-sm font-medium text-zinc-200">
+          <div className="rounded-lg bg-[var(--surface)] p-3">
+            <dt className="text-xs text-[var(--dim)]">Topic</dt>
+            <dd className="mt-1 truncate text-sm font-medium text-[var(--text)]">
               {session.topicId ?? '—'}
             </dd>
           </div>
-          <div className="rounded-lg bg-black/15 p-3">
-            <dt className="text-xs text-zinc-500">Answers submitted</dt>
-            <dd className="mt-1 text-sm font-medium tabular-nums text-zinc-200">
+          <div className="rounded-lg bg-[var(--surface)] p-3">
+            <dt className="text-xs text-[var(--dim)]">Answers submitted</dt>
+            <dd className="mt-1 text-sm font-medium tabular-nums text-[var(--text)]">
               {session.questionsAnswered} / {session.totalQuestions}
             </dd>
           </div>
-          <div className="rounded-lg bg-black/15 p-3">
-            <dt className="text-xs text-zinc-500">Average score</dt>
-            <dd className="mt-1 text-sm font-medium tabular-nums text-amber-200">{averageScore}</dd>
+          <div className="rounded-lg bg-[var(--surface)] p-3">
+            <dt className="text-xs text-[var(--dim)]">Average score</dt>
+            <dd className="mt-1 text-sm font-medium tabular-nums text-[var(--accent-strong)]">
+              {averageScore}
+            </dd>
           </div>
         </dl>
 
-        <p className="mt-4 text-sm leading-6 text-zinc-400">
+        <p className="mt-4 text-sm leading-6 text-[var(--dim)]">
           This page contains submitted answers only. Skipped or unanswered questions cannot be
           resumed here.
         </p>
@@ -93,14 +97,17 @@ export const TheorySessionDetail = (props: ITheorySessionDetailProps) => {
         {completionError ? (
           <div
             role="alert"
-            className="mt-4 rounded-lg border border-rose-400/20 bg-rose-400/[0.06] p-3"
+            className="mt-4 rounded-lg border border-[var(--red-bg)] bg-[var(--red-bg)] p-3"
           >
-            <p className="text-sm text-rose-200">{completionError}</p>
+            <p className="text-sm text-[var(--danger-strong)]">{completionError}</p>
           </div>
         ) : null}
 
         {isInProgress && hasActiveEvaluation ? (
-          <p role="status" className="mt-4 flex items-center gap-2 text-sm text-amber-200">
+          <p
+            role="status"
+            className="mt-4 flex items-center gap-2 text-sm text-[var(--accent-strong)]"
+          >
             <Clock3 aria-hidden="true" className="size-4 shrink-0" />
             Evaluation is still in progress. You can finish this saved session when it is complete.
           </p>
@@ -111,14 +118,17 @@ export const TheorySessionDetail = (props: ITheorySessionDetailProps) => {
             type="button"
             disabled={isCompleting}
             onClick={onComplete}
-            className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg bg-amber-500 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60"
+            className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
           >
             {isCompleting ? 'Finishing session…' : 'Finish saved session'}
           </button>
         ) : null}
 
         {!isInProgress ? (
-          <p role="status" className="mt-4 flex items-center gap-2 text-sm text-emerald-200">
+          <p
+            role="status"
+            className="mt-4 flex items-center gap-2 text-sm text-[var(--success-strong)]"
+          >
             <Check aria-hidden="true" className="size-4" />
             Session completed.
           </p>
@@ -126,45 +136,45 @@ export const TheorySessionDetail = (props: ITheorySessionDetailProps) => {
       </section>
 
       <section aria-labelledby="session-answers-heading" className="space-y-3">
-        <h2 id="session-answers-heading" className="text-lg font-semibold text-zinc-100">
+        <h2 id="session-answers-heading" className="text-lg font-semibold text-[var(--text-h)]">
           Saved answers{' '}
-          <span className="text-sm font-normal text-zinc-500">({session.answers.length})</span>
+          <span className="text-sm font-normal text-[var(--dim)]">({session.answers.length})</span>
         </h2>
         {session.answers.length === 0 ? (
-          <p className="rounded-xl border border-white/[0.08] bg-[#18181b] p-4 text-sm text-zinc-400">
+          <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-sm text-[var(--dim)]">
             No answers were submitted in this session.
           </p>
         ) : (
           session.answers.map((answer, index) => (
             <article
               key={answer.id}
-              className="rounded-xl border border-white/[0.08] bg-[#18181b] p-4 sm:p-5"
+              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5"
             >
               <header className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-zinc-100">Question {index + 1}</h3>
-                <span className="text-xs text-zinc-400">{getEvaluationLabel(answer)}</span>
+                <h3 className="text-sm font-semibold text-[var(--text-h)]">Question {index + 1}</h3>
+                <span className="text-xs text-[var(--dim)]">{getEvaluationLabel(answer)}</span>
               </header>
-              <p className="mt-3 break-words whitespace-pre-wrap text-sm leading-6 text-zinc-200">
+              <p className="mt-3 break-words whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
                 {answer.questionText}
               </p>
-              <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <p className="mt-3 text-xs font-medium uppercase tracking-wide text-[var(--dim)]">
                 Your answer
               </p>
-              <p className="mt-1 break-words whitespace-pre-wrap text-sm leading-6 text-zinc-300">
+              <p className="mt-1 break-words whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
                 {answer.userAnswer}
               </p>
               {answer.status === 'completed' ? (
-                <p className="mt-3 text-sm font-medium text-amber-200">
+                <p className="mt-3 text-sm font-medium text-[var(--accent-strong)]">
                   {answer.aiScore === null ? 'No score returned' : `Score: ${answer.aiScore} / 10`}
                 </p>
               ) : null}
               {answer.aiFeedback ? (
-                <p className="mt-2 break-words rounded-md bg-amber-400/[0.08] p-3 text-sm leading-6 text-amber-100">
+                <p className="mt-2 break-words rounded-md bg-[var(--accent-bg)] p-3 text-sm leading-6 text-[var(--accent-strong)]">
                   {answer.aiFeedback}
                 </p>
               ) : null}
               {answer.status === 'failed' && answer.failureMessage ? (
-                <p className="mt-2 flex items-start gap-2 text-sm leading-6 text-rose-300">
+                <p className="mt-2 flex items-start gap-2 text-sm leading-6 text-[var(--danger-strong)]">
                   <CircleAlert aria-hidden="true" className="mt-1 size-4 shrink-0" />
                   {answer.failureMessage}
                 </p>
