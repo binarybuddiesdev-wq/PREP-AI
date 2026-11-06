@@ -6,3 +6,4 @@ export { filterCodingProblems, getCodingProblemTopics } from './filterCodingProb
 export { toTheorySessionCsv } from './toTheorySessionCsv';
 export { toCodingSessionCsv } from './toCodingSessionCsv';
 export { formatCodingValue } from './formatCodingValue';
+export { getCodingArgumentNames } from './getCodingArgumentNames';

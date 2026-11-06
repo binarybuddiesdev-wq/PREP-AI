@@ -2,6 +2,7 @@ import type { ICodingProblemExample } from '@/core';
 import type { ICodingProblemContentProps } from './CodingProblemContent.types';
 import { CodingInputArguments } from './CodingInputArguments';
 import { CodingValue } from './CodingValue';
+import { getCodingArgumentNames } from '@/utils';
 
 const difficultyClassName = {
   Easy: 'border-[var(--green-bg)] bg-[var(--green-bg)] text-[var(--success-strong)]',
@@ -9,33 +10,38 @@ const difficultyClassName = {
   Hard: 'border-[var(--red-bg)] bg-[var(--red-bg)] text-[var(--danger-strong)]',
 } as const;
 
-const Example = (props: { example: ICodingProblemExample; index: number }) => {
-  const { example, index } = props;
+const Example = (props: {
+  example: ICodingProblemExample;
+  index: number;
+  argumentNames: string[];
+}) => {
+  const { example, index, argumentNames } = props;
 
   return (
     <figure
       aria-label={`Example ${index + 1}`}
-      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-3 sm:px-4"
+      className="mb-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-3 sm:px-3.5"
     >
-      <figcaption className="mb-3 border-b border-[var(--border)] pb-2.5 text-xs font-semibold text-[var(--text-h)]">
-        Example <span className="font-mono text-[var(--dim)]">{index + 1}</span>
+      <figcaption className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Example {index + 1}
       </figcaption>
-      <dl className="grid min-w-0 grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
-        <div className="min-w-0">
-          <dt className="text-[11px] font-semibold text-[var(--dim)]">Input</dt>
-          <dd className="min-w-0">
-            <CodingInputArguments value={example.input} ariaLabel="Input arguments" />
-          </dd>
+      <div className="space-y-1 font-mono text-xs leading-5 text-[var(--dim)]">
+        <div className="flex min-w-0 gap-2">
+          <span className="shrink-0 font-sans font-semibold">Input:</span>
+          <CodingInputArguments
+            value={example.input}
+            ariaLabel="Input arguments"
+            argumentNames={argumentNames}
+          />
         </div>
-        <div className="min-w-0">
-          <dt className="text-[11px] font-semibold text-[var(--dim)]">Output</dt>
-          <dd>
-            <CodingValue value={example.output} ariaLabel="Example output" />
-          </dd>
+        <div className="flex min-w-0 gap-2">
+          <span className="shrink-0 font-sans font-semibold">Output:</span>
+          <CodingValue value={example.output} ariaLabel="Example output" />
         </div>
-      </dl>
+      </div>
       {example.explanation ? (
-        <p className="mt-3 border-t border-[var(--border)] pt-2.5 text-xs leading-5 text-[var(--dim)]">
+        <p className="mt-1.5 font-mono text-xs leading-5 text-[var(--dim)]">
+          <span className="font-sans font-semibold">Explanation: </span>
           {example.explanation}
         </p>
       ) : null}
@@ -45,6 +51,7 @@ const Example = (props: { example: ICodingProblemExample; index: number }) => {
 
 export const CodingProblemContent = (props: ICodingProblemContentProps) => {
   const { problem } = props;
+  const argumentNames = getCodingArgumentNames(problem);
 
   return (
     <div className="p-4 sm:p-5">
@@ -83,7 +90,12 @@ export const CodingProblemContent = (props: ICodingProblemContentProps) => {
           </h2>
           <div className="space-y-2">
             {problem.examples.map((example, index) => (
-              <Example key={`${problem.id}-example-${index + 1}`} example={example} index={index} />
+              <Example
+                key={`${problem.id}-example-${index + 1}`}
+                example={example}
+                index={index}
+                argumentNames={argumentNames}
+              />
             ))}
           </div>
         </section>

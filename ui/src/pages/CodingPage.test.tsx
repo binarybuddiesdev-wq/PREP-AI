@@ -213,7 +213,7 @@ describe('coding pages', () => {
       idempotencyKey: executionIdempotencyKey,
     });
     expect(queries.readExecution).toHaveBeenLastCalledWith('session-one', 'execution-one');
-    expect(screen.getByRole('tab', { name: 'Test cases' })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: 'Test Cases' })).toHaveAttribute(
       'aria-selected',
       'true'
     );

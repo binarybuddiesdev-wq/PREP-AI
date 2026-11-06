@@ -43,7 +43,7 @@ test('shows readable Two Sum input and output in the coding results panel', asyn
         topic: 'Arrays',
         examples: [{ input: [[2, 7, 11, 15], 9], output: [0, 1] }],
         constraints: ['Only one valid answer exists.'],
-        codeJs: 'function solution(nums, target) {}',
+        codeJs: 'function twoSum(nums, target) {}',
         codeTs: 'function solution(nums: number[], target: number): number[] { return []; }',
         codePy: 'def solution(nums, target):\n    return []',
       };
@@ -105,11 +105,11 @@ test('shows readable Two Sum input and output in the coding results panel', asyn
     const results = page.getByRole('region', { name: 'Run results' });
     await expect(results.getByText('1 of 2 test cases passed')).toBeVisible();
     await expect(page.getByRole('group', { name: 'Input arguments' })).toHaveText(
-      '[2, 7, 11, 15], 9'
+      'nums = [2, 7, 11, 15], target = 9'
     );
     await expect(page.getByLabel('Example output')).toHaveText('[0, 1]');
     await expect(results.getByRole('group', { name: 'Test case inputs' }).first()).toHaveText(
-      '[2, 7, 11, 15], 9'
+      'nums = [2, 7, 11, 15], target = 9'
     );
     await expect(results.getByLabel('Expected output').first()).toHaveText('[0, 1]');
     await expect(results.getByLabel('Your output').last()).toHaveText('[2, 1]');

@@ -32,7 +32,7 @@ const problem: ICodingProblem = {
   topic: 'Arrays',
   examples: [{ input: [[2, 7], 9], output: [0, 1] }],
   constraints: ['Two values exist.'],
-  codeJs: 'function twoSum() {}',
+  codeJs: 'function twoSum(nums, target) {}',
   codeTs: 'function twoSum(): number[] { return []; }',
   codePy: 'def two_sum():\n    pass',
 };
@@ -102,7 +102,7 @@ describe('CodingProblemWorkspace', () => {
     render(<CodingProblemWorkspace {...props} />);
 
     await user.click(screen.getByRole('button', { name: 'Reset code' }));
-    await user.click(screen.getByRole('tab', { name: 'Test cases' }));
+    await user.click(screen.getByRole('tab', { name: 'Test Cases' }));
     await user.click(screen.getByRole('button', { name: 'Hide problem description' }));
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen editor' }));
 
@@ -117,12 +117,15 @@ describe('CodingProblemWorkspace', () => {
     const props = createProps();
     const { rerender } = render(<CodingProblemWorkspace {...props} />);
     expect(screen.getByRole('tab', { name: 'Output' })).toHaveClass('text-[var(--accent-strong)]');
-    expect(screen.getByText('Run your code to see output.')).toBeInTheDocument();
+    expect(screen.getByText('Click Run Code to see output')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: 'Test cases' }));
+    await user.click(screen.getByRole('tab', { name: 'Test Cases' }));
     expect(props.onOutputTabChange).toHaveBeenCalledWith('testcases');
     rerender(<CodingProblemWorkspace {...props} outputTab="testcases" />);
-    expect(screen.getByText('Run your code to inspect each test case.')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('tabpanel')).getByRole('group', { name: 'Input arguments' })
+    ).toHaveTextContent('nums = [2, 7], target = 9');
+    expect(screen.getByLabelText('Expected output')).toHaveTextContent('[0, 1]');
 
     rerender(<CodingProblemWorkspace {...props} isProblemCollapsed />);
     expect(screen.queryByText(problem.description)).not.toBeInTheDocument();
@@ -155,7 +158,7 @@ describe('CodingProblemWorkspace', () => {
   });
 
   it.each([
-    ['queued', 'Your run is queued. Results will appear here automatically.'],
+    ['queued', 'Waiting for a code runner. Results refresh automatically.'],
     ['running', 'Your code is running…'],
   ] as const)('shows %s progress and prevents duplicate actions', (status, label) => {
     const props = createProps();
@@ -200,7 +203,7 @@ describe('CodingProblemWorkspace', () => {
     render(<CodingProblemWorkspace {...props} execution={execution} />);
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Your submission is queued. Results will appear here automatically.'
+      'Waiting for a code runner. Your submission updates automatically.'
     );
   });
 
@@ -288,24 +291,26 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByText('Wrong answer')).toHaveClass('text-[var(--accent-strong)]');
     expect(screen.getByText('Wrong answer')).toBeInTheDocument();
     expect(screen.getByText('1 of 2 test cases passed')).toBeInTheDocument();
-    await user.click(screen.getByRole('tab', { name: 'Test cases' }));
+    await user.click(screen.getByRole('tab', { name: 'Test Cases' }));
     expect(props.onOutputTabChange).toHaveBeenCalledWith('testcases');
     rerender(<CodingProblemWorkspace {...props} execution={execution} outputTab="testcases" />);
-    expect(screen.getByText('Test case 1')).toBeInTheDocument();
-    expect(screen.getByText('Test case 2')).toBeInTheDocument();
-    expect(screen.getByText('Passed')).toHaveClass('text-[var(--success-strong)]');
-    expect(screen.getByText('Failed')).toHaveClass('text-[var(--danger-strong)]');
-    const secondCase = screen.getByText('Test case 2').closest('li');
+    expect(screen.getByText('Test 1 — Input')).toBeInTheDocument();
+    expect(screen.getByText('Test 2 — Input')).toBeInTheDocument();
+    expect(screen.getByLabelText('Passed')).toHaveClass('text-[var(--success-strong)]');
+    expect(screen.getByLabelText('Failed')).toHaveClass('text-[var(--danger-strong)]');
+    const secondCase = screen.getByText('Test 2 — Input').closest('li');
     expect(secondCase).not.toBeNull();
     expect(
       within(secondCase as HTMLElement).getByRole('group', { name: 'Test case inputs' })
-    ).toHaveTextContent('3, 4');
+    ).toHaveTextContent('nums = 3, target = 4');
     expect(within(secondCase as HTMLElement).getByLabelText('Expected output')).toHaveTextContent(
       /\[\s*0,\s*1\s*\]/
     );
     expect(within(secondCase as HTMLElement).getByLabelText('Your output')).toHaveTextContent(
       /\[\s*1,\s*0\s*\]/
     );
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.queryByText('1 of 2 test cases passed')).not.toBeInTheDocument();
   });
 
   it('gives test results enough space to read at a glance', () => {

@@ -13,22 +13,20 @@ describe('CodingTestCaseResult', () => {
       passed: true,
     };
 
-    render(<CodingTestCaseResult caseNumber={1} testCase={testCase} />);
-
-    expect(screen.getByText('Test case 1')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Test case inputs' })).toHaveTextContent(
-      '[2, 7, 11, 15], 9'
+    render(
+      <CodingTestCaseResult caseNumber={1} testCase={testCase} argumentNames={['nums', 'target']} />
     );
-    expect(screen.queryByLabelText('Argument 1')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Argument 2')).not.toBeInTheDocument();
+
+    expect(screen.getByText('Test 1 — Input')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Test case inputs' })).toHaveTextContent(
+      'nums = [2, 7, 11, 15], target = 9'
+    );
     expect(screen.getByLabelText('Expected output')).toHaveTextContent('[0, 1]');
     expect(screen.getByLabelText('Your output')).toHaveTextContent('[0, 1]');
     expect(screen.getByRole('group', { name: 'Output comparison' })).toHaveClass('sm:grid-cols-2');
-    expect(screen.getByRole('group', { name: 'Test case inputs' }).parentElement).toHaveClass(
-      'min-w-0'
-    );
     expect(screen.getByLabelText('Your output').querySelector('code')).toHaveClass(
-      'whitespace-pre-wrap'
+      'block',
+      'text-[var(--success-strong)]'
     );
   });
 
@@ -40,15 +38,19 @@ describe('CodingTestCaseResult', () => {
       passed: false,
     };
 
-    render(<CodingTestCaseResult caseNumber={2} testCase={testCase} />);
+    render(
+      <CodingTestCaseResult caseNumber={2} testCase={testCase} argumentNames={['nums', 'target']} />
+    );
 
-    expect(screen.getByText('Failed')).toBeInTheDocument();
+    expect(screen.getByLabelText('Failed')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Test case inputs' })).toHaveTextContent(
-      '[3, 2, 4], 6'
+      'nums = [3, 2, 4], target = 6'
     );
     expect(screen.getByLabelText('Expected output')).toHaveTextContent('[1, 2]');
     expect(screen.getByLabelText('Your output')).toHaveTextContent('[0, 2]');
-    expect(screen.getByLabelText('Your output')).toHaveClass('text-[var(--danger-strong)]');
+    expect(screen.getByLabelText('Your output').querySelector('code')).toHaveClass(
+      'text-[var(--danger-strong)]'
+    );
     expect(screen.getByRole('group', { name: 'Output comparison' })).toHaveTextContent('Expected');
   });
 });

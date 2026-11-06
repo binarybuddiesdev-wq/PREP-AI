@@ -1,58 +1,48 @@
+import { Check, X } from 'lucide-react';
 import type { ICodingTestCaseResultProps } from './CodingTestCaseResult.types';
 import { CodingInputArguments } from './CodingInputArguments';
 import { CodingValue } from './CodingValue';
 
 export const CodingTestCaseResult = (props: ICodingTestCaseResultProps) => {
-  const { caseNumber, testCase } = props;
+  const { caseNumber, testCase, argumentNames } = props;
   const outputClassName = testCase.passed
     ? 'text-[var(--success-strong)]'
     : 'text-[var(--danger-strong)]';
 
   return (
-    <li className="rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 sm:px-3.5">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-h)]">
-          <span className="flex size-6 items-center justify-center rounded-md bg-[var(--surface2)] font-mono text-xs text-[var(--dim)]">
-            {caseNumber}
-          </span>
-          Test case {caseNumber}
-        </span>
-        <span
-          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${testCase.passed ? 'bg-[var(--green-bg)] text-[var(--success-strong)]' : 'bg-[var(--red-bg)] text-[var(--danger-strong)]'}`}
-        >
-          {testCase.passed ? 'Passed' : 'Failed'}
-        </span>
-      </div>
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.8fr)]">
+    <li className="mb-1.5 flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2.5 py-2 text-xs last:mb-0">
+      <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-[var(--dim)]">Input</p>
-          <div className="min-w-0">
-            <CodingInputArguments value={testCase.input} ariaLabel="Test case inputs" />
-          </div>
+          <p className="mb-0.5 text-[10px] text-[var(--dim)]">Test {caseNumber} — Input</p>
+          <CodingInputArguments
+            value={testCase.input}
+            ariaLabel="Test case inputs"
+            argumentNames={argumentNames}
+          />
         </div>
         <div
           role="group"
           aria-label="Output comparison"
-          className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"
+          className="col-span-1 grid min-w-0 grid-cols-2 gap-2 sm:col-span-2 sm:grid-cols-2 sm:gap-4"
         >
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-[var(--dim)]">Expected</p>
-            <div>
-              <CodingValue value={testCase.expected} ariaLabel="Expected output" />
-            </div>
+            <p className="mb-0.5 text-[10px] text-[var(--dim)]">Expected</p>
+            <CodingValue value={testCase.expected} ariaLabel="Expected output" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-[var(--dim)]">Your output</p>
-            <div>
-              <CodingValue
-                value={testCase.got}
-                ariaLabel="Your output"
-                className={outputClassName}
-              />
-            </div>
+            <p className="mb-0.5 text-[10px] text-[var(--dim)]">Got</p>
+            <CodingValue value={testCase.got} ariaLabel="Your output" className={outputClassName} />
           </div>
         </div>
       </div>
+      <span className={outputClassName} aria-label={testCase.passed ? 'Passed' : 'Failed'}>
+        {testCase.passed ? (
+          <Check aria-hidden="true" className="size-3.5" />
+        ) : (
+          <X aria-hidden="true" className="size-3.5" />
+        )}
+        <span className="sr-only">{testCase.passed ? 'Passed' : 'Failed'}</span>
+      </span>
     </li>
   );
 };

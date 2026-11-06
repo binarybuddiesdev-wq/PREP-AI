@@ -19,8 +19,11 @@ import type { CodingExecutionOperation, CodingLanguage, ICodingExecution } from 
 import { CodingReviewDialog } from './CodingReviewDialog';
 import { CodingProblemContent } from './CodingProblemContent';
 import { CodingTestCaseResult } from './CodingTestCaseResult';
+import { CodingInputArguments } from './CodingInputArguments';
+import { CodingValue } from './CodingValue';
 import { CodingEditor } from './CodingEditor';
 import type { ICodingProblemWorkspaceProps } from './CodingProblemWorkspace.types';
+import { getCodingArgumentNames } from '@/utils';
 
 const LANGUAGES: readonly { value: CodingLanguage; label: string; extension: string }[] = [
   { value: 'javascript', label: 'JavaScript', extension: 'js' },
@@ -80,16 +83,22 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     )
     .join('');
   const filename = `${fileBaseName}.${selectedLanguage.extension}`;
+  const argumentNames = getCodingArgumentNames(problem);
   const isExecutionActive = execution?.status === 'queued' || execution?.status === 'running';
   const isBusy = isActionPending || isExecutionActive;
   const [isReviewOpen, setReviewOpen] = useState(false);
   const [stalledExecutionId, setStalledExecutionId] = useState<string | null>(null);
+  const [isOutputCleared, setOutputCleared] = useState(false);
   const fullscreenDialogRef = useRef<HTMLDivElement>(null);
   const fullscreenFocusReturnRef = useRef<HTMLElement | null>(null);
   const reviewAnswer =
     execution?.status === 'completed' && execution.operation === 'submit' ? execution.answer : null;
   const isQueuedExecutionStalled =
     execution?.status === 'queued' && stalledExecutionId === execution.id;
+
+  useEffect(() => {
+    setOutputCleared(false);
+  }, [execution?.id]);
 
   useEffect(() => {
     if (execution?.status !== 'queued') {
@@ -319,15 +328,29 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                     onClick={() => onOutputTabChange(tab)}
                     className={`relative h-full px-2 text-xs transition ${outputTab === tab ? 'text-[var(--accent-strong)] after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--accent)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}
                   >
-                    {tab === 'output' ? 'Output' : 'Test cases'}
+                    {tab === 'output' ? 'Output' : 'Test Cases'}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setOutputCleared(true)}
+                  className="ml-auto px-2 text-[11px] text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                >
+                  Clear
+                </button>
               </div>
               <div
                 role="tabpanel"
                 className={`min-h-0 flex-1 overflow-y-auto px-3 py-2 text-xs text-[var(--dim)] ${execution?.status === 'completed' && execution.result && outputTab === 'testcases' ? 'text-left' : 'flex items-center justify-center text-center'}`}
               >
-                {actionError ? (
+                {isOutputCleared ? (
+                  <div className="flex w-full gap-3 font-mono text-xs text-[var(--dim)]">
+                    <span aria-hidden="true" className="min-w-5 text-right">
+                      1
+                    </span>
+                    <span>Click Run Code to see output</span>
+                  </div>
+                ) : actionError ? (
                   <div
                     role="alert"
                     className="flex h-full flex-col items-center justify-center gap-2 text-center"
@@ -388,8 +411,8 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                       <span>
                         {execution.status === 'queued'
                           ? execution.operation === 'run'
-                            ? 'Your run is queued. Results will appear here automatically.'
-                            : 'Your submission is queued. Results will appear here automatically.'
+                            ? 'Waiting for a code runner. Results refresh automatically.'
+                            : 'Waiting for a code runner. Your submission updates automatically.'
                           : 'Your code is running…'}
                       </span>
                     </p>
@@ -438,6 +461,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                               key={`${execution.id}-case-${index + 1}`}
                               caseNumber={index + 1}
                               testCase={testCase}
+                              argumentNames={argumentNames}
                             />
                           ))}
                         </ol>
@@ -447,9 +471,39 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                     'Execution completed without a result.'
                   )
                 ) : outputTab === 'output' ? (
-                  'Run your code to see output.'
+                  <div className="flex w-full gap-3 font-mono text-xs text-[var(--dim)]">
+                    <span aria-hidden="true" className="min-w-5 text-right">
+                      1
+                    </span>
+                    <span>Click Run Code to see output</span>
+                  </div>
                 ) : (
-                  'Run your code to inspect each test case.'
+                  <ol className="w-full space-y-1.5">
+                    {problem.examples.map((example, index) => (
+                      <li
+                        key={`${problem.id}-preview-${index + 1}`}
+                        className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2.5 py-2"
+                      >
+                        <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] sm:gap-4">
+                          <div className="min-w-0">
+                            <p className="mb-0.5 text-[10px] text-[var(--dim)]">Input</p>
+                            <CodingInputArguments
+                              value={example.input}
+                              ariaLabel="Input arguments"
+                              argumentNames={argumentNames}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="mb-0.5 text-[10px] text-[var(--dim)]">Expected</p>
+                            <CodingValue value={example.output} ariaLabel="Expected output" />
+                          </div>
+                        </div>
+                        <span aria-hidden="true" className="text-xs text-[var(--dim)]">
+                          -
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
                 )}
               </div>
             </section>

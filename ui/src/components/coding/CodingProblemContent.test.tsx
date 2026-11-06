@@ -13,7 +13,7 @@ const problem: ICodingProblem = {
   topic: 'Arrays',
   examples: [{ input: [[2, 7], 9], output: [0, 1], explanation: '2 + 7 equals 9.' }],
   constraints: ['Two values exist.'],
-  codeJs: 'function twoSum() {}',
+  codeJs: 'function twoSum(nums, target) {}',
   codeTs: 'function twoSum(): number[] { return []; }',
   codePy: 'def two_sum():\n    pass',
 };
@@ -30,7 +30,7 @@ describe('CodingProblemContent', () => {
     expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface)]', 'text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toHaveClass('text-[var(--text-h)]');
     const exampleContent = screen.getByRole('figure', { name: 'Example 1' });
-    expect(exampleContent).toHaveClass('border-[var(--border)]', 'bg-[var(--surface)]');
+    expect(exampleContent).toHaveClass('rounded-lg', 'border-[var(--border)]', 'bg-[var(--bg)]');
     expect(screen.getByText('Two values exist.').closest('ul')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText('Easy')).toBeInTheDocument();
@@ -44,13 +44,11 @@ describe('CodingProblemContent', () => {
     render(<CodingProblemContent problem={problem} />);
 
     const example = screen.getByRole('figure', { name: 'Example 1' });
-    expect(within(example).getByText('Input')).toBeInTheDocument();
+    expect(within(example).getByText(/^Input:/)).toBeInTheDocument();
     expect(within(example).getByRole('group', { name: 'Input arguments' })).toHaveTextContent(
-      '[2, 7], 9'
+      'nums = [2, 7], target = 9'
     );
-    expect(within(example).queryByText('Argument 1')).not.toBeInTheDocument();
-    expect(within(example).queryByText('Argument 2')).not.toBeInTheDocument();
-    expect(within(example).getByText('Output')).toBeInTheDocument();
+    expect(within(example).getByText(/^Output:/)).toBeInTheDocument();
     expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
     expect(within(example).getByLabelText('Example output').querySelector('code')).toHaveClass(
       'font-mono'

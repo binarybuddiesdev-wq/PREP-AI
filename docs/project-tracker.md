@@ -283,8 +283,10 @@ parity and responsive/accessibility acceptance remain.**
       explicit light/dark canvas, text, surface, amber accent, and status tokens.
 - [ ] Match screen-level surfaces, spacing, cards, and status treatments to the
       reference across the full route set.
-- [x] Show coding example inputs as distinct numbered arguments with the
-      expected output beside them, and keep explanations below the values.
+- [x] Match the coding example and result surfaces to `prepai-ui.html`:
+      labeled sample inputs/outputs, compact Input/Expected/Got test rows,
+      Output/Test Cases tabs, and Clear behavior. Resolve parameter labels from
+      the problem's language starters so future problems render their inputs.
 - [x] Keep keyboard focus inside the fullscreen coding editor and restore it to
       the launch control when the editor closes.
 - [x] Move Dashboard cards and status colors onto theme-aware tokens; keep the
@@ -341,9 +343,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move Coding problem details, workspace controls/results, review dialog,
       and missing/not-found states onto shared theme tokens; preserve the
       dark editor surface and verify the detail/review screens in both themes.
-- [x] Format coding examples and test-case results with distinct positional
-      inputs, readable expected/actual values, clear run progress, background
-      polling, and a status retry when a run stays queued for 45 seconds.
+- [x] Format coding examples and test-case results to match the reference,
+      keep queued runs polling until a result arrives, and show a recoverable
+      worker prompt if an execution remains queued for 45 seconds.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
