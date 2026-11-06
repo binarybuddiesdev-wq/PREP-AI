@@ -40,15 +40,17 @@ test('renders theory practice setup, question, feedback, and completion in both 
       ]);
 
       const now = '2026-11-01T10:00:00.000Z';
-      const topic = {
-        id: 'react',
-        name: 'React',
-        slug: 'react',
-        category: 'practice',
-        icon: null,
-        createdAt: now,
-        updatedAt: now,
-      };
+      const topics = ['React', 'TypeScript', 'JavaScript', 'Accessibility', 'Web APIs'].map(
+        (name) => ({
+          id: name.toLowerCase().replaceAll(' ', '-'),
+          name,
+          slug: name.toLowerCase().replaceAll(' ', '-'),
+          category: 'practice',
+          icon: null,
+          createdAt: now,
+          updatedAt: now,
+        })
+      );
       const answer = {
         id: 'answer-1',
         sessionId: 'session-1',
@@ -107,7 +109,7 @@ test('renders theory practice setup, question, feedback, and completion in both 
           isDailySessionsFetching: false,
           dailySessionsError: null,
           onRetryDailySessions: () => {},
-          topics: [topic],
+          topics,
           weakAreas: [],
           pdfSources: [],
           selectedPdfIds: [],
@@ -125,7 +127,7 @@ test('renders theory practice setup, question, feedback, and completion in both 
           isStarting: false,
           startError: null,
           onModeChange: () => {},
-          onTopicChange: () => {},
+          onTopicChange: (topicId) => (globalThis.__selectedTopicId = topicId),
           onDifficultyChange: () => {},
           onStart: () => {},
         })
@@ -191,6 +193,17 @@ test('renders theory practice setup, question, feedback, and completion in both 
     const completeCard = page.locator('#practice-complete main');
     const evaluationError = page.getByText('Evaluation could not be refreshed.', { exact: true });
     await expect(setupCard).toBeVisible();
+    const topicGroup = page.getByRole('group', { name: 'Topics' });
+    await expect(topicGroup.getByRole('button', { name: 'React' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(topicGroup.getByRole('button', { name: 'TypeScript' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+    await topicGroup.getByRole('button', { name: 'TypeScript' }).click();
+    await expect.poll(() => page.evaluate(() => globalThis.__selectedTopicId)).toBe('typescript');
     await expect(page.locator('#practice-setup').getByRole('status')).toContainText(
       '2 of 3 sessions left today'
     );
@@ -234,6 +247,15 @@ test('renders theory practice setup, question, feedback, and completion in both 
           page.locator('#theory-practice-preview').evaluate((element) => element.scrollWidth)
         )
         .toBeLessThanOrEqual(viewport.width);
+      if (viewport.width === 320) {
+        const topicRows = await topicGroup
+          .getByRole('button')
+          .evaluateAll(
+            (buttons) =>
+              new Set(buttons.map((button) => Math.round(button.getBoundingClientRect().top))).size
+          );
+        expect(topicRows).toBeGreaterThan(1);
+      }
     }
     expect(browserErrors).toEqual([]);
   } finally {

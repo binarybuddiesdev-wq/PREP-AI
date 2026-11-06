@@ -218,12 +218,21 @@ describe('PracticeSetup', () => {
     const onDifficultyChange = vi.fn<(difficulty: TheoryDifficulty) => void>();
 
     render(<PracticeSetup {...createProps({ onTopicChange, onDifficultyChange })} />);
-    await user.click(screen.getByRole('combobox', { name: 'Practice topic' }));
-    await user.click(await screen.findByRole('option', { name: 'React' }));
+    await user.click(screen.getByRole('button', { name: 'React' }));
     await user.click(screen.getByRole('button', { name: 'Senior' }));
 
     expect(onTopicChange).toHaveBeenCalledWith('topic-react');
     expect(onDifficultyChange).toHaveBeenCalledWith('Senior');
+  });
+
+  it('shows topic choices as selected-state pills and disables them while loading', () => {
+    const { rerender } = render(<PracticeSetup {...createProps({ topicId: 'topic-react' })} />);
+    const reactTopic = screen.getByRole('button', { name: 'React' });
+    expect(screen.getByRole('group', { name: 'Topics' })).toContainElement(reactTopic);
+    expect(reactTopic).toHaveAttribute('aria-pressed', 'true');
+
+    rerender(<PracticeSetup {...createProps({ isTopicsLoading: true })} />);
+    expect(screen.getByRole('button', { name: 'React' })).toBeDisabled();
   });
 
   it('shows retryable weak-area loading and error states', async () => {

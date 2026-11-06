@@ -293,6 +293,8 @@ parity and responsive/accessibility acceptance remain.**
       panel to the complete history route.
 - [x] Make dashboard weak-area suggestions launch Practice with that topic
       preselected from the existing route query parameter.
+- [x] Match Practice topic selection to the reference's wrapping single-select
+      pills, with accessible selected and loading states and query preselection.
 - [x] Show dashboard recent sessions in the reference's Topic, Date, Score,
       and Status table while keeping its rows usable on mobile.
 - [x] Match the dashboard score trend to the reference's labeled line chart,

@@ -124,8 +124,7 @@ describe('PracticePage', () => {
     });
 
     renderPracticePage();
-    await userEventInstance.click(screen.getByRole('combobox', { name: 'Practice topic' }));
-    await userEventInstance.click(await screen.findByRole('option', { name: 'React' }));
+    await userEventInstance.click(screen.getByRole('button', { name: 'React' }));
     await userEventInstance.click(screen.getByRole('button', { name: /Start/ }));
 
     expect(mocks.startPractice).toHaveBeenCalledWith({
@@ -139,7 +138,7 @@ describe('PracticePage', () => {
   it('preselects a valid practice topic from the query string', () => {
     renderPracticePage('/practice?topicId=topic-react');
 
-    expect(screen.getByRole('combobox', { name: 'Practice topic' })).toHaveTextContent('React');
+    expect(screen.getByRole('button', { name: 'React' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('shows server-owned remaining practice sessions and retries a failed usage read', async () => {
@@ -227,11 +226,10 @@ describe('PracticePage', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent(/profile details unavailable/i);
     expect(screen.getByRole('alert')).toHaveTextContent('free-plan limit of 10 questions');
-    expect(screen.getByRole('combobox', { name: 'Practice topic' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'React' })).toBeVisible();
     await userEventInstance.click(screen.getByRole('button', { name: 'Retry profile' }));
     expect(refetch).toHaveBeenCalledOnce();
-    await userEventInstance.click(screen.getByRole('combobox', { name: 'Practice topic' }));
-    await userEventInstance.click(await screen.findByRole('option', { name: 'React' }));
+    await userEventInstance.click(screen.getByRole('button', { name: 'React' }));
     await userEventInstance.click(screen.getByRole('button', { name: /Start practice/ }));
     expect(mocks.startPractice).toHaveBeenCalledWith({
       topicId: 'topic-react',

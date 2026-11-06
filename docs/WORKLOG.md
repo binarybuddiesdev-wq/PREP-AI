@@ -1206,3 +1206,14 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Verification: full UI suite 129 files / 572 tests, UI lint and production
   build, coding worker/service/Piston suites 136 tests, and the responsive
   Two Sum browser check at 320, 390, 768, and 1440 px all pass.
+
+## 2026-11-06 - Practice topic selector parity
+
+- Replaced the Practice topic dropdown with wrapping single-select pills to
+  match the reference while preserving the API's single-topic session model.
+  Kept server-provided topic values, query-string preselection, loading disable,
+  and accessible pressed state.
+- Verification: 26 Practice component/page tests pass. Browser preview confirms
+  selection callback, selected state, both themes, pill wrapping at 320 px,
+  and no horizontal overflow at 320, 390, 768, or 1440 px. Route-wide Phase 9
+  parity remains open for the remaining screens.

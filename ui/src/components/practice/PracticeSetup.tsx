@@ -1,7 +1,6 @@
 import { BarChart3, FileText, RotateCw, Zap } from 'lucide-react';
 
 import type { TheoryDifficulty } from '@/core';
-import { SelectField } from '@/components/form';
 import { PracticeQuotaBanner } from './PracticeQuotaBanner';
 import type { IPracticeSetupProps, PracticeMode } from './PracticeSetup.types';
 
@@ -160,15 +159,31 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                   No practice topics are available yet.
                 </p>
               ) : (
-                <SelectField
-                  id="practice-topic"
-                  label="Practice topic"
-                  placeholder={isTopicsLoading ? 'Loading topics…' : 'Select a topic'}
-                  options={topics.map((topic) => ({ value: topic.id, label: topic.name }))}
-                  value={topicId}
-                  disabled={isTopicsLoading || topics.length === 0}
-                  onChange={onTopicChange}
-                />
+                <>
+                  <p className="mb-2 text-xs font-medium text-[var(--dim)]">Topics</p>
+                  <div role="group" aria-label="Topics" className="flex flex-wrap gap-2">
+                    {topics.map((topic) => {
+                      const isSelected = topic.id === topicId;
+                      return (
+                        <button
+                          key={topic.id}
+                          type="button"
+                          aria-pressed={isSelected}
+                          disabled={isTopicsLoading}
+                          onClick={() => onTopicChange(topic.id)}
+                          className={`min-h-9 rounded-full border px-3.5 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60 ${isSelected ? 'border-[var(--accent)] bg-[var(--accent)] text-zinc-950' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--dim)] hover:border-[var(--border2)] hover:text-[var(--text)]'}`}
+                        >
+                          {topic.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {isTopicsLoading ? (
+                    <p role="status" className="mt-2 text-xs text-[var(--dim)]">
+                      Loading topics…
+                    </p>
+                  ) : null}
+                </>
               )}
             </div>
             <div>
