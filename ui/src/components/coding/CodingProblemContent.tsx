@@ -8,7 +8,7 @@ const difficultyClassName = {
 } as const;
 
 const formatExampleValue = (value: unknown) => {
-  const serialized = JSON.stringify(value, null, 2);
+  const serialized = JSON.stringify(value);
   return serialized ?? String(value);
 };
 
@@ -20,11 +20,11 @@ const Example = (props: { example: ICodingProblemExample; index: number }) => {
       <figcaption className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--dim)]">
         Example {index + 1}
       </figcaption>
-      <dl className="space-y-2.5">
+      <dl className="grid gap-3 sm:grid-cols-2 sm:gap-4">
         <div>
           <dt className="text-xs font-medium text-[var(--dim)]">Input</dt>
           <dd className="mt-1">
-            <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-[var(--surface2)] p-2.5 font-mono text-xs leading-5 text-[var(--text)]">
+            <pre className="min-h-10 overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 font-mono text-xs leading-5 text-[var(--text)]">
               {formatExampleValue(example.input)}
             </pre>
           </dd>
@@ -32,7 +32,7 @@ const Example = (props: { example: ICodingProblemExample; index: number }) => {
         <div>
           <dt className="text-xs font-medium text-[var(--dim)]">Output</dt>
           <dd className="mt-1">
-            <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-[var(--surface2)] p-2.5 font-mono text-xs leading-5 text-[var(--success-strong)]">
+            <pre className="min-h-10 overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 font-mono text-xs leading-5 text-[var(--success-strong)]">
               {formatExampleValue(example.output)}
             </pre>
           </dd>

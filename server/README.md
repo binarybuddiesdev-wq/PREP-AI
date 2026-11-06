@@ -95,7 +95,7 @@ pnpm seed:coding:local
 
 The seed is idempotent by slug and refuses any PostgreSQL hostname except `localhost`, `127.0.0.1`, or `::1`. Do not target shared or production data. The schema adds `CodingSession.problemIds String[] @default([])`.
 
-Set `PISTON_URL=http://127.0.0.1:2000` for a host-run backend. The full Podman backend and worker use `PISTON_URL=http://host.containers.internal:2000`, since Piston runs on the host. Execution is on by default in development; production execution is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly set after reviewing the Piston isolation setup. The current local Piston launcher uses a privileged container and must not be exposed publicly as-is.
+Set `PISTON_URL=http://127.0.0.1:2000` for a host-run backend. The full Podman backend and worker use `PISTON_URL=http://piston_api:2000`; `pnpm piston:start` connects the Piston container to the private `prepai-dev_default` network while preserving its loopback-only host port. Execution is on by default in development; production execution is disabled unless `PISTON_EXECUTION_ENABLED=true` is explicitly set after reviewing the Piston isolation setup. The current local Piston launcher uses a privileged container and must not be exposed publicly as-is.
 
 For host development, `pnpm start:dev` runs the BullMQ worker in-process by default. For a producer-only API, set `JOBS_WORKER_ENABLED=false`; start a separate worker with `pnpm start:worker` and `JOBS_WORKER_ENABLED=true`. The full Podman profile configures these values automatically.
 

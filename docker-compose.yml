@@ -124,7 +124,7 @@ services:
     environment:
       DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin&replicaSet=rs0
       POSTGRESQL_URL: postgresql://postgres:postgres@postgres:5432/prepai
-      PISTON_URL: http://host.containers.internal:2000
+      PISTON_URL: http://piston_api:2000
       PISTON_EXECUTION_ENABLED: 'true'
       REDIS_HOST: redis
       REDIS_PORT: '6379'
@@ -178,7 +178,7 @@ services:
     environment:
       DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin&replicaSet=rs0
       POSTGRESQL_URL: postgresql://postgres:postgres@postgres:5432/prepai
-      PISTON_URL: http://host.containers.internal:2000
+      PISTON_URL: http://piston_api:2000
       PISTON_EXECUTION_ENABLED: 'true'
       REDIS_HOST: redis
       REDIS_PORT: '6379'

@@ -4,9 +4,10 @@
 
 This runbook covers PrepAI's **local developer** Piston service, managed by
 rootless Podman on Windows/WSL2. The API has no authentication. The launcher
-publishes port 2000 on IPv4 loopback only, and the application sends execution
-jobs to it through the BullMQ worker. Do not publish this port on all host
-interfaces or expose `/api/v2/execute` to browser clients.
+publishes port 2000 on IPv4 loopback only and connects Piston to the private
+`prepai-dev_default` Podman network. The backend worker calls the `piston_api`
+network alias. Do not publish this port on all host interfaces or expose
+`/api/v2/execute` to browser clients.
 
 Piston uses Isolate and the local container runs with Podman's `--privileged`
 mode so it can initialize the delegated cgroups required by Isolate and the
@@ -59,7 +60,10 @@ pnpm piston:status
 podman logs piston_api
 ```
 
-`pnpm piston:setup` is a first-time step. Runtime packages persist in the
+Start the PrepAI Podman stack before the first `pnpm piston:start` so its
+private network exists. The start command attaches the runner to that network
+without changing its loopback-only host port. `pnpm piston:setup` is a
+first-time step. Runtime packages persist in the
 `piston_data` named volume.
 
 ```bash

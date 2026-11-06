@@ -188,6 +188,36 @@ describe('CodingExecutionService', () => {
     ]);
     expect((pg as unknown as { $queryRaw: ReturnType<typeof vi.fn> }).$queryRaw).toHaveBeenCalled();
   });
+
+  it('claims queued executions locally when the optional production helper is not installed', async () => {
+    const undefinedFunction = Object.assign(new Error('function does not exist'), {
+      code: 'P2010',
+      meta: { code: '42883', message: 'function does not exist' },
+    });
+    pg.$queryRaw
+      .mockRejectedValueOnce(undefinedFunction)
+      .mockResolvedValueOnce([{ execution_id: jobData.executionId }]);
+
+    await expect(service.findQueuedForDispatch()).resolves.toEqual([
+      { ...jobData, idempotencyKey: jobData.executionId, quotaReservation: null },
+    ]);
+    expect(pg.$queryRaw).toHaveBeenCalledTimes(3);
+  });
+
+  it('loads execution ownership locally when the optional production helper is not installed', async () => {
+    const undefinedFunction = Object.assign(new Error('function does not exist'), {
+      code: 'P2010',
+      meta: { code: '42883', message: 'function does not exist' },
+    });
+    pg.$queryRaw.mockRejectedValueOnce(undefinedFunction);
+
+    await expect(service.markRunning(jobData.executionId)).resolves.toBeNull();
+    expect(pg.codingExecution.findUnique).toHaveBeenCalledWith({
+      where: { id: jobData.executionId },
+      select: { userId: true, sessionId: true },
+    });
+    expect(postgres.setTenantContext).toHaveBeenCalledWith(expect.anything(), jobData.userId);
+  });
   it('persists a run result inside a transaction', async () => {
     await expect(service.complete(jobData, result)).resolves.toEqual(result);
     expect(pg.$transaction).toHaveBeenCalledOnce();

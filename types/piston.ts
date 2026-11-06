@@ -47,6 +47,22 @@ const containerRunning = (): boolean =>
   probe('podman', ['container', 'inspect', '-f', '"{{.State.Running}}"', CONTAINER_NAME]).stdout ===
   'true';
 
+const connectToApplicationNetwork = (): void => {
+  const network = 'prepai-dev_default';
+  if (probe('podman', ['network', 'inspect', network]).status !== 0) {
+    console.error(`Podman network ${network} is missing. Start the PrepAI stack first.`);
+    process.exit(1);
+  }
+  const networks = probe('podman', [
+    'inspect',
+    '-f',
+    '"{{json .NetworkSettings.Networks}}"',
+    CONTAINER_NAME,
+  ]);
+  if (networks.stdout.includes(`"${network}"`)) return;
+  runCommand('podman', ['network', 'connect', '--alias', CONTAINER_NAME, network, CONTAINER_NAME]);
+};
+
 if (argsObj.action === 'start') {
   // Reuse the existing container if it's already there so it stays visible in
   // Podman Desktop's container list — only `podman run` on a first-time setup.
@@ -60,6 +76,7 @@ if (argsObj.action === 'start') {
     const entrypointPath = path.resolve(ROOT_DIR, 'piston-entrypoint.sh');
     runCommand('podman', buildPistonContainerArgs(entrypointPath));
   }
+  connectToApplicationNetwork();
 } else if (argsObj.action === 'stop') {
   // Stop but keep the container (shows as "Exited" in Podman Desktop, restart
   // with `piston:start`). Use `piston:remove` to delete it entirely.

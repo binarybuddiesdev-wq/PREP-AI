@@ -104,9 +104,31 @@ export class CodingExecutionService {
   async findQueuedForDispatch(limit = 100): Promise<ICodingExecutionJobData[]> {
     try {
       const worker = this.workerDatabase();
-      const queued = await worker.$queryRaw<Array<{ execution_id: string }>>`
-        SELECT execution_id FROM public.prepai_list_queued_coding_execution_ids(${limit}::integer)
-      `;
+      let queued: Array<{ execution_id: string }>;
+      try {
+        queued = await worker.$queryRaw<Array<{ execution_id: string }>>`
+          SELECT execution_id FROM public.prepai_list_queued_coding_execution_ids(${limit}::integer)
+        `;
+      } catch (error) {
+        if (!this.isUndefinedDatabaseFunction(error)) throw error;
+        // Local compose uses the schema-owner connection and does not apply the
+        // production RLS helper functions. Keep the same atomic claim semantics.
+        queued = await worker.$queryRaw<Array<{ execution_id: string }>>`
+          WITH candidates AS (
+            SELECT id FROM public."CodingExecution"
+            WHERE status = 'queued'
+              AND ("dispatchClaimedAt" IS NULL OR "dispatchClaimedAt" < now() - interval '30 seconds')
+            ORDER BY "createdAt" ASC
+            LIMIT LEAST(GREATEST(${limit}::integer, 1), 100)
+            FOR UPDATE SKIP LOCKED
+          )
+          UPDATE public."CodingExecution" AS execution
+          SET "dispatchClaimedAt" = now()
+          FROM candidates
+          WHERE execution.id = candidates.id
+          RETURNING execution.id AS execution_id
+        `;
+      }
       return await Promise.all(
         queued.map(({ execution_id }) => this.loadPersistedJobData(execution_id))
       );
@@ -225,10 +247,25 @@ export class CodingExecutionService {
       owner: { owner_id: string; session_id: string }
     ) => Promise<T>
   ): Promise<T> {
+    const worker = this.workerDatabase();
+    let owner: { owner_id: string; session_id: string } | undefined;
+    try {
+      [owner] = await worker.$queryRaw<
+        Array<{ owner_id: string; session_id: string }>
+      >`SELECT owner_id, session_id FROM public.prepai_get_coding_execution_owner(${executionId})`;
+    } catch (error) {
+      if (!this.isUndefinedDatabaseFunction(error)) throw error;
+      // Resolve outside the tenant transaction so a missing function cannot
+      // abort that transaction before the local schema-owner fallback runs.
+      const execution = await worker.codingExecution.findUnique({
+        where: { id: executionId },
+        select: { userId: true, sessionId: true },
+      });
+      if (execution) owner = { owner_id: execution.userId, session_id: execution.sessionId };
+    }
+    if (!owner) throw new Error('Coding execution record is missing');
+
     return this.postgres.withWorkerJobContext(executionId, async (transaction) => {
-      const [owner] = await transaction.$queryRaw<Array<{ owner_id: string; session_id: string }>>`
-        SELECT owner_id, session_id FROM public.prepai_get_coding_execution_owner(${executionId})
-      `;
       if (!owner) throw new Error('Coding execution record is missing');
       await this.postgres.setTenantContext(transaction, owner.owner_id);
       await this.postgres.setWorkerSessionContext(transaction, owner.session_id);
@@ -240,6 +277,15 @@ export class CodingExecutionService {
     if (!this.postgres.workerClient_)
       throw new ServiceUnavailableException(CODING_DATABASE_UNAVAILABLE);
     return this.postgres.workerClient_ as PostgresPrismaClient;
+  }
+
+  private isUndefinedDatabaseFunction(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) return false;
+    const candidate = error as { code?: string; meta?: { code?: string; message?: string } };
+    return (
+      candidate.meta?.code === '42883' ||
+      (candidate.code === 'P2010' && candidate.meta?.message?.includes('does not exist') === true)
+    );
   }
 
   private databaseError(error: unknown) {

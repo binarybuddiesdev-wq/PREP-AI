@@ -41,4 +41,12 @@ describe('CodingProblemContent', () => {
     expect(screen.getByText('2 + 7 equals 9.')).toBeInTheDocument();
     expect(screen.getByText('Two values exist.')).toBeInTheDocument();
   });
+
+  it('shows compact example values in a paired input and output layout', () => {
+    render(<CodingProblemContent problem={problem} />);
+
+    expect(screen.getByText('[[2,7],9]')).toBeInTheDocument();
+    expect(screen.getByText('[0,1]')).toBeInTheDocument();
+    expect(screen.getByText('Input').parentElement?.parentElement).toHaveClass('sm:grid-cols-2');
+  });
 });
