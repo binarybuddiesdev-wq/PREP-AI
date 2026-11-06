@@ -489,6 +489,13 @@ unrelated or user-owned files.
   format commands still include failing user-owned untracked files, so Phase 10
   remains open.
 
+- Tracked route-preview evidence refreshed (2026-11-06): all 19 UI preview
+  tests pass in both configured browser projects (38/38). They cover dark/light
+  rendering and responsive layouts at 320, 390, 768, and 1440 px. The onboarding
+  preview now updates saved theme state as well as the document theme, avoiding
+  interference from the hidden app root. These previews use fixtures; real
+  signed-in API state acceptance remains open.
+
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
 - [ ] Verify signed-out, first-run, returning-user, free, premium, and relevant

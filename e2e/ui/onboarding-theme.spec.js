@@ -100,7 +100,10 @@ test('renders onboarding and its select menu with readable colors in both themes
     await expect(popup).toHaveCSS('background-color', 'rgb(24, 24, 27)');
     await page.keyboard.press('Escape');
 
-    await page.locator('html').evaluate((element) => (element.dataset.theme = 'light'));
+    await page.locator('html').evaluate((element) => {
+      globalThis.localStorage.setItem('prepai-theme', 'light');
+      element.dataset.theme = 'light';
+    });
     await expect
       .poll(() =>
         screen.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)

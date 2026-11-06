@@ -1217,3 +1217,14 @@ New layout, one folder per purpose. A layer may import only from the layers list
   selection callback, selected state, both themes, pill wrapping at 320 px,
   and no horizontal overflow at 320, 390, 768, or 1440 px. Route-wide Phase 9
   parity remains open for the remaining screens.
+
+## 2026-11-06 - Stabilize onboarding theme browser preview
+
+- The route-preview suite intermittently saw the onboarding select popup revert
+  to dark after switching the fixture to light. The hidden app root was still
+  mounted and could restore its saved theme. The preview now updates the saved
+  theme together with the document attribute, matching the real theme owner.
+- Verification: the onboarding preview passes 10/10 repeated runs with eight
+  workers. All 19 tracked UI route previews pass in both configured browser
+  projects (38/38), including responsive overflow checks through 1440 px.
+  These previews use fixtures; live signed-in API acceptance remains open.
