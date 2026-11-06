@@ -155,7 +155,7 @@ describe('CodingProblemWorkspace', () => {
   });
 
   it.each([
-    ['queued', 'Your run is queued and will start automatically.'],
+    ['queued', 'Waiting for a worker to start your run…'],
     ['running', 'Your code is running…'],
   ] as const)('shows %s progress and prevents duplicate actions', (status, label) => {
     const props = createProps();

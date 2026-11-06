@@ -48,8 +48,12 @@ describe('CodingProblemContent', () => {
     expect(within(example).getByLabelText('Example input')).toHaveTextContent(
       /\[\s*\[\s*2,\s*7\s*\],\s*9\s*\]/
     );
+    expect(within(example).getByLabelText('Example input').querySelector('code')).toHaveClass(
+      'whitespace-pre'
+    );
     expect(within(example).getByText('Output')).toBeInTheDocument();
     expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
+    expect(within(example).getByLabelText('Example output')).toHaveClass('overflow-auto');
     expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
   });
 });

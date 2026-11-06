@@ -388,8 +388,8 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                       <span>
                         {execution.status === 'queued'
                           ? execution.operation === 'run'
-                            ? 'Your run is queued and will start automatically.'
-                            : 'Your submission is queued and will start automatically.'
+                            ? 'Waiting for a worker to start your run…'
+                            : 'Waiting for a worker to start your submission…'
                           : 'Your code is running…'}
                       </span>
                     </p>

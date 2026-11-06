@@ -23,29 +23,29 @@ const Example = (props: { example: ICodingProblemExample; index: number }) => {
         Example {index + 1}
       </figcaption>
       <dl className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-        <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2.5">
-          <dt className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--faint)]">
+        <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3">
+          <dt className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--dim)]">
             Input
           </dt>
           <dd>
             <pre
               aria-label="Example input"
-              className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-md bg-[var(--card)] p-2.5 font-mono text-xs leading-5 text-[var(--text)]"
+              className="max-h-40 overflow-auto rounded-md bg-[var(--card)] px-3 py-2.5 font-mono text-[13px] leading-5 text-[var(--text)]"
             >
-              <code>{formatCodingValue(example.input)}</code>
+              <code className="whitespace-pre">{formatCodingValue(example.input)}</code>
             </pre>
           </dd>
         </div>
-        <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2.5">
-          <dt className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--faint)]">
+        <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3">
+          <dt className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--dim)]">
             Output
           </dt>
           <dd>
             <pre
               aria-label="Example output"
-              className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-md bg-[var(--card)] p-2.5 font-mono text-xs leading-5 text-[var(--text)]"
+              className="max-h-40 overflow-auto rounded-md bg-[var(--card)] px-3 py-2.5 font-mono text-[13px] leading-5 text-[var(--text)]"
             >
-              <code>{formatCodingValue(example.output)}</code>
+              <code className="whitespace-pre">{formatCodingValue(example.output)}</code>
             </pre>
           </dd>
         </div>
