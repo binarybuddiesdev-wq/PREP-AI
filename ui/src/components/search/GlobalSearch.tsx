@@ -72,7 +72,7 @@ export const GlobalSearch = (props: IGlobalSearchProps) => {
         type="button"
         aria-label="Search pages and topics"
         title="Search pages and topics (Ctrl+K)"
-        className={`flex size-9 items-center justify-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400 ${isLight ? 'border-zinc-200 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900' : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:bg-white/[0.07] hover:text-zinc-100'}`}
+        className={`flex size-[34px] items-center justify-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400 ${isLight ? 'border-zinc-200 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900' : 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:bg-white/[0.07] hover:text-zinc-100'}`}
       >
         <Search aria-hidden="true" className="size-4" />
       </Dialog.Trigger>

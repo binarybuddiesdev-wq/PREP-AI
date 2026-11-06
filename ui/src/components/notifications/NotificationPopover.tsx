@@ -51,7 +51,7 @@ export const NotificationPopover = (props: INotificationPopoverProps) => {
         type="button"
         aria-label={badge ? `Notifications, ${badge} unread` : 'Notifications'}
         className={cn(
-          'relative grid size-9 shrink-0 place-items-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400',
+          'relative grid size-[34px] shrink-0 place-items-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400',
           isDark
             ? 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:bg-white/[0.07] hover:text-zinc-100'
             : 'border-zinc-200 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900'

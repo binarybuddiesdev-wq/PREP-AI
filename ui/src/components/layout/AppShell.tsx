@@ -100,7 +100,7 @@ export const AppShell = (props: IAppShellProps) => {
           className={cn(
             'fixed inset-y-0 left-0 z-40 flex w-[240px] flex-col border-r transition-all duration-200 md:translate-x-0',
             isDarkTheme ? 'border-white/[0.08] bg-[#111113]' : 'border-zinc-200 bg-white',
-            isCollapsed && 'md:w-[68px]',
+            isCollapsed && 'md:w-[60px]',
             isMobileNavigationOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
@@ -277,12 +277,12 @@ export const AppShell = (props: IAppShellProps) => {
         <div
           className={cn(
             'min-h-svh transition-[padding] duration-200 md:pl-[240px]',
-            isCollapsed && 'md:pl-[68px]'
+            isCollapsed && 'md:pl-[60px]'
           )}
         >
           <header
             className={cn(
-              'sticky top-0 z-20 flex h-[68px] items-center justify-between border-b px-4 backdrop-blur-xl sm:px-6',
+              'sticky top-0 z-20 flex h-[73px] items-center justify-between border-b px-8 backdrop-blur-xl md:h-[62px]',
               isDarkTheme ? 'border-white/[0.08] bg-[#09090b]/90' : 'border-zinc-200 bg-white/90'
             )}
           >
@@ -319,7 +319,7 @@ export const AppShell = (props: IAppShellProps) => {
                 aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
                 aria-pressed={theme === 'light'}
                 className={cn(
-                  'flex size-9 items-center justify-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400',
+                  'flex size-[34px] items-center justify-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400',
                   isDarkTheme
                     ? 'border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:bg-white/[0.07] hover:text-zinc-100'
                     : 'border-zinc-200 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900'
