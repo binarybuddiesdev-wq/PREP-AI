@@ -6,6 +6,8 @@ export { CodingProblemContent } from './CodingProblemContent';
 export type { ICodingProblemContentProps } from './CodingProblemContent.types';
 export { CodingTestCaseResult } from './CodingTestCaseResult';
 export type { ICodingTestCaseResultProps } from './CodingTestCaseResult.types';
+export type { ICodingInputArgumentsProps } from './CodingInputArguments.types';
+export type { ICodingValueProps } from './CodingValue.types';
 export { CodingEditor } from './CodingEditor';
 export type { ICodingEditorProps } from './CodingEditor.types';
 export { CodingProblemWorkspace } from './CodingProblemWorkspace';

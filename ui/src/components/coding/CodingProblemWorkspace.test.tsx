@@ -155,7 +155,7 @@ describe('CodingProblemWorkspace', () => {
   });
 
   it.each([
-    ['queued', 'Waiting for a worker to start your run…'],
+    ['queued', 'Your run is queued. Results will appear here automatically.'],
     ['running', 'Your code is running…'],
   ] as const)('shows %s progress and prevents duplicate actions', (status, label) => {
     const props = createProps();
@@ -179,6 +179,29 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByRole('status')).toHaveTextContent(label);
     expect(screen.getByRole('button', { name: 'Run' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+  });
+
+  it('explains queued submissions will show results automatically', () => {
+    const props = createProps();
+    const execution: ICodingExecution = {
+      id: 'execution-submit',
+      sessionId: 'session-one',
+      problemId: problem.id,
+      operation: 'submit',
+      language: 'javascript',
+      status: 'queued',
+      result: null,
+      failureMessage: null,
+      createdAt: new Date().toISOString(),
+      startedAt: null,
+      completedAt: null,
+      answer: null,
+    };
+    render(<CodingProblemWorkspace {...props} execution={execution} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Your submission is queued. Results will appear here automatically.'
+    );
   });
 
   it('explains how to recover when a queued run has stalled', async () => {

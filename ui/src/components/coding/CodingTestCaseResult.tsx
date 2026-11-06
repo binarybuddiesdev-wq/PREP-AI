@@ -23,32 +23,42 @@ export const CodingTestCaseResult = (props: ICodingTestCaseResultProps) => {
           {testCase.passed ? 'Passed' : 'Failed'}
         </span>
       </div>
-      <dl className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,0.85fr)_minmax(0,0.85fr)]">
+      <div className="grid min-w-0 grid-cols-1 gap-3">
         <div className="min-w-0">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
             Input
-          </dt>
-          <dd className="min-w-0">
+          </p>
+          <div className="min-w-0">
             <CodingInputArguments value={testCase.input} ariaLabel="Test case inputs" />
-          </dd>
+          </div>
         </div>
-        <div className="min-w-0 border-t border-[var(--border)] pt-2.5 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
-            Expected
-          </dt>
-          <dd>
-            <CodingValue value={testCase.expected} ariaLabel="Expected output" />
-          </dd>
+        <div
+          role="group"
+          aria-label="Output comparison"
+          className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"
+        >
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
+              Expected
+            </p>
+            <div>
+              <CodingValue value={testCase.expected} ariaLabel="Expected output" />
+            </div>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
+              Your output
+            </p>
+            <div>
+              <CodingValue
+                value={testCase.got}
+                ariaLabel="Your output"
+                className={outputClassName}
+              />
+            </div>
+          </div>
         </div>
-        <div className="min-w-0 border-t border-[var(--border)] pt-2.5 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
-            Your output
-          </dt>
-          <dd>
-            <CodingValue value={testCase.got} ariaLabel="Your output" className={outputClassName} />
-          </dd>
-        </div>
-      </dl>
+      </div>
     </li>
   );
 };
