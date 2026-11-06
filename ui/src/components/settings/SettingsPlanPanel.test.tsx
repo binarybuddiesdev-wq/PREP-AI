@@ -70,6 +70,17 @@ describe('SettingsPlanPanel', () => {
     expect(screen.getByText('1 / 3')).toBeVisible();
   });
 
+  it('shows administrative access without offering purchase or cancellation controls', () => {
+    render(<SettingsPlanPanel {...makeProps({ role: 'ADMIN' })} />);
+
+    expect(screen.getByText('Admin access')).toBeVisible();
+    expect(
+      screen.getByText('Administrative access includes all current product capabilities.')
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: /upgrade to premium/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /cancel subscription/i })).not.toBeInTheDocument();
+  });
+
   it('lets a user choose a term and starts checkout without displaying a client price', async () => {
     const user = userEvent.setup();
     const props = makeProps();

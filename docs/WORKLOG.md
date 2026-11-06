@@ -1167,3 +1167,12 @@ New layout, one folder per purpose. A layer may import only from the layers list
   dashboard Playwright preview, and all 23 UI Playwright tests pass. Root lint
   still reports 14 errors in the unrelated untracked `types/piston.js`; root
   format check still reports 57 unrelated or user-owned files.
+
+## 2026-11-06 - Admin plan-state regression coverage
+
+- Added coverage for the existing Admin plan state: it identifies
+  administrative access, explains its capabilities, and offers neither an
+  upgrade nor subscription cancellation action.
+- Full UI checks pass: 129 files / 570 tests, UI lint, TypeScript project
+  check, and production build. This component test verifies rendering from an
+  Admin role value; live signed-in Admin API verification remains in Phase 10.
