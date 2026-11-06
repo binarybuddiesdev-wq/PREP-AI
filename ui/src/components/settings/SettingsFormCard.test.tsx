@@ -58,7 +58,7 @@ describe('SettingsFormCard', () => {
     renderCard();
 
     const tabHeader = screen.getByRole('tablist').closest('header');
-    const saveFooter = screen.getByRole('button', { name: 'Save settings' }).closest('footer');
+    const saveFooter = screen.getByRole('button', { name: 'Save Changes' }).closest('footer');
     const formCard = screen.getByRole('tablist').closest('section');
     const activeTab = screen.getByRole('tab', { name: 'Profile' });
     const inactiveTab = screen.getByRole('tab', { name: 'Notifications' });
@@ -74,6 +74,17 @@ describe('SettingsFormCard', () => {
     expect(inactiveTab).toHaveClass('text-[var(--dim)]', 'hover:text-[var(--text)]');
     expect(tabHeader).not.toHaveClass('border-white/[0.08]');
     expect(saveFooter).not.toHaveClass('border-white/[0.08]');
+  });
+
+  it('uses the reference save labels for each editable settings tab', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    expect(screen.getByRole('button', { name: 'Save Changes' })).toBeVisible();
+    await user.click(screen.getByRole('tab', { name: 'Notifications' }));
+    expect(screen.getByRole('button', { name: 'Save Preferences' })).toBeVisible();
+    await user.click(screen.getByRole('tab', { name: 'Practice Preferences' }));
+    expect(screen.getByRole('button', { name: 'Save Preferences' })).toBeVisible();
   });
 
   it('uses a theme-aware success color for saved feedback', () => {
@@ -163,7 +174,7 @@ describe('SettingsFormCard', () => {
   it('keeps the save action and status visible on editable panels', () => {
     renderCard({ status: { kind: 'error', message: 'Invalid time zone' } });
 
-    expect(screen.getByRole('button', { name: 'Save settings' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save Changes' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Invalid time zone');
   });
 });

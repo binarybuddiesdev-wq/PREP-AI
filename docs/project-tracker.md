@@ -503,6 +503,10 @@ unrelated or user-owned files.
   `Avg Score` heading mismatch. A regression assertion failed before the
   correction and passes afterward; the focused history table suite passes
   (5 tests).
+- Settings Profile and Notifications/Practice Preferences now use their
+  reference-specific save button labels. The new tab-label test failed against
+  the previous shared label and passes with the corrected labels; 17 focused
+  component/page tests pass.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

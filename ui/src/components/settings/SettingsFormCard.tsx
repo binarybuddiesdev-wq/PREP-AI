@@ -27,6 +27,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
   const activeIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);
   const isDocumentsTab = activeTab === 'documents';
   const showSaveFooter = !isDocumentsTab && activeTab !== 'plan';
+  const saveActionLabel = activeTab === 'profile' ? 'Save Changes' : 'Save Preferences';
 
   const getPanel = () => {
     switch (activeTab) {
@@ -92,7 +93,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
             disabled={isSaving}
             className="inline-flex min-h-9 items-center rounded-lg bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-strong)] disabled:cursor-wait disabled:opacity-60"
           >
-            {isSaving ? 'Saving…' : 'Save settings'}
+            {isSaving ? 'Saving…' : saveActionLabel}
           </button>
           {status && (
             <p

@@ -97,7 +97,7 @@ describe('SettingsPage', () => {
     await user.type(screen.getByRole('textbox', { name: 'Time zone' }), 'Europe/London');
     await user.click(screen.getByRole('tab', { name: 'Profile' }));
     expect(screen.getByRole('textbox', { name: 'Target companies' })).toHaveValue('Stripe, Acme');
-    await user.click(screen.getByRole('button', { name: 'Save settings' }));
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     await waitFor(() => expect(patchBodies).toHaveLength(1));
     expect(patchBodies[0]).toMatchObject({
@@ -231,7 +231,7 @@ describe('SettingsPage', () => {
     renderSettingsPage();
 
     await screen.findByText('Asha Rao');
-    await user.click(screen.getByRole('button', { name: 'Save settings' }));
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Timezone must be a valid IANA timezone'

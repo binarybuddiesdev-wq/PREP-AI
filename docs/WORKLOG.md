@@ -1217,6 +1217,15 @@ New layout, one folder per purpose. A layer may import only from the layers list
   then passed after the correction. The focused SessionHistoryTable suite passes
   (5 tests), as do scoped ESLint and Prettier checks.
 
+## 2026-11-06 - Settings save-action label parity
+
+- The shared settings save action now uses `Save Changes` on Profile and
+  `Save Preferences` on Notifications and Practice Preferences, matching the
+  corresponding reference panels while preserving the shared API save flow.
+- TDD evidence: the new tab-label test failed on the old `Save settings` label,
+  then passed after the change. Settings component/page tests pass (17 tests),
+  as do scoped ESLint and Prettier checks.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to
