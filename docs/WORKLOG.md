@@ -977,3 +977,16 @@ New layout, one folder per purpose. A layer may import only from the layers list
   `git diff --check` passed. Repository lint still fails on the untracked
   `types/piston.js` file, and repository formatting still reports existing or
   user-owned files outside this change.
+
+## 2026-11-06 - Manage keyboard focus in the coding fullscreen editor
+
+- The fullscreen editor now receives focus when opened, traps Tab and
+  Shift+Tab within the dialog, and restores focus to its launch control when
+  closed with Escape or the exit button.
+- Added a component test that first failed because the dialog did not receive
+  focus, then passed for entry, tab wrapping, and focus restoration. Chromium
+  also passed the same keyboard flow against the rendered component.
+- Verification: all 538 UI tests across 123 files passed. UI lint,
+  `tsc -b`, production build, changed-file Prettier, Impeccable detector, and
+  `git diff --check` passed. The broader route-wide accessibility checklist
+  remains open.

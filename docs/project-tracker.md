@@ -282,6 +282,8 @@ parity and responsive/accessibility acceptance remain.**
       reference across the full route set.
 - [x] Match Coding problem examples to the reference's single compact
       Input/Output/Explanation code block; inspect desktop and mobile renders.
+- [x] Keep keyboard focus inside the fullscreen coding editor and restore it to
+      the launch control when the editor closes.
 - [x] Move Dashboard cards and status colors onto theme-aware tokens; keep the
       route-wide visual parity item open until the remaining screens are checked.
 - [x] Move PDF Library reader surfaces, controls, and error states onto shared
@@ -334,7 +336,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 537 UI unit tests (123 files) pass; UI
+**Latest evidence (2026-11-06):** All 538 UI unit tests (123 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -408,7 +410,7 @@ single code block, matching the prototype and removing the nested value cards.
 The component test first failed against the split layout, then passed after the
 change. Desktop and 390 px mobile component previews were inspected; neither
 overflows horizontally. The focused coding detail browser check passed in
-Chromium in both themes. The full UI suite passes at 123 files / 537 tests,
+Chromium in both themes. The full UI suite passes at 123 files / 538 tests,
 alongside UI lint, TypeScript project check, production build, scoped Prettier,
 and `git diff --check`. The cross-route visual parity item remains open.
 

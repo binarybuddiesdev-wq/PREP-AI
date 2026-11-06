@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -25,6 +26,8 @@ const LANGUAGES: readonly { value: CodingLanguage; label: string; extension: str
   { value: 'typescript', label: 'TypeScript', extension: 'ts' },
   { value: 'python', label: 'Python', extension: 'py' },
 ];
+const FULLSCREEN_FOCUSABLE_SELECTOR =
+  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"], [contenteditable="true"]';
 
 const formatResultValue = (value: unknown) => {
   const serialized = JSON.stringify(value);
@@ -83,13 +86,62 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
   const isExecutionActive = execution?.status === 'queued' || execution?.status === 'running';
   const isBusy = isActionPending || isExecutionActive;
   const [isReviewOpen, setReviewOpen] = useState(false);
+  const fullscreenDialogRef = useRef<HTMLDivElement>(null);
+  const fullscreenFocusReturnRef = useRef<HTMLElement | null>(null);
   const reviewAnswer =
     execution?.status === 'completed' && execution.operation === 'submit' ? execution.answer : null;
 
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      fullscreenFocusReturnRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
+    onToggleFullscreen();
+  };
+
+  const handleFullscreenDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+
+    const focusableElements = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>(FULLSCREEN_FOCUSABLE_SELECTOR)
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements.at(-1);
+
+    if (!firstElement || !lastElement) {
+      event.preventDefault();
+      event.currentTarget.focus();
+    } else if (!event.currentTarget.contains(document.activeElement)) {
+      event.preventDefault();
+      firstElement.focus();
+    } else if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
+
   useEffect(() => {
-    if (!isFullscreen) return;
+    if (!isFullscreen) {
+      const previousFocusTarget = fullscreenFocusReturnRef.current;
+      if (previousFocusTarget) {
+        const focusTarget = previousFocusTarget.isConnected
+          ? previousFocusTarget
+          : document.querySelector<HTMLElement>('[data-coding-fullscreen-trigger]');
+        focusTarget?.focus();
+        fullscreenFocusReturnRef.current = null;
+      }
+      return;
+    }
+
+    fullscreenDialogRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onToggleFullscreen();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onToggleFullscreen();
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -214,7 +266,8 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
               </button>
               <button
                 type="button"
-                onClick={onToggleFullscreen}
+                onClick={toggleFullscreen}
+                data-coding-fullscreen-trigger={!isFullscreen ? '' : undefined}
                 aria-label={isFullscreen ? 'Exit fullscreen editor' : 'Enter fullscreen editor'}
                 title={isFullscreen ? 'Exit fullscreen editor' : 'Enter fullscreen editor'}
                 className="flex size-8 shrink-0 items-center justify-center rounded-md border border-[var(--border2)] text-[var(--dim)] transition hover:bg-[var(--surface2)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
@@ -418,10 +471,13 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
     <>
       <div className="fixed inset-0 z-50 bg-[var(--bg)] p-2 sm:p-4">
         <div
+          ref={fullscreenDialogRef}
           role="dialog"
           aria-modal="true"
           aria-label="Fullscreen coding editor"
           className="h-full"
+          tabIndex={-1}
+          onKeyDown={handleFullscreenDialogKeyDown}
         >
           {workspace}
         </div>

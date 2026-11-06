@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -526,5 +526,40 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Daily AI review limit reached.');
     await user.click(screen.getByRole('button', { name: 'Retry AI Review' }));
     expect(props.onRequestReview).toHaveBeenCalledOnce();
+  });
+
+  it('moves focus into fullscreen, traps it there, and restores focus when closed', async () => {
+    const user = userEvent.setup();
+    const props = createProps();
+    const FullscreenHarness = () => {
+      const [isFullscreen, setFullscreen] = useState(false);
+      return (
+        <CodingProblemWorkspace
+          {...props}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={() => setFullscreen((previous) => !previous)}
+        />
+      );
+    };
+
+    render(<FullscreenHarness />);
+    const fullscreenButton = screen.getByRole('button', { name: 'Enter fullscreen editor' });
+    await user.click(fullscreenButton);
+
+    const dialog = screen.getByRole('dialog', { name: 'Fullscreen coding editor' });
+    const firstButton = within(dialog).getByRole('button', { name: 'Back to problems' });
+    const lastFocusableElement = within(dialog).getByRole('textbox', { name: 'Code editor' });
+    expect(dialog).toHaveFocus();
+
+    lastFocusableElement.focus();
+    await user.tab();
+    expect(firstButton).toHaveFocus();
+    firstButton.focus();
+    await user.tab({ shift: true });
+    expect(lastFocusableElement).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Enter fullscreen editor' })).toHaveFocus();
   });
 });
