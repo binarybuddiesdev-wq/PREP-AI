@@ -1,3 +1,15 @@
+## 2026-11-06 - Match Settings page layout to prototype
+
+- Restored the Settings page heading and subtitle, moved the tab row outside
+  the content card, and added the active panel title and prototype-sized card
+  padding. Kept supported settings, tab behavior, and API saves unchanged.
+- Added regression tests for the page heading, tab/card separation, and active
+  panel title. The Settings theme preview passes in both configured browser
+  projects.
+- Verification: full UI suite passes (130 files / 591 tests), UI lint,
+  TypeScript project check, and production build pass. The build retains the
+  known Monaco chunk-size warning.
+
 ## 2026-11-05 - Theme Settings documents
 
 - Replaced hard-coded dark styling across PDF upload, document rows, empty and

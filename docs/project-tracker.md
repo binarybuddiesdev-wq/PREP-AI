@@ -318,6 +318,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Theme the Settings Profile, Notifications, and Practice Preferences card,
       inputs, checkbox, tabs, text, and save feedback; verify both themes and
       320/390/768/1440 px layouts.
+- [x] Match the Settings page heading, subtitle, external tab strip, active
+      panel heading, and padded content card to `prepai-ui.html` while retaining
+      supported controls and server-backed save behavior.
 - [x] Move Practice and Coding Session History tables, expanded details,
       loading/error/empty states, pagination, and CSV controls onto the shared
       theme tokens; keep the separate theory detail route in the full-route
@@ -371,7 +374,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 590 UI unit tests (130 files) pass; UI
+**Latest evidence (2026-11-06):** All 591 UI unit tests (130 files) pass; UI
 lint, TypeScript project check, and production build pass. Coding run results
 and Practice reference previews pass in both configured browser projects.
 The Chrome

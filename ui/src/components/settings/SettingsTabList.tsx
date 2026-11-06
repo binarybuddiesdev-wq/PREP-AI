@@ -18,7 +18,7 @@ export const SettingsTabList = (props: ISettingsTabListProps) => {
   };
 
   return (
-    <div role="tablist" aria-label="Settings sections" className="mt-2 flex flex-wrap gap-1">
+    <div role="tablist" aria-label="Settings sections" className="flex flex-wrap gap-1">
       {SETTINGS_TABS.map((tab, index) => (
         <button
           key={tab.id}
@@ -33,10 +33,10 @@ export const SettingsTabList = (props: ISettingsTabListProps) => {
           tabIndex={activeTab === tab.id ? 0 : -1}
           onClick={() => onChange(tab.id)}
           onKeyDown={(event) => handleKeyDown(event, index)}
-          className={`min-h-9 rounded-t-lg border-b px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent-strong)] sm:text-sm ${
+          className={`mb-[-1px] min-h-10 rounded-t-lg border-b-2 px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent-strong)] sm:px-5 sm:text-sm ${
             activeTab === tab.id
-              ? 'border-[var(--accent)] text-[var(--accent-strong)]'
-              : 'border-transparent text-[var(--dim)] hover:text-[var(--text)]'
+              ? 'border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+              : 'border-transparent text-[var(--dim)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
           }`}
         >
           {tab.label}

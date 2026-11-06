@@ -44,6 +44,21 @@ describe('SettingsFormCard', () => {
     expect(screen.queryByText(/UserSettings Model|Raw UserSettings JSON/)).not.toBeInTheDocument();
   });
 
+  it('keeps section tabs outside the reference content card and labels the active panel', () => {
+    renderCard();
+
+    const tabList = screen.getByRole('tablist', { name: 'Settings sections' });
+    const panel = screen.getByRole('tabpanel');
+
+    expect(tabList.parentElement).not.toBe(panel.parentElement);
+    expect(panel.parentElement).toHaveClass(
+      'rounded-xl',
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
+    expect(within(panel).getByRole('heading', { name: 'Profile' })).toBeVisible();
+  });
+
   it('connects every tab to its corresponding panel', () => {
     renderCard();
 
@@ -54,26 +69,22 @@ describe('SettingsFormCard', () => {
     }
   });
 
-  it('uses theme-aware dividers around the settings panel and save actions', () => {
+  it('uses theme-aware tabs, content panel, and save action colors', () => {
     renderCard();
 
     const tabHeader = screen.getByRole('tablist').closest('header');
     const saveFooter = screen.getByRole('button', { name: 'Save Changes' }).closest('footer');
-    const formCard = screen.getByRole('tablist').closest('section');
+    const formCard = screen.getByRole('tabpanel').parentElement;
     const activeTab = screen.getByRole('tab', { name: 'Profile' });
     const inactiveTab = screen.getByRole('tab', { name: 'Notifications' });
 
     expect(tabHeader).toHaveClass('border-[var(--border)]');
-    expect(saveFooter).toHaveClass('border-[var(--border)]');
-    expect(formCard).toHaveClass(
-      'border-[var(--border)]',
-      'bg-[var(--card)]',
-      'text-[var(--text)]'
-    );
+    expect(saveFooter).toHaveClass('mt-5');
+    expect(formCard).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
     expect(activeTab).toHaveClass('border-[var(--accent)]', 'text-[var(--accent-strong)]');
     expect(inactiveTab).toHaveClass('text-[var(--dim)]', 'hover:text-[var(--text)]');
     expect(tabHeader).not.toHaveClass('border-white/[0.08]');
-    expect(saveFooter).not.toHaveClass('border-white/[0.08]');
+    expect(formCard).not.toHaveClass('border-white/[0.08]');
   });
 
   it('uses the reference save labels for each editable settings tab', async () => {

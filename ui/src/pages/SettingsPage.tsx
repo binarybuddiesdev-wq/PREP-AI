@@ -62,24 +62,30 @@ export const SettingsPage = () => {
       userQuery.error?.message ?? settingsQuery.error?.message ?? 'Request failed';
 
     return (
-      <main className="mx-auto w-full max-w-2xl">
-        <QueryErrorState
-          title={`Couldn’t load your ${failedResource}`}
-          description="Check your connection and try again. If the problem continues, share the technical detail with your support team."
-          onRetry={() => {
-            if (userQuery.isError) void userQuery.refetch();
-            if (settingsQuery.isError) void settingsQuery.refetch();
-          }}
-          isRetrying={userQuery.isFetching || settingsQuery.isFetching}
-        />
-        <details className="app-shell-panel mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 text-left">
-          <summary className="cursor-pointer text-xs font-medium text-zinc-500">
-            Technical detail
-          </summary>
-          <pre className="mt-3 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-zinc-500">
-            {errorMessage}
-          </pre>
-        </details>
+      <main className="mx-auto w-full">
+        <header className="mb-6">
+          <h1 className="mb-[0.2rem] text-[1.35rem] font-bold text-[var(--text-h)]">Settings</h1>
+          <p className="text-[0.9rem] text-[var(--dim)]">Manage your profile and preferences</p>
+        </header>
+        <div className="mx-auto w-full max-w-3xl">
+          <QueryErrorState
+            title={`Couldn’t load your ${failedResource}`}
+            description="Check your connection and try again. If the problem continues, share the technical detail with your support team."
+            onRetry={() => {
+              if (userQuery.isError) void userQuery.refetch();
+              if (settingsQuery.isError) void settingsQuery.refetch();
+            }}
+            isRetrying={userQuery.isFetching || settingsQuery.isFetching}
+          />
+          <details className="app-shell-panel mt-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 text-left">
+            <summary className="cursor-pointer text-xs font-medium text-[var(--dim)]">
+              Technical detail
+            </summary>
+            <pre className="mt-3 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-[var(--dim)]">
+              {errorMessage}
+            </pre>
+          </details>
+        </div>
       </main>
     );
   }
@@ -153,7 +159,11 @@ export const SettingsPage = () => {
   );
 
   return (
-    <main className="-mt-2 mx-auto w-full max-w-3xl">
+    <main className="mx-auto w-full">
+      <header className="mb-6">
+        <h1 className="mb-[0.2rem] text-[1.35rem] font-bold text-[var(--text-h)]">Settings</h1>
+        <p className="text-[0.9rem] text-[var(--dim)]">Manage your profile and preferences</p>
+      </header>
       <SettingsFormCard
         values={values}
         userName={userQuery.data.name}
