@@ -1,3 +1,16 @@
+## 2026-11-06 - Match PDF Library to the prototype
+
+- Changed Library to the reference PDF card grid with Select/Delete actions and
+  a separate reader view. The reader now places zoom controls in its header and
+  page navigation in the bottom toolbar. Opening and returning from a document
+  uses the existing `pdfId` URL parameter.
+- Wired confirmed multi-file deletion through the existing PDF delete command.
+  Failed deletions remain retryable, and deleted sources continue to use the
+  query invalidation path already owned by the PDF logic layer.
+- Verification: UI suite passes (130 files / 595 tests), UI lint, TypeScript
+  project check, production build, and the PDF Library browser check in both
+  configured projects. The build retains the known Monaco chunk-size warning.
+
 ## 2026-11-06 - Match Settings page layout to prototype
 
 - Restored the Settings page heading and subtitle, moved the tab row outside

@@ -101,13 +101,8 @@ test('renders PDF reader surfaces and errors in both themes without mobile overf
           .evaluate((element) => globalThis.getComputedStyle(element).color)
       )
       .toBe('rgb(190, 18, 60)');
-    await expect
-      .poll(() =>
-        page
-          .getByRole('link', { name: 'Manage documents' })
-          .evaluate((element) => globalThis.getComputedStyle(element).color)
-      )
-      .toBe('rgb(17, 24, 39)');
+    await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next page' })).toBeVisible();
 
     for (const viewport of [
       { width: 320, height: 740 },

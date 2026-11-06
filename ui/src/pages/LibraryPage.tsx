@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { PdfLibrary } from '@/components/pdf/PdfLibrary';
-import { usePdfContentReader, usePdfSourcesReader } from '@/logic';
+import { usePdfContentReader, usePdfDeleteCommand, usePdfSourcesReader } from '@/logic';
 
 interface IPdfContentState {
   sourceId: string | null;
@@ -17,8 +17,10 @@ const getErrorMessage = (error: unknown) =>
 export const LibraryPage = () => {
   const loadPdfContent = usePdfContentReader();
   const sourcesQuery = usePdfSourcesReader();
+  const deleteCommand = usePdfDeleteCommand();
   const [searchParams, setSearchParams] = useSearchParams();
   const [retryCount, setRetryCount] = useState(0);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [contentState, setContentState] = useState<IPdfContentState>({
     sourceId: null,
     status: 'idle',
@@ -32,20 +34,10 @@ export const LibraryPage = () => {
   const selectedSource = sources.find((source) => source.id === selectedId) ?? null;
 
   useEffect(() => {
-    if (sourcesQuery.isPending || sourcesQuery.isError) return;
-    if (!selectedSource && sources.length > 0) {
-      setSearchParams({ pdfId: sources[0]!.id }, { replace: true });
-    } else if (selectedId && !selectedSource) {
+    if (!sourcesQuery.isPending && !sourcesQuery.isError && selectedId && !selectedSource) {
       setSearchParams({}, { replace: true });
     }
-  }, [
-    selectedId,
-    selectedSource,
-    setSearchParams,
-    sources,
-    sourcesQuery.isError,
-    sourcesQuery.isPending,
-  ]);
+  }, [selectedId, selectedSource, setSearchParams, sourcesQuery.isError, sourcesQuery.isPending]);
 
   useEffect(() => {
     if (!selectedSource) {
@@ -90,6 +82,23 @@ export const LibraryPage = () => {
   const matchingContent = contentState.sourceId === selectedSource?.id;
   const contentLoading =
     Boolean(selectedSource) && (!matchingContent || contentState.status === 'loading');
+  const deleteSources = async (pdfIds: string[]): Promise<boolean> => {
+    setDeleteError(null);
+    const results = await Promise.allSettled(
+      pdfIds.map((pdfId) => deleteCommand.mutateAsync({ pdfId }))
+    );
+    if (results.some((result) => result.status === 'rejected')) {
+      const failed = results.find((result) => result.status === 'rejected');
+      setDeleteError(
+        failed?.status === 'rejected'
+          ? getErrorMessage(failed.reason)
+          : 'Some selected PDFs could not be deleted. Refresh the Library and try again.'
+      );
+      void sourcesQuery.refetch();
+      return false;
+    }
+    return true;
+  };
 
   return (
     <PdfLibrary
@@ -102,8 +111,12 @@ export const LibraryPage = () => {
       contentError={matchingContent && contentState.status === 'failed' ? contentState.error : null}
       initialPage={initialPage}
       onSelectSource={(pdfId) => setSearchParams({ pdfId, page: '1' })}
+      onBackToList={() => setSearchParams({})}
       onRetryList={() => void sourcesQuery.refetch()}
       onRetryContent={() => setRetryCount((current) => current + 1)}
+      onDeleteSources={deleteSources}
+      deleteError={deleteError}
+      isDeleting={deleteCommand.isPending}
     />
   );
 };

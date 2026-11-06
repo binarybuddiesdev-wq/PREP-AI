@@ -308,6 +308,9 @@ parity and responsive/accessibility acceptance remain.**
       so the suggestion and score-trend panels explain their data.
 - [x] Move PDF Library reader surfaces, controls, and error states onto shared
       theme tokens while keeping the document page white in the native viewer.
+- [x] Match Library's PDF card grid, select/delete toolbar, separate reader
+      view, and reader control placement to `prepai-ui.html`; use the existing
+      PDF API for confirmed deletion and URL-backed document navigation.
 - [x] Match PDF Study source rows to the reference with a PDF badge, readable
       filename and page-count hierarchy, and stacked mobile-friendly selection.
 - [x] Move Settings > Documents upload and list surfaces, states, and actions
@@ -374,9 +377,11 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 591 UI unit tests (130 files) pass; UI
+**Latest evidence (2026-11-06):** All 595 UI unit tests (130 files) pass; UI
 lint, TypeScript project check, and production build pass. Coding run results
 and Practice reference previews pass in both configured browser projects.
+Settings form and PDF Library theme previews also pass in both configured
+browser projects.
 The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop

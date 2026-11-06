@@ -37,17 +37,75 @@ describe('PdfLibrary', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'PDF Library' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Library' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'PDF reader' })).toHaveClass('bg-[var(--card)]');
-    expect(screen.getByRole('button', { name: /first\.pdf/ })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
+    expect(screen.queryByRole('button', { name: /first\.pdf/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'queued.pdf' })).not.toBeInTheDocument();
     expect(screen.getByTitle('Preview: first.pdf')).toHaveAttribute(
       'src',
       'blob:http://localhost/pdf-preview#page=1&zoom=100'
     );
+  });
+
+  it('matches the reference PDF list and opens a separate reader view', async () => {
+    const user = userEvent.setup();
+    const onSelectSource = vi.fn();
+    render(
+      <MemoryRouter>
+        <PdfLibrary
+          sources={[pdf('first'), pdf('second')]}
+          selectedSource={null}
+          isLoading={false}
+          listError={null}
+          contentUrl={null}
+          contentLoading={false}
+          contentError={null}
+          onSelectSource={onSelectSource}
+          onRetryList={vi.fn()}
+          onRetryContent={vi.fn()}
+          onDeleteSources={vi.fn()}
+          isDeleting={false}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Read and manage your uploaded PDF documents')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'My PDFs' })).toBeVisible();
+    expect(screen.getByRole('button', { name: /first\.pdf/ })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'PDF reader' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /first\.pdf/ }));
+    expect(onSelectSource).toHaveBeenCalledWith('first');
+  });
+
+  it('confirms and deletes selected PDFs through the supplied command', async () => {
+    const user = userEvent.setup();
+    const onDeleteSources = vi.fn(async () => true);
+    render(
+      <MemoryRouter>
+        <PdfLibrary
+          sources={[pdf('first'), pdf('second')]}
+          selectedSource={null}
+          isLoading={false}
+          listError={null}
+          contentUrl={null}
+          contentLoading={false}
+          contentError={null}
+          onSelectSource={vi.fn()}
+          onRetryList={vi.fn()}
+          onRetryContent={vi.fn()}
+          onDeleteSources={onDeleteSources}
+          isDeleting={false}
+        />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Select' }));
+    await user.click(screen.getByRole('button', { name: /first\.pdf/ }));
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('delete this file');
+    await user.click(screen.getByRole('button', { name: 'Delete selected files' }));
+    expect(onDeleteSources).toHaveBeenCalledWith(['first']);
   });
 
   it('provides page and zoom controls around the browser PDF viewer', async () => {
@@ -71,7 +129,7 @@ describe('PdfLibrary', () => {
 
     await user.click(screen.getByRole('button', { name: 'Next page' }));
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
-    expect(screen.getByLabelText('Current page')).toHaveValue(2);
+    expect(screen.getByText('Page 2 / 8')).toBeVisible();
     expect(screen.getByTitle('Preview: first.pdf')).toHaveAttribute(
       'src',
       'blob:pdf#page=2&zoom=125'
@@ -97,7 +155,7 @@ describe('PdfLibrary', () => {
     );
 
     expect(screen.getByText('Your Library is empty')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Manage documents' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Go to Documents' })).toHaveAttribute(
       'href',
       '/settings/documents'
     );
