@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import {
   CODING_DATABASE_UNAVAILABLE,
@@ -16,7 +17,8 @@ import type { ICodingExecutionJobData, TCodingExecutionResult } from './coding-e
 export class CodingExecutionService {
   constructor(
     private readonly postgres: PrismaPostgresqlService,
-    @InjectPinoLogger(CodingExecutionService.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(CodingExecutionService.name) private readonly logger: PinoLogger,
+    private readonly config: ConfigService
   ) {}
 
   async markRunning(executionId: string): Promise<TCodingExecutionResult | null> {
@@ -104,16 +106,12 @@ export class CodingExecutionService {
   async findQueuedForDispatch(limit = 100): Promise<ICodingExecutionJobData[]> {
     try {
       const worker = this.workerDatabase();
-      let queued: Array<{ execution_id: string }>;
-      try {
-        queued = await worker.$queryRaw<Array<{ execution_id: string }>>`
+      const usesRestrictedWorkerRole = Boolean(this.config.get<string>('POSTGRESQL_WORKER_URL'));
+      const queued = usesRestrictedWorkerRole
+        ? await worker.$queryRaw<Array<{ execution_id: string }>>`
           SELECT execution_id FROM public.prepai_list_queued_coding_execution_ids(${limit}::integer)
-        `;
-      } catch (error) {
-        if (!this.isUndefinedDatabaseFunction(error)) throw error;
-        // Local compose uses the schema-owner connection and does not apply the
-        // production RLS helper functions. Keep the same atomic claim semantics.
-        queued = await worker.$queryRaw<Array<{ execution_id: string }>>`
+        `
+        : await worker.$queryRaw<Array<{ execution_id: string }>>`
           WITH candidates AS (
             SELECT id FROM public."CodingExecution"
             WHERE status = 'queued'
@@ -128,7 +126,6 @@ export class CodingExecutionService {
           WHERE execution.id = candidates.id
           RETURNING execution.id AS execution_id
         `;
-      }
       return await Promise.all(
         queued.map(({ execution_id }) => this.loadPersistedJobData(execution_id))
       );
@@ -249,14 +246,11 @@ export class CodingExecutionService {
   ): Promise<T> {
     const worker = this.workerDatabase();
     let owner: { owner_id: string; session_id: string } | undefined;
-    try {
+    if (this.config.get<string>('POSTGRESQL_WORKER_URL')) {
       [owner] = await worker.$queryRaw<
         Array<{ owner_id: string; session_id: string }>
       >`SELECT owner_id, session_id FROM public.prepai_get_coding_execution_owner(${executionId})`;
-    } catch (error) {
-      if (!this.isUndefinedDatabaseFunction(error)) throw error;
-      // Resolve outside the tenant transaction so a missing function cannot
-      // abort that transaction before the local schema-owner fallback runs.
+    } else {
       const execution = await worker.codingExecution.findUnique({
         where: { id: executionId },
         select: { userId: true, sessionId: true },
@@ -277,15 +271,6 @@ export class CodingExecutionService {
     if (!this.postgres.workerClient_)
       throw new ServiceUnavailableException(CODING_DATABASE_UNAVAILABLE);
     return this.postgres.workerClient_ as PostgresPrismaClient;
-  }
-
-  private isUndefinedDatabaseFunction(error: unknown): boolean {
-    if (typeof error !== 'object' || error === null) return false;
-    const candidate = error as { code?: string; meta?: { code?: string; message?: string } };
-    return (
-      candidate.meta?.code === '42883' ||
-      (candidate.code === 'P2010' && candidate.meta?.message?.includes('does not exist') === true)
-    );
   }
 
   private databaseError(error: unknown) {

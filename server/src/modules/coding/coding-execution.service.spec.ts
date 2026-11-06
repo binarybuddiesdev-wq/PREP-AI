@@ -1,4 +1,5 @@
 import { ConflictException, ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaPostgresqlService } from '@/prisma/prisma.service.js';
@@ -28,6 +29,7 @@ describe('CodingExecutionService', () => {
     warn: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
   };
+  let config: { get: ReturnType<typeof vi.fn> };
 
   const jobData: ICodingExecutionJobData = {
     idempotencyKey: 'execution-001',
@@ -106,11 +108,13 @@ describe('CodingExecutionService', () => {
       setWorkerSessionContext: vi.fn(),
     };
     logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    config = { get: vi.fn().mockReturnValue('postgresql://worker@localhost/prepai') };
 
     const module = await Test.createTestingModule({
       providers: [
         CodingExecutionService,
         { provide: PrismaPostgresqlService, useValue: postgres },
+        { provide: ConfigService, useValue: config },
         { provide: 'PinoLogger:CodingExecutionService', useValue: logger },
       ],
     }).compile();
@@ -189,29 +193,26 @@ describe('CodingExecutionService', () => {
     expect((pg as unknown as { $queryRaw: ReturnType<typeof vi.fn> }).$queryRaw).toHaveBeenCalled();
   });
 
-  it('claims queued executions locally when the optional production helper is not installed', async () => {
-    const undefinedFunction = Object.assign(new Error('function does not exist'), {
-      code: 'P2010',
-      meta: { code: '42883', message: 'function does not exist' },
-    });
-    pg.$queryRaw
-      .mockRejectedValueOnce(undefinedFunction)
-      .mockResolvedValueOnce([{ execution_id: jobData.executionId }]);
+  it('uses the local queue query without probing missing production helpers', async () => {
+    config.get.mockReturnValue(undefined);
+    pg.$queryRaw.mockResolvedValueOnce([{ execution_id: jobData.executionId }]);
 
     await expect(service.findQueuedForDispatch()).resolves.toEqual([
       { ...jobData, idempotencyKey: jobData.executionId, quotaReservation: null },
     ]);
-    expect(pg.$queryRaw).toHaveBeenCalledTimes(3);
+    expect(pg.$queryRaw).toHaveBeenCalledOnce();
+    expect(pg.$queryRaw.mock.calls[0]?.[0]?.join('')).toContain('WITH candidates');
+    expect(pg.codingExecution.findUnique).toHaveBeenCalledWith({
+      where: { id: jobData.executionId },
+      select: { userId: true, sessionId: true },
+    });
   });
 
-  it('loads execution ownership locally when the optional production helper is not installed', async () => {
-    const undefinedFunction = Object.assign(new Error('function does not exist'), {
-      code: 'P2010',
-      meta: { code: '42883', message: 'function does not exist' },
-    });
-    pg.$queryRaw.mockRejectedValueOnce(undefinedFunction);
+  it('loads execution ownership locally without probing the optional helper', async () => {
+    config.get.mockReturnValue(undefined);
 
     await expect(service.markRunning(jobData.executionId)).resolves.toBeNull();
+    expect(pg.$queryRaw).not.toHaveBeenCalled();
     expect(pg.codingExecution.findUnique).toHaveBeenCalledWith({
       where: { id: jobData.executionId },
       select: { userId: true, sessionId: true },

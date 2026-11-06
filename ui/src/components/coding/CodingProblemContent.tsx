@@ -12,24 +12,36 @@ const formatExampleValue = (value: unknown) => {
   return serialized ?? String(value);
 };
 
-const formatExampleContent = (example: ICodingProblemExample) =>
-  [
-    `Input: ${formatExampleValue(example.input)}`,
-    `Output: ${formatExampleValue(example.output)}`,
-    ...(example.explanation ? [`Explanation: ${example.explanation}`] : []),
-  ].join('\n');
-
 const Example = (props: { example: ICodingProblemExample; index: number }) => {
   const { example, index } = props;
 
   return (
-    <figure className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3.5 sm:p-4">
-      <figcaption className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--accent-strong)]">
+    <figure
+      aria-label={`Example ${index + 1}`}
+      className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3"
+    >
+      <figcaption className="mb-2 text-xs font-semibold text-[var(--text-h)]">
         Example {index + 1}
       </figcaption>
-      <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs leading-[1.6] text-[var(--dim)]">
-        {formatExampleContent(example)}
-      </pre>
+      <dl className="space-y-2">
+        <div className="grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2">
+          <dt className="pt-1 text-[11px] font-medium text-[var(--dim)]">Input</dt>
+          <dd className="min-w-0 overflow-x-auto rounded-md bg-[var(--surface)] px-2.5 py-1.5 font-mono text-xs leading-5 text-[var(--text)]">
+            {formatExampleValue(example.input)}
+          </dd>
+        </div>
+        <div className="grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2">
+          <dt className="pt-1 text-[11px] font-medium text-[var(--dim)]">Output</dt>
+          <dd className="min-w-0 overflow-x-auto rounded-md bg-[var(--surface)] px-2.5 py-1.5 font-mono text-xs leading-5 text-[var(--text)]">
+            {formatExampleValue(example.output)}
+          </dd>
+        </div>
+      </dl>
+      {example.explanation ? (
+        <p className="mt-2 border-t border-[var(--border)] pt-2 text-xs leading-5 text-[var(--dim)]">
+          {example.explanation}
+        </p>
+      ) : null}
     </figure>
   );
 };

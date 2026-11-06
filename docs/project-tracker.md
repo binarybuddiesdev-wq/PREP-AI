@@ -132,6 +132,9 @@ links to session details. See the
       feedback details; implement CSV export only from actual returned data.
 - [x] Use role-supported question counts; do not expose unsupported time-limit
       or hint settings.
+- [x] Show remaining daily practice sessions from the authenticated stats API;
+      retry usage errors, prevent a known exhausted start, and refresh usage
+      after each start attempt.
 
 ### Phase 4 — PDF documents, library, and PDF Study
 
@@ -305,6 +308,8 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move theory Practice setup, question, feedback, completion, and route
       error states onto the shared theme tokens; full-route parity remains open
       until all screens are checked.
+- [x] Add the themed Practice usage banner with server-owned remaining-session
+      counts, retry state, and exhausted-limit messaging.
 - [x] Move the compact onboarding wizard and shared select menu onto theme
       tokens; restore persisted theme and verify both themes, keyboard focus,
       and a 390 px viewport.
@@ -338,7 +343,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 538 UI unit tests (123 files) pass; UI
+**Latest evidence (2026-11-06):** All 554 UI unit tests (125 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -422,6 +427,24 @@ failed before the badge and page labels were added, then passed. Chromium
 previews at 1440 px and 390 px had no horizontal overflow. The full UI suite
 passes at 123 files / 538 tests; UI lint, type-check, and production build pass.
 Root lint and repo-wide formatting still report unrelated or user-owned files.
+
+Coding examples now render input/output as labeled, compact values, and running
+or submitting switches the results panel to the per-test-case view. The local
+coding worker skips production-only PostgreSQL helper functions when no
+restricted worker URL is configured, preventing its local transaction from
+being aborted before execution. UI and server suites pass; direct Piston
+execution and responsive Two Sum browser checks pass. A signed-in browser
+click-through remains to be confirmed.
+
+Practice setup now shows remaining daily sessions from the authenticated theory
+stats query. It presents loading, retryable error, remaining, and reached-limit
+states; Start is disabled only when the server has reported an exhausted quota.
+Session-start attempts invalidate the user-scoped stats cache without blocking
+the session start. Tests first failed for missing display and invalidation, then
+passed. Chromium desktop and 390 px mobile previews had no horizontal overflow.
+The full UI suite passes at 125 files / 550 tests; UI lint, type-check, and
+production build pass. Root lint and repository-wide formatting remain red on
+unrelated or user-owned files.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

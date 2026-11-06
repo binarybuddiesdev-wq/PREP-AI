@@ -2,6 +2,7 @@ import { BarChart3, FileText, RotateCw, Zap } from 'lucide-react';
 
 import type { TheoryDifficulty } from '@/core';
 import { SelectField } from '@/components/form';
+import { PracticeQuotaBanner } from './PracticeQuotaBanner';
 import type { IPracticeSetupProps, PracticeMode } from './PracticeSetup.types';
 
 const MODES: Array<{
@@ -42,6 +43,11 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
     difficulty,
     totalQuestions,
     isPremium,
+    dailySessions,
+    isDailySessionsLoading,
+    isDailySessionsFetching,
+    dailySessionsError,
+    onRetryDailySessions,
     topics,
     weakAreas,
     pdfSources,
@@ -71,8 +77,10 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
     selectedPdfIds.length >= 1 &&
     selectedPdfIds.length <= 5 &&
     selectedPdfIds.every((id) => validPdfIds.has(id));
+  const isDailyQuotaReached = dailySessions !== null && dailySessions.used >= dailySessions.limit;
   const cannotStart =
     isStarting ||
+    isDailyQuotaReached ||
     (mode === 'topic'
       ? isTopicsLoading || Boolean(topicsError) || topics.length === 0 || !topicId
       : mode === 'weak'
@@ -88,6 +96,14 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
           Choose a practice mode and set the focus for your next session.
         </p>
       </header>
+
+      <PracticeQuotaBanner
+        dailySessions={dailySessions}
+        isLoading={isDailySessionsLoading}
+        isRetrying={isDailySessionsFetching}
+        errorMessage={dailySessionsError}
+        onRetry={onRetryDailySessions}
+      />
 
       <section aria-label="Practice mode" className="grid gap-3 sm:grid-cols-3">
         {MODES.map(({ value, label, description, icon: Icon }) => {

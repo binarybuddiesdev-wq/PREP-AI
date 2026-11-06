@@ -102,6 +102,27 @@ describe('useCodingExecutionReader', () => {
     expect(typeof interval === 'function' ? interval(query as never) : interval).toBe(expected);
   });
 
+  it('keeps reading a queued execution until the worker returns its result', async () => {
+    vi.mocked(getCodingExecution)
+      .mockResolvedValueOnce(envelope(execution('queued')))
+      .mockResolvedValueOnce(envelope(execution('completed')));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(() => useCodingExecutionReader('session-one', 'execution-one'), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.data?.status).toBe('queued'));
+    await waitFor(() => expect(result.current.data?.status).toBe('completed'), { timeout: 4000 });
+
+    expect(getCodingExecution).toHaveBeenCalledTimes(2);
+    expect(result.current.data?.result?.testCases[0]).toMatchObject({
+      input: [1],
+      expected: 1,
+      got: 1,
+      passed: true,
+    });
+  });
+
   it.each([
     ['queued', 1500],
     ['running', 1500],

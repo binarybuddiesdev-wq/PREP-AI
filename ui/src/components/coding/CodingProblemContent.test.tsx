@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import type { ICodingProblem } from '@/core';
@@ -29,29 +29,25 @@ describe('CodingProblemContent', () => {
     );
     expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface)]', 'text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toHaveClass('text-[var(--text-h)]');
-    const exampleContent = screen.getByText(
-      (_, element) => element?.tagName === 'PRE' && element.textContent?.includes('2 + 7 equals 9.')
-    );
-    expect(exampleContent.closest('figure')).toHaveClass(
-      'border-[var(--border)]',
-      'bg-[var(--bg)]'
-    );
+    const exampleContent = screen.getByRole('figure', { name: 'Example 1' });
+    expect(exampleContent).toHaveClass('border-[var(--border)]', 'bg-[var(--bg)]');
     expect(screen.getByText('Two values exist.').closest('ul')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText('Easy')).toBeInTheDocument();
     expect(screen.getByText('Arrays')).toBeInTheDocument();
     expect(screen.getByText(problem.description)).toBeInTheDocument();
-    expect(exampleContent).toHaveTextContent('Explanation: 2 + 7 equals 9.');
+    expect(exampleContent).toHaveTextContent('2 + 7 equals 9.');
     expect(screen.getByText('Two values exist.')).toBeInTheDocument();
   });
 
-  it('shows example input and output together in one readable code block', () => {
+  it('shows example input and output as separate readable values', () => {
     render(<CodingProblemContent problem={problem} />);
 
-    const exampleContent = screen.getByText((_, element) => element?.tagName === 'PRE');
-
-    expect(exampleContent.textContent).toBe(
-      'Input: [[2,7],9]\nOutput: [0,1]\nExplanation: 2 + 7 equals 9.'
-    );
+    const example = screen.getByRole('figure', { name: 'Example 1' });
+    expect(within(example).getByText('Input')).toBeInTheDocument();
+    expect(within(example).getByText('[[2,7],9]')).toHaveClass('font-mono');
+    expect(within(example).getByText('Output')).toBeInTheDocument();
+    expect(within(example).getByText('[0,1]')).toHaveClass('font-mono');
+    expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
   });
 });

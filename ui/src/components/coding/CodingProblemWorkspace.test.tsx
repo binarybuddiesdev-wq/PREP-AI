@@ -155,7 +155,7 @@ describe('CodingProblemWorkspace', () => {
   });
 
   it.each([
-    ['queued', 'Run queued…'],
+    ['queued', 'Run queued · waiting for a runner…'],
     ['running', 'Run is running…'],
   ] as const)('shows %s progress and prevents duplicate actions', (status, label) => {
     const props = createProps();
@@ -179,6 +179,32 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByRole('status')).toHaveTextContent(label);
     expect(screen.getByRole('button', { name: 'Run' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+  });
+
+  it('offers a fresh run after the worker reports an execution failure', async () => {
+    const user = userEvent.setup();
+    const props = createProps();
+    const execution: ICodingExecution = {
+      id: 'execution-one',
+      sessionId: 'session-one',
+      problemId: problem.id,
+      operation: 'run',
+      language: 'javascript',
+      status: 'failed',
+      result: null,
+      failureMessage: 'The execution worker could not complete this run.',
+      createdAt: '2026-11-05T10:00:00.000Z',
+      startedAt: null,
+      completedAt: '2026-11-05T10:00:02.000Z',
+      answer: null,
+    };
+    render(<CodingProblemWorkspace {...props} execution={execution} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The execution worker could not complete this run.'
+    );
+    await user.click(screen.getByRole('button', { name: 'Run again' }));
+    expect(props.onRun).toHaveBeenCalledOnce();
   });
 
   it('shows completed verdict and actual per-test values in the Test cases tab', async () => {
@@ -221,6 +247,15 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByText('Passed')).toHaveClass('text-[var(--success-strong)]');
     expect(screen.getByText('Failed')).toHaveClass('text-[var(--danger-strong)]');
     expect(screen.getByText('[1,0]')).toBeInTheDocument();
+  });
+
+  it('gives test results enough space to read at a glance', () => {
+    render(<CodingProblemWorkspace {...createProps()} />);
+
+    expect(screen.getByRole('region', { name: 'Run results' })).toHaveClass(
+      'min-h-[180px]',
+      'max-h-[38vh]'
+    );
   });
 
   it('shows request errors and retries the same action on request', async () => {

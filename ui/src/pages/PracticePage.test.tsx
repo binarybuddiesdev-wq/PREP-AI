@@ -8,15 +8,18 @@ import type { IPdfSource } from '@/core';
 import { PracticePage } from './PracticePage';
 
 const mocks = vi.hoisted(() => ({
+  getHttpStatus: vi.fn(),
   useSessionReader: vi.fn(),
   useUserReader: vi.fn(),
   useTheoryPracticeReader: vi.fn(),
+  useTheoryStatsReader: vi.fn(),
   usePdfSourcesReader: vi.fn(),
   useTheoryPracticeSession: vi.fn(),
   startPractice: vi.fn(),
 }));
 
 vi.mock('@/logic', () => ({
+  getHttpStatus: mocks.getHttpStatus,
   getPracticePolicy: (role: string) => {
     const isPremium = role === 'PREMIUM' || role === 'ADMIN';
     return { isPremium, totalQuestions: isPremium ? 30 : 10 };
@@ -24,6 +27,7 @@ vi.mock('@/logic', () => ({
   useSessionReader: mocks.useSessionReader,
   useUserReader: mocks.useUserReader,
   useTheoryPracticeReader: mocks.useTheoryPracticeReader,
+  useTheoryStatsReader: mocks.useTheoryStatsReader,
   usePdfSourcesReader: mocks.usePdfSourcesReader,
   useTheoryPracticeSession: mocks.useTheoryPracticeSession,
 }));
@@ -84,6 +88,13 @@ describe('PracticePage', () => {
       topicsQuery: { data: [topic], isPending: false, isError: false, refetch: vi.fn() },
       weakAreasQuery: { data: [weakArea], isPending: false, isError: false, refetch: vi.fn() },
     });
+    mocks.useTheoryStatsReader.mockReturnValue({
+      data: { dailySessions: { used: 0, limit: 3 }, questionsPerSession: 10 },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
     mocks.usePdfSourcesReader.mockReturnValue({
       data: [pdfSource],
       isPending: false,
@@ -129,6 +140,76 @@ describe('PracticePage', () => {
     renderPracticePage('/practice?topicId=topic-react');
 
     expect(screen.getByRole('combobox', { name: 'Practice topic' })).toHaveTextContent('React');
+  });
+
+  it('shows server-owned remaining practice sessions and retries a failed usage read', async () => {
+    const userEventInstance = userEvent.setup();
+    const refetch = vi.fn();
+    mocks.useTheoryStatsReader.mockReturnValue({
+      data: { dailySessions: { used: 2, limit: 3 }, questionsPerSession: 10 },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      refetch,
+    });
+
+    const { rerender } = renderPracticePage();
+    expect(screen.getByRole('status')).toHaveTextContent('1 of 3 sessions left today');
+
+    mocks.useTheoryStatsReader.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      isFetching: false,
+      error: new Error('Practice usage is temporarily unavailable.'),
+      refetch,
+    });
+    rerender(
+      <MemoryRouter>
+        <PracticePage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Practice usage is temporarily unavailable.'
+    );
+    await userEventInstance.click(screen.getByRole('button', { name: 'Retry usage' }));
+    expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it('explains an expired session without offering a blind quota retry', () => {
+    const refetch = vi.fn();
+    mocks.getHttpStatus.mockReturnValue(401);
+    mocks.useTheoryStatsReader.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      isFetching: false,
+      error: new Error('Unauthorized'),
+      refetch,
+    });
+
+    renderPracticePage();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Your session has expired. Refresh the page and sign in again.'
+    );
+    expect(screen.queryByRole('button', { name: /retry usage/i })).not.toBeInTheDocument();
+  });
+
+  it('hides setup quota usage while a practice session is active', () => {
+    mocks.useTheoryPracticeSession.mockReturnValue({
+      session: { id: 'session-one', mode: 'topic' },
+      phase: 'loading',
+      isStarting: false,
+      startError: null,
+      start: mocks.startPractice,
+    });
+
+    renderPracticePage();
+
+    expect(screen.getByRole('status')).toHaveTextContent(/loading your questions/i);
+    expect(screen.queryByText(/sessions left today/i)).not.toBeInTheDocument();
   });
 
   it('keeps practice setup available with free-tier limits when the profile cannot load', async () => {

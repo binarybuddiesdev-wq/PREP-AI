@@ -60,6 +60,11 @@ const createProps = (overrides: Partial<IPracticeSetupProps> = {}): IPracticeSet
   difficulty: 'Mid',
   totalQuestions: 10,
   isPremium: false,
+  dailySessions: null,
+  isDailySessionsLoading: false,
+  isDailySessionsFetching: false,
+  dailySessionsError: null,
+  onRetryDailySessions: vi.fn(),
   topics,
   weakAreas,
   pdfSources,
@@ -126,6 +131,43 @@ describe('PracticeSetup', () => {
     expect(screen.getByText('1 of 5 selected')).toBeVisible();
     await user.click(screen.getByRole('checkbox', { name: /System design.pdf/ }));
     expect(onPdfSelectionChange).toHaveBeenLastCalledWith(['pdf-one', 'pdf-two']);
+  });
+
+  it('disables starting when the server reports that the daily limit is reached', () => {
+    render(
+      <PracticeSetup
+        {...createProps({
+          topicId: 'topic-react',
+          dailySessions: { used: 3, limit: 3 },
+        })}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /start practice/i })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(/daily practice limit reached/i);
+  });
+
+  it('keeps starting available when practice usage is unknown', () => {
+    render(<PracticeSetup {...createProps({ topicId: 'topic-react', dailySessions: null })} />);
+
+    expect(screen.getByRole('button', { name: /start practice/i })).toBeEnabled();
+  });
+
+  it('keeps starting available when the usage request failed', () => {
+    render(
+      <PracticeSetup
+        {...createProps({
+          topicId: 'topic-react',
+          dailySessions: null,
+          dailySessionsError: 'Practice usage is temporarily unavailable.',
+        })}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /start practice/i })).toBeEnabled();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Practice usage is temporarily unavailable.'
+    );
   });
 
   it('allows choosing a difficulty for PDF study', async () => {

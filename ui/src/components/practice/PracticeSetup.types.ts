@@ -1,4 +1,10 @@
-import type { IPdfSource, IPracticeTopic, ITheoryWeakArea, TheoryDifficulty } from '@/core';
+import type {
+  IPdfSource,
+  IPracticeTopic,
+  ITheoryStats,
+  ITheoryWeakArea,
+  TheoryDifficulty,
+} from '@/core';
 
 export type PracticeMode = 'topic' | 'weak' | 'pdf';
 
@@ -8,6 +14,11 @@ export interface IPracticeSetupProps {
   difficulty: TheoryDifficulty;
   totalQuestions: number;
   isPremium: boolean;
+  dailySessions: ITheoryStats['dailySessions'] | null;
+  isDailySessionsLoading: boolean;
+  isDailySessionsFetching: boolean;
+  dailySessionsError: string | null;
+  onRetryDailySessions: (() => void) | null;
   topics: IPracticeTopic[];
   weakAreas: ITheoryWeakArea[];
   pdfSources: IPdfSource[];

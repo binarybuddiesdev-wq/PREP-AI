@@ -159,7 +159,7 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
       });
       setSessionId(acceptedExecution.sessionId);
       setExecutionId(acceptedExecution.id);
-      setOutputTab(attempt.operation === 'submit' ? 'testcases' : 'output');
+      setOutputTab('testcases');
       attemptRef.current = null;
     } catch (error: unknown) {
       setActionError({

@@ -213,6 +213,10 @@ describe('coding pages', () => {
       idempotencyKey: executionIdempotencyKey,
     });
     expect(queries.readExecution).toHaveBeenLastCalledWith('session-one', 'execution-one');
+    expect(screen.getByRole('tab', { name: 'Test cases' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
   });
 
   it('retries the exact failed submission with the original code and idempotency key', async () => {

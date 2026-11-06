@@ -1001,3 +1001,35 @@ New layout, one folder per purpose. A layer may import only from the layers list
   overflow. The full UI suite passes (123 files / 538 tests), with UI lint,
   type-check, and production build also passing. Root lint and repository-wide
   formatting still fail on unrelated or user-owned files.
+
+## 2026-11-06 - Show server-owned practice session usage
+
+- Added the Practice setup usage banner backed by `useTheoryStatsReader`, with
+  loading, remaining, exhausted, and retryable error states. Start is disabled
+  only when the returned server count confirms the daily quota is exhausted.
+- The session-start command now invalidates the current user's usage query on
+  success or failure without waiting for a refetch, so session start is not
+  delayed and setup refreshes its count when shown again.
+- Added DOM coverage for the banner and start behavior, page wiring, and query
+  invalidation. The focused tests failed before implementation, then passed.
+  The Practice theme Playwright check passed; direct Chromium desktop and 390 px
+  mobile previews had no horizontal overflow.
+- Verification: 125 UI test files / 554 tests pass, as do UI lint, type-check,
+  production build, scoped formatting, and `git diff --check`. Root lint and
+  repository-wide formatting remain red on unrelated or user-owned files.
+
+## 2026-11-06 - Improve coding examples and execution results
+
+- Render coding examples as compact, labeled Input and Output values with
+  explanations separated from the values. After Run or Submit, open Test cases
+  so each case shows its input, expected output, and actual result.
+- Keep queued executions visibly pending, bound the results panel height, and
+  show a retry action when an execution reaches a terminal error.
+- Fixed the local worker database path: when `POSTGRESQL_WORKER_URL` is absent,
+  it now uses local PostgreSQL queries directly instead of calling production
+  helper functions and continuing on a transaction that PostgreSQL has aborted.
+  Production continues using the restricted worker role and its helper funcs.
+- Verification: 125 UI test files / 554 tests pass, 108 server test files /
+  1,078 tests pass, server build, UI lint/build, scoped formatting, and the
+  responsive Two Sum Playwright check pass. Piston accepted a direct Two Sum
+  JavaScript run. A signed-in browser click-through was unavailable here.

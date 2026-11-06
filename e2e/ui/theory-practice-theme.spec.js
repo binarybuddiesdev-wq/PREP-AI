@@ -102,6 +102,11 @@ test('renders theory practice setup, question, feedback, and completion in both 
           difficulty: 'Mid',
           totalQuestions: 10,
           isPremium: false,
+          dailySessions: { used: 1, limit: 3 },
+          isDailySessionsLoading: false,
+          isDailySessionsFetching: false,
+          dailySessionsError: null,
+          onRetryDailySessions: () => {},
           topics: [topic],
           weakAreas: [],
           pdfSources: [],
@@ -186,6 +191,9 @@ test('renders theory practice setup, question, feedback, and completion in both 
     const completeCard = page.locator('#practice-complete main');
     const evaluationError = page.getByText('Evaluation could not be refreshed.', { exact: true });
     await expect(setupCard).toBeVisible();
+    await expect(page.locator('#practice-setup').getByRole('status')).toContainText(
+      '2 of 3 sessions left today'
+    );
     await expect(questionCard).toBeVisible();
     await expect(feedbackCard).toBeVisible();
     await expect(completeCard).toBeVisible();

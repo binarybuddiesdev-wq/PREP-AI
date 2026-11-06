@@ -11,11 +11,13 @@ import {
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
 import { ROUTES, type IStartTheorySessionBody, type TheoryDifficulty } from '@/core';
 import {
+  getHttpStatus,
   getPracticePolicy,
   usePdfSourcesReader,
   useSessionReader,
   useTheoryPracticeReader,
   useTheoryPracticeSession,
+  useTheoryStatsReader,
   useUserReader,
 } from '@/logic';
 
@@ -28,6 +30,9 @@ export const PracticePage = () => {
   const { topicsQuery, weakAreasQuery } = useTheoryPracticeReader();
   const pdfSourcesQuery = usePdfSourcesReader();
   const practice = useTheoryPracticeSession();
+  const theoryStatsQuery = useTheoryStatsReader(!practice.session && !practice.completedSession);
+  const isTheoryStatsAuthExpired =
+    theoryStatsQuery.isError && getHttpStatus(theoryStatsQuery.error) === 401;
   const [mode, setMode] = useState<PracticeMode>('topic');
   const [topicId, setTopicId] = useState('');
   const [difficulty, setDifficulty] = useState<TheoryDifficulty>('Mid');
@@ -278,6 +283,19 @@ export const PracticePage = () => {
         difficulty={difficulty}
         totalQuestions={totalQuestions}
         isPremium={isPremium}
+        dailySessions={theoryStatsQuery.data?.dailySessions ?? null}
+        isDailySessionsLoading={theoryStatsQuery.isPending}
+        isDailySessionsFetching={theoryStatsQuery.isFetching}
+        dailySessionsError={
+          theoryStatsQuery.isError
+            ? isTheoryStatsAuthExpired
+              ? 'Your session has expired. Refresh the page and sign in again.'
+              : (theoryStatsQuery.error?.message ?? 'Practice usage could not be loaded.')
+            : null
+        }
+        onRetryDailySessions={
+          isTheoryStatsAuthExpired ? null : () => void theoryStatsQuery.refetch()
+        }
         topics={topicsQuery.data ?? []}
         weakAreas={weakAreasQuery.data ?? []}
         pdfSources={pdfSourcesQuery.data ?? []}

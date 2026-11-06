@@ -286,7 +286,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
 
           {!isFullscreen ? (
             <section
-              className="flex h-[142px] shrink-0 flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]"
+              className="flex min-h-[180px] max-h-[38vh] shrink-0 flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]"
               aria-label="Run results"
             >
               <div
@@ -349,16 +349,30 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                 ) : execution?.status === 'queued' || execution?.status === 'running' ? (
                   <p role="status" className="inline-flex items-center gap-2 text-[var(--dim)]">
                     <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
-                    {executionActionLabel(execution.operation)}{' '}
-                    {execution.status === 'queued' ? 'queued…' : 'is running…'}
+                    <span>
+                      {executionActionLabel(execution.operation)}{' '}
+                      {execution.status === 'queued'
+                        ? 'queued · waiting for a runner…'
+                        : 'is running…'}
+                    </span>
                   </p>
                 ) : execution?.status === 'failed' ? (
                   <div
                     role="alert"
-                    className="inline-flex items-center gap-2 text-[var(--danger-strong)]"
+                    className="flex h-full flex-col items-center justify-center gap-2"
                   >
-                    <CircleX aria-hidden="true" className="size-4 shrink-0" />
-                    {execution.failureMessage || 'The code execution could not be completed.'}
+                    <p className="inline-flex items-center gap-2 text-center text-[var(--danger-strong)]">
+                      <CircleX aria-hidden="true" className="size-4 shrink-0" />
+                      {execution.failureMessage || 'The code execution could not be completed.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={execution.operation === 'run' ? onRun : onSubmit}
+                      className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[var(--border2)] px-2.5 text-xs font-medium text-[var(--text)] transition hover:bg-[var(--surface2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                    >
+                      <RotateCcw aria-hidden="true" className="size-3" />
+                      {executionActionLabel(execution.operation)} again
+                    </button>
                   </div>
                 ) : execution?.status === 'completed' ? (
                   execution.result ? (
