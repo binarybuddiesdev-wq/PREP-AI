@@ -1033,3 +1033,20 @@ New layout, one folder per purpose. A layer may import only from the layers list
   1,078 tests pass, server build, UI lint/build, scoped formatting, and the
   responsive Two Sum Playwright check pass. Piston accepted a direct Two Sum
   JavaScript run. A signed-in browser click-through was unavailable here.
+
+## 2026-11-06 - Theme editable Settings surfaces
+
+- Replaced fixed dark colors in the Settings form card, profile, notifications,
+  practice preferences, tab list, text inputs, and checkbox with existing app
+  theme tokens. Kept the API-backed form and keyboard tab behavior unchanged.
+- Added DOM checks for both save-status colors and tokenized controls. The new
+  cases first failed against fixed colors, then passed after the token change.
+- Chromium toggled the app's actual theme while the Settings form stayed
+  mounted; card, fields, selected tab, identity text, and save status changed
+  colors. Notifications and Practice Preferences remained usable, and the
+  surface had no horizontal overflow at 320, 390, 768, or 1440 px.
+- Verification: 125 UI test files / 556 tests pass; UI lint, project
+  type-check, production build, focused Playwright, scoped Prettier, and
+  `git diff --check` pass. Root lint and repository formatting still fail on
+  unrelated or user-owned files.
+- Read-only UI architecture and general correctness reviews found no findings.

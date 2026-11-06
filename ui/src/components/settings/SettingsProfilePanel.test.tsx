@@ -31,6 +31,14 @@ describe('SettingsProfilePanel', () => {
     expect(screen.getByText('Asha Rao')).toBeInTheDocument();
     expect(screen.getByText('asha@example.com')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Target companies' })).toHaveValue('Google, Stripe');
+    expect(screen.getByText('Asha Rao')).toHaveClass('text-[var(--text)]');
+    expect(screen.getByText('Name')).toHaveClass('text-[var(--dim)]');
+    expect(screen.getByRole('textbox', { name: 'Target companies' })).toHaveClass(
+      'border-[var(--border2)]',
+      'bg-[var(--bg2)]',
+      'text-[var(--text)]',
+      'placeholder:text-[var(--faint)]'
+    );
   });
 
   it('reports target company edits', async () => {

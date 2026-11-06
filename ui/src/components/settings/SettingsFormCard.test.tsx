@@ -59,11 +59,31 @@ describe('SettingsFormCard', () => {
 
     const tabHeader = screen.getByRole('tablist').closest('header');
     const saveFooter = screen.getByRole('button', { name: 'Save settings' }).closest('footer');
+    const formCard = screen.getByRole('tablist').closest('section');
+    const activeTab = screen.getByRole('tab', { name: 'Profile' });
+    const inactiveTab = screen.getByRole('tab', { name: 'Notifications' });
 
     expect(tabHeader).toHaveClass('border-[var(--border)]');
     expect(saveFooter).toHaveClass('border-[var(--border)]');
+    expect(formCard).toHaveClass(
+      'border-[var(--border)]',
+      'bg-[var(--card)]',
+      'text-[var(--text)]'
+    );
+    expect(activeTab).toHaveClass('border-[var(--accent)]', 'text-[var(--accent-strong)]');
+    expect(inactiveTab).toHaveClass('text-[var(--dim)]', 'hover:text-[var(--text)]');
     expect(tabHeader).not.toHaveClass('border-white/[0.08]');
     expect(saveFooter).not.toHaveClass('border-white/[0.08]');
+  });
+
+  it('uses a theme-aware success color for saved feedback', () => {
+    renderCard({ status: { kind: 'success', message: 'Settings saved' } });
+    expect(screen.getByRole('status')).toHaveClass('text-[var(--success-strong)]');
+  });
+
+  it('uses a theme-aware error color for failed feedback', () => {
+    renderCard({ status: { kind: 'error', message: 'Save failed' } });
+    expect(screen.getByRole('alert')).toHaveClass('text-[var(--danger-strong)]');
   });
 
   it('switches panels accessibly and edits supported practice preferences', async () => {

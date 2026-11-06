@@ -20,6 +20,15 @@ describe('SettingsNotificationsPanel', () => {
     render(<SettingsNotificationsPanel values={values} isSaving onChange={vi.fn()} />);
 
     expect(screen.getByRole('checkbox', { name: 'Daily practice reminder' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Daily practice reminder' })).toHaveClass(
+      'border-[var(--border2)]',
+      'bg-[var(--bg2)]',
+      'accent-[var(--accent)]'
+    );
+    expect(screen.getByText('Get one email reminder at your chosen local time.')).toHaveClass(
+      'text-[var(--dim)]'
+    );
+    expect(screen.getByText('Reminder time')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByLabelText('Reminder time')).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Time zone' })).toBeDisabled();
   });

@@ -11,9 +11,9 @@ export const CheckboxField = (props: ICheckboxFieldProps) => {
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4 rounded border-white/20 bg-[#09090b] text-amber-500 focus:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-4 w-4 rounded border-[var(--border2)] bg-[var(--bg2)] accent-[var(--accent)] focus:ring-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       />
-      <label htmlFor={id} className="text-sm text-zinc-300">
+      <label htmlFor={id} className="text-sm text-[var(--text)]">
         {label}
       </label>
     </div>

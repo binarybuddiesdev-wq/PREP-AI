@@ -23,6 +23,12 @@ describe('SettingsPracticePreferencesPanel', () => {
 
     const unselectedTopic = screen.getByRole('button', { name: 'Node.js' });
 
+    expect(screen.getByRole('heading', { name: 'Focus topics' })).toHaveClass(
+      'text-[var(--text-h)]'
+    );
+    expect(screen.getByText('Choose the topics you want to practice.')).toHaveClass(
+      'text-[var(--dim)]'
+    );
     expect(unselectedTopic).toHaveClass(
       'border-[var(--border)]',
       'bg-[var(--surface)]',

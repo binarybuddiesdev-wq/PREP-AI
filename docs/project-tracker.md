@@ -298,6 +298,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move Settings > Plan cards, usage metrics, billing errors, and plan
       selection controls onto the shared theme tokens; keep full-route parity
       open until the remaining screens are checked.
+- [x] Theme the Settings Profile, Notifications, and Practice Preferences card,
+      inputs, checkbox, tabs, text, and save feedback; verify both themes and
+      320/390/768/1440 px layouts.
 - [x] Move Practice and Coding Session History tables, expanded details,
       loading/error/empty states, pagination, and CSV controls onto the shared
       theme tokens; keep the separate theory detail route in the full-route
@@ -343,7 +346,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 554 UI unit tests (125 files) pass; UI
+**Latest evidence (2026-11-06):** All 556 UI unit tests (125 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -435,6 +438,17 @@ restricted worker URL is configured, preventing its local transaction from
 being aborted before execution. UI and server suites pass; direct Piston
 execution and responsive Two Sum browser checks pass. A signed-in browser
 click-through remains to be confirmed.
+
+Settings Profile, Notifications, and Practice Preferences now render their
+editable card, fields, checkbox, tabs, and save feedback with the shared
+light/dark theme tokens. The browser check switched the live app theme while
+the form remained mounted, verified all tokenized colors, visited the editable
+tabs, and checked 320/390/768/1440 px widths with no horizontal overflow.
+Keyboard tab navigation and accessible labels remain covered by component
+tests. The full UI suite passes at 125 files / 556 tests; UI lint, project
+type-check, production build, focused Chromium check, scoped Prettier, and
+`git diff --check` pass. Repository-wide lint and formatting still report
+unrelated worktree files.
 
 Practice setup now shows remaining daily sessions from the authenticated theory
 stats query. It presents loading, retryable error, remaining, and reached-limit

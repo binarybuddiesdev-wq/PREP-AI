@@ -15,13 +15,13 @@ export const SettingsNotificationsPanel = (props: ISettingsNotificationsPanelPro
           disabled={isSaving}
           onChange={(dailyReminder) => onChange({ ...values, dailyReminder })}
         />
-        <p className="ml-7 mt-1 text-xs text-zinc-500">
+        <p className="ml-7 mt-1 text-xs text-[var(--dim)]">
           Get one email reminder at your chosen local time.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="space-y-1.5">
-          <span className="block text-[0.8rem] font-medium text-zinc-400">Reminder time</span>
+          <span className="block text-[0.8rem] font-medium text-[var(--dim)]">Reminder time</span>
           <input
             aria-label="Reminder time"
             className={SETTINGS_INPUT_CLASS_NAME}
@@ -32,7 +32,7 @@ export const SettingsNotificationsPanel = (props: ISettingsNotificationsPanelPro
           />
         </label>
         <label className="space-y-1.5">
-          <span className="block text-[0.8rem] font-medium text-zinc-400">Time zone</span>
+          <span className="block text-[0.8rem] font-medium text-[var(--dim)]">Time zone</span>
           <input
             aria-label="Time zone"
             autoComplete="off"

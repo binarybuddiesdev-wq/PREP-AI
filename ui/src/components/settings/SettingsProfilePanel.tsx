@@ -13,12 +13,12 @@ export const SettingsProfilePanel = (props: ISettingsProfilePanelProps) => {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <p className="text-xs font-medium text-zinc-500">Name</p>
-          <p className="mt-1 truncate text-sm text-zinc-200">{userName || 'Not set'}</p>
+          <p className="text-xs font-medium text-[var(--dim)]">Name</p>
+          <p className="mt-1 truncate text-sm text-[var(--text)]">{userName || 'Not set'}</p>
         </div>
         <div>
-          <p className="text-xs font-medium text-zinc-500">Email</p>
-          <p className="mt-1 truncate text-sm text-zinc-200">{userEmail || 'Not set'}</p>
+          <p className="text-xs font-medium text-[var(--dim)]">Email</p>
+          <p className="mt-1 truncate text-sm text-[var(--text)]">{userEmail || 'Not set'}</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -43,7 +43,9 @@ export const SettingsProfilePanel = (props: ISettingsProfilePanelProps) => {
           onChange={(experienceLevel) => onChange({ ...values, experienceLevel })}
         />
         <label className="space-y-1.5 sm:col-span-2">
-          <span className="block text-[0.8rem] font-medium text-zinc-400">Target companies</span>
+          <span className="block text-[0.8rem] font-medium text-[var(--dim)]">
+            Target companies
+          </span>
           <input
             aria-label="Target companies"
             className={SETTINGS_INPUT_CLASS_NAME}

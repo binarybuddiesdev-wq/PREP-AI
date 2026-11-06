@@ -60,7 +60,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
   };
 
   return (
-    <section className="app-shell-panel overflow-hidden rounded-xl border border-white/10 bg-[#18181b]">
+    <section className="app-shell-panel overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--text)]">
       <header className="border-b border-[var(--border)] px-4 pt-2 sm:px-5">
         <SettingsTabList activeTab={activeTab} onChange={changeActiveTab} />
       </header>
@@ -90,14 +90,14 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
             type="button"
             onClick={onSave}
             disabled={isSaving}
-            className="inline-flex min-h-9 items-center rounded-lg bg-amber-400 px-3 text-sm font-semibold text-black transition hover:bg-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex min-h-9 items-center rounded-lg bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-strong)] disabled:cursor-wait disabled:opacity-60"
           >
             {isSaving ? 'Saving…' : 'Save settings'}
           </button>
           {status && (
             <p
               role={status.kind === 'error' ? 'alert' : 'status'}
-              className={`text-sm ${status.kind === 'success' ? 'text-emerald-300' : 'text-rose-300'}`}
+              className={`text-sm ${status.kind === 'success' ? 'text-[var(--success-strong)]' : 'text-[var(--danger-strong)]'}`}
             >
               {status.message}
             </p>

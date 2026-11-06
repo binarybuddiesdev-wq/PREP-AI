@@ -23,7 +23,7 @@ export const SETTINGS_ROLE_OPTIONS = ONBOARDING_ROLE_OPTIONS.map(({ value }) => 
 }));
 
 export const SETTINGS_INPUT_CLASS_NAME =
-  'h-9 w-full rounded-lg border border-white/10 bg-[#09090b] px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20';
+  'h-9 w-full rounded-lg border border-[var(--border2)] bg-[var(--bg2)] px-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--faint)] focus:border-[var(--accent-border)] focus:ring-2 focus:ring-[var(--accent-bg)]';
 
 export const SETTINGS_EXPERIENCE_OPTIONS = ONBOARDING_EXPERIENCE_OPTIONS;
 export const SETTINGS_DIFFICULTY_OPTIONS = ONBOARDING_DIFFICULTY_OPTIONS;

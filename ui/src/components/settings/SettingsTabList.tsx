@@ -33,10 +33,10 @@ export const SettingsTabList = (props: ISettingsTabListProps) => {
           tabIndex={activeTab === tab.id ? 0 : -1}
           onClick={() => onChange(tab.id)}
           onKeyDown={(event) => handleKeyDown(event, index)}
-          className={`min-h-9 rounded-t-lg border-b px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-amber-400 sm:text-sm ${
+          className={`min-h-9 rounded-t-lg border-b px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent-strong)] sm:text-sm ${
             activeTab === tab.id
-              ? 'border-amber-400 text-amber-300'
-              : 'border-transparent text-zinc-400 hover:text-zinc-100'
+              ? 'border-[var(--accent)] text-[var(--accent-strong)]'
+              : 'border-transparent text-[var(--dim)] hover:text-[var(--text)]'
           }`}
         >
           {tab.label}

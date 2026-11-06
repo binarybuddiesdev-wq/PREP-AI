@@ -19,8 +19,8 @@ export const SettingsPracticePreferencesPanel = (props: ISettingsPracticePrefere
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-zinc-200">Focus topics</h3>
-        <p className="mt-1 text-xs text-zinc-500">Choose the topics you want to practice.</p>
+        <h3 className="text-sm font-medium text-[var(--text-h)]">Focus topics</h3>
+        <p className="mt-1 text-xs text-[var(--dim)]">Choose the topics you want to practice.</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {ONBOARDING_TOPICS.map((topic) => {
             const isSelected = values.preferredTopics.includes(topic);
