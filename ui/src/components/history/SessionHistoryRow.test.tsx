@@ -114,12 +114,14 @@ describe('SessionHistoryRow', () => {
     );
     expect(
       screen.getByRole('region', { name: /session answers/i }).querySelector('article')
-    ).toHaveClass('bg-[var(--card)]');
+    ).toHaveClass('bg-[var(--surface)]');
     expect(screen.getByText('20 min')).toBeVisible();
-    expect(screen.getByText('What is a React hook?')).toBeVisible();
-    expect(screen.getByText('A function that lets components use React features.')).toBeVisible();
+    expect(screen.getByText(/Q: What is a React hook\?/)).toBeVisible();
+    expect(
+      screen.getByText(/A: A function that lets components use React features\./)
+    ).toBeVisible();
     expect(screen.getByText(/Evaluation queued/i)).toBeVisible();
-    expect(screen.getByText('Score: 8 / 10')).toBeVisible();
+    expect(screen.getByText(/Score: 8 \/ 10/)).toBeVisible();
     expect(screen.getByText('Good explanation of dependency-based effects.')).toBeVisible();
     expect(screen.getByText('Evaluation service unavailable.')).toBeVisible();
   });
@@ -127,11 +129,30 @@ describe('SessionHistoryRow', () => {
   it('shows the reference score and status badges in the history row', () => {
     renderRow(createProps({ isExpanded: false }));
 
+    expect(screen.getByText('Practice')).toHaveClass(
+      'bg-[var(--blue-bg)]',
+      'text-[var(--info-strong)]'
+    );
+
     const score = screen.getByText('7.5');
     expect(score).toHaveClass('bg-[var(--green-bg)]', 'text-[var(--success-strong)]');
     expect(score.querySelector('svg')).toBeInTheDocument();
     const completed = screen.getByText('Completed');
     expect(completed).toHaveClass('bg-[var(--green-bg)]', 'text-[var(--success-strong)]');
+  });
+
+  it('uses an in-progress status badge when a session has not finished', () => {
+    renderRow(
+      createProps({
+        session: { ...session, status: 'in_progress', completedAt: null },
+        isExpanded: false,
+      })
+    );
+
+    expect(screen.getByText('In Progress')).toHaveClass(
+      'bg-[var(--blue-bg)]',
+      'text-[var(--info-strong)]'
+    );
   });
 
   it('uses the reference warning and error score colors for lower scores', () => {

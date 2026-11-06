@@ -1,3 +1,5 @@
+import { CalendarDays } from 'lucide-react';
+
 import type { ISessionHistoryTableProps } from './SessionHistoryTable.types';
 
 const tableHeaders = [
@@ -57,25 +59,6 @@ export const SessionHistoryTable = (props: ISessionHistoryTableProps) => {
     );
   }
 
-  if (!hasSessions) {
-    return (
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-5 py-10 text-center sm:px-8">
-        <h2 className="text-lg font-semibold text-[var(--text-h)]">No sessions yet</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--dim)]">
-          Start your first practice session to begin tracking your progress and improvement over
-          time.
-        </p>
-        <button
-          type="button"
-          onClick={onStartPractice}
-          className="mt-5 inline-flex min-h-10 items-center justify-center rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-        >
-          Start practicing
-        </button>
-      </section>
-    );
-  }
-
   return (
     <section aria-label="Session history" className="space-y-3">
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
@@ -88,43 +71,76 @@ export const SessionHistoryTable = (props: ISessionHistoryTableProps) => {
                   <th
                     key={header}
                     scope="col"
-                    className="border-b border-[var(--border)] px-3 py-3 text-[0.68rem] font-medium uppercase tracking-[0.08em] text-[var(--dim)] sm:px-4"
+                    className="border-b border-[var(--border)] px-4 py-[0.7rem] text-[0.68rem] font-medium uppercase tracking-[0.08em] text-[var(--dim)]"
                   >
                     {header}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>{children}</tbody>
+            <tbody>
+              {hasSessions ? (
+                children
+              ) : (
+                <tr>
+                  <td colSpan={tableHeaders.length} className="p-0">
+                    <div className="px-8 py-16 text-center">
+                      <div
+                        aria-hidden="true"
+                        className="mx-auto mb-5 grid size-[4.5rem] place-items-center rounded-full bg-[var(--surface)] text-[var(--dim)]"
+                      >
+                        <CalendarDays className="size-8" />
+                      </div>
+                      <h2 className="text-lg font-semibold text-[var(--text-h)]">
+                        No sessions yet
+                      </h2>
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--dim)]">
+                        Start your first practice session to begin tracking your progress and
+                        improvement over time.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={onStartPractice}
+                        className="mt-5 inline-flex min-h-9 items-center justify-center rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                      >
+                        Start Practicing
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
       </div>
-      <nav aria-label="Session history pages" className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--dim)]">
-          Page {page} of {totalPages}
-          <span className="hidden sm:inline"> · {total} sessions</span>
-        </p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            aria-label="Previous page"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
-            className="min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            aria-label="Next page"
-            disabled={page >= totalPages}
-            onClick={() => onPageChange(page + 1)}
-            className="min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
-      </nav>
+      {hasSessions ? (
+        <nav aria-label="Session history pages" className="flex items-center justify-between gap-3">
+          <p className="text-sm text-[var(--dim)]">
+            Page {page} of {totalPages}
+            <span className="hidden sm:inline"> · {total} sessions</span>
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              aria-label="Previous page"
+              disabled={page <= 1}
+              onClick={() => onPageChange(page - 1)}
+              className="min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              aria-label="Next page"
+              disabled={page >= totalPages}
+              onClick={() => onPageChange(page + 1)}
+              className="min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </nav>
+      ) : null}
     </section>
   );
 };

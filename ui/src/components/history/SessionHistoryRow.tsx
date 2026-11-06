@@ -1,15 +1,10 @@
-import { Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Lightbulb } from 'lucide-react';
 
 import type { ITheoryAnswer } from '@/core';
 import { formatDate } from '@/utils';
 import type { ISessionHistoryRowProps } from './SessionHistoryRow.types';
 
 const MILLISECONDS_PER_MINUTE = 60_000;
-
-const formatScore = (answer: ITheoryAnswer) => {
-  if (answer.aiScore === null) return 'No score returned';
-  return `Score: ${answer.aiScore} / 10`;
-};
 
 const formatSessionDuration = (startedAt: string, completedAt: string | null) => {
   if (!completedAt) return '—';
@@ -60,25 +55,19 @@ export const SessionHistoryRow = (props: ISessionHistoryRowProps) => {
       : session.avgScore >= 5
         ? '~'
         : '!';
-  const modeLabel =
-    session.mode === 'weak'
-      ? 'Weak areas'
-      : session.mode === 'pdf'
-        ? 'PDF study'
-        : 'Topic practice';
   const topicLabel = session.topicId ?? '—';
 
   return (
     <>
       <tr className="border-b border-[var(--border)] transition-colors hover:bg-[var(--surface)]">
-        <td className="px-3 py-3 text-sm sm:px-4">
+        <td className="px-4 py-[0.7rem] text-[0.825rem]">
           <button
             type="button"
             aria-expanded={isExpanded}
             aria-controls={detailsId}
             aria-label={`${isExpanded ? 'Hide' : 'Show'} details for ${dateLabel}`}
             onClick={() => onToggle(session.id)}
-            className="inline-flex min-h-9 items-center gap-2 rounded-md text-left text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="inline-flex min-h-6 items-center gap-2 rounded-md text-left text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             {isExpanded ? (
               <ChevronDown
@@ -91,17 +80,21 @@ export const SessionHistoryRow = (props: ISessionHistoryRowProps) => {
             <time dateTime={session.startedAt}>{dateLabel}</time>
           </button>
         </td>
-        <td className="px-3 py-3 text-sm text-[var(--text)] sm:px-4">{modeLabel}</td>
-        <td className="max-w-44 truncate px-3 py-3 text-sm text-[var(--text)] sm:px-4">
+        <td className="px-4 py-[0.7rem] text-[0.825rem]">
+          <span className="inline-flex rounded-full bg-[var(--blue-bg)] px-[0.6rem] py-[0.2rem] text-[0.72rem] font-semibold text-[var(--info-strong)]">
+            Practice
+          </span>
+        </td>
+        <td className="max-w-44 truncate px-4 py-[0.7rem] text-[0.825rem] text-[var(--text)]">
           {topicLabel}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-[var(--text)] sm:px-4">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem] tabular-nums text-[var(--text)]">
           {session.questionsAnswered} / {session.totalQuestions}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums sm:px-4">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem] tabular-nums">
           <span
             aria-label={hasScore ? `Average score: ${averageScore}` : averageScore}
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${scoreTone}`}
+            className={`inline-flex items-center gap-1 rounded-full px-[0.6rem] py-[0.2rem] text-[0.72rem] font-semibold ${scoreTone}`}
           >
             {scoreIndicator === 'check' ? (
               <Check aria-hidden="true" className="size-3" />
@@ -111,74 +104,82 @@ export const SessionHistoryRow = (props: ISessionHistoryRowProps) => {
             {scoreValue ?? averageScore}
           </span>
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm text-[var(--text)] sm:px-4">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem] text-[var(--text)]">
           {formatSessionDuration(session.startedAt, session.completedAt)}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm sm:px-4">
-          <span className="inline-flex rounded-full bg-[var(--green-bg)] px-2 py-0.5 text-xs font-medium text-[var(--success-strong)]">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem]">
+          <span
+            className={`inline-flex rounded-full px-[0.6rem] py-[0.2rem] text-[0.72rem] font-semibold ${
+              session.status === 'completed' && session.completedAt
+                ? 'bg-[var(--green-bg)] text-[var(--success-strong)]'
+                : 'bg-[var(--blue-bg)] text-[var(--info-strong)]'
+            }`}
+          >
             {session.status === 'completed' && session.completedAt ? 'Completed' : 'In Progress'}
           </span>
         </td>
       </tr>
       <tr id={detailsId} hidden={!isExpanded}>
-        <td colSpan={7} className="border-b border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4">
-          <div role="region" aria-label={`Session answers from ${dateLabel}`} className="space-y-3">
-            {isDetailLoading ? (
-              <p role="status" className="text-sm text-[var(--dim)]">
-                Loading saved answers…
-              </p>
-            ) : detailError ? (
-              <div role="alert" className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-[var(--danger-strong)]">{detailError}</p>
-                <button
-                  type="button"
-                  onClick={onRetry}
-                  className="min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                >
-                  Retry session details
-                </button>
-              </div>
-            ) : detail?.answers.length ? (
-              detail.answers.map((answer, index) => (
-                <article
-                  key={answer.id}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-[var(--text-h)]">
-                      Question {index + 1}
-                    </h3>
-                    <span className="text-xs text-[var(--dim)]">{answerStatusLabel(answer)}</span>
-                  </div>
-                  <p className="mt-2 break-words whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
-                    {answer.questionText}
-                  </p>
-                  <p className="mt-2 text-xs font-medium uppercase tracking-wide text-[var(--dim)]">
-                    Your answer
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--text)]">
-                    {answer.userAnswer}
-                  </p>
-                  {answer.status === 'completed' ? (
-                    <p className="mt-3 text-sm font-medium text-[var(--accent-strong)]">
-                      {formatScore(answer)}
+        <td
+          colSpan={7}
+          className="border-b border-[var(--border)] bg-[var(--bg2)] px-4 py-[0.7rem]"
+        >
+          <div className="bg-[var(--bg2)] p-[1.2rem]">
+            <div
+              role="region"
+              aria-label={`Session answers from ${dateLabel}`}
+              className="space-y-3"
+            >
+              {isDetailLoading ? (
+                <p role="status" className="text-sm text-[var(--dim)]">
+                  Loading saved answers…
+                </p>
+              ) : detailError ? (
+                <div role="alert" className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-[var(--danger-strong)]">{detailError}</p>
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  >
+                    Retry session details
+                  </button>
+                </div>
+              ) : detail?.answers.length ? (
+                detail.answers.map((answer) => (
+                  <article
+                    key={answer.id}
+                    className="mb-2.5 flex flex-col gap-[0.35rem] rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 last:mb-0"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="break-words text-[0.85rem] font-semibold text-[var(--text-h)]">
+                        Q: {answer.questionText}
+                      </h3>
+                      <span className="text-xs text-[var(--dim)]">
+                        {answerStatusLabel(answer)}
+                        {answer.aiScore === null ? '' : ` · Score: ${answer.aiScore} / 10`}
+                      </span>
+                    </div>
+                    <p className="whitespace-pre-wrap break-words text-[0.825rem] leading-[1.6] text-[var(--dim)]">
+                      A: {answer.userAnswer}
                     </p>
-                  ) : null}
-                  {answer.aiFeedback ? (
-                    <p className="mt-2 break-words rounded-md bg-[var(--accent-bg)] p-3 text-sm leading-6 text-[var(--accent-strong)]">
-                      {answer.aiFeedback}
-                    </p>
-                  ) : null}
-                  {answer.status === 'failed' && answer.failureMessage ? (
-                    <p className="mt-2 text-sm leading-6 text-[var(--danger-strong)]">
-                      {answer.failureMessage}
-                    </p>
-                  ) : null}
-                </article>
-              ))
-            ) : (
-              <p className="text-sm text-[var(--dim)]">No saved answers for this session.</p>
-            )}
+                    {answer.aiFeedback ? (
+                      <p className="mt-[0.15rem] flex items-start gap-2 break-words rounded-md bg-[var(--accent-bg)] px-3 py-2 text-[0.78rem] leading-[1.5] text-[var(--accent-strong)]">
+                        <Lightbulb aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                        {answer.aiFeedback}
+                      </p>
+                    ) : null}
+                    {answer.status === 'failed' && answer.failureMessage ? (
+                      <p className="mt-2 text-sm leading-6 text-[var(--danger-strong)]">
+                        {answer.failureMessage}
+                      </p>
+                    ) : null}
+                  </article>
+                ))
+              ) : (
+                <p className="text-sm text-[var(--dim)]">No saved answers for this session.</p>
+              )}
+            </div>
           </div>
         </td>
       </tr>

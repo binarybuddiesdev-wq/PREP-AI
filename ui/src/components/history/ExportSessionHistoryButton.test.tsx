@@ -60,10 +60,9 @@ describe('ExportSessionHistoryButton', () => {
     expect(csvText.split('\r\n')).toHaveLength(3);
   });
 
-  it('does not show an export action when the current page is empty', () => {
-    const { container } = render(<ExportSessionHistoryButton sessions={[]} page={1} />);
+  it('shows a disabled export action when the current page has no sessions', () => {
+    render(<ExportSessionHistoryButton sessions={[]} page={1} />);
 
-    expect(container).toBeEmptyDOMElement();
-    expect(screen.queryByRole('button', { name: /export/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
   });
 });

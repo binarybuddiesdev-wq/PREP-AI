@@ -36,14 +36,14 @@ export const CodingSessionHistoryRow = (props: ICodingSessionHistoryRowProps) =>
   return (
     <>
       <tr className="border-b border-[var(--border)] transition-colors hover:bg-[var(--surface)]">
-        <td className="px-3 py-3 text-sm sm:px-4">
+        <td className="px-4 py-[0.7rem] text-[0.825rem]">
           <button
             type="button"
             aria-expanded={isExpanded}
             aria-controls={detailsId}
             aria-label={`${isExpanded ? 'Hide' : 'Show'} submissions for ${dateLabel}`}
             onClick={() => onToggle(session.id)}
-            className="inline-flex min-h-9 items-center gap-2 rounded-md text-left text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="inline-flex min-h-6 items-center gap-2 rounded-md text-left text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           >
             {isExpanded ? (
               <ChevronDown
@@ -56,16 +56,16 @@ export const CodingSessionHistoryRow = (props: ICodingSessionHistoryRowProps) =>
             <time dateTime={session.startedAt}>{dateLabel}</time>
           </button>
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-[var(--text)] sm:px-4">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem] tabular-nums text-[var(--text)]">
           {session.problemsAttempted}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-[var(--text)] sm:px-4">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem] tabular-nums text-[var(--text)]">
           {session.problemsSolved}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm text-[var(--text)] sm:px-4">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem] text-[var(--text)]">
           {formatSessionDuration(session.startedAt, session.completedAt)}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm text-[var(--text)] sm:px-4">
+        <td className="whitespace-nowrap px-4 py-[0.7rem] text-[0.825rem] text-[var(--text)]">
           {session.status === 'completed' && session.completedAt ? 'Completed' : 'In progress'}
         </td>
       </tr>

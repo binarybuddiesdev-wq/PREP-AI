@@ -190,19 +190,47 @@ test('renders practice and coding history surfaces in both themes without mobile
     await expect(codingCard).toBeVisible();
     await expect(page.getByRole('article')).toHaveCount(2);
 
-    for (const surface of [practiceCard, codingCard, ...(await page.getByRole('article').all())]) {
+    for (const surface of [practiceCard, codingCard]) {
       await expect
         .poll(() =>
           surface.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
         )
         .toBe('rgb(24, 24, 27)');
     }
+    for (const article of await page.locator('#practice-history').getByRole('article').all()) {
+      await expect
+        .poll(() =>
+          article.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
+        )
+        .toBe('rgba(255, 255, 255, 0.04)');
+    }
+    for (const article of await page.locator('#coding-history').getByRole('article').all()) {
+      await expect
+        .poll(() =>
+          article.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
+        )
+        .toBe('rgb(24, 24, 27)');
+    }
 
     await page.locator('html').evaluate((element) => (element.dataset.theme = 'light'));
-    for (const surface of [practiceCard, codingCard, ...(await page.getByRole('article').all())]) {
+    for (const surface of [practiceCard, codingCard]) {
       await expect
         .poll(() =>
           surface.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
+        )
+        .toBe('rgb(255, 255, 255)');
+    }
+    for (const article of await page.locator('#practice-history').getByRole('article').all()) {
+      await expect
+        .poll(() =>
+          article.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
+        )
+        .toBe('rgba(0, 0, 0, 0.04)');
+    }
+    for (const article of await page.locator('#coding-history').getByRole('article').all()) {
+      await expect
+        .poll(() =>
+          article.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
         )
         .toBe('rgb(255, 255, 255)');
     }

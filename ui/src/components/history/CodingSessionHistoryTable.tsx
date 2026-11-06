@@ -109,7 +109,7 @@ export const CodingSessionHistoryTable = (props: ICodingSessionHistoryTableProps
                   <th
                     key={header}
                     scope="col"
-                    className="border-b border-[var(--border)] px-3 py-3 text-[0.68rem] font-medium uppercase tracking-[0.08em] text-[var(--dim)] sm:px-4"
+                    className="border-b border-[var(--border)] px-4 py-[0.7rem] text-[0.68rem] font-medium uppercase tracking-[0.08em] text-[var(--dim)]"
                   >
                     {header}
                   </th>

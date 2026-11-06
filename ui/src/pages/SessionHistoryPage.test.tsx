@@ -169,7 +169,7 @@ describe('SessionHistoryPage', () => {
     expect(screen.getByRole('tab', { name: 'Practice' })).toHaveClass('bg-[var(--accent-bg)]');
     expect(screen.getByRole('tab', { name: 'Coding' })).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'No sessions yet' })).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Start practicing' }));
+    await user.click(screen.getByRole('button', { name: 'Start Practicing' }));
 
     expect(await screen.findByRole('heading', { name: 'Practice setup' })).toBeVisible();
     expect(mocks.useTheorySessionHistoryReader).toHaveBeenCalledWith({ page: 1, limit: 20 });

@@ -37,17 +37,15 @@ const createProps = (
 });
 
 describe('SessionHistoryTable', () => {
-  it('shows a useful empty state and a way to start practicing', () => {
+  it('keeps the reference table shell around the empty state and offers a way to start practicing', () => {
     const onStartPractice = vi.fn();
     render(<SessionHistoryTable {...createProps({ onStartPractice })} />);
 
     expect(screen.getByRole('heading', { name: 'No sessions yet' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'No sessions yet' }).closest('section')).toHaveClass(
-      'bg-[var(--card)]'
-    );
+    expect(screen.getByRole('table', { name: 'Your recent practice sessions' })).toBeVisible();
+    expect(screen.getByRole('columnheader', { name: 'Date' })).toBeVisible();
     expect(screen.getByText(/begin tracking your progress/i)).toBeVisible();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start practicing' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Start Practicing' })).toBeVisible();
   });
 
   it('disables previous on the first page and advances to the next page', async () => {
