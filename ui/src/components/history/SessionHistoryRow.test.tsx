@@ -124,6 +124,42 @@ describe('SessionHistoryRow', () => {
     expect(screen.getByText('Evaluation service unavailable.')).toBeVisible();
   });
 
+  it('shows the reference score and status badges in the history row', () => {
+    renderRow(createProps({ isExpanded: false }));
+
+    const score = screen.getByText('7.5');
+    expect(score).toHaveClass('bg-[var(--green-bg)]', 'text-[var(--success-strong)]');
+    expect(score.querySelector('svg')).toBeInTheDocument();
+    const completed = screen.getByText('Completed');
+    expect(completed).toHaveClass('bg-[var(--green-bg)]', 'text-[var(--success-strong)]');
+  });
+
+  it('uses the reference warning and error score colors for lower scores', () => {
+    const { rerender } = renderRow(
+      createProps({ session: { ...session, avgScore: 6.2 }, isExpanded: false })
+    );
+
+    expect(screen.getByLabelText('Average score: 6.2 / 10')).toHaveClass(
+      'bg-[var(--accent-bg)]',
+      'text-[var(--accent-strong)]'
+    );
+
+    rerender(
+      <table>
+        <tbody>
+          <SessionHistoryRow
+            {...createProps({ session: { ...session, avgScore: 4.4 }, isExpanded: false })}
+          />
+        </tbody>
+      </table>
+    );
+
+    expect(screen.getByLabelText('Average score: 4.4 / 10')).toHaveClass(
+      'bg-[var(--red-bg)]',
+      'text-[var(--danger-strong)]'
+    );
+  });
+
   it('expands and collapses the saved answers through an accessible control', async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();

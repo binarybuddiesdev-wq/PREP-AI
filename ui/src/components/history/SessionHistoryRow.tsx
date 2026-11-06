@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 
 import type { ITheoryAnswer } from '@/core';
 import { formatDate } from '@/utils';
@@ -43,8 +43,23 @@ export const SessionHistoryRow = (props: ISessionHistoryRowProps) => {
   const { session, isExpanded, detail, isDetailLoading, detailError, onToggle, onRetry } = props;
   const detailsId = `session-details-${session.id}`;
   const dateLabel = formatDate(session.startedAt);
-  const averageScore =
-    session.questionsAnswered === 0 ? 'Not scored' : `${session.avgScore.toFixed(1)} / 10`;
+  const hasScore = session.questionsAnswered > 0;
+  const scoreValue = hasScore ? session.avgScore.toFixed(1) : null;
+  const averageScore = scoreValue ? `${scoreValue} / 10` : 'Not scored';
+  const scoreTone = !hasScore
+    ? 'bg-[var(--surface2)] text-[var(--dim)]'
+    : session.avgScore >= 7
+      ? 'bg-[var(--green-bg)] text-[var(--success-strong)]'
+      : session.avgScore >= 5
+        ? 'bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+        : 'bg-[var(--red-bg)] text-[var(--danger-strong)]';
+  const scoreIndicator = !hasScore
+    ? null
+    : session.avgScore >= 7
+      ? 'check'
+      : session.avgScore >= 5
+        ? '~'
+        : '!';
   const modeLabel =
     session.mode === 'weak'
       ? 'Weak areas'
@@ -83,14 +98,26 @@ export const SessionHistoryRow = (props: ISessionHistoryRowProps) => {
         <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-[var(--text)] sm:px-4">
           {session.questionsAnswered} / {session.totalQuestions}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums text-[var(--text)] sm:px-4">
-          {averageScore}
+        <td className="whitespace-nowrap px-3 py-3 text-sm tabular-nums sm:px-4">
+          <span
+            aria-label={hasScore ? `Average score: ${averageScore}` : averageScore}
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${scoreTone}`}
+          >
+            {scoreIndicator === 'check' ? (
+              <Check aria-hidden="true" className="size-3" />
+            ) : scoreIndicator ? (
+              <span aria-hidden="true">{scoreIndicator}</span>
+            ) : null}
+            {scoreValue ?? averageScore}
+          </span>
         </td>
         <td className="whitespace-nowrap px-3 py-3 text-sm text-[var(--text)] sm:px-4">
           {formatSessionDuration(session.startedAt, session.completedAt)}
         </td>
-        <td className="whitespace-nowrap px-3 py-3 text-sm text-[var(--text)] sm:px-4">
-          {session.status === 'completed' && session.completedAt ? 'Completed' : 'In progress'}
+        <td className="whitespace-nowrap px-3 py-3 text-sm sm:px-4">
+          <span className="inline-flex rounded-full bg-[var(--green-bg)] px-2 py-0.5 text-xs font-medium text-[var(--success-strong)]">
+            {session.status === 'completed' && session.completedAt ? 'Completed' : 'In Progress'}
+          </span>
         </td>
       </tr>
       <tr id={detailsId} hidden={!isExpanded}>

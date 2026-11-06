@@ -507,6 +507,10 @@ unrelated or user-owned files.
   reference-specific save button labels. The new tab-label test failed against
   the previous shared label and passes with the corrected labels; 17 focused
   component/page tests pass.
+- Practice History score and status cells now use the reference pill layout,
+  score thresholds, and concise numeric values. New assertions failed before
+  the change and pass now (6 tests); History theme/responsive previews pass in
+  both browser projects (2/2).
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

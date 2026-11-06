@@ -1226,6 +1226,19 @@ New layout, one folder per purpose. A layer may import only from the layers list
   then passed after the change. Settings component/page tests pass (17 tests),
   as do scoped ESLint and Prettier checks.
 
+## 2026-11-06 - Session History status and score parity
+
+- Matched the Practice History rows to the reference's compact score pills:
+  green with a check for scores 7 and above, amber with a tilde for scores 5–6.9,
+  and red with an exclamation for lower scores. Score values no longer add a
+  visible `/ 10`; screen-reader labels retain the scale. Completion status now
+  uses the reference pill treatment, including its `In Progress` label.
+- TDD evidence: new score/status assertions failed against the plain-text row,
+  then passed after the change. The SessionHistoryRow suite passes (6 tests),
+  and the focused History Playwright preview passes in both browser projects
+  (2/2) for light/dark themes and mobile overflow. Scoped ESLint and Prettier
+  pass.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to
