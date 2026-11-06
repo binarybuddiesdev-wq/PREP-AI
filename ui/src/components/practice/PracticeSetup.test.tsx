@@ -107,8 +107,9 @@ describe('PracticeSetup', () => {
     render(<PracticeSetup {...createProps()} />);
 
     expect(screen.getByRole('button', { name: /Topic Practice/ })).toHaveClass(
-      'border-[var(--accent-border)]',
-      'bg-[var(--accent-bg)]'
+      'border-[var(--accent)]',
+      'bg-[rgba(245,158,11,0.04)]',
+      'text-center'
     );
     expect(screen.getByRole('button', { name: /Weak Areas/ })).toHaveClass('bg-[var(--card)]');
     expect(screen.getByRole('button', { name: /Topic Practice/ })).toHaveAttribute(
@@ -123,6 +124,18 @@ describe('PracticeSetup', () => {
       'aria-pressed',
       'false'
     );
+  });
+
+  it('shows the selected mode, topic, difficulty, and question count in the start card', () => {
+    render(<PracticeSetup {...createProps({ topicId: 'topic-react' })} />);
+
+    expect(screen.getByRole('heading', { name: 'Ready to Practice?' })).toBeVisible();
+    expect(screen.getAllByText('Topic Practice')).toHaveLength(2);
+    expect(screen.getByText('Mode', { exact: true })).toBeVisible();
+    expect(screen.getByText('Junior', { exact: true })).toBeVisible();
+    expect(screen.getAllByText('Difficulty', { exact: true })).toHaveLength(2);
+    expect(screen.getByText('10', { exact: true })).toBeVisible();
+    expect(screen.getByText('Questions', { exact: true })).toBeVisible();
   });
 
   it('selects up to five ready PDFs for the session', async () => {
@@ -287,7 +300,11 @@ describe('PracticeSetup', () => {
     );
 
     expect(screen.getByText('Node.js')).toBeVisible();
-    expect(screen.getByText('5.4/10')).toBeVisible();
-    expect(screen.getByText(/30 questions requested/i)).toBeVisible();
+    expect(screen.getByText('54%')).toBeVisible();
+    expect(screen.getByRole('progressbar', { name: 'Node.js average score' })).toHaveAttribute(
+      'aria-valuenow',
+      '54'
+    );
+    expect(screen.getByText('30', { exact: true })).toBeVisible();
   });
 });

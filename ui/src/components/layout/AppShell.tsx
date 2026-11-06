@@ -86,7 +86,7 @@ export const AppShell = (props: IAppShellProps) => {
           <button
             type="button"
             aria-label="Close navigation overlay"
-            className="fixed inset-0 z-30 bg-black/60 md:hidden"
+            className="fixed inset-0 z-30 bg-black/60 min-[769px]:hidden"
             onClick={closeMobileNavigation}
           />
         )}
@@ -98,23 +98,27 @@ export const AppShell = (props: IAppShellProps) => {
           data-mobile-open={isMobileNavigationOpen}
           onKeyDown={isMobileNavigationOpen ? handleMobileNavigationKeyDown : undefined}
           className={cn(
-            'fixed inset-y-0 left-0 z-40 flex w-[240px] flex-col border-r transition-all duration-200 md:translate-x-0',
+            'fixed inset-y-0 left-0 z-40 flex w-[240px] flex-col border-r transition-all duration-200 min-[769px]:translate-x-0',
             isDarkTheme ? 'border-white/[0.08] bg-[#111113]' : 'border-zinc-200 bg-white',
-            isCollapsed && 'md:w-[60px]',
+            isCollapsed && 'min-[769px]:w-[60px]',
             isMobileNavigationOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
           <div
             className={cn(
               'flex min-h-[72px] items-center justify-between gap-3 border-b px-4 py-4',
-              isCollapsed && 'md:min-h-24 md:flex-col md:justify-center md:gap-2 md:px-2 md:py-3',
+              isCollapsed &&
+                'min-[769px]:min-h-24 min-[769px]:flex-col min-[769px]:justify-center min-[769px]:gap-2 min-[769px]:px-2 min-[769px]:py-3',
               isDarkTheme ? 'border-white/[0.08]' : 'border-zinc-200'
             )}
           >
             <div
               data-app-shell-brand
               onClick={closeMobileNavigation}
-              className={cn('min-w-0 flex-1', isCollapsed && 'md:flex-none md:justify-center')}
+              className={cn(
+                'min-w-0 flex-1',
+                isCollapsed && 'min-[769px]:flex-none min-[769px]:justify-center'
+              )}
             >
               {brand}
             </div>
@@ -123,7 +127,7 @@ export const AppShell = (props: IAppShellProps) => {
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               data-desktop-only
               className={cn(
-                'hidden size-8 shrink-0 items-center justify-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400 md:flex',
+                'hidden size-8 shrink-0 items-center justify-center rounded-lg border transition focus-visible:outline-2 focus-visible:outline-amber-400 min-[769px]:flex',
                 isDarkTheme
                   ? 'border-white/10 text-zinc-400 hover:bg-white/[0.05] hover:text-white'
                   : 'border-zinc-200 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
@@ -143,7 +147,7 @@ export const AppShell = (props: IAppShellProps) => {
                       'mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em]',
                       isDarkTheme ? 'text-zinc-600' : 'text-zinc-500'
                     ),
-                    isCollapsed && 'md:sr-only'
+                    isCollapsed && 'min-[769px]:sr-only'
                   )}
                 >
                   {group.label}
@@ -161,7 +165,7 @@ export const AppShell = (props: IAppShellProps) => {
                           ? 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100'
                           : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900',
                       !isAvailable && 'cursor-not-allowed opacity-60',
-                      isCollapsed && 'md:justify-center md:px-0'
+                      isCollapsed && 'min-[769px]:justify-center min-[769px]:px-0'
                     );
                     const itemContent = (
                       <>
@@ -172,7 +176,10 @@ export const AppShell = (props: IAppShellProps) => {
                           {item.icon}
                         </span>
                         <span
-                          className={cn('min-w-0 flex-1 truncate', isCollapsed && 'md:sr-only')}
+                          className={cn(
+                            'min-w-0 flex-1 truncate',
+                            isCollapsed && 'min-[769px]:sr-only'
+                          )}
                         >
                           {item.label}
                         </span>
@@ -183,7 +190,7 @@ export const AppShell = (props: IAppShellProps) => {
                               isDarkTheme
                                 ? 'border-white/[0.08] text-zinc-500'
                                 : 'border-zinc-200 text-zinc-500',
-                              isCollapsed && 'md:sr-only'
+                              isCollapsed && 'min-[769px]:sr-only'
                             )}
                           >
                             Soon
@@ -253,7 +260,7 @@ export const AppShell = (props: IAppShellProps) => {
             >
               {userName.slice(0, 1).toUpperCase()}
             </span>
-            <span className={cn('min-w-0 flex-1', isCollapsed && 'md:sr-only')}>
+            <span className={cn('min-w-0 flex-1', isCollapsed && 'min-[769px]:sr-only')}>
               <span
                 className={cn(
                   'block truncate text-sm font-medium',
@@ -276,13 +283,13 @@ export const AppShell = (props: IAppShellProps) => {
 
         <div
           className={cn(
-            'min-h-svh transition-[padding] duration-200 md:pl-[240px]',
-            isCollapsed && 'md:pl-[60px]'
+            'min-h-svh transition-[padding] duration-200 min-[769px]:pl-[240px]',
+            isCollapsed && 'min-[769px]:pl-[60px]'
           )}
         >
           <header
             className={cn(
-              'sticky top-0 z-20 flex h-[73px] items-center justify-between border-b px-8 backdrop-blur-xl md:h-[62px]',
+              'sticky top-0 z-20 flex h-[62px] items-center justify-between border-b px-8 backdrop-blur-xl max-[767px]:h-[73px] max-[767px]:px-4',
               isDarkTheme ? 'border-white/[0.08] bg-[#09090b]/90' : 'border-zinc-200 bg-white/90'
             )}
           >
@@ -294,7 +301,7 @@ export const AppShell = (props: IAppShellProps) => {
                 aria-controls="primary-navigation"
                 aria-expanded={isMobileNavigationOpen}
                 className={cn(
-                  'flex size-9 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-amber-400 md:hidden',
+                  'flex size-9 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-amber-400 min-[769px]:hidden',
                   isDarkTheme
                     ? 'text-zinc-300 hover:bg-white/[0.06]'
                     : 'text-zinc-600 hover:bg-zinc-100'
@@ -332,7 +339,7 @@ export const AppShell = (props: IAppShellProps) => {
               {userMenu}
             </div>
           </header>
-          <div className="px-4 py-6 sm:px-6 lg:px-8">{children}</div>
+          <div className="px-4 py-6 min-[769px]:px-8">{children}</div>
         </div>
       </div>
     </div>

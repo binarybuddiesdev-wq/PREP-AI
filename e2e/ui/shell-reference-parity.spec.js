@@ -133,6 +133,7 @@ test('matches the reference shell and preserves its responsive interactions', as
 
   for (const viewport of [
     { width: 1440, height: 900 },
+    { width: 768, height: 900 },
     { width: 390, height: 844 },
   ]) {
     await page.setViewportSize(viewport);
@@ -146,7 +147,7 @@ test('matches the reference shell and preserves its responsive interactions', as
     const sidebar = page.locator('#primary-navigation');
     const toolbar = page.locator('#shell-reference-preview header');
 
-    if (viewport.width > 767) {
+    if (viewport.width > 768) {
       const targetSidebar = await box(reference.locator('.sb'));
       const actualSidebar = await box(sidebar);
       const targetToolbar = await box(reference.locator('.tb'));
@@ -176,7 +177,8 @@ test('matches the reference shell and preserves its responsive interactions', as
       await expect(page.locator('.app-shell')).toHaveAttribute('data-theme', 'light');
       await page.getByRole('button', { name: 'Switch to dark theme' }).click();
     } else {
-      expect(await sidebar.isVisible()).toBe(false);
+      expect(sidebar).toHaveAttribute('data-mobile-open', 'false');
+      expect((await box(sidebar)).x).toBeLessThanOrEqual(-239);
       const targetToolbar = await box(reference.locator('.tb'));
       const actualToolbar = await box(toolbar);
       expect(Math.abs(actualToolbar.height - targetToolbar.height)).toBeLessThanOrEqual(4);
@@ -188,7 +190,8 @@ test('matches the reference shell and preserves its responsive interactions', as
       expect(Math.abs(actualSidebar.width - targetSidebar.width)).toBeLessThanOrEqual(2);
       await page.keyboard.press('Escape');
       await reference.keyboard.press('Escape');
-      await expect(sidebar).toBeHidden();
+      await expect(sidebar).toHaveAttribute('data-mobile-open', 'false');
+      expect((await box(sidebar)).x).toBeLessThanOrEqual(-239);
       await expect(page.getByRole('button', { name: 'Open navigation menu' })).toBeFocused();
     }
   }
