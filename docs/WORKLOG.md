@@ -1209,6 +1209,14 @@ New layout, one folder per purpose. A layer may import only from the layers list
   A live JavaScript Two Sum request from the server container to Piston returned
   `[0,1]` with exit code 0.
 
+## 2026-11-06 - Session History reference label parity
+
+- Changed the Practice history table heading from `Avg. score` to `Avg Score`,
+  matching the History screen in `prepai-ui.html`.
+- TDD evidence: the new column-heading assertion failed against the old label,
+  then passed after the correction. The focused SessionHistoryTable suite passes
+  (5 tests), as do scoped ESLint and Prettier checks.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to

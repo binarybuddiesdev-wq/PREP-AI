@@ -5,7 +5,7 @@ const tableHeaders = [
   'Type',
   'Topic',
   'Questions',
-  'Avg. score',
+  'Avg Score',
   'Duration',
   'Status',
 ] as const;

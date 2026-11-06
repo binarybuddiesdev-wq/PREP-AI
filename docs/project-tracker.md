@@ -499,6 +499,10 @@ unrelated or user-owned files.
   use fixture data and verify responsive/theme behavior, not pixel-level
   comparison against `prepai-ui.html`; direct reference review and real
   signed-in API acceptance remain open.
+- Session History reference audit found and fixed the `Avg. score` versus
+  `Avg Score` heading mismatch. A regression assertion failed before the
+  correction and passes afterward; the focused history table suite passes
+  (5 tests).
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

@@ -75,6 +75,23 @@ describe('SessionHistoryTable', () => {
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
 
+  it('uses the reference table headings', () => {
+    render(
+      <SessionHistoryTable
+        {...createProps({
+          hasSessions: true,
+          children: (
+            <tr>
+              <td>{session.id}</td>
+            </tr>
+          ),
+        })}
+      />
+    );
+
+    expect(screen.getByRole('columnheader', { name: 'Avg Score' })).toBeVisible();
+  });
+
   it('disables next on the last page', () => {
     render(
       <SessionHistoryTable
