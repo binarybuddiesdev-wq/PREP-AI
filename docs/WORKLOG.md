@@ -1252,6 +1252,28 @@ New layout, one folder per purpose. A layer may import only from the layers list
   theme preview passes in both browser projects (2/2). Scoped ESLint and
   Prettier pass.
 
+## 2026-11-06 - Practice completion screen parity
+
+- Replaced the completion summary labels with the prototype's Questions, Avg
+  Score, and Time metrics. Elapsed minutes come from the saved session
+  timestamps; completed sessions without any scored answers still say so.
+  Restored both reference actions: Back to Practice resets to setup, and Go to
+  Dashboard navigates to the dashboard. The title, subtitle, celebration icon,
+  and stacked full-width actions now follow the reference screen.
+- TDD evidence: the updated metric and action assertions failed before the
+  implementation. TheorySessionComplete and PracticePage tests pass (17 total),
+  and the Theory Practice light/dark responsive preview passes in both browser
+  projects (2/2). Scoped ESLint and Prettier pass.
+
+## 2026-11-06 - Frontend gate after route-parity fixes
+
+- Full UI verification passes after the History, Settings, Dashboard, and
+  Practice completion updates: 130 UI test files / 580 tests, UI lint, project
+  TypeScript check, and production build. Focused responsive theme previews for
+  Dashboard, History, and Theory Practice pass in both configured browser
+  projects. Pixel-level comparison of every route and live signed-in API state
+  verification remain open.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to

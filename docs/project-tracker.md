@@ -366,7 +366,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 574 UI unit tests (130 files) pass; UI
+**Latest evidence (2026-11-06):** All 580 UI unit tests (130 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -515,6 +515,16 @@ unrelated or user-owned files.
   formats, including the matching recent-score pill thresholds. The new
   regression checks pass with 18 DashboardOverview tests; both responsive theme
   previews pass (2/2).
+- Practice completion now matches the prototype's Questions, Avg Score, and Time
+  summary and restores both completion actions, including working Dashboard
+  navigation. Focused component/page tests pass (17 total); both responsive
+  theme previews pass (2/2).
+- The full UI gate after these parity fixes passes: 580 tests across 130 files,
+  UI lint, TypeScript project check, and production build. The coding-result,
+  dashboard, history, and theory-practice visual previews have passed in both
+  configured browser projects. The visual-preview suite still uses fixtures;
+  screen-by-screen reference comparison and signed-in live API acceptance stay
+  open.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

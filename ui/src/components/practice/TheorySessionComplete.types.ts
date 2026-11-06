@@ -4,4 +4,5 @@ export interface ITheorySessionCompleteProps {
   session: ITheorySession;
   answers: ITheoryAnswer[];
   onPracticeAgain: () => void;
+  onGoToDashboard: () => void;
 }

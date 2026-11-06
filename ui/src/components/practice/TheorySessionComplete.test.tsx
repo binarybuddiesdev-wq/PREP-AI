@@ -42,24 +42,35 @@ const answer: ITheoryAnswer = {
 describe('TheorySessionComplete', () => {
   it('distinguishes a real zero average from a session with no scored answers', () => {
     const onPracticeAgain = vi.fn();
+    const onGoToDashboard = vi.fn();
     const { rerender } = render(
       <TheorySessionComplete
         session={{ ...session, questionsAnswered: 1 }}
         answers={[answer]}
         onPracticeAgain={onPracticeAgain}
+        onGoToDashboard={onGoToDashboard}
       />
     );
 
     expect(screen.getByRole('main')).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
-    expect(screen.getByText('0.0/10')).toBeVisible();
+    expect(screen.getByText('0.0')).toBeVisible();
     const metrics = document.querySelector('dl')!;
-    expect(within(metrics).getByText('Answers scored').parentElement).toHaveTextContent('1');
+    expect(within(metrics).getByText('Questions').parentElement).toHaveTextContent('1');
+    expect(within(metrics).getByText('Avg Score').parentElement).toHaveTextContent('0.0');
+    expect(within(metrics).getByText('Time').parentElement).toHaveTextContent('10m');
+    expect(screen.getByRole('button', { name: 'Back to Practice' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Go to Dashboard' })).toBeVisible();
 
     rerender(
-      <TheorySessionComplete session={session} answers={[]} onPracticeAgain={onPracticeAgain} />
+      <TheorySessionComplete
+        session={session}
+        answers={[]}
+        onPracticeAgain={onPracticeAgain}
+        onGoToDashboard={onGoToDashboard}
+      />
     );
     expect(screen.getByText(/no scored answers/i)).toBeVisible();
-    expect(screen.queryByText('0.0/10')).not.toBeInTheDocument();
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
   });
 
   it('reports submitted and failed answers without treating failures as scores', () => {
@@ -74,12 +85,12 @@ describe('TheorySessionComplete', () => {
         session={{ ...session, questionsAnswered: 1 }}
         answers={[failedAnswer]}
         onPracticeAgain={vi.fn()}
+        onGoToDashboard={vi.fn()}
       />
     );
 
     const metrics = document.querySelector('dl')!;
-    expect(within(metrics).getByText('Answers submitted').parentElement).toHaveTextContent('1');
-    expect(within(metrics).getByText('Answers scored').parentElement).toHaveTextContent('0');
+    expect(within(metrics).getByText('Questions').parentElement).toHaveTextContent('1');
     expect(screen.getByText(/1 answer could not be scored/i)).toBeVisible();
     expect(screen.getByText(/no scored answers/i)).toBeVisible();
   });
@@ -88,10 +99,32 @@ describe('TheorySessionComplete', () => {
     const user = userEvent.setup();
     const onPracticeAgain = vi.fn();
     render(
-      <TheorySessionComplete session={session} answers={[]} onPracticeAgain={onPracticeAgain} />
+      <TheorySessionComplete
+        session={session}
+        answers={[]}
+        onPracticeAgain={onPracticeAgain}
+        onGoToDashboard={vi.fn()}
+      />
     );
 
-    await user.click(screen.getByRole('button', { name: 'Practice again' }));
+    await user.click(screen.getByRole('button', { name: 'Back to Practice' }));
     expect(onPracticeAgain).toHaveBeenCalledOnce();
+  });
+
+  it('navigates to the dashboard when requested', async () => {
+    const user = userEvent.setup();
+    const onGoToDashboard = vi.fn();
+    render(
+      <TheorySessionComplete
+        session={session}
+        answers={[]}
+        onPracticeAgain={vi.fn()}
+        onGoToDashboard={onGoToDashboard}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Go to Dashboard' }));
+
+    expect(onGoToDashboard).toHaveBeenCalledOnce();
   });
 });

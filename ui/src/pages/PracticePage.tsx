@@ -80,6 +80,7 @@ export const PracticePage = () => {
         session={practice.completedSession}
         answers={practice.savedAnswers}
         onPracticeAgain={practice.reset}
+        onGoToDashboard={() => navigate(ROUTES.dashboard)}
       />
     );
   }
