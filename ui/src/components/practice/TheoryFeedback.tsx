@@ -97,7 +97,7 @@ export const TheoryFeedback = (props: ITheoryFeedbackProps) => {
           onClick={onEnd}
           className="min-h-10 rounded-lg px-3.5 text-sm text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-50"
         >
-          {isEnding ? 'Waiting to finish…' : 'End session'}
+          {isEnding ? 'Waiting to finish…' : 'End Session'}
         </button>
         <button
           type="button"
@@ -105,7 +105,7 @@ export const TheoryFeedback = (props: ITheoryFeedbackProps) => {
           onClick={onContinue}
           className="min-h-10 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Continue
+          Next Question
         </button>
       </div>
     </section>

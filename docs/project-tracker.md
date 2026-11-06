@@ -525,6 +525,9 @@ unrelated or user-owned files.
   configured browser projects. The visual-preview suite still uses fixtures;
   screen-by-screen reference comparison and signed-in live API acceptance stay
   open.
+- Practice feedback buttons now read `Next Question` and `End Session`, matching
+  the reference labels without changing their guarded lifecycle behavior. Five
+  focused tests pass after the new assertions failed on the previous labels.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

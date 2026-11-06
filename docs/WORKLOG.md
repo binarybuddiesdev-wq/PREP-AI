@@ -1274,6 +1274,14 @@ New layout, one folder per purpose. A layer may import only from the layers list
   projects. Pixel-level comparison of every route and live signed-in API state
   verification remain open.
 
+## 2026-11-06 - Practice feedback action labels
+
+- Renamed the feedback actions to `Next Question` and `End Session`, matching
+  the prototype while keeping their existing guarded continue/end behavior.
+- TDD evidence: new action assertions failed against `Continue` and `End
+session`, then passed after the label correction. TheoryFeedback passes
+  (5 tests), with scoped ESLint and Prettier checks passing.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to

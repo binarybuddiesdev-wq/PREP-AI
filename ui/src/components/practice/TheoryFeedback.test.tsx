@@ -66,6 +66,21 @@ describe('TheoryFeedback', () => {
     expect(screen.getByText('Clear explanation.')).toBeVisible();
   });
 
+  it('uses the reference labels for ending or advancing the session', async () => {
+    const user = userEvent.setup();
+    const onContinue = vi.fn();
+    render(
+      <TheoryFeedback
+        {...createProps({ answer: createAnswer('completed', 8), canContinue: true, onContinue })}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'End Session' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Next Question' }));
+
+    expect(onContinue).toHaveBeenCalledOnce();
+  });
+
   it('shows failed evaluations as unscored with the server failure message', () => {
     render(<TheoryFeedback {...createProps({ answer: createAnswer('failed') })} />);
 
@@ -89,6 +104,6 @@ describe('TheoryFeedback', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry evaluation' }));
     expect(onRetryEvaluation).toHaveBeenCalledOnce();
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next Question' })).toBeDisabled();
   });
 });
