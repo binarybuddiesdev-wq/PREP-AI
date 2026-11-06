@@ -52,12 +52,24 @@ describe('TheorySessionComplete', () => {
       />
     );
 
-    expect(screen.getByRole('main')).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
+    expect(screen.getByRole('main')).toHaveClass(
+      'max-w-[30rem]',
+      'rounded-2xl',
+      'p-6',
+      'sm:p-10',
+      'text-center',
+      'border-[var(--border)]',
+      'bg-[var(--card)]'
+    );
     expect(screen.getByText('0.0')).toBeVisible();
     const metrics = document.querySelector('dl')!;
+    expect(metrics).toHaveClass('flex', 'justify-center', 'gap-8');
     expect(within(metrics).getByText('Questions').parentElement).toHaveTextContent('1');
     expect(within(metrics).getByText('Avg Score').parentElement).toHaveTextContent('0.0');
     expect(within(metrics).getByText('Time').parentElement).toHaveTextContent('10m');
+    expect(within(metrics).getByText('1').parentElement?.querySelector('dd')).toHaveClass(
+      'text-[1.8rem]'
+    );
     expect(screen.getByRole('button', { name: 'Back to Practice' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Go to Dashboard' })).toBeVisible();
 
@@ -71,6 +83,7 @@ describe('TheorySessionComplete', () => {
     );
     expect(screen.getByText(/no scored answers/i)).toBeVisible();
     expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+    expect(screen.getByText(/no scored answers/i)).toHaveClass('text-xs', 'break-words');
   });
 
   it('reports submitted and failed answers without treating failures as scores', () => {

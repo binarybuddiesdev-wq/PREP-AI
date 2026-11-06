@@ -384,6 +384,9 @@ lint, TypeScript project check, and production build pass. Coding run results
 and Practice reference previews pass in both configured browser projects.
 Settings form and PDF Library theme previews also pass in both configured
 browser projects.
+The latest Practice detail-screen pass aligns the active question layout and
+the 480 px completion card with the HTML reference; all 597 UI tests, the
+responsive Practice preview, lint, TypeScript check, and production build pass.
 The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop

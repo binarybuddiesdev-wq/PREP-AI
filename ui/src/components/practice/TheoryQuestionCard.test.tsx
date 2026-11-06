@@ -37,11 +37,22 @@ describe('TheoryQuestionCard', () => {
   it('renders question progress, elapsed time, and a labeled response field', () => {
     render(<TheoryQuestionCard {...createProps()} />);
 
+    expect(screen.getByRole('main')).toHaveClass('w-full');
+    expect(screen.getByRole('heading', { name: 'Practice Session' })).toHaveClass('text-[1.35rem]');
+    expect(screen.getByRole('heading', { name: question.question })).toHaveClass(
+      'text-[1.05rem]',
+      'leading-[1.7]'
+    );
     expect(screen.getByRole('heading', { name: question.question }).closest('section')).toHaveClass(
+      'rounded-2xl',
       'border-[var(--border)]',
       'bg-[var(--card)]'
     );
-    expect(screen.getByRole('textbox', { name: 'Your answer' })).toHaveClass('bg-[var(--bg2)]');
+    expect(screen.getByRole('textbox', { name: 'Your answer' })).toHaveClass(
+      'min-h-[150px]',
+      'p-4',
+      'bg-[var(--bg2)]'
+    );
     expect(screen.getByRole('heading', { name: question.question })).toBeVisible();
     expect(screen.getByRole('progressbar', { name: 'Question progress' })).toHaveAttribute(
       'aria-valuenow',

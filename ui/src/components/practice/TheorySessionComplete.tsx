@@ -1,5 +1,3 @@
-import { PartyPopper } from 'lucide-react';
-
 import type { ITheorySessionCompleteProps } from './TheorySessionComplete.types';
 
 export const TheorySessionComplete = (props: ITheorySessionCompleteProps) => {
@@ -13,31 +11,33 @@ export const TheorySessionComplete = (props: ITheorySessionCompleteProps) => {
     Number.isFinite(elapsedMinutes) && elapsedMinutes >= 0 ? `${elapsedMinutes}m` : '—';
 
   return (
-    <main className="mx-auto w-full max-w-3xl rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7">
-      <div className="mx-auto max-w-xl text-center">
-        <span className="mx-auto mb-3 grid size-11 place-items-center rounded-full bg-[var(--accent-bg)] text-[var(--accent-strong)]">
-          <PartyPopper aria-hidden="true" className="size-5" />
-        </span>
-        <h1 className="mb-1 text-2xl font-semibold text-[var(--text-h)]">Session Complete!</h1>
-        <p className="text-sm text-[var(--dim)]">Great work! Here&apos;s how you did.</p>
-      </div>
+    <main className="mx-auto my-8 w-full max-w-[30rem] rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 text-center sm:p-10">
+      <span aria-hidden="true" className="mb-4 block text-5xl">
+        🎉
+      </span>
+      <h1 className="mb-1 text-[1.3rem] font-bold text-[var(--text-h)]">Session Complete!</h1>
+      <p className="mb-6 text-[0.9rem] text-[var(--dim)]">Great work! Here&apos;s how you did.</p>
 
-      <dl className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
-          <dt className="text-xs text-[var(--dim)]">Questions</dt>
-          <dd className="mt-1 text-lg font-semibold tabular-nums text-[var(--accent-strong)]">
+      <dl className="mb-8 flex justify-center gap-8">
+        <div className="flex min-w-0 flex-1 flex-col text-center">
+          <dt className="order-2 text-[0.78rem] text-[var(--dim)]">Questions</dt>
+          <dd className="order-1 mb-0.5 text-[1.8rem] leading-none font-bold tabular-nums text-[var(--accent-strong)]">
             {session.questionsAnswered}
           </dd>
         </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
-          <dt className="text-xs text-[var(--dim)]">Avg Score</dt>
-          <dd className="mt-1 text-lg font-semibold tabular-nums text-[var(--accent-strong)]">
+        <div className="flex min-w-0 flex-1 flex-col text-center">
+          <dt className="order-2 text-[0.78rem] text-[var(--dim)]">Avg Score</dt>
+          <dd
+            className={`order-1 mb-0.5 break-words font-bold tabular-nums text-[var(--accent-strong)] ${
+              scoredAnswers.length > 0 ? 'text-[1.8rem] leading-none' : 'text-xs leading-4'
+            }`}
+          >
             {scoredAnswers.length > 0 ? session.avgScore.toFixed(1) : 'No scored answers'}
           </dd>
         </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 text-center">
-          <dt className="text-xs text-[var(--dim)]">Time</dt>
-          <dd className="mt-1 text-lg font-semibold tabular-nums text-[var(--accent-strong)]">
+        <div className="flex min-w-0 flex-1 flex-col text-center">
+          <dt className="order-2 text-[0.78rem] text-[var(--dim)]">Time</dt>
+          <dd className="order-1 mb-0.5 text-[1.8rem] leading-none font-bold tabular-nums text-[var(--accent-strong)]">
             {duration}
           </dd>
         </div>
@@ -49,7 +49,7 @@ export const TheorySessionComplete = (props: ITheorySessionCompleteProps) => {
           be scored.
         </p>
       ) : null}
-      <div className="mt-6 flex flex-col gap-2">
+      <div className="flex flex-col gap-[0.6rem]">
         <button
           type="button"
           onClick={onPracticeAgain}

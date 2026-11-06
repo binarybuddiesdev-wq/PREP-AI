@@ -25,13 +25,10 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
   const progress = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <main className="w-full space-y-5">
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="mb-1 text-2xl font-semibold text-[var(--text-h)]">Practice session</h1>
-          <p className="text-sm text-[var(--dim)]">
-            Answer in your own words. Your time is recorded.
-          </p>
+          <h1 className="mb-1 text-[1.35rem] font-bold text-[var(--text-h)]">Practice Session</h1>
         </div>
         <div className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 text-sm tabular-nums text-[var(--text)]">
           <Clock3 aria-hidden="true" className="size-4 text-[var(--accent-strong)]" />
@@ -39,8 +36,8 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
         </div>
       </header>
 
-      <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
-        <div className="border-b border-[var(--border)] px-4 py-4 sm:px-6">
+      <section className="app-shell-panel rounded-2xl border border-[var(--border)] bg-[var(--card)]">
+        <div className="border-b border-[var(--border)] px-8 py-5">
           <div className="mb-2 flex items-center justify-between gap-3 text-xs text-[var(--dim)]">
             <span>
               Question {currentQuestion} of {totalQuestions}
@@ -62,12 +59,12 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
           </div>
         </div>
 
-        <div className="space-y-5 p-4 sm:p-6">
+        <div className="space-y-5 p-6 sm:p-8">
           <div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--accent-strong)]">
               Interview question
             </p>
-            <h2 className="text-lg font-semibold leading-7 text-[var(--text-h)]">
+            <h2 className="text-[1.05rem] leading-[1.7] font-semibold text-[var(--text-h)]">
               {question.question}
             </h2>
           </div>
@@ -103,7 +100,7 @@ export const TheoryQuestionCard = (props: ITheoryQuestionCardProps) => {
               disabled={submitted || isSubmitting || isAnswerFrozen}
               rows={6}
               placeholder="Write your answer here…"
-              className="w-full resize-y rounded-lg border border-[var(--border2)] bg-[var(--bg2)] px-3.5 py-3 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--dim)] focus:border-[var(--accent-border)] focus:ring-2 focus:ring-[var(--accent-bg)] disabled:opacity-70"
+              className="min-h-[150px] w-full resize-y rounded-xl border border-[var(--border2)] bg-[var(--bg2)] p-4 text-sm leading-[1.6] text-[var(--text)] outline-none transition placeholder:text-[var(--dim)] focus:border-[var(--accent-border)] focus:ring-2 focus:ring-[var(--accent-bg)] disabled:opacity-70"
             />
           </div>
 

@@ -1387,3 +1387,17 @@ session`, then passed after the label correction. TheoryFeedback passes
   workers. All 19 tracked UI route previews pass in both configured browser
   projects (38/38), including responsive overflow checks through 1440 px.
   These previews use fixtures; live signed-in API acceptance remains open.
+
+## 2026-11-06 - Practice question and completion screen parity
+
+- Matched the active Practice question title and question/editor sizing to the
+  HTML reference. Removed the redundant active-session helper subtitle and
+  retained the existing question progress, timer, citations, and answer actions.
+- Matched the completion card's centered 480 px width, padding, celebration,
+  inline Questions/Avg Score/Time metrics, and vertically stacked actions.
+  Preserved zero-score, failed-answer, and elapsed-time handling.
+- TDD evidence: the new layout assertions failed against the oversized heading,
+  textarea, and 768 px completion panel, then passed after the update. All 597
+  UI tests (130 files), UI lint, TypeScript/build, and the Theory Practice
+  responsive theme preview pass. Vite's existing native-config and Monaco
+  chunk-size warnings remain non-failing.
