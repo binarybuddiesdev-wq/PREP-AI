@@ -104,11 +104,13 @@ test('shows readable Two Sum input and output in the coding results panel', asyn
 
     const results = page.getByRole('region', { name: 'Run results' });
     await expect(results.getByText('1 of 2 test cases passed')).toBeVisible();
-    await expect(page.getByLabel('Argument 1').first()).toHaveText('[2, 7, 11, 15]');
-    await expect(page.getByLabel('Argument 2').first()).toHaveText('9');
+    await expect(page.getByRole('group', { name: 'Input arguments' })).toHaveText(
+      '[2, 7, 11, 15], 9'
+    );
     await expect(page.getByLabel('Example output')).toHaveText('[0, 1]');
-    await expect(results.getByLabel('Argument 1').first()).toHaveText('[2, 7, 11, 15]');
-    await expect(results.getByLabel('Argument 2').first()).toHaveText('9');
+    await expect(results.getByRole('group', { name: 'Test case inputs' }).first()).toHaveText(
+      '[2, 7, 11, 15], 9'
+    );
     await expect(results.getByLabel('Expected output').first()).toHaveText('[0, 1]');
     await expect(results.getByLabel('Your output').last()).toHaveText('[2, 1]');
 

@@ -297,8 +297,9 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByText('Failed')).toHaveClass('text-[var(--danger-strong)]');
     const secondCase = screen.getByText('Test case 2').closest('li');
     expect(secondCase).not.toBeNull();
-    expect(within(secondCase as HTMLElement).getByLabelText('Argument 1')).toHaveTextContent('3');
-    expect(within(secondCase as HTMLElement).getByLabelText('Argument 2')).toHaveTextContent('4');
+    expect(
+      within(secondCase as HTMLElement).getByRole('group', { name: 'Test case inputs' })
+    ).toHaveTextContent('3, 4');
     expect(within(secondCase as HTMLElement).getByLabelText('Expected output')).toHaveTextContent(
       /\[\s*0,\s*1\s*\]/
     );

@@ -1190,3 +1190,19 @@ New layout, one folder per purpose. A layer may import only from the layers list
   scan found random values only in decorative landing particles and a chat
   request-ID fallback, not in user-facing results. Signed-in live API
   verification remains open in Phase 10.
+
+## 2026-11-06 - Coding input and output presentation
+
+- Replaced stacked argument rows in examples and run results with a compact,
+  positional input display such as `[2, 7, 11, 15], 9`. This keeps the shared
+  rendering generic for future problems and gives expected/actual outputs a
+  simpler, consistent code surface.
+- The coding API intentionally returns HTTP 202 with `queued`; the UI polls the
+  execution endpoint every 1.5 seconds until it receives a terminal result.
+  Local inspection confirmed the coding worker is enabled, shares the API's
+  Redis and Piston endpoints, and the queue currently has no pending jobs. A
+  live Piston JavaScript smoke run returned `[0,1]`. No recent queued database
+  execution was present to reproduce a persistent stuck run.
+- Verification: full UI suite 129 files / 572 tests, UI lint and production
+  build, coding worker/service/Piston suites 136 tests, and the responsive
+  Two Sum browser check at 320, 390, 768, and 1440 px all pass.

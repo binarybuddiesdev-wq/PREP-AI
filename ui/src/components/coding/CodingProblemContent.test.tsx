@@ -30,7 +30,7 @@ describe('CodingProblemContent', () => {
     expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface)]', 'text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toHaveClass('text-[var(--text-h)]');
     const exampleContent = screen.getByRole('figure', { name: 'Example 1' });
-    expect(exampleContent).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
+    expect(exampleContent).toHaveClass('border-[var(--border)]', 'bg-[var(--surface)]');
     expect(screen.getByText('Two values exist.').closest('ul')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText('Easy')).toBeInTheDocument();
@@ -45,14 +45,16 @@ describe('CodingProblemContent', () => {
 
     const example = screen.getByRole('figure', { name: 'Example 1' });
     expect(within(example).getByText('Input')).toBeInTheDocument();
-    expect(within(example).getByLabelText('Input arguments')).toHaveClass('divide-y');
-    expect(within(example).getByText('Argument 1')).toBeInTheDocument();
-    expect(within(example).getByText('Argument 2')).toBeInTheDocument();
-    expect(within(example).getByLabelText('Argument 1')).toHaveTextContent('[2, 7]');
-    expect(within(example).getByLabelText('Argument 2')).toHaveTextContent('9');
+    expect(within(example).getByRole('group', { name: 'Input arguments' })).toHaveTextContent(
+      '[2, 7], 9'
+    );
+    expect(within(example).queryByText('Argument 1')).not.toBeInTheDocument();
+    expect(within(example).queryByText('Argument 2')).not.toBeInTheDocument();
     expect(within(example).getByText('Output')).toBeInTheDocument();
     expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
-    expect(within(example).getByLabelText('Example output')).toHaveClass('border');
+    expect(within(example).getByLabelText('Example output').querySelector('code')).toHaveClass(
+      'font-mono'
+    );
     expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
   });
 });

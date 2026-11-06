@@ -16,15 +16,15 @@ describe('CodingTestCaseResult', () => {
     render(<CodingTestCaseResult caseNumber={1} testCase={testCase} />);
 
     expect(screen.getByText('Test case 1')).toBeInTheDocument();
-    expect(screen.getByLabelText('Test case inputs')).toHaveTextContent('Argument 1');
-    expect(screen.getByLabelText('Test case inputs')).toHaveTextContent('Argument 2');
-    expect(screen.getByLabelText('Test case inputs')).toHaveClass('divide-y');
-    expect(screen.getByLabelText('Argument 1')).toHaveTextContent('[2, 7, 11, 15]');
-    expect(screen.getByLabelText('Argument 2')).toHaveTextContent('9');
+    expect(screen.getByRole('group', { name: 'Test case inputs' })).toHaveTextContent(
+      '[2, 7, 11, 15], 9'
+    );
+    expect(screen.queryByLabelText('Argument 1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Argument 2')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Expected output')).toHaveTextContent('[0, 1]');
     expect(screen.getByLabelText('Your output')).toHaveTextContent('[0, 1]');
     expect(screen.getByRole('group', { name: 'Output comparison' })).toHaveClass('sm:grid-cols-2');
-    expect(screen.getByLabelText('Test case inputs').parentElement?.parentElement).toHaveClass(
+    expect(screen.getByRole('group', { name: 'Test case inputs' }).parentElement).toHaveClass(
       'min-w-0'
     );
     expect(screen.getByLabelText('Your output').querySelector('code')).toHaveClass(
@@ -43,8 +43,9 @@ describe('CodingTestCaseResult', () => {
     render(<CodingTestCaseResult caseNumber={2} testCase={testCase} />);
 
     expect(screen.getByText('Failed')).toBeInTheDocument();
-    expect(screen.getByLabelText('Argument 1')).toHaveTextContent('[3, 2, 4]');
-    expect(screen.getByLabelText('Argument 2')).toHaveTextContent('6');
+    expect(screen.getByRole('group', { name: 'Test case inputs' })).toHaveTextContent(
+      '[3, 2, 4], 6'
+    );
     expect(screen.getByLabelText('Expected output')).toHaveTextContent('[1, 2]');
     expect(screen.getByLabelText('Your output')).toHaveTextContent('[0, 2]');
     expect(screen.getByLabelText('Your output')).toHaveClass('text-[var(--danger-strong)]');

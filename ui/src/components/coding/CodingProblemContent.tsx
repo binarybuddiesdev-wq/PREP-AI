@@ -15,34 +15,27 @@ const Example = (props: { example: ICodingProblemExample; index: number }) => {
   return (
     <figure
       aria-label={`Example ${index + 1}`}
-      className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-3 sm:px-4"
+      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-3 sm:px-4"
     >
-      <figcaption className="mb-3 flex items-center gap-2 border-b border-[var(--border)] pb-2.5 text-xs font-semibold text-[var(--text-h)]">
-        <span className="flex size-5 items-center justify-center rounded bg-[var(--accent-bg)] font-mono text-[var(--accent-strong)]">
-          {index + 1}
-        </span>
-        Example {index + 1}
+      <figcaption className="mb-3 border-b border-[var(--border)] pb-2.5 text-xs font-semibold text-[var(--text-h)]">
+        Example <span className="font-mono text-[var(--dim)]">{index + 1}</span>
       </figcaption>
-      <dl className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)]">
+      <dl className="grid min-w-0 grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
         <div className="min-w-0">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
-            Input
-          </dt>
+          <dt className="text-[11px] font-semibold text-[var(--dim)]">Input</dt>
           <dd className="min-w-0">
             <CodingInputArguments value={example.input} ariaLabel="Input arguments" />
           </dd>
         </div>
-        <div className="min-w-0 border-t border-[var(--border)] pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
-            Output
-          </dt>
+        <div className="min-w-0">
+          <dt className="text-[11px] font-semibold text-[var(--dim)]">Output</dt>
           <dd>
             <CodingValue value={example.output} ariaLabel="Example output" />
           </dd>
         </div>
       </dl>
       {example.explanation ? (
-        <p className="mt-2 border-t border-[var(--border)] pt-2 text-xs leading-5 text-[var(--dim)]">
+        <p className="mt-3 border-t border-[var(--border)] pt-2.5 text-xs leading-5 text-[var(--dim)]">
           {example.explanation}
         </p>
       ) : null}

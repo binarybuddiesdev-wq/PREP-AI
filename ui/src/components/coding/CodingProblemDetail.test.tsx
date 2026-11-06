@@ -41,8 +41,9 @@ describe('CodingProblemDetail', () => {
     expect(screen.getByText(problem.description)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Examples' })).toBeInTheDocument();
     const example = screen.getByRole('figure', { name: 'Example 1' });
-    expect(within(example).getByLabelText('Argument 1')).toHaveTextContent('[2, 7, 11, 15]');
-    expect(within(example).getByLabelText('Argument 2')).toHaveTextContent('9');
+    expect(within(example).getByRole('group', { name: 'Input arguments' })).toHaveTextContent(
+      '[2, 7, 11, 15], 9'
+    );
     expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
     expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Constraints' })).toBeInTheDocument();

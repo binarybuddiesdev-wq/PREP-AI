@@ -23,11 +23,9 @@ export const CodingTestCaseResult = (props: ICodingTestCaseResultProps) => {
           {testCase.passed ? 'Passed' : 'Failed'}
         </span>
       </div>
-      <div className="grid min-w-0 grid-cols-1 gap-3">
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.8fr)]">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
-            Input
-          </p>
+          <p className="text-[11px] font-semibold text-[var(--dim)]">Input</p>
           <div className="min-w-0">
             <CodingInputArguments value={testCase.input} ariaLabel="Test case inputs" />
           </div>
@@ -38,17 +36,13 @@ export const CodingTestCaseResult = (props: ICodingTestCaseResultProps) => {
           className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"
         >
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
-              Expected
-            </p>
+            <p className="text-[11px] font-semibold text-[var(--dim)]">Expected</p>
             <div>
               <CodingValue value={testCase.expected} ariaLabel="Expected output" />
             </div>
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--dim)]">
-              Your output
-            </p>
+            <p className="text-[11px] font-semibold text-[var(--dim)]">Your output</p>
             <div>
               <CodingValue
                 value={testCase.got}
