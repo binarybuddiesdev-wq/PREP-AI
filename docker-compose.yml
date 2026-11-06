@@ -124,6 +124,9 @@ services:
     environment:
       DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin&replicaSet=rs0
       POSTGRESQL_URL: postgresql://postgres:postgres@postgres:5432/prepai
+      # The local database has not had the restricted-role RLS rollout applied.
+      # Omit this so the worker uses the development schema-owner connection.
+      POSTGRESQL_WORKER_URL: ''
       PISTON_URL: http://piston_api:2000
       PISTON_EXECUTION_ENABLED: 'true'
       REDIS_HOST: redis
@@ -178,6 +181,8 @@ services:
     environment:
       DATABASE_URL: mongodb://prepai:prepai@mongo:27017/prepai?authSource=admin&replicaSet=rs0
       POSTGRESQL_URL: postgresql://postgres:postgres@postgres:5432/prepai
+      # Keep the local worker on the documented development database role.
+      POSTGRESQL_WORKER_URL: ''
       PISTON_URL: http://piston_api:2000
       PISTON_EXECUTION_ENABLED: 'true'
       REDIS_HOST: redis

@@ -30,7 +30,7 @@ describe('CodingProblemContent', () => {
     expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface)]', 'text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toHaveClass('text-[var(--text-h)]');
     const exampleContent = screen.getByRole('figure', { name: 'Example 1' });
-    expect(exampleContent).toHaveClass('border-[var(--border)]', 'bg-[var(--bg)]');
+    expect(exampleContent).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
     expect(screen.getByText('Two values exist.').closest('ul')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText('Easy')).toBeInTheDocument();
@@ -40,20 +40,20 @@ describe('CodingProblemContent', () => {
     expect(screen.getByText('Two values exist.')).toBeInTheDocument();
   });
 
-  it('shows example input and output as separate readable values', () => {
+  it('shows positional example inputs separately from the expected output', () => {
     render(<CodingProblemContent problem={problem} />);
 
     const example = screen.getByRole('figure', { name: 'Example 1' });
     expect(within(example).getByText('Input')).toBeInTheDocument();
-    expect(within(example).getByLabelText('Example input')).toHaveTextContent(
-      /\[\s*\[\s*2,\s*7\s*\],\s*9\s*\]/
-    );
-    expect(within(example).getByLabelText('Example input').querySelector('code')).toHaveClass(
-      'whitespace-pre'
-    );
+    expect(within(example).getByLabelText('Input arguments')).toHaveTextContent('Argument 1');
+    expect(within(example).getByLabelText('Input arguments')).toHaveTextContent('Argument 2');
+    expect(within(example).getByLabelText('Argument 1')).toHaveTextContent('[2, 7]');
+    expect(within(example).getByLabelText('Argument 2')).toHaveTextContent('9');
     expect(within(example).getByText('Output')).toBeInTheDocument();
     expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
-    expect(within(example).getByLabelText('Example output')).toHaveClass('overflow-auto');
+    expect(within(example).getByLabelText('Example output').querySelector('code')).toHaveClass(
+      'whitespace-pre-wrap'
+    );
     expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
   });
 });

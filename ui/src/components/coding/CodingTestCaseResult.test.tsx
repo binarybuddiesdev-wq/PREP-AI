@@ -5,7 +5,7 @@ import type { ICodingTestCaseResult } from '@/core';
 import { CodingTestCaseResult } from './CodingTestCaseResult';
 
 describe('CodingTestCaseResult', () => {
-  it('gives the input a full row and compares expected and actual output side by side', () => {
+  it('shows positional input arguments beside expected and actual output', () => {
     const testCase: ICodingTestCaseResult = {
       input: [[2, 7, 11, 15], 9],
       expected: [0, 1],
@@ -16,14 +16,17 @@ describe('CodingTestCaseResult', () => {
     render(<CodingTestCaseResult caseNumber={1} testCase={testCase} />);
 
     expect(screen.getByText('Test case 1')).toBeInTheDocument();
-    expect(screen.getByLabelText('Test case input')).toHaveTextContent('[[2, 7, 11, 15], 9]');
+    expect(screen.getByLabelText('Test case inputs')).toHaveTextContent('Argument 1');
+    expect(screen.getByLabelText('Test case inputs')).toHaveTextContent('Argument 2');
+    expect(screen.getByLabelText('Argument 1')).toHaveTextContent('[2, 7, 11, 15]');
+    expect(screen.getByLabelText('Argument 2')).toHaveTextContent('9');
     expect(screen.getByLabelText('Expected output')).toHaveTextContent('[0, 1]');
     expect(screen.getByLabelText('Your output')).toHaveTextContent('[0, 1]');
-    expect(screen.getByLabelText('Test case input').parentElement?.parentElement).toHaveClass(
-      'sm:col-span-2'
+    expect(screen.getByLabelText('Test case inputs').parentElement?.parentElement).toHaveClass(
+      'min-w-0'
     );
     expect(screen.getByLabelText('Your output').querySelector('code')).toHaveClass(
-      'whitespace-pre'
+      'whitespace-pre-wrap'
     );
   });
 
@@ -38,6 +41,8 @@ describe('CodingTestCaseResult', () => {
     render(<CodingTestCaseResult caseNumber={2} testCase={testCase} />);
 
     expect(screen.getByText('Failed')).toBeInTheDocument();
+    expect(screen.getByLabelText('Argument 1')).toHaveTextContent('[3, 2, 4]');
+    expect(screen.getByLabelText('Argument 2')).toHaveTextContent('6');
     expect(screen.getByLabelText('Expected output')).toHaveTextContent('[1, 2]');
     expect(screen.getByLabelText('Your output')).toHaveTextContent('[0, 2]');
     expect(screen.getByLabelText('Your output')).toHaveClass('text-[var(--danger-strong)]');
