@@ -30,4 +30,4 @@
 - [x] Run the tests and confirm the new assertions fail before implementation.
 - [x] Replace the fixed dark page colors with shared theme tokens.
 - [x] Run the UI verification workflow and review the change.
-- [ ] Commit and push the completed slice.
+- [x] Commit and push the completed slice.
