@@ -7,7 +7,28 @@ html[data-theme='light'] .auth-page-shell {
 }
 
 .auth-page-card {
+  min-height: 706px;
   box-shadow: var(--auth-card-shadow);
+}
+
+.auth-page-card--sign-up {
+  min-height: 792px;
+}
+
+.auth-page-shell .cl-socialButtonsBlockButton {
+  border: 1px solid var(--border2) !important;
+  border-color: var(--border2) !important;
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+.auth-page-shell .cl-socialButtonsBlockButton:hover {
+  border-color: var(--border2) !important;
+  background-color: var(--surface2) !important;
+}
+
+.auth-page-shell .cl-socialButtonsBlockButtonText {
+  color: var(--text) !important;
 }
 
 .auth-page-shell .cl-formButtonPrimary.prepai-auth-primary-button {

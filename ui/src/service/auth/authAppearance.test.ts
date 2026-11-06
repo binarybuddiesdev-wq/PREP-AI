@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { authAppearance } from './authAppearance';
 
 describe('authAppearance', () => {
+  it('uses labeled provider buttons to match the reference auth layout', () => {
+    expect(authAppearance.layout.socialButtonsVariant).toBe('blockButton');
+  });
+
   it('uses shared theme tokens for Clerk surfaces and text', () => {
     expect(authAppearance.variables).toMatchObject({
       colorPrimary: 'var(--prepai-accent)',

@@ -7,7 +7,7 @@ export const SignUpPage = () => {
   useThemePreference();
 
   return (
-    <AuthPageShell brandTo={ROUTES.root}>
+    <AuthPageShell brandTo={ROUTES.root} mode="sign-up">
       <SignUpWidget />
     </AuthPageShell>
   );

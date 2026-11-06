@@ -7,7 +7,7 @@ export const SignInPage = () => {
   useThemePreference();
 
   return (
-    <AuthPageShell brandTo={ROUTES.root}>
+    <AuthPageShell brandTo={ROUTES.root} mode="sign-in">
       <SignInWidget />
     </AuthPageShell>
   );

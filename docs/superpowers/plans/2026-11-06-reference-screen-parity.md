@@ -35,7 +35,7 @@
 For each screen: inspect the corresponding HTML/CSS and prototype interaction; inspect the live React screen in Chromium at desktop and mobile sizes; write/adjust the focused regression test first; make the smallest architecture-aligned fix; run the focused tests and browser preview; update this plan; commit and push that screen before continuing.
 
 1. [x] Public landing page and its responsive navigation/hero/sections. Compared desktop and mobile Chromium layouts to `prepai-ui.html`; corrected hero wrapping, navigation spacing, CTA sizing, and terminal preview presentation. Added a browser parity check and verified the feature anchor interaction.
-2. [ ] Sign-in and sign-up screens, including Clerk theming and auth-shell layout.
+2. [x] Sign-in and sign-up screens, including Clerk theming and auth-shell layout. Compared both Clerk routes against the prototype at 1440×900 and 390×844; matched card geometry for each flow, changed configured social providers to labeled buttons, and fixed provider contrast/borders. Verified the real Clerk widgets in Chromium.
 3. [ ] Three-step onboarding and skip/back/finish interactions.
 4. [ ] Shared authenticated shell: sidebar, toolbar, search, theme, profile menu, notifications, mobile navigation.
 5. [ ] Dashboard overview, recent sessions, score chart, weak areas, welcome banner, and actions.

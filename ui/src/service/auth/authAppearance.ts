@@ -1,4 +1,7 @@
 export const authAppearance = {
+  layout: {
+    socialButtonsVariant: 'blockButton',
+  },
   variables: {
     colorPrimary: 'var(--prepai-accent)',
     colorForeground: 'var(--text)',
