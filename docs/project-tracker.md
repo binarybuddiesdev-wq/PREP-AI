@@ -1,6 +1,6 @@
 # PrepAI project tracker
 
-Last reviewed: 2026-11-05
+Last reviewed: 2026-11-06
 
 This is the project-wide progress list for the backend, frontend, shared
 integration, and production readiness. Use it to choose the next feature and
@@ -280,6 +280,8 @@ parity and responsive/accessibility acceptance remain.**
       explicit light/dark canvas, text, surface, amber accent, and status tokens.
 - [ ] Match screen-level surfaces, spacing, cards, and status treatments to the
       reference across the full route set.
+- [x] Match Coding problem examples to the reference's single compact
+      Input/Output/Explanation code block; inspect desktop and mobile renders.
 - [x] Move Dashboard cards and status colors onto theme-aware tokens; keep the
       route-wide visual parity item open until the remaining screens are checked.
 - [x] Move PDF Library reader surfaces, controls, and error states onto shared
@@ -332,7 +334,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 536 UI unit tests (123 files) pass; UI
+**Latest evidence (2026-11-06):** All 537 UI unit tests (123 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -400,6 +402,15 @@ Practice and Coding content is now seeded in the local Podman databases so the
 existing flows can be tried: 23 topics, 12 theory questions, and the Two Sum
 coding problem. `pnpm seed` targets local MongoDB explicitly and is idempotent;
 the Coding seed is available as `pnpm --filter server seed:coding:local`.
+
+Coding examples now show Input, Output, and optional Explanation together in a
+single code block, matching the prototype and removing the nested value cards.
+The component test first failed against the split layout, then passed after the
+change. Desktop and 390 px mobile component previews were inspected; neither
+overflows horizontally. The focused coding detail browser check passed in
+Chromium in both themes. The full UI suite passes at 123 files / 537 tests,
+alongside UI lint, TypeScript project check, production build, scoped Prettier,
+and `git diff --check`. The cross-route visual parity item remains open.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

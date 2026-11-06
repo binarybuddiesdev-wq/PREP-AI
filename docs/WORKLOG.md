@@ -961,3 +961,19 @@ New layout, one folder per purpose. A layer may import only from the layers list
   the viewport at 320, 390, 768, and 1440 px.
 - Verification: both overlay browser checks passed in both configured browser
   projects. Scoped Prettier, E2E lint, and `git diff --check` passed.
+
+## 2026-11-06 - Match coding examples to the reference
+
+- Replaced the separate Input and Output cards inside each coding example with
+  one compact code block containing Input, Output, and an optional Explanation,
+  following `prepai-ui.html`.
+- Added a test for the combined content. It failed against the split-card
+  layout, then passed after the markup change. Updated the detail-page assertion
+  to check the explanation in the example block.
+- Inspected desktop and 390 px mobile component previews; both had no
+  horizontal overflow. The focused Chromium detail/theme browser check passed.
+- Verification: all 537 UI tests across 123 files passed. UI lint,
+  `tsc -b`, production build, changed-file Prettier, Impeccable detector, and
+  `git diff --check` passed. Repository lint still fails on the untracked
+  `types/piston.js` file, and repository formatting still reports existing or
+  user-owned files outside this change.

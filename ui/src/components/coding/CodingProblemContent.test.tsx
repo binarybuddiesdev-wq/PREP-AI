@@ -29,24 +29,29 @@ describe('CodingProblemContent', () => {
     );
     expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface)]', 'text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toHaveClass('text-[var(--text-h)]');
-    expect(screen.getByText('2 + 7 equals 9.').closest('figure')).toHaveClass(
+    const exampleContent = screen.getByText(
+      (_, element) => element?.tagName === 'PRE' && element.textContent?.includes('2 + 7 equals 9.')
+    );
+    expect(exampleContent.closest('figure')).toHaveClass(
       'border-[var(--border)]',
-      'bg-[var(--surface)]'
+      'bg-[var(--bg)]'
     );
     expect(screen.getByText('Two values exist.').closest('ul')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText('Easy')).toBeInTheDocument();
     expect(screen.getByText('Arrays')).toBeInTheDocument();
     expect(screen.getByText(problem.description)).toBeInTheDocument();
-    expect(screen.getByText('2 + 7 equals 9.')).toBeInTheDocument();
+    expect(exampleContent).toHaveTextContent('Explanation: 2 + 7 equals 9.');
     expect(screen.getByText('Two values exist.')).toBeInTheDocument();
   });
 
-  it('shows compact example values in a paired input and output layout', () => {
+  it('shows example input and output together in one readable code block', () => {
     render(<CodingProblemContent problem={problem} />);
 
-    expect(screen.getByText('[[2,7],9]')).toBeInTheDocument();
-    expect(screen.getByText('[0,1]')).toBeInTheDocument();
-    expect(screen.getByText('Input').parentElement?.parentElement).toHaveClass('sm:grid-cols-2');
+    const exampleContent = screen.getByText((_, element) => element?.tagName === 'PRE');
+
+    expect(exampleContent.textContent).toBe(
+      'Input: [[2,7],9]\nOutput: [0,1]\nExplanation: 2 + 7 equals 9.'
+    );
   });
 });

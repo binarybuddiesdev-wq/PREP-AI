@@ -12,37 +12,24 @@ const formatExampleValue = (value: unknown) => {
   return serialized ?? String(value);
 };
 
+const formatExampleContent = (example: ICodingProblemExample) =>
+  [
+    `Input: ${formatExampleValue(example.input)}`,
+    `Output: ${formatExampleValue(example.output)}`,
+    ...(example.explanation ? [`Explanation: ${example.explanation}`] : []),
+  ].join('\n');
+
 const Example = (props: { example: ICodingProblemExample; index: number }) => {
   const { example, index } = props;
 
   return (
-    <figure className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4">
-      <figcaption className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--dim)]">
+    <figure className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3.5 sm:p-4">
+      <figcaption className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--accent-strong)]">
         Example {index + 1}
       </figcaption>
-      <dl className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-        <div>
-          <dt className="text-xs font-medium text-[var(--dim)]">Input</dt>
-          <dd className="mt-1">
-            <pre className="min-h-10 overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 font-mono text-xs leading-5 text-[var(--text)]">
-              {formatExampleValue(example.input)}
-            </pre>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium text-[var(--dim)]">Output</dt>
-          <dd className="mt-1">
-            <pre className="min-h-10 overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 font-mono text-xs leading-5 text-[var(--success-strong)]">
-              {formatExampleValue(example.output)}
-            </pre>
-          </dd>
-        </div>
-      </dl>
-      {example.explanation ? (
-        <p className="mt-3 border-t border-[var(--border)] pt-3 text-sm leading-6 text-[var(--dim)]">
-          {example.explanation}
-        </p>
-      ) : null}
+      <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs leading-[1.6] text-[var(--dim)]">
+        {formatExampleContent(example)}
+      </pre>
     </figure>
   );
 };

@@ -40,7 +40,13 @@ describe('CodingProblemDetail', () => {
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
     expect(screen.getByText(problem.description)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Examples' })).toBeInTheDocument();
-    expect(screen.getByText('2 + 7 equals 9.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === 'PRE' &&
+          element.textContent?.includes('Explanation: 2 + 7 equals 9.')
+      )
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Constraints' })).toBeInTheDocument();
     expect(screen.getByText('Do not use the same element twice.')).toBeInTheDocument();
 
