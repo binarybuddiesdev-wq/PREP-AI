@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
@@ -22,10 +22,11 @@ describe('LandingNav', () => {
       </MemoryRouter>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Switch to light theme' }));
+    await user.click(screen.getByRole('button', { name: 'Open navigation menu' }));
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+    await user.click(within(navigation).getByRole('button', { name: 'Switch to light theme' }));
     expect(onToggleTheme).toHaveBeenCalledOnce();
 
-    await user.click(screen.getByRole('button', { name: 'Open navigation menu' }));
     expect(screen.getByRole('button', { name: 'Close navigation menu' })).toHaveAttribute(
       'aria-expanded',
       'true'

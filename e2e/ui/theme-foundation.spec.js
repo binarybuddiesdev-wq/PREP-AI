@@ -35,7 +35,7 @@ test('applies the saved PrepAI light and dark theme across reloads', async () =>
     await expect
       .poll(() =>
         page
-          .getByText('Choose a topic and target difficulty')
+          .getByText('Questions match your chosen topic.')
           .evaluate(
             (element) =>
               element.ownerDocument.defaultView.getComputedStyle(element.closest('p')).opacity
@@ -46,7 +46,7 @@ test('applies the saved PrepAI light and dark theme across reloads', async () =>
       .poll(
         () =>
           page
-            .getByText('Review feedback and choose a next step')
+            .getByText('Score and written feedback explain what to improve next and why.')
             .evaluate(
               (element) =>
                 element.ownerDocument.defaultView.getComputedStyle(element.closest('p')).opacity
