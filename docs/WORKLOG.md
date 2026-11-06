@@ -1093,3 +1093,15 @@ New layout, one folder per purpose. A layer may import only from the layers list
   `[0,1]`; the persisted local execution is completed. Root lint still reports
   14 errors in the unrelated, untracked `types/piston.js`; root Prettier still
   flags unrelated or user-owned files.
+
+## 2026-11-06 - App-shell keyboard and reduced-motion behavior
+
+- Fixed mobile navigation focus so the first visible drawer link receives focus
+  after its visibility state updates, and the menu trigger regains focus when
+  the drawer closes. Reduced-motion now disables transitions on the drawer's
+  interactive links as well as the drawer surface.
+- Theme-aware navigation selection colors now use shared light/dark CSS tokens.
+- Verified all 23 UI Playwright tests, including keyboard focus, Escape close,
+  reduced-motion, route semantics, and responsive previews. The AppShell unit
+  tests pass (10/10), UI lint and TypeScript checks pass, and the production UI
+  build succeeds. The build reports the existing large Monaco chunk warning.

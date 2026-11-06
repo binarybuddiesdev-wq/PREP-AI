@@ -41,6 +41,7 @@ export const AppShell = (props: IAppShellProps) => {
       asideRef.current
         ?.querySelector<HTMLElement>('[data-mobile-drawer-focusable]:not(:disabled)')
         ?.focus();
+      wasMobileNavigationOpen.current = true;
     } else if (wasMobileNavigationOpen.current) {
       menuTriggerRef.current?.focus();
     }
@@ -155,7 +156,7 @@ export const AppShell = (props: IAppShellProps) => {
                     const itemClassName = cn(
                       'group flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400',
                       isActive
-                        ? 'bg-amber-400/10 text-amber-300'
+                        ? 'bg-[var(--app-shell-nav-active-bg)] text-[var(--app-shell-nav-active-text)]'
                         : isDarkTheme
                           ? 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100'
                           : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900',

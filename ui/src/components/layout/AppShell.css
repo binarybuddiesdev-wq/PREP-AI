@@ -1,12 +1,16 @@
 .app-shell[data-theme='dark'] {
   --text-h: #f4f4f5;
   --text: #a1a1aa;
+  --app-shell-nav-active-bg: rgb(251 191 36 / 10%);
+  --app-shell-nav-active-text: #fcd34d;
   color-scheme: dark;
 }
 
 .app-shell[data-theme='light'] {
   --text-h: #18181b;
   --text: #52525b;
+  --app-shell-nav-active-bg: #fef3c7;
+  --app-shell-nav-active-text: #78350f;
   color-scheme: light;
 }
 
@@ -24,6 +28,10 @@
       transform 200ms ease,
       visibility 0s;
   }
+
+  .app-shell aside[data-mobile-open='true'] [data-mobile-drawer-focusable] {
+    visibility: visible;
+  }
 }
 
 @media (min-width: 768px) {
@@ -36,6 +44,13 @@
   }
   .app-shell[data-collapsed='true'] [data-sidebar-action-label] {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell aside,
+  .app-shell aside [data-mobile-drawer-focusable] {
+    transition: none !important;
   }
 }
 
@@ -92,11 +107,6 @@
 
 .app-shell[data-theme='light'] .app-shell-panel .text-amber-400 {
   color: #b45309;
-}
-
-.app-shell[data-theme='light'] aside [aria-current='page'] {
-  background-color: #fef3c7;
-  color: #78350f;
 }
 
 .app-shell[data-theme='light'] .app-shell-panel input,

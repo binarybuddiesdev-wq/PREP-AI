@@ -347,8 +347,9 @@ parity and responsive/accessibility acceptance remain.**
       PDF, and settings previews.
 - [x] Verify the Study Chat popup/fullscreen and Notifications popover in both
       themes, including viewport positioning from phone through desktop widths.
-- [ ] Match desktop, tablet, and mobile layouts; preserve keyboard focus,
-      reduced-motion preferences, semantic controls, and screen-reader names.
+- [x] Match desktop, tablet, and mobile layouts; preserve keyboard focus,
+      reduced-motion preferences, semantic controls, and screen-reader names;
+      verify the navigation and responsive screen previews in Playwright.
 
 ### Phase 10 — Frontend acceptance and release
 

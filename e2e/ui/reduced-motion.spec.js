@@ -58,9 +58,15 @@ test('uses semantic app navigation and honors reduced-motion preferences', async
       );
     });
 
-    const sidebar = page.locator('#reduced-motion-preview .app-shell aside');
+    const appShell = page.locator('#reduced-motion-preview .app-shell');
+    const sidebar = appShell.locator('aside');
     await expect(sidebar).toHaveCount(1);
-    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    const menuTrigger = page.getByRole('button', { name: 'Open navigation menu' });
+    await page.keyboard.press('Tab');
+    await expect(menuTrigger).toBeFocused();
+    await page.keyboard.press('Enter');
+    const closeNavigationButton = page.getByRole('button', { name: 'Close navigation menu' });
+    await expect(closeNavigationButton).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
       'href',
       '/dashboard'
@@ -69,7 +75,25 @@ test('uses semantic app navigation and honors reduced-motion preferences', async
       'aria-current',
       'page'
     );
-    const dashboardLink = page.getByRole('link', { name: 'Dashboard' });
+    const dashboardLink = appShell.getByRole('link', { name: 'Dashboard' });
+    await expect(dashboardLink).toBeFocused();
+    await expect
+      .poll(() =>
+        dashboardLink.evaluate((element) => {
+          const style = globalThis.getComputedStyle(element);
+          return style.outlineStyle === 'solid' && Number.parseFloat(style.outlineWidth) >= 2;
+        })
+      )
+      .toBe(true);
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(dashboardLink).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dashboardLink).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(menuTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(menuTrigger).toBeFocused();
+
     await page
       .locator('#reduced-motion-preview .app-shell')
       .evaluate((element) => (element.dataset.theme = 'light'));
