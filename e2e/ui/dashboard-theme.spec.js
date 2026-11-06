@@ -1,4 +1,14 @@
 import { chromium, expect, test } from '@playwright/test';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const textBox = (locator) =>
+  locator.evaluate((element) => {
+    const range = globalThis.document.createRange();
+    range.selectNodeContents(element);
+    const { x, y, width, height } = range.getBoundingClientRect();
+    return { x, y, width, height };
+  });
 
 test('renders dashboard surfaces and status colors in both themes on mobile and desktop', async () => {
   let browser;
@@ -102,41 +112,115 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       ];
       const preview = globalThis.document.createElement('div');
       preview.id = 'dashboard-preview';
+      const responsiveShell = globalThis.document.createElement('style');
+      responsiveShell.textContent =
+        '#dashboard-preview{margin-left:240px;padding-top:62px;width:calc(100% - 240px)}@media(max-width:767px){#dashboard-preview{margin-left:0;padding-top:73px;width:100%}}';
+      globalThis.document.head.append(responsiveShell);
       globalThis.document.querySelector('#root').hidden = true;
       globalThis.document.body.append(preview);
       const content = globalThis.document.createElement('div');
       content.className = 'px-4 py-6 sm:px-6 lg:px-8';
       preview.append(content);
-      createRoot(content).render(
+      const dashboardRoot = createRoot(content);
+      const renderDashboard = (codingStatus) =>
+        dashboardRoot.render(
+          createElement(
+            MemoryRouter,
+            { initialEntries: ['/dashboard'] },
+            createElement(DashboardOverview, {
+              name: 'Asha',
+              summary,
+              practiceTopics,
+              codingProblems,
+              theoryStatus: ready,
+              codingStatus,
+              codingProblemsStatus: ready,
+              scoreTrendStatus: ready,
+              weakAreasStatus: ready,
+              practiceTopicsStatus: ready,
+              settingsStatus: ready,
+              onOpenSession: () => {},
+            })
+          )
+        );
+      renderDashboard(failed);
+
+      const { AppShell } = await import('/src/components/layout/AppShell.tsx');
+      const { BrandLink } = await import('/src/components/layout/BrandLink.tsx');
+      const icons = await loadViteDependency('lucide-react');
+      const shellPreview = globalThis.document.createElement('div');
+      shellPreview.id = 'dashboard-shell-preview';
+      shellPreview.style.display = 'none';
+      globalThis.document.body.append(shellPreview);
+      createRoot(shellPreview).render(
         createElement(
           MemoryRouter,
-          { initialEntries: ['/dashboard'] },
-          createElement(DashboardOverview, {
-            name: 'Asha',
-            summary,
-            practiceTopics,
-            codingProblems,
-            theoryStatus: ready,
-            codingStatus: failed,
-            codingProblemsStatus: ready,
-            scoreTrendStatus: ready,
-            weakAreasStatus: ready,
-            practiceTopicsStatus: ready,
-            settingsStatus: ready,
-            onOpenSession: () => {},
+          null,
+          createElement(AppShell, {
+            activeRoute: '/dashboard',
+            brand: createElement(BrandLink, { to: '/dashboard', size: 'small' }),
+            collapseIcon: createElement(icons.PanelLeftClose, { size: 16 }),
+            expandIcon: createElement(icons.PanelLeftOpen, { size: 16 }),
+            headerLeadingActions: null,
+            headerActions: null,
+            mobileCloseIcon: createElement(icons.X, { size: 20 }),
+            mobileMenuIcon: createElement(icons.Menu, { size: 20 }),
+            navigation: [
+              {
+                label: 'Main',
+                items: [
+                  {
+                    label: 'Dashboard',
+                    route: '/dashboard',
+                    icon: createElement(icons.LayoutDashboard, { size: 18 }),
+                  },
+                ],
+              },
+            ],
+            onNavigate: () => {},
+            onThemeToggle: () => {},
+            pageTitle: 'Dashboard',
+            theme: 'dark',
+            themeIcon: createElement(icons.Sun, { size: 17 }),
+            userEmail: 'asha@example.com',
+            userMenu: createElement(
+              'button',
+              { type: 'button', 'aria-label': 'Account menu' },
+              'A'
+            ),
+            userName: 'Asha',
+            children: createElement(DashboardOverview, {
+              name: 'Asha',
+              summary,
+              practiceTopics,
+              codingProblems,
+              theoryStatus: ready,
+              codingStatus: ready,
+              codingProblemsStatus: ready,
+              scoreTrendStatus: ready,
+              weakAreasStatus: ready,
+              practiceTopicsStatus: ready,
+              settingsStatus: ready,
+              onOpenSession: () => {},
+            }),
           })
         )
       );
     });
 
-    const metricLabel = page.getByText('Sessions Completed', { exact: true });
+    const dashboardPreview = page.locator('#dashboard-preview');
+    const metricLabel = dashboardPreview.getByText('Sessions Completed', { exact: true });
     await expect(metricLabel).toBeVisible();
-    const scoreTrendChart = page.getByRole('img', { name: /Score trend for the last 2 sessions/ });
+    const scoreTrendChart = dashboardPreview.getByRole('img', {
+      name: /Score trend for the last 2 sessions/,
+    });
     await expect(scoreTrendChart).toBeVisible();
     await expect(scoreTrendChart.locator('[data-score-trend-point]')).toHaveCount(2);
-    await expect(page.getByText('Last 2 sessions', { exact: true })).toBeVisible();
-    await expect(page.getByText('Based on your weak areas, we recommend:')).toBeVisible();
-    const recentSessionsTable = page.getByRole('table', { name: 'Recent Sessions' });
+    await expect(dashboardPreview.getByText('Last 2 sessions', { exact: true })).toBeVisible();
+    await expect(
+      dashboardPreview.getByText('Based on your weak areas, we recommend:')
+    ).toBeVisible();
+    const recentSessionsTable = dashboardPreview.getByRole('table', { name: 'Recent Sessions' });
     await expect(recentSessionsTable.getByRole('columnheader')).toHaveText([
       'Topic',
       'Date',
@@ -144,25 +228,26 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       'Status',
     ]);
     await expect(recentSessionsTable.getByRole('cell', { name: 'Completed' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Practice Node.js' })).toHaveAttribute(
+    await expect(dashboardPreview.getByRole('link', { name: 'Practice Node.js' })).toHaveAttribute(
       'href',
       '/practice?topicId=topic-node'
     );
-    await expect(page.getByRole('link', { name: 'Practice React' })).toHaveAttribute(
+    await expect(dashboardPreview.getByRole('link', { name: 'Practice React' })).toHaveAttribute(
       'href',
       '/practice?topicId=topic-react'
     );
-    await expect(page.getByRole('link', { name: /Try Two Sum/ })).toHaveAttribute(
+    await expect(dashboardPreview.getByRole('link', { name: /Try Two Sum/ })).toHaveAttribute(
       'href',
       '/coding/two-sum'
     );
+
     const card = metricLabel.locator('..');
     await expect
       .poll(() => card.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor))
       .toBe('rgb(24, 24, 27)');
     await expect
       .poll(() =>
-        page
+        dashboardPreview
           .getByText('Coding history is unavailable', { exact: true })
           .first()
           .evaluate((element) => globalThis.getComputedStyle(element).color)
@@ -175,12 +260,115 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       .toBe('rgb(255, 255, 255)');
     await expect
       .poll(() =>
-        page
+        dashboardPreview
           .getByText('Coding history is unavailable', { exact: true })
           .first()
           .evaluate((element) => globalThis.getComputedStyle(element).color)
       )
       .toBe('rgb(190, 18, 60)');
+
+    await page.locator('html').evaluate((element) => {
+      element.dataset.theme = 'dark';
+    });
+    await page.locator('#dashboard-preview').evaluate((element) => {
+      element.hidden = true;
+    });
+    await page.locator('#dashboard-shell-preview').evaluate((element) => {
+      element.style.display = 'block';
+    });
+    const referencePage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await referencePage.goto(pathToFileURL(resolve('prepai-ui.html')).href, {
+      waitUntil: 'networkidle',
+    });
+    await referencePage.locator('#scr-app').evaluate((element) => {
+      element.hidden = false;
+    });
+    const referenceKpis = referencePage.locator('#pg-dashboard .kpi-row');
+    const implementationKpis = page.locator(
+      '#dashboard-shell-preview [aria-label="Practice summary"]'
+    );
+    const referenceKpiBox = await referenceKpis.boundingBox();
+    const implementationKpiBox = await implementationKpis.boundingBox();
+    const referenceTitle = await textBox(referencePage.locator('#pg-dashboard .pg-title'));
+    const implementationTitle = await textBox(
+      page.locator('#dashboard-shell-preview').getByRole('heading', { level: 1 })
+    );
+    expect(Math.abs(implementationKpiBox.x - referenceKpiBox.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(implementationKpiBox.width - referenceKpiBox.width)).toBeLessThanOrEqual(2);
+    expect(Math.abs(implementationTitle.x - referenceTitle.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(implementationTitle.y - referenceTitle.y)).toBeLessThanOrEqual(2);
+    expect(Math.abs(implementationKpiBox.y - referenceKpiBox.y)).toBeLessThanOrEqual(2);
+    const referenceFirstDesktopKpi = await referencePage
+      .locator('#pg-dashboard .kpi')
+      .first()
+      .boundingBox();
+    const implementationFirstDesktopKpi = await implementationKpis
+      .locator('article')
+      .first()
+      .boundingBox();
+    expect(
+      Math.abs(implementationFirstDesktopKpi.height - referenceFirstDesktopKpi.height),
+      JSON.stringify({ referenceFirstDesktopKpi, implementationFirstDesktopKpi })
+    ).toBeLessThanOrEqual(4);
+    const referenceContentGrid = await referencePage
+      .locator('#pg-dashboard .dash-grid')
+      .boundingBox();
+    const implementationContentGrid = await page
+      .locator('#dashboard-shell-preview main > section')
+      .filter({ has: page.getByRole('heading', { name: 'Recent Sessions' }) })
+      .boundingBox();
+    expect(
+      Math.abs(implementationContentGrid.y - referenceContentGrid.y),
+      JSON.stringify({ implementationContentGrid, referenceContentGrid })
+    ).toBeLessThanOrEqual(6);
+
+    await referencePage.setViewportSize({ width: 390, height: 844 });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect
+      .poll(() =>
+        referencePage
+          .locator('.mn')
+          .evaluate((element) => globalThis.getComputedStyle(element).marginLeft)
+      )
+      .toBe('0px');
+    const referenceFirstKpi = referencePage.locator('#pg-dashboard .kpi').first();
+    const implementationFirstKpi = implementationKpis.locator('article').first();
+    const referenceFirstKpiBox = await referenceFirstKpi.boundingBox();
+    const implementationFirstKpiBox = await implementationFirstKpi.boundingBox();
+    const referenceMobileTitle = await textBox(referencePage.locator('#pg-dashboard .pg-title'));
+    const implementationMobileTitle = await textBox(
+      page.locator('#dashboard-shell-preview').getByRole('heading', { level: 1 })
+    );
+    const referenceMobileKpiRow = await referenceKpis.boundingBox();
+    const implementationMobileKpiRow = await implementationKpis.boundingBox();
+    const referenceColumns = await referenceKpis.evaluate(
+      (element) => globalThis.getComputedStyle(element).gridTemplateColumns.split(' ').length
+    );
+    const implementationColumns = await implementationKpis.evaluate(
+      (element) => globalThis.getComputedStyle(element).gridTemplateColumns.split(' ').length
+    );
+    expect(implementationColumns).toBe(referenceColumns);
+    expect(Math.abs(implementationFirstKpiBox.x - referenceFirstKpiBox.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(implementationMobileTitle.y - referenceMobileTitle.y)).toBeLessThanOrEqual(2);
+    expect(
+      Math.abs(implementationMobileKpiRow.y - referenceMobileKpiRow.y),
+      JSON.stringify({
+        implementationMobileKpiRow,
+        referenceMobileKpiRow,
+        implementationMobileTitle,
+        referenceMobileTitle,
+        implementationSubtitle: await textBox(
+          page.locator('#dashboard-shell-preview main > header > p')
+        ),
+        referenceSubtitle: await textBox(referencePage.locator('#dashboard-sub')),
+      })
+    ).toBeLessThanOrEqual(2);
+    expect(Math.abs(implementationMobileKpiRow.x - referenceMobileKpiRow.x)).toBeLessThanOrEqual(2);
+    expect(
+      Math.abs(implementationFirstKpiBox.height - referenceFirstKpiBox.height),
+      JSON.stringify({ referenceFirstKpiBox, implementationFirstKpiBox })
+    ).toBeLessThanOrEqual(4);
+    await referencePage.close();
 
     for (const viewport of [
       { width: 320, height: 740 },
@@ -191,6 +379,11 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       await page.setViewportSize(viewport);
       await expect
         .poll(() => page.locator('#dashboard-preview').evaluate((element) => element.scrollWidth))
+        .toBeLessThanOrEqual(viewport.width);
+      await expect
+        .poll(() =>
+          page.locator('#dashboard-shell-preview').evaluate((element) => element.scrollWidth)
+        )
         .toBeLessThanOrEqual(viewport.width);
     }
   } finally {

@@ -96,6 +96,21 @@ describe('AuthenticatedLayoutPage', () => {
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings?tab=plan');
   });
 
+  it('shows the dashboard New Session action and opens Practice', async () => {
+    const user = userEvent.setup();
+    renderAuthenticatedRoutes('/dashboard');
+
+    await user.click(screen.getByRole('button', { name: 'New Session' }));
+
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/practice');
+  });
+
+  it('keeps the dashboard-only New Session action off other routes', () => {
+    renderAuthenticatedRoutes('/practice');
+
+    expect(screen.queryByRole('button', { name: 'New Session' })).not.toBeInTheDocument();
+  });
+
   it('mounts exactly one Study Chat launcher beside the authenticated route content', () => {
     renderAuthenticatedRoutes('/dashboard');
 

@@ -106,6 +106,35 @@ const renderOverview = (overrides: Partial<IDashboardOverviewProps> = {}) =>
   );
 
 describe('DashboardOverview', () => {
+  it('shows an incomplete setup checklist as a dismissible welcome banner above the dashboard', async () => {
+    const user = userEvent.setup();
+    renderOverview();
+
+    const banner = screen.getByRole('region', { name: 'Complete your setup' });
+    const greeting = screen.getByRole('heading', { level: 1 });
+    expect(banner).toBeVisible();
+    expect(
+      banner.compareDocumentPosition(greeting) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(within(banner).getByText('Choose focus topics')).toBeVisible();
+    await user.click(within(banner).getByRole('button', { name: 'Dismiss setup checklist' }));
+    expect(screen.queryByRole('region', { name: 'Complete your setup' })).not.toBeInTheDocument();
+  });
+
+  it('hides the setup checklist when all setup steps are complete or missing', () => {
+    const empty = renderOverview({ summary: { ...summary, setupChecklist: [] } });
+
+    expect(screen.queryByRole('region', { name: 'Complete your setup' })).not.toBeInTheDocument();
+    empty.unmount();
+    renderOverview({
+      summary: {
+        ...summary,
+        setupChecklist: summary.setupChecklist.map((item) => ({ ...item, isComplete: true })),
+      },
+    });
+    expect(screen.queryByRole('region', { name: 'Complete your setup' })).not.toBeInTheDocument();
+  });
+
   it('uses the prototype dashboard greeting scale and greeting mark', () => {
     renderOverview();
 

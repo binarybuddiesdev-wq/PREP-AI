@@ -8,6 +8,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   Settings2,
   Sun,
   X,
@@ -113,7 +114,21 @@ export const AuthenticatedLayoutPage = () => {
             onSelect={selectSearchResult}
           />
         }
-        headerActions={<NotificationCenter theme={theme} />}
+        headerActions={
+          <>
+            {activeRoute === ROUTES.dashboard && (
+              <button
+                type="button"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-semibold text-zinc-950 transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                onClick={() => navigate(ROUTES.practice)}
+              >
+                <Plus aria-hidden="true" className="size-3.5" />
+                New Session
+              </button>
+            )}
+            <NotificationCenter theme={theme} />
+          </>
+        }
         sidebarAction={
           <button
             type="button"
