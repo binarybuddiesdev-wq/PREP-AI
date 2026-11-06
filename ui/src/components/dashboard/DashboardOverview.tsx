@@ -197,31 +197,68 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                 'Retry recent sessions',
                 'No sessions yet',
                 summary.recentSessions.length > 0 ? (
-                  <ul className="divide-y divide-[var(--border)]">
-                    {summary.recentSessions.map((session) => (
-                      <li
-                        key={session.id}
-                        className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
-                      >
-                        <button
-                          type="button"
-                          aria-label={`View ${session.topicName} session`}
-                          onClick={() => onOpenSession(session.id)}
-                          className="min-h-11 min-w-0 truncate text-left text-sm font-medium text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
-                        >
-                          {session.topicName}
-                        </button>
-                        <span className="text-xs text-[var(--dim)]">
-                          {formatSessionDate(session.startedAt)}
-                        </span>
-                        <span className="col-span-2 text-xs text-[var(--dim)] sm:col-span-1 sm:text-right">
-                          {session.status === 'completed' && session.averageScore !== null
-                            ? formatScore(session.averageScore)
-                            : `${session.questionsAnswered}/${session.totalQuestions} answered · In progress`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <table
+                    aria-label="Recent Sessions"
+                    className="w-full table-fixed border-collapse text-left"
+                  >
+                    <colgroup>
+                      <col className="w-[32%]" />
+                      <col className="w-[19%]" />
+                      <col className="w-[21%]" />
+                      <col className="w-[28%]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b border-[var(--border)] text-[0.65rem] font-medium text-[var(--dim)] sm:text-xs">
+                        <th scope="col" className="px-1.5 pb-2 text-left sm:px-2">
+                          Topic
+                        </th>
+                        <th scope="col" className="px-1.5 pb-2 text-left sm:px-2">
+                          Date
+                        </th>
+                        <th scope="col" className="px-1.5 pb-2 text-left sm:px-2">
+                          Score
+                        </th>
+                        <th scope="col" className="px-1.5 pb-2 text-left sm:px-2">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                      {summary.recentSessions.map((session) => (
+                        <tr key={session.id}>
+                          <td className="py-1 pr-1.5 sm:pr-2">
+                            <button
+                              type="button"
+                              aria-label={`View ${session.topicName} session`}
+                              onClick={() => onOpenSession(session.id)}
+                              className="min-h-11 w-full truncate rounded-sm text-left text-xs font-medium text-[var(--text)] transition hover:text-[var(--accent-strong)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] sm:px-2 sm:text-sm"
+                            >
+                              {session.topicName}
+                            </button>
+                          </td>
+                          <td className="truncate px-1.5 py-1 text-[0.65rem] text-[var(--dim)] sm:px-2 sm:text-xs">
+                            {formatSessionDate(session.startedAt)}
+                          </td>
+                          <td className="truncate px-1.5 py-1 text-[0.65rem] tabular-nums text-[var(--dim)] sm:px-2 sm:text-xs">
+                            {session.averageScore === null
+                              ? '—'
+                              : formatScore(session.averageScore)}
+                          </td>
+                          <td className="px-1.5 py-1 sm:px-2">
+                            <span
+                              className={`inline-flex max-w-full truncate rounded-full px-1.5 py-1 text-[0.6rem] font-medium leading-none sm:px-2 sm:text-[0.7rem] ${
+                                session.status === 'completed'
+                                  ? 'bg-[var(--green-bg)] text-[var(--success-strong)]'
+                                  : 'bg-[var(--blue-bg)] text-[var(--info-strong)]'
+                              }`}
+                            >
+                              {session.status === 'completed' ? 'Completed' : 'In progress'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 ) : null
               )}
             </div>

@@ -1130,3 +1130,15 @@ New layout, one folder per purpose. A layer may import only from the layers list
   build pass. Root lint still reports 14 errors in the unrelated untracked
   `types/piston.js`; root Prettier still reports 57 unrelated or user-owned
   files.
+
+## 2026-11-06 - Dashboard recent-session table
+
+- Matched the reference's Topic, Date, Score, and Status columns using real
+  session values. Unfinished sessions show no fabricated score, the topic
+  remains a link to its session detail, and compact fixed columns fit mobile.
+- The table test failed before the change and passes now; a separate test
+  covers unfinished sessions. The dashboard Playwright preview verifies the
+  rendered table and no overflow at 320, 390, 768, and 1440 px. The full UI
+  suite passes (129 files / 568 tests), UI lint, TypeScript project check, and
+  production build pass. Root lint and formatting still report unrelated or
+  user-owned worktree issues.

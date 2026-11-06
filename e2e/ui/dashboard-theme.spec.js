@@ -52,7 +52,17 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
           currentStreak: 2,
         },
         week: [],
-        recentSessions: [],
+        recentSessions: [
+          {
+            id: 'session-react',
+            topicName: 'React Hooks',
+            startedAt: '2026-11-05T07:00:00.000Z',
+            status: 'completed',
+            questionsAnswered: 5,
+            totalQuestions: 5,
+            averageScore: 8.5,
+          },
+        ],
         scoreTrend: [
           { date: '2026-11-05', avgScore: 7.5 },
           { date: '2026-11-06', avgScore: 8 },
@@ -98,11 +108,11 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
             summary,
             practiceTopics,
             codingProblems,
-            theoryStatus: failed,
+            theoryStatus: ready,
             codingStatus: ready,
             codingProblemsStatus: ready,
             scoreTrendStatus: ready,
-            weakAreasStatus: ready,
+            weakAreasStatus: failed,
             practiceTopicsStatus: ready,
             settingsStatus: ready,
             onOpenSession: () => {},
@@ -116,6 +126,14 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
     const scoreTrendChart = page.getByRole('img', { name: /Score trend for the last 2 sessions/ });
     await expect(scoreTrendChart).toBeVisible();
     await expect(scoreTrendChart.locator('[data-score-trend-point]')).toHaveCount(2);
+    const recentSessionsTable = page.getByRole('table', { name: 'Recent Sessions' });
+    await expect(recentSessionsTable.getByRole('columnheader')).toHaveText([
+      'Topic',
+      'Date',
+      'Score',
+      'Status',
+    ]);
+    await expect(recentSessionsTable.getByRole('cell', { name: 'Completed' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Practice React' })).toHaveAttribute(
       'href',
       '/practice?topicId=topic-react'

@@ -214,6 +214,46 @@ describe('DashboardOverview', () => {
     expect(screen.getByRole('img', { name: /score trend/i })).toBeInTheDocument();
   });
 
+  it('shows recent sessions in the reference table with score and status', () => {
+    renderOverview();
+
+    const sessionsTable = screen.getByRole('table', { name: 'Recent Sessions' });
+    expect(
+      within(sessionsTable)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent)
+    ).toEqual(['Topic', 'Date', 'Score', 'Status']);
+    const sessionRow = within(sessionsTable).getByRole('row', { name: /React/ });
+    expect(within(sessionRow).getByText('8.0/10')).toBeVisible();
+    expect(within(sessionRow).getByText('Completed')).toBeVisible();
+  });
+
+  it('shows an in-progress label and no fabricated score for unfinished sessions', () => {
+    renderOverview({
+      summary: {
+        ...summary,
+        recentSessions: [
+          {
+            id: 'session-in-progress',
+            topicName: 'TypeScript',
+            startedAt: '2026-11-05T07:00:00.000Z',
+            status: 'in_progress',
+            questionsAnswered: 2,
+            totalQuestions: 5,
+            averageScore: null,
+          },
+        ],
+      },
+    });
+
+    const sessionRow = within(screen.getByRole('table', { name: 'Recent Sessions' })).getByRole(
+      'row',
+      { name: /TypeScript/ }
+    );
+    expect(within(sessionRow).getByText('—')).toBeVisible();
+    expect(within(sessionRow).getByText('In progress')).toBeVisible();
+  });
+
   it('opens the matching session detail from a recent practice session', async () => {
     const user = userEvent.setup();
     const onOpenSession = vi.fn();
