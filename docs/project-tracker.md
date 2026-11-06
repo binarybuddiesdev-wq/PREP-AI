@@ -478,12 +478,14 @@ unrelated or user-owned files.
 
 - The coding-results browser regression now asserts numbered inputs and
   expected/actual outputs at 320, 390, 768, and 1440 px. Its stale combined-
-  input selector failed before the test update, then passed. The Chromium
-  route-preview suite passes 23/23; the UI unit suite passes 129 files / 570
-  tests, lint, TypeScript project check, and build. Browser component previews
-  use fixture data. Signed-in live API states remain unverified, and root
-  lint/format still fail on unrelated or user-owned files, so Phase 10 remains
-  open.
+  input selector failed before the test update, then passed. Both configured
+  Chromium route-preview projects pass 23/23 (46 total); the UI unit suite
+  passes 129 files / 570 tests, lint, TypeScript project check, and build.
+  Browser component previews use fixture data. A scan found no fake user-facing
+  data or random feature results. Signed-in live API states remain unverified.
+  All 1,127 tracked source/document files pass scoped Prettier; root lint and
+  format commands still include failing user-owned untracked files, so Phase 10
+  remains open.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

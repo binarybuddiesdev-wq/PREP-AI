@@ -1183,6 +1183,10 @@ New layout, one folder per purpose. A layer may import only from the layers list
   and the expected/actual values used by the shared coding result components.
   It checks responsive overflow at 320, 390, 768, and 1440 px.
 - The stale browser assertion failed before the test update; the focused test
-  then passed. The full Chromium UI suite passes 23/23. These previews use
-  component/API fixtures; signed-in live API verification remains open in
-  Phase 10.
+  then passed. Both configured Chromium browser projects pass 23/23 (46 total).
+  The UI suite passes at 129 files / 570 tests with lint, TypeScript, and build.
+  Prettier passes all 1,127 tracked source/document files. The root lint and
+  format commands still include failing untracked worktree files. A frontend
+  scan found random values only in decorative landing particles and a chat
+  request-ID fallback, not in user-facing results. Signed-in live API
+  verification remains open in Phase 10.
