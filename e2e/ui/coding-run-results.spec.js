@@ -104,15 +104,11 @@ test('shows readable Two Sum input and output in the coding results panel', asyn
 
     const results = page.getByRole('region', { name: 'Run results' });
     await expect(results.getByText('1 of 2 test cases passed')).toBeVisible();
-    await expect(page.getByLabel('Example input')).toHaveText(
-      /\[\s*\[\s*2,\s*7,\s*11,\s*15\s*\],\s*9\s*\]/
-    );
-    await expect(page.getByLabel('Example output')).toHaveText(/\[\s*0,\s*1\s*\]/);
-    await expect(results.getByLabel('Test case input').first()).toHaveText(
-      /\[\s*\[\s*2,\s*7,\s*11,\s*15\s*\],\s*9\s*\]/
-    );
-    await expect(results.getByLabel('Expected output').first()).toHaveText(/\[\s*0,\s*1\s*\]/);
-    await expect(results.getByLabel('Your output').last()).toHaveText(/\[\s*2,\s*1\s*\]/);
+    await expect(page.getByLabel('Example input')).toHaveText('[[2, 7, 11, 15], 9]');
+    await expect(page.getByLabel('Example output')).toHaveText('[0, 1]');
+    await expect(results.getByLabel('Test case input').first()).toHaveText('[[2, 7, 11, 15], 9]');
+    await expect(results.getByLabel('Expected output').first()).toHaveText('[0, 1]');
+    await expect(results.getByLabel('Your output').last()).toHaveText('[2, 1]');
 
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 840 });

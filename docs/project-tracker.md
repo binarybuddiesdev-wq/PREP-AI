@@ -330,8 +330,9 @@ parity and responsive/accessibility acceptance remain.**
       and missing/not-found states onto shared theme tokens; preserve the
       dark editor surface and verify the detail/review screens in both themes.
 - [x] Format coding examples and test-case input/results as readable code
-      blocks; show clear run progress, verify queued-to-completed polling, and
-      provide a status retry if a run stays queued for 45 seconds.
+      blocks; keep short values compact, show clear run progress, poll through
+      background tabs, and provide a status retry if a run stays queued for 45
+      seconds.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible

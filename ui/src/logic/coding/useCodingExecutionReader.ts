@@ -26,6 +26,7 @@ export const useCodingExecutionReader = (sessionId: string, executionId: string)
       const isReviewActive = reviewStatus === 'queued' || reviewStatus === 'running';
       return isExecutionActive || isReviewActive ? EXECUTION_POLL_INTERVAL_MS : false;
     },
+    refetchIntervalInBackground: true,
   });
   const execution = executionQuery.data;
 

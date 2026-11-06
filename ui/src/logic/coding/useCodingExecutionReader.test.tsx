@@ -100,6 +100,10 @@ describe('useCodingExecutionReader', () => {
       }
     ).refetchInterval;
     expect(typeof interval === 'function' ? interval(query as never) : interval).toBe(expected);
+    expect(
+      (query.options as unknown as { refetchIntervalInBackground?: boolean })
+        .refetchIntervalInBackground
+    ).toBe(true);
   });
 
   it('keeps reading a queued execution until the worker returns its result', async () => {

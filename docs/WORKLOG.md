@@ -1078,3 +1078,18 @@ New layout, one folder per purpose. A layer may import only from the layers list
   unrelated or user-owned files.
 - Read-only UI architecture, QA, and general correctness reviews found no
   findings. Full cross-screen acceptance remains open in the tracker.
+
+## 2026-11-06 - Coding result clarity
+
+- Adjusted the coding result cards to show a clear case number and pass/fail
+  badge, with compact, spaced JSON for short values such as Two Sum inputs and
+  outputs. Longer values remain indented for readability.
+- Queued runs now say they will start automatically, and execution polling
+  continues while the browser tab is in the background. Existing automatic
+  queued-to-completed coverage remains in place.
+- Verification: the full UI suite passes (127 files / 562 tests), UI lint,
+  type-check, production build, the focused Two Sum Chromium check, and scoped
+  formatting pass. A real JavaScript Two Sum request to local Piston returned
+  `[0,1]`; the persisted local execution is completed. Root lint still reports
+  14 errors in the unrelated, untracked `types/piston.js`; root Prettier still
+  flags unrelated or user-owned files.
