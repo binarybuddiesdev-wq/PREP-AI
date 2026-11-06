@@ -1,4 +1,5 @@
 import type { ICodingProblemExample } from '@/core';
+import { formatCodingValue } from '@/utils';
 import type { ICodingProblemContentProps } from './CodingProblemContent.types';
 
 const difficultyClassName = {
@@ -7,33 +8,45 @@ const difficultyClassName = {
   Hard: 'border-[var(--red-bg)] bg-[var(--red-bg)] text-[var(--danger-strong)]',
 } as const;
 
-const formatExampleValue = (value: unknown) => {
-  const serialized = JSON.stringify(value);
-  return serialized ?? String(value);
-};
-
 const Example = (props: { example: ICodingProblemExample; index: number }) => {
   const { example, index } = props;
 
   return (
     <figure
       aria-label={`Example ${index + 1}`}
-      className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3"
+      className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-3 sm:p-4"
     >
-      <figcaption className="mb-2 text-xs font-semibold text-[var(--text-h)]">
+      <figcaption className="mb-3 flex items-center gap-2 text-xs font-semibold text-[var(--text-h)]">
+        <span className="flex size-6 items-center justify-center rounded-md bg-[var(--accent-bg)] font-mono text-[var(--accent-strong)]">
+          {index + 1}
+        </span>
         Example {index + 1}
       </figcaption>
-      <dl className="space-y-2">
-        <div className="grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2">
-          <dt className="pt-1 text-[11px] font-medium text-[var(--dim)]">Input</dt>
-          <dd className="min-w-0 overflow-x-auto rounded-md bg-[var(--surface)] px-2.5 py-1.5 font-mono text-xs leading-5 text-[var(--text)]">
-            {formatExampleValue(example.input)}
+      <dl className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2.5">
+          <dt className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--faint)]">
+            Input
+          </dt>
+          <dd>
+            <pre
+              aria-label="Example input"
+              className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-md bg-[var(--card)] p-2.5 font-mono text-xs leading-5 text-[var(--text)]"
+            >
+              <code>{formatCodingValue(example.input)}</code>
+            </pre>
           </dd>
         </div>
-        <div className="grid grid-cols-[52px_minmax(0,1fr)] items-start gap-2">
-          <dt className="pt-1 text-[11px] font-medium text-[var(--dim)]">Output</dt>
-          <dd className="min-w-0 overflow-x-auto rounded-md bg-[var(--surface)] px-2.5 py-1.5 font-mono text-xs leading-5 text-[var(--text)]">
-            {formatExampleValue(example.output)}
+        <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2.5">
+          <dt className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--faint)]">
+            Output
+          </dt>
+          <dd>
+            <pre
+              aria-label="Example output"
+              className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-md bg-[var(--card)] p-2.5 font-mono text-xs leading-5 text-[var(--text)]"
+            >
+              <code>{formatCodingValue(example.output)}</code>
+            </pre>
           </dd>
         </div>
       </dl>

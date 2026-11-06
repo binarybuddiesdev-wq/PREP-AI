@@ -18,6 +18,7 @@ import {
 import type { CodingExecutionOperation, CodingLanguage, ICodingExecution } from '@/core';
 import { CodingReviewDialog } from './CodingReviewDialog';
 import { CodingProblemContent } from './CodingProblemContent';
+import { CodingTestCaseResult } from './CodingTestCaseResult';
 import { CodingEditor } from './CodingEditor';
 import type { ICodingProblemWorkspaceProps } from './CodingProblemWorkspace.types';
 
@@ -28,11 +29,7 @@ const LANGUAGES: readonly { value: CodingLanguage; label: string; extension: str
 ];
 const FULLSCREEN_FOCUSABLE_SELECTOR =
   'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"], [contenteditable="true"]';
-
-const formatResultValue = (value: unknown) => {
-  const serialized = JSON.stringify(value);
-  return serialized ?? String(value);
-};
+const QUEUED_EXECUTION_WARNING_MS = 45_000;
 
 const executionActionLabel = (operation: CodingExecutionOperation) =>
   operation === 'run' ? 'Run' : 'Submit';
@@ -86,10 +83,29 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
   const isExecutionActive = execution?.status === 'queued' || execution?.status === 'running';
   const isBusy = isActionPending || isExecutionActive;
   const [isReviewOpen, setReviewOpen] = useState(false);
+  const [stalledExecutionId, setStalledExecutionId] = useState<string | null>(null);
   const fullscreenDialogRef = useRef<HTMLDivElement>(null);
   const fullscreenFocusReturnRef = useRef<HTMLElement | null>(null);
   const reviewAnswer =
     execution?.status === 'completed' && execution.operation === 'submit' ? execution.answer : null;
+  const isQueuedExecutionStalled =
+    execution?.status === 'queued' && stalledExecutionId === execution.id;
+
+  useEffect(() => {
+    if (execution?.status !== 'queued') {
+      setStalledExecutionId(null);
+      return;
+    }
+
+    const queuedAt = Date.parse(execution.createdAt);
+    if (!Number.isFinite(queuedAt)) return;
+
+    const timeoutId = window.setTimeout(
+      () => setStalledExecutionId(execution.id),
+      Math.max(0, queuedAt + QUEUED_EXECUTION_WARNING_MS - Date.now())
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [execution?.createdAt, execution?.id, execution?.status]);
 
   const toggleFullscreen = () => {
     if (!isFullscreen) {
@@ -347,15 +363,37 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                     Starting your request…
                   </p>
                 ) : execution?.status === 'queued' || execution?.status === 'running' ? (
-                  <p role="status" className="inline-flex items-center gap-2 text-[var(--dim)]">
-                    <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
-                    <span>
-                      {executionActionLabel(execution.operation)}{' '}
-                      {execution.status === 'queued'
-                        ? 'queued · waiting for a runner…'
-                        : 'is running…'}
-                    </span>
-                  </p>
+                  isQueuedExecutionStalled ? (
+                    <div
+                      role="alert"
+                      className="flex h-full flex-col items-center justify-center gap-2 text-center"
+                    >
+                      <p className="max-w-lg text-[var(--accent-strong)]">
+                        This {execution.operation === 'run' ? 'run' : 'submission'} is taking longer
+                        than expected. Check that the coding worker is running, then check the
+                        status again.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={onRetryExecutionRead}
+                        className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[var(--border2)] px-2.5 text-xs font-medium text-[var(--text)] transition hover:bg-[var(--surface2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                      >
+                        <RotateCcw aria-hidden="true" className="size-3" />
+                        Check status
+                      </button>
+                    </div>
+                  ) : (
+                    <p role="status" className="inline-flex items-center gap-2 text-[var(--dim)]">
+                      <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
+                      <span>
+                        {execution.status === 'queued'
+                          ? execution.operation === 'run'
+                            ? 'Starting your run…'
+                            : 'Starting your submission…'
+                          : 'Your code is running…'}
+                      </span>
+                    </p>
+                  )
                 ) : execution?.status === 'failed' ? (
                   <div
                     role="alert"
@@ -396,51 +434,11 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                       {outputTab === 'testcases' ? (
                         <ol className="space-y-1.5">
                           {execution.result.testCases.map((testCase, index) => (
-                            <li
+                            <CodingTestCaseResult
                               key={`${execution.id}-case-${index + 1}`}
-                              className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-2"
-                            >
-                              <div className="mb-1.5 flex items-center justify-between gap-2">
-                                <span className="font-medium text-[var(--text)]">
-                                  Test case {index + 1}
-                                </span>
-                                <span
-                                  className={
-                                    testCase.passed
-                                      ? 'text-[var(--success-strong)]'
-                                      : 'text-[var(--danger-strong)]'
-                                  }
-                                >
-                                  {testCase.passed ? 'Passed' : 'Failed'}
-                                </span>
-                              </div>
-                              <dl className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-3">
-                                <div>
-                                  <dt className="text-[10px] uppercase tracking-wide text-[var(--faint)]">
-                                    Input
-                                  </dt>
-                                  <dd className="break-all font-mono text-[11px] text-[var(--text)]">
-                                    {formatResultValue(testCase.input)}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="text-[10px] uppercase tracking-wide text-[var(--faint)]">
-                                    Expected
-                                  </dt>
-                                  <dd className="break-all font-mono text-[11px] text-[var(--text)]">
-                                    {formatResultValue(testCase.expected)}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt className="text-[10px] uppercase tracking-wide text-[var(--faint)]">
-                                    Your output
-                                  </dt>
-                                  <dd className="break-all font-mono text-[11px] text-[var(--text)]">
-                                    {formatResultValue(testCase.got)}
-                                  </dd>
-                                </div>
-                              </dl>
-                            </li>
+                              caseNumber={index + 1}
+                              testCase={testCase}
+                            />
                           ))}
                         </ol>
                       ) : null}

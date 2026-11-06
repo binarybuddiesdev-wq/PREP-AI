@@ -107,7 +107,7 @@ export const OnboardingPage = () => {
 
   if (userQuery.isError) {
     return (
-      <main className="min-h-svh bg-[#09090b] px-5 py-12 text-white sm:px-8">
+      <main className="min-h-svh bg-[var(--bg)] px-5 py-12 text-[var(--text)] sm:px-8">
         <div className="mx-auto max-w-2xl">
           <QueryErrorState
             title="Couldn’t load your profile"
@@ -131,7 +131,7 @@ export const OnboardingPage = () => {
 
   if (settingsQuery.isError) {
     return (
-      <main className="min-h-svh bg-[#09090b] px-5 py-12 text-white sm:px-8">
+      <main className="min-h-svh bg-[var(--bg)] px-5 py-12 text-[var(--text)] sm:px-8">
         <div className="mx-auto max-w-2xl">
           <QueryErrorState
             title="Couldn’t load your saved setup"

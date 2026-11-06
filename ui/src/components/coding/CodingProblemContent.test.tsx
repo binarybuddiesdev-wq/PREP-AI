@@ -45,9 +45,11 @@ describe('CodingProblemContent', () => {
 
     const example = screen.getByRole('figure', { name: 'Example 1' });
     expect(within(example).getByText('Input')).toBeInTheDocument();
-    expect(within(example).getByText('[[2,7],9]')).toHaveClass('font-mono');
+    expect(within(example).getByLabelText('Example input')).toHaveTextContent(
+      /\[\s*\[\s*2,\s*7\s*\],\s*9\s*\]/
+    );
     expect(within(example).getByText('Output')).toBeInTheDocument();
-    expect(within(example).getByText('[0,1]')).toHaveClass('font-mono');
+    expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
     expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
   });
 });

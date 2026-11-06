@@ -239,10 +239,12 @@ describe('OnboardingPage', () => {
       .mockRejectedValueOnce(new Error('API unavailable'))
       .mockResolvedValue({ success: true, message: 'ok', data: null });
     const user = userEvent.setup();
+    localStorage.setItem('prepai-theme', 'light');
 
     renderOnboarding();
 
     expect(await screen.findByRole('alert')).toBeVisible();
+    expect(screen.getByRole('main')).toHaveClass('bg-[var(--bg)]', 'text-[var(--text)]');
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(
       await screen.findByRole('heading', { name: 'Tell us about your target role' })
@@ -254,10 +256,12 @@ describe('OnboardingPage', () => {
       .mockRejectedValueOnce(new Error('API unavailable'))
       .mockResolvedValue({ success: true, message: 'ok', data: newUser });
     const user = userEvent.setup();
+    localStorage.setItem('prepai-theme', 'light');
 
     renderOnboarding();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/load your profile/i);
+    expect(screen.getByRole('main')).toHaveClass('bg-[var(--bg)]', 'text-[var(--text)]');
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(
       await screen.findByRole('heading', { name: 'Tell us about your target role' })

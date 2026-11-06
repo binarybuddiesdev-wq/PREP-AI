@@ -4,6 +4,8 @@ export { CodingProblemDetail } from './CodingProblemDetail';
 export type { ICodingProblemDetailProps } from './CodingProblemDetail.types';
 export { CodingProblemContent } from './CodingProblemContent';
 export type { ICodingProblemContentProps } from './CodingProblemContent.types';
+export { CodingTestCaseResult } from './CodingTestCaseResult';
+export type { ICodingTestCaseResultProps } from './CodingTestCaseResult.types';
 export { CodingEditor } from './CodingEditor';
 export type { ICodingEditorProps } from './CodingEditor.types';
 export { CodingProblemWorkspace } from './CodingProblemWorkspace';

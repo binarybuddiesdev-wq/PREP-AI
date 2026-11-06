@@ -155,8 +155,8 @@ describe('CodingProblemWorkspace', () => {
   });
 
   it.each([
-    ['queued', 'Run queued · waiting for a runner…'],
-    ['running', 'Run is running…'],
+    ['queued', 'Starting your run…'],
+    ['running', 'Your code is running…'],
   ] as const)('shows %s progress and prevents duplicate actions', (status, label) => {
     const props = createProps();
     const execution: ICodingExecution = {
@@ -168,7 +168,7 @@ describe('CodingProblemWorkspace', () => {
       status,
       result: null,
       failureMessage: null,
-      createdAt: '2026-11-05T10:00:00.000Z',
+      createdAt: new Date().toISOString(),
       startedAt: status === 'running' ? '2026-11-05T10:00:01.000Z' : null,
       completedAt: null,
       answer: null,
@@ -179,6 +179,32 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByRole('status')).toHaveTextContent(label);
     expect(screen.getByRole('button', { name: 'Run' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+  });
+
+  it('explains how to recover when a queued run has stalled', async () => {
+    const user = userEvent.setup();
+    const props = createProps();
+    const execution: ICodingExecution = {
+      id: 'execution-stalled',
+      sessionId: 'session-one',
+      problemId: problem.id,
+      operation: 'run',
+      language: 'javascript',
+      status: 'queued',
+      result: null,
+      failureMessage: null,
+      createdAt: new Date(Date.now() - 60_000).toISOString(),
+      startedAt: null,
+      completedAt: null,
+      answer: null,
+    };
+    render(<CodingProblemWorkspace {...props} execution={execution} />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This run is taking longer than expected. Check that the coding worker is running, then check the status again.'
+    );
+    await user.click(screen.getByRole('button', { name: 'Check status' }));
+    expect(props.onRetryExecutionRead).toHaveBeenCalledOnce();
   });
 
   it('offers a fresh run after the worker reports an execution failure', async () => {
@@ -246,7 +272,17 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByText('Test case 2')).toBeInTheDocument();
     expect(screen.getByText('Passed')).toHaveClass('text-[var(--success-strong)]');
     expect(screen.getByText('Failed')).toHaveClass('text-[var(--danger-strong)]');
-    expect(screen.getByText('[1,0]')).toBeInTheDocument();
+    const secondCase = screen.getByText('Test case 2').closest('li');
+    expect(secondCase).not.toBeNull();
+    expect(within(secondCase as HTMLElement).getByLabelText('Test case input')).toHaveTextContent(
+      /\[\s*3,\s*4\s*\]/
+    );
+    expect(within(secondCase as HTMLElement).getByLabelText('Expected output')).toHaveTextContent(
+      /\[\s*0,\s*1\s*\]/
+    );
+    expect(within(secondCase as HTMLElement).getByLabelText('Your output')).toHaveTextContent(
+      /\[\s*1,\s*0\s*\]/
+    );
   });
 
   it('gives test results enough space to read at a glance', () => {

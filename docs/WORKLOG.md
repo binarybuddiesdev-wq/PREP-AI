@@ -1050,3 +1050,31 @@ New layout, one folder per purpose. A layer may import only from the layers list
   `git diff --check` pass. Root lint and repository formatting still fail on
   unrelated or user-owned files.
 - Read-only UI architecture and general correctness reviews found no findings.
+
+## 2026-11-06 - Onboarding error theme and coding run clarity
+
+- Changed both retryable onboarding load-error screens to use the selected
+  theme's page canvas and text tokens. The existing error details and retry
+  actions remain available.
+- Restyled coding examples and completed test cases as labeled, formatted code
+  blocks. A shared formatter keeps nested arrays and outputs readable for
+  future problems; the workspace delegates each result card to a typed
+  component.
+- Run progress now uses user-facing starting/running messages instead of
+  exposing the internal queued label. Polling continues; after 45 seconds in
+  the queue, the screen explains how to check the worker and offers a status
+  retry.
+- Confirmed the local worker completed a persisted run. The latest recorded
+  Two Sum source only logged the input array, so the result was correctly
+  marked wrong because the coding runner compares the solution function's
+  return value with each example's expected output.
+- Added DOM coverage for readable example/test-case values, stalled queue
+  recovery, and automatic queued-to-completed polling. The formatting and
+  queued-progress assertions failed before their corresponding changes.
+- Verification: 126 UI test files / 558 tests pass; UI lint, type-check,
+  production build, focused Chromium coding-results check, scoped Prettier,
+  and `git diff --check` pass. Root lint still reports 14 errors in the
+  untracked user-owned `types/piston.js`; repository formatting reports
+  unrelated or user-owned files.
+- Read-only UI architecture, QA, and general correctness reviews found no
+  findings. Full cross-screen acceptance remains open in the tracker.

@@ -316,6 +316,8 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move the compact onboarding wizard and shared select menu onto theme
       tokens; restore persisted theme and verify both themes, keyboard focus,
       and a 390 px viewport.
+- [x] Theme onboarding's retryable profile and saved-settings load errors using
+      the shared page canvas/text tokens; preserve error details and retry.
 - [x] Move the Clerk sign-in/sign-up shell and appearance onto shared theme
       tokens; restore the saved theme on direct auth routes.
 - [x] Verify Clerk's rendered sign-in and sign-up primary buttons in dark and
@@ -327,6 +329,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move Coding problem details, workspace controls/results, review dialog,
       and missing/not-found states onto shared theme tokens; preserve the
       dark editor surface and verify the detail/review screens in both themes.
+- [x] Format coding examples and test-case input/results as readable code
+      blocks; show clear run progress, verify queued-to-completed polling, and
+      provide a status retry if a run stays queued for 45 seconds.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible

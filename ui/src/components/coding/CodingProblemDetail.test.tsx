@@ -41,8 +41,10 @@ describe('CodingProblemDetail', () => {
     expect(screen.getByText(problem.description)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Examples' })).toBeInTheDocument();
     const example = screen.getByRole('figure', { name: 'Example 1' });
-    expect(within(example).getByText('[[2,7,11,15],9]')).toBeInTheDocument();
-    expect(within(example).getByText('[0,1]')).toBeInTheDocument();
+    expect(within(example).getByLabelText('Example input')).toHaveTextContent(
+      /\[\s*\[\s*2,\s*7,\s*11,\s*15\s*\],\s*9\s*\]/
+    );
+    expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
     expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Constraints' })).toBeInTheDocument();
     expect(screen.getByText('Do not use the same element twice.')).toBeInTheDocument();
