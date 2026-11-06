@@ -369,8 +369,10 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 586 UI unit tests (130 files) pass; UI
-lint, TypeScript project check, and production build pass. The Chrome
+**Latest evidence (2026-11-06):** All 590 UI unit tests (130 files) pass; UI
+lint, TypeScript project check, and production build pass. Coding run results
+and Practice reference previews pass in both configured browser projects.
+The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
 (1440 px) and mobile (390 px) landing captures were reviewed. The dashboard
