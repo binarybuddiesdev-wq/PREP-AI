@@ -164,7 +164,7 @@ describe('coding pages', () => {
     await user.click(screen.getByRole('button', { name: /Two Sum/ }));
 
     await waitFor(() => expect(queries.detail).toHaveBeenCalledWith('two-sum'));
-    expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Two Sum' })).toHaveLength(2);
   });
 
   it('loads a problem directly from its URL and returns to the catalogue', async () => {
@@ -172,7 +172,8 @@ describe('coding pages', () => {
     renderCodingRoutes('/coding/problem-one');
 
     expect(queries.detail).toHaveBeenCalledWith('problem-one');
-    await user.click(screen.getByRole('button', { name: 'Back to problems' }));
+    expect(screen.getByText('Easy • Arrays')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Back to Problems' }));
     expect(await screen.findByRole('heading', { name: 'Coding Questions' })).toBeInTheDocument();
   });
 
@@ -180,7 +181,7 @@ describe('coding pages', () => {
     const user = userEvent.setup();
     renderCodingRoutes('/coding/two-sum');
 
-    expect(screen.getByRole('main')).toHaveClass('h-[calc(100svh-116px)]');
+    expect(screen.getByRole('main')).toHaveClass('min-h-[calc(100svh-180px)]');
     expect(screen.getByRole('textbox', { name: 'Code editor' })).toHaveValue(detail.codeJs);
 
     await user.selectOptions(

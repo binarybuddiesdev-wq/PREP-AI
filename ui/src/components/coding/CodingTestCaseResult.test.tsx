@@ -23,7 +23,7 @@ describe('CodingTestCaseResult', () => {
     );
     expect(screen.getByLabelText('Expected output')).toHaveTextContent('[0, 1]');
     expect(screen.getByLabelText('Your output')).toHaveTextContent('[0, 1]');
-    expect(screen.getByRole('group', { name: 'Output comparison' })).toHaveClass('sm:grid-cols-2');
+    expect(screen.getByRole('group', { name: 'Output comparison' })).toHaveClass('grid-cols-2');
     expect(screen.getByLabelText('Your output').querySelector('code')).toHaveClass(
       'block',
       'text-[var(--success-strong)]'

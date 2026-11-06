@@ -25,9 +25,9 @@ describe('CodingStatsBar', () => {
     );
 
     const metrics = screen.getByRole('group', { name: 'Coding statistics' });
-    expect(metrics).toHaveClass('border-[var(--border)]', 'bg-[var(--border)]');
-    expect(metrics.firstElementChild).toHaveClass('bg-[var(--card)]');
-    expect(within(metrics).getByText('7')).toHaveClass('text-[var(--accent-strong)]');
+    expect(metrics).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]', 'gap-6');
+    expect(metrics.firstElementChild).toHaveClass('text-center');
+    expect(within(metrics).getByText('7')).toHaveClass('text-[var(--text)]');
     expect(within(metrics).getByText('Solved')).toBeVisible();
     expect(within(metrics).getByText('7')).toBeVisible();
     expect(within(metrics).getByText('Today')).toBeVisible();
@@ -35,7 +35,7 @@ describe('CodingStatsBar', () => {
     expect(within(metrics).getByText('AI Reviews')).toBeVisible();
     expect(within(metrics).getByText('1 / 3')).toBeVisible();
     expect(within(metrics).getByText('Day Streak')).toBeVisible();
-    expect(within(metrics).getByText('4 days')).toBeVisible();
+    expect(within(metrics).getByText('4')).toBeVisible();
   });
 
   it('shows a loading status without displaying placeholder counts', () => {

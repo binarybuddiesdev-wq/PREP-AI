@@ -125,7 +125,10 @@ links to session details. See the
 - [x] Add the practice mode selector and topic/difficulty configuration.
 - [x] Add weak-area practice using the server-selected weak topics.
 - [x] Build the session start, question, answer, timer, skip, evaluation,
-      feedback, next-question, end-session, and completion states.
+      feedback, same-topic restart, next-question, end-session, and completion
+      states. A repeat completes the current evaluated session before opening
+      another with the same mode, topic/documents, difficulty, and question
+      count.
 - [x] Represent asynchronous AI evaluation and quota failures using the API's
       real status and error responses; prevent duplicate submissions.
 - [x] Add paginated session history with expandable question, answer, and
@@ -366,7 +369,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 580 UI unit tests (130 files) pass; UI
+**Latest evidence (2026-11-06):** All 586 UI unit tests (130 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -519,7 +522,7 @@ unrelated or user-owned files.
   summary and restores both completion actions, including working Dashboard
   navigation. Focused component/page tests pass (17 total); both responsive
   theme previews pass (2/2).
-- The full UI gate after these parity fixes passes: 580 tests across 130 files,
+- The full UI gate after these parity fixes passes: 586 tests across 130 files,
   UI lint, TypeScript project check, and production build. The coding-result,
   dashboard, history, and theory-practice visual previews have passed in both
   configured browser projects. The visual-preview suite still uses fixtures;
@@ -528,6 +531,19 @@ unrelated or user-owned files.
 - Practice feedback buttons now read `Next Question` and `End Session`, matching
   the reference labels without changing their guarded lifecycle behavior. Five
   focused tests pass after the new assertions failed on the previous labels.
+- Practice feedback now also offers `Practice Same Topic Again`. It completes
+  the current session before creating a new one with the same settings, guards
+  pending evaluations, and surfaces completion/quota errors. Hook and UI tests
+  pass (39 tests); the responsive browser preview passes in both projects
+  (2/2).
+- Coding catalogue, problem detail, run results, editor sizing, and fullscreen
+  controls now follow the corresponding layouts in `prepai-ui.html`. Focused
+  coding component/page tests pass (56 tests); coding results and the practice
+  reference preview pass in both browser projects (4/4).
+- The full UI gate passes at 130 files / 590 tests, with UI lint, TypeScript
+  check, production build, and both coding/practice browser previews passing.
+  Manual review of every reference screen and live signed-in API acceptance
+  remain open.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

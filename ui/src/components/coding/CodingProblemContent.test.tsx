@@ -23,11 +23,10 @@ describe('CodingProblemContent', () => {
     render(<CodingProblemContent problem={problem} />);
 
     expect(screen.getByText('Easy')).toHaveClass(
-      'border-[var(--green-bg)]',
       'bg-[var(--green-bg)]',
       'text-[var(--success-strong)]'
     );
-    expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface)]', 'text-[var(--dim)]');
+    expect(screen.getByText('Arrays')).toHaveClass('bg-[var(--surface2)]', 'text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'Two Sum' })).toHaveClass('text-[var(--text-h)]');
     const exampleContent = screen.getByRole('figure', { name: 'Example 1' });
     expect(exampleContent).toHaveClass('rounded-lg', 'border-[var(--border)]', 'bg-[var(--bg)]');
@@ -49,10 +48,26 @@ describe('CodingProblemContent', () => {
       'nums = [2, 7], target = 9'
     );
     expect(within(example).getByText(/^Output:/)).toBeInTheDocument();
-    expect(within(example).getByLabelText('Example output')).toHaveTextContent(/\[\s*0,\s*1\s*\]/);
-    expect(within(example).getByLabelText('Example output').querySelector('code')).toHaveClass(
-      'font-mono'
+    expect(within(example).getByLabelText('Example input and output')).toHaveTextContent(
+      /Output: \[0, 1\]/
     );
     expect(within(example).getByText('2 + 7 equals 9.')).toBeInTheDocument();
+  });
+
+  it('matches the reference ordering and compact monospace example block', () => {
+    render(<CodingProblemContent problem={problem} />);
+
+    const title = screen.getByRole('heading', { name: 'Two Sum' });
+    const difficulty = screen.getByText('Easy');
+    expect(
+      Boolean(title.compareDocumentPosition(difficulty) & Node.DOCUMENT_POSITION_FOLLOWING)
+    ).toBe(true);
+
+    const example = screen.getByRole('figure', { name: 'Example 1' });
+    const formattedExample = within(example).getByLabelText('Example input and output');
+    expect(formattedExample.tagName).toBe('PRE');
+    expect(formattedExample).toHaveTextContent('Input: nums = [2, 7], target = 9');
+    expect(formattedExample).toHaveTextContent('Output: [0, 1]');
+    expect(formattedExample).toHaveTextContent('Explanation: 2 + 7 equals 9.');
   });
 });

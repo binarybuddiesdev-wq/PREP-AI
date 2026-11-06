@@ -44,7 +44,7 @@ export const CodingStatsBar = (props: ICodingStatsBarProps) => {
     { label: 'Solved', value: String(stats.solved) },
     { label: 'Today', value: `${stats.dailySolved.used} / ${stats.dailySolved.limit}` },
     { label: 'AI Reviews', value: `${stats.dailyReviews.used} / ${stats.dailyReviews.limit}` },
-    { label: 'Day Streak', value: `${stats.streakDays} days` },
+    { label: 'Day Streak', value: String(stats.streakDays) },
   ];
 
   return (
@@ -68,19 +68,14 @@ export const CodingStatsBar = (props: ICodingStatsBarProps) => {
       <dl
         role="group"
         aria-label="Coding statistics"
-        className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--border)] md:grid-cols-4"
+        className="mb-5 flex flex-wrap items-center gap-6 rounded-xl border border-[var(--border)] bg-[var(--card)] px-5 py-3.5"
       >
         {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="flex min-w-0 flex-col bg-[var(--card)] px-4 py-3 sm:px-5 sm:py-3.5"
-          >
-            <dt className="order-2 mt-1 text-[11px] font-medium text-[var(--dim)]">
-              {metric.label}
-            </dt>
-            <dd className="order-1 font-mono text-xl font-semibold tabular-nums leading-6 text-[var(--accent-strong)]">
+          <div key={metric.label} className="min-w-[4rem] text-center">
+            <dd className="mb-[0.15rem] font-mono text-[1.3rem] font-bold leading-none text-[var(--text)]">
               {metric.value}
             </dd>
+            <dt className="text-[0.72rem] text-[var(--dim)]">{metric.label}</dt>
           </div>
         ))}
       </dl>

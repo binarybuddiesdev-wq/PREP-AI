@@ -38,6 +38,8 @@ export const useTheoryPracticeSession = () => {
   const [startError, setStartError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [completionError, setCompletionError] = useState<string | null>(null);
+  const [isRestarting, setIsRestarting] = useState(false);
+  const [restartBody, setRestartBody] = useState<IStartTheorySessionBody | null>(null);
   const [endRequested, setEndRequested] = useState(false);
   const [completionAttempted, setCompletionAttempted] = useState(false);
   const startLock = useRef(false);
@@ -238,6 +240,7 @@ export const useTheoryPracticeSession = () => {
 
   const end = useCallback(async () => {
     if (!session || phase === 'setup' || phase === 'complete') return;
+    setRestartBody(null);
     if (pendingSubmissionRef.current) {
       setSubmitError('Retry this answer or skip it before ending the session.');
       return;
@@ -251,10 +254,108 @@ export const useTheoryPracticeSession = () => {
 
   const continueAfterSubmit = useCallback(() => {
     if (phase === 'submitted' && !evaluationPending && !evaluationQuery.isError) {
+      setRestartBody(null);
+      setCompletionError(null);
       setCurrentAnswer(null);
       advance();
     }
   }, [advance, evaluationPending, evaluationQuery.isError, phase]);
+
+  const restart = useCallback(
+    async (body: IStartTheorySessionBody): Promise<ITheorySession | null> => {
+      if (
+        !sessionId ||
+        phase !== 'submitted' ||
+        evaluationPending ||
+        evaluationQuery.isError ||
+        startLock.current ||
+        completionLock.current ||
+        startCommand.isPending ||
+        completionCommand.isPending
+      ) {
+        return null;
+      }
+
+      startLock.current = true;
+      completionLock.current = true;
+      setIsRestarting(true);
+      setRestartBody(body);
+      setCompletionError(null);
+      setStartError(null);
+
+      try {
+        await completionCommand.mutateAsync(sessionId);
+      } catch (error) {
+        setCompletionError(
+          error instanceof Error ? error.message : 'Could not complete the current session.'
+        );
+        startLock.current = false;
+        completionLock.current = false;
+        setIsRestarting(false);
+        return null;
+      }
+
+      completionLock.current = false;
+      completionCommand.reset();
+
+      try {
+        const startedSession = await startCommand.mutateAsync({
+          body,
+          idempotencyKey: createIdempotencyKey(),
+        });
+        setSession(startedSession);
+        setCompletedSession(null);
+        setCompletionAttempted(false);
+        setEndRequested(false);
+        setSavedAnswers([]);
+        setCurrentAnswer(null);
+        setPendingSubmission(null);
+        pendingSubmissionRef.current = null;
+        setQuestionIndex(0);
+        setAnswerDraft('');
+        setElapsedSeconds(0);
+        setSubmitError(null);
+        setCompletionError(null);
+        setView('question');
+        answerCommand.reset();
+        setRestartBody(null);
+        return startedSession;
+      } catch (error) {
+        setSession(null);
+        setCompletedSession(null);
+        setSavedAnswers([]);
+        setCurrentAnswer(null);
+        setPendingSubmission(null);
+        pendingSubmissionRef.current = null;
+        setQuestionIndex(0);
+        setAnswerDraft('');
+        setElapsedSeconds(0);
+        setSubmitError(null);
+        setCompletionError(null);
+        setView('question');
+        answerCommand.reset();
+        setStartError(error instanceof Error ? error.message : 'Could not restart this session.');
+        setRestartBody(null);
+        return null;
+      } finally {
+        startLock.current = false;
+        setIsRestarting(false);
+      }
+    },
+    [
+      answerCommand,
+      completionCommand,
+      evaluationPending,
+      evaluationQuery.isError,
+      phase,
+      sessionId,
+      startCommand,
+    ]
+  );
+
+  const retryRestart = useCallback(() => {
+    if (restartBody) void restart(restartBody);
+  }, [restart, restartBody]);
 
   const reset = useCallback(() => {
     setSession(null);
@@ -270,6 +371,7 @@ export const useTheoryPracticeSession = () => {
     setStartError(null);
     setSubmitError(null);
     setCompletionError(null);
+    setRestartBody(null);
     setEndRequested(false);
     setCompletionAttempted(false);
     answerCommand.reset();
@@ -307,7 +409,9 @@ export const useTheoryPracticeSession = () => {
     isCompleting: completionCommand.isPending,
     isEndRequested: endRequested,
     completionError: completionError ?? completionCommand.error?.message ?? null,
-    completedSession: completedSession ?? completionCommand.data ?? null,
+    completedSession: isRestarting ? null : (completedSession ?? completionCommand.data ?? null),
+    isRestarting,
+    canRetryRestart: restartBody !== null,
     savedAnswers,
     scoredAnswerCount: savedAnswers.filter((answer) => answer.aiScore !== null).length,
     failedAnswerCount: savedAnswers.filter((answer) => answer.status === 'failed').length,
@@ -324,6 +428,8 @@ export const useTheoryPracticeSession = () => {
     end,
     completeSession,
     continueAfterSubmit,
+    restart,
+    retryRestart,
     reset,
   };
 };

@@ -325,4 +325,66 @@ describe('PracticePage', () => {
     expect(refetch).toHaveBeenCalledOnce();
     expect(end).toHaveBeenCalledOnce();
   });
+
+  it('retries a failed same-topic restart instead of only completing the current session', async () => {
+    const userEventInstance = userEvent.setup();
+    const retryRestart = vi.fn();
+    mocks.useTheoryPracticeSession.mockReturnValue({
+      session: { id: 'session-one', mode: 'topic' },
+      phase: 'submitted',
+      activeQuestion: {
+        id: 'question-one',
+        question: 'What is a hook?',
+        topicId: 'topic-react',
+        difficulty: 'Mid',
+      },
+      progress: { current: 1, total: 10 },
+      answerDraft: 'A function.',
+      elapsedSeconds: 20,
+      isSubmitting: false,
+      isAnswerFrozen: false,
+      submitError: null,
+      setAnswerDraft: vi.fn(),
+      submit: vi.fn(),
+      skip: vi.fn(),
+      end: vi.fn(),
+      evaluation: {
+        id: 'answer-one',
+        sessionId: 'session-one',
+        questionId: 'question-one',
+        questionText: 'What is a hook?',
+        userAnswer: 'A function.',
+        aiScore: 8,
+        aiFeedback: 'Clear explanation.',
+        evaluationProvider: null,
+        evaluationModel: null,
+        evaluationPromptVersion: null,
+        status: 'completed',
+        failureMessage: null,
+        startedAt: null,
+        completedAt: null,
+        timeTaken: 20,
+        createdAt: '2026-11-01T00:00:00.000Z',
+        updatedAt: '2026-11-01T00:00:00.000Z',
+      },
+      evaluationQuery: { isError: false, isFetching: false, refetch: vi.fn() },
+      isEnding: false,
+      isCompleting: false,
+      isRestarting: false,
+      canContinue: true,
+      continueAfterSubmit: vi.fn(),
+      canRetryRestart: true,
+      retryRestart,
+      retryCompletion: vi.fn(),
+      completionError: 'Temporary completion failure.',
+      savedAnswers: [],
+    });
+
+    renderPracticePage();
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Temporary completion failure.');
+    await userEventInstance.click(screen.getByRole('button', { name: 'Retry same-topic restart' }));
+
+    expect(retryRestart).toHaveBeenCalledOnce();
+  });
 });

@@ -63,16 +63,15 @@ export const PracticePage = () => {
   const profileUnavailable = userQuery.isError || !userQuery.data;
   const { isPremium, totalQuestions } = getPracticePolicy(userQuery.data?.role ?? 'USER');
 
-  const handleStart = () => {
-    const body: IStartTheorySessionBody = {
-      ...(mode === 'topic' ? { topicId } : {}),
-      ...(mode === 'pdf' ? { pdfIds: selectedPdfIds } : {}),
-      mode,
-      difficulty,
-      totalQuestions,
-    };
-    void practice.start(body);
-  };
+  const createSessionBody = (): IStartTheorySessionBody => ({
+    ...(mode === 'topic' ? { topicId } : {}),
+    ...(mode === 'pdf' ? { pdfIds: selectedPdfIds } : {}),
+    mode,
+    difficulty,
+    totalQuestions,
+  });
+  const handleStart = () => void practice.start(createSessionBody());
+  const handlePracticeSameTopic = () => void practice.restart(createSessionBody());
 
   if (practice.completedSession) {
     return (
@@ -223,9 +222,11 @@ export const PracticePage = () => {
             isRefreshing={practice.evaluationQuery.isFetching}
             isEnding={practice.isEnding}
             isCompleting={practice.isCompleting}
+            isRestarting={practice.isRestarting}
             canContinue={practice.canContinue}
             onRetryEvaluation={() => void practice.evaluationQuery.refetch()}
             onContinue={practice.continueAfterSubmit}
+            onPracticeSameTopic={handlePracticeSameTopic}
             onEnd={() => void practice.end()}
           />
         ) : null}
@@ -237,11 +238,19 @@ export const PracticePage = () => {
             <p>{practice.completionError}</p>
             <button
               type="button"
-              disabled={practice.isCompleting}
-              onClick={practice.retryCompletion}
+              disabled={practice.isCompleting || practice.isRestarting}
+              onClick={() =>
+                practice.canRetryRestart ? practice.retryRestart() : practice.retryCompletion()
+              }
               className="mt-2 min-h-9 rounded-lg border border-[var(--border2)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-60"
             >
-              {practice.isCompleting ? 'Completing…' : 'Retry session completion'}
+              {practice.isRestarting
+                ? 'Starting again…'
+                : practice.isCompleting
+                  ? 'Completing…'
+                  : practice.canRetryRestart
+                    ? 'Retry same-topic restart'
+                    : 'Retry session completion'}
             </button>
           </div>
         ) : null}

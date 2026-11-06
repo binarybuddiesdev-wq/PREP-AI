@@ -1282,6 +1282,41 @@ New layout, one folder per purpose. A layer may import only from the layers list
 session`, then passed after the label correction. TheoryFeedback passes
   (5 tests), with scoped ESLint and Prettier checks passing.
 
+## 2026-11-06 - Practice Same Topic Again
+
+- Added the reference's third feedback action. The logic layer first completes
+  the evaluated session, then starts another with the same topic/mode,
+  difficulty, question limit, and selected PDF sources. Actions are disabled
+  while evaluation or restart is pending. Completion errors keep the current
+  feedback visible; a failed new-session start returns to setup and shows the
+  backend error.
+- TDD evidence: the hook tests failed before `restart` existed. Coverage now
+  verifies complete-before-start ordering, reset session state, pending
+  evaluation guard, completion failure, retrying the same restart, and
+  quota/start failure. The hook, Practice feedback, and Practice page suites
+  pass (39 tests); the responsive
+  browser preview verifies the action and callback in both projects (2/2).
+  Full UI verification passes at 130 files / 589 tests, lint, TypeScript build,
+  and production build.
+
+## 2026-11-06 - Coding screen reference alignment
+
+- Compared the coding catalogue and workspace against the coding markup and
+  styles in `prepai-ui.html`. Matched the compact stats strip, catalogue filter
+  and problem card treatment, detail heading/metadata order and page subtitle,
+  compact Input/Output/Explanation examples, horizontal pre-run and completed
+  test cases, equal desktop columns, fixed-height results panel, and fullscreen
+  editor toolbar. The AI Review control remains in place but disabled until a
+  completed submission is available.
+- Kept the data and behavior in the existing catalog, page, and coding
+  components. The fullscreen editor now mirrors the reference's editor-only
+  surface while retaining keyboard focus trapping and focus restoration.
+- TDD evidence: the new layout and fullscreen assertions failed against the
+  prior structure, then passed after the changes. Focused coding component and
+  page tests pass (56 tests); coding results and practice reference previews
+  pass in both browser projects (4/4). The full UI suite passes (130 files / 590
+  tests), with UI lint, TypeScript check, and production build passing.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to

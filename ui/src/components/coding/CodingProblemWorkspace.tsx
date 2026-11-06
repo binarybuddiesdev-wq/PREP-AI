@@ -8,9 +8,7 @@ import {
   LoaderCircle,
   Maximize2,
   Minimize2,
-  Play,
   RotateCcw,
-  Send,
   Sparkles,
   X,
 } from 'lucide-react';
@@ -175,16 +173,18 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
   const workspace = (
     <section
       aria-label="Coding workspace"
-      className="coding-workspace flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]"
+      aria-hidden={isFullscreen}
+      inert={isFullscreen}
+      className="coding-workspace flex h-full min-h-0 w-full flex-col"
     >
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border)] px-3">
+      <div className="mb-4 flex shrink-0 items-center gap-2">
         <button
           type="button"
           onClick={onBack}
           className="inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-[var(--dim)] transition hover:bg-[var(--surface2)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
         >
           <ArrowLeft aria-hidden="true" className="size-3.5" />
-          Back to problems
+          Back to Problems
         </button>
         {isProblemCollapsed ? (
           <button
@@ -199,18 +199,19 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
       </div>
 
       <div
-        className={`coding-workspace-grid grid min-h-0 flex-1 gap-3 p-3 ${isProblemCollapsed ? 'grid-cols-1' : 'grid-cols-1 grid-rows-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-[minmax(260px,0.82fr)_minmax(0,1.18fr)] lg:grid-rows-1'}`}
+        data-testid="coding-workspace-grid"
+        className={`coding-workspace-grid grid min-h-[calc(100vh-180px)] flex-1 gap-4 ${isProblemCollapsed ? 'grid-cols-1' : 'grid-cols-1 grid-rows-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:grid-cols-2 lg:grid-rows-1'}`}
       >
         {!isProblemCollapsed ? (
-          <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
-            <div className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border)] px-3">
+          <section className="flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)]">
+            <div className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border)] px-5">
               <h2 className="text-xs font-semibold text-[var(--text-h)]">Problem</h2>
               <button
                 type="button"
                 onClick={onToggleProblem}
                 aria-label="Hide problem description"
                 title="Hide problem description"
-                className="rounded-md px-2 py-1 text-[11px] text-[var(--dim)] transition hover:bg-[var(--surface2)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                className="flex size-7 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--dim)] transition hover:bg-[var(--surface2)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
               >
                 Hide
               </button>
@@ -221,10 +222,10 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
           </section>
         ) : null}
 
-        <div className="flex min-h-0 min-w-0 flex-col gap-3">
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
-            <header className="flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b border-[var(--border)] px-2.5 py-1.5 sm:flex-nowrap">
-              <span className="flex min-w-0 flex-1 items-center gap-2 px-1 font-mono text-[11px] text-[var(--dim)]">
+        <div className="flex min-h-0 min-w-0 flex-col gap-4">
+          <section className="flex min-h-[480px] min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)]">
+            <header className="flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--surface2)] px-2 py-1 sm:flex-nowrap sm:gap-0 sm:px-0 sm:py-0">
+              <span className="flex h-11 min-w-0 flex-1 items-center gap-2 border-r border-[var(--border)] bg-[var(--card)] px-4 font-mono text-xs text-[var(--dim)]">
                 <span
                   aria-hidden="true"
                   className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
@@ -237,7 +238,6 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                 disabled={isBusy}
                 className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[var(--accent)] px-2.5 text-xs font-semibold text-black transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-strong)] disabled:cursor-wait disabled:opacity-50"
               >
-                <Play aria-hidden="true" className="size-3" />
                 Run
               </button>
               <button
@@ -246,19 +246,18 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                 disabled={isBusy}
                 className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-[var(--border2)] px-2.5 text-xs font-medium text-[var(--text)] transition hover:bg-[var(--surface2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-50"
               >
-                <Send aria-hidden="true" className="size-3" />
                 Submit
               </button>
-              {reviewAnswer ? (
-                <button
-                  type="button"
-                  onClick={() => setReviewOpen(true)}
-                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-[var(--purple-strong)] transition hover:bg-[var(--purple-bg)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--purple-strong)]"
-                >
-                  <Sparkles aria-hidden="true" className="size-3.5" />
-                  AI Review
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={() => setReviewOpen(true)}
+                disabled={!reviewAnswer}
+                title={!reviewAnswer ? 'Submit your code to unlock AI Review' : undefined}
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-[var(--purple-strong)] transition hover:bg-[var(--purple-bg)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--purple-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Sparkles aria-hidden="true" className="size-3.5" />
+                AI Review
+              </button>
               <label className="relative inline-flex shrink-0 items-center">
                 <span className="sr-only">Programming language</span>
                 <select
@@ -311,7 +310,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
 
           {!isFullscreen ? (
             <section
-              className="flex min-h-[180px] max-h-[38vh] shrink-0 flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]"
+              className="flex h-[200px] shrink-0 flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)]"
               aria-label="Run results"
             >
               <div
@@ -326,7 +325,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                     role="tab"
                     aria-selected={outputTab === tab}
                     onClick={() => onOutputTabChange(tab)}
-                    className={`relative h-full px-2 text-xs transition ${outputTab === tab ? 'text-[var(--accent-strong)] after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--accent)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}
+                    className={`relative h-full px-4 text-xs transition ${outputTab === tab ? 'text-[var(--accent-strong)] after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--accent)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}
                   >
                     {tab === 'output' ? 'Output' : 'Test Cases'}
                   </button>
@@ -334,14 +333,14 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                 <button
                   type="button"
                   onClick={() => setOutputCleared(true)}
-                  className="ml-auto px-2 text-[11px] text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                  className="ml-auto px-3 py-2 text-[0.72rem] text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                 >
                   Clear
                 </button>
               </div>
               <div
                 role="tabpanel"
-                className={`min-h-0 flex-1 overflow-y-auto px-3 py-2 text-xs text-[var(--dim)] ${execution?.status === 'completed' && execution.result && outputTab === 'testcases' ? 'text-left' : 'flex items-center justify-center text-center'}`}
+                className="min-h-0 flex-1 overflow-y-auto px-4 py-3 text-xs text-left text-[var(--dim)]"
               >
                 {isOutputCleared ? (
                   <div className="flex w-full gap-3 font-mono text-xs text-[var(--dim)]">
@@ -478,27 +477,32 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                     <span>Click Run Code to see output</span>
                   </div>
                 ) : (
-                  <ol className="w-full space-y-1.5">
-                    {problem.examples.map((example, index) => (
+                  <ol className="w-full">
+                    {problem.examples.slice(0, 3).map((example, index) => (
                       <li
                         key={`${problem.id}-preview-${index + 1}`}
-                        className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2.5 py-2"
+                        className="mb-1.5 flex min-w-0 items-center justify-between gap-4 rounded-md border border-[var(--border)] bg-[var(--bg)] px-[0.65rem] py-2 text-[0.75rem] last:mb-0"
                       >
-                        <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] sm:gap-4">
-                          <div className="min-w-0">
-                            <p className="mb-0.5 text-[10px] text-[var(--dim)]">Input</p>
+                        <div className="flex min-w-0 flex-1 gap-4 font-mono">
+                          <div className="min-w-0 flex-1">
+                            <p className="mb-[0.15rem] font-sans text-[0.65rem] text-[var(--dim)]">
+                              Input
+                            </p>
                             <CodingInputArguments
                               value={example.input}
                               ariaLabel="Input arguments"
                               argumentNames={argumentNames}
+                              isTruncated
                             />
                           </div>
-                          <div className="min-w-0">
-                            <p className="mb-0.5 text-[10px] text-[var(--dim)]">Expected</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="mb-[0.15rem] font-sans text-[0.65rem] text-[var(--dim)]">
+                              Expected
+                            </p>
                             <CodingValue value={example.output} ariaLabel="Expected output" />
                           </div>
                         </div>
-                        <span aria-hidden="true" className="text-xs text-[var(--dim)]">
+                        <span aria-hidden="true" className="shrink-0 text-xs text-[var(--dim)]">
                           -
                         </span>
                       </li>
@@ -545,7 +549,56 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
           tabIndex={-1}
           onKeyDown={handleFullscreenDialogKeyDown}
         >
-          {workspace}
+          <header className="flex h-[60px] shrink-0 items-center gap-4 border-b border-[var(--border)] bg-[var(--surface2)] px-5">
+            <span className="flex h-full items-center gap-2 border-r border-[var(--border)] bg-[var(--card)] pr-5 font-mono text-xs text-[var(--dim)]">
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-[var(--accent)]" />
+              {filename}
+            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <label className="relative inline-flex items-center">
+                <span className="sr-only">Programming language</span>
+                <select
+                  aria-label="Programming language"
+                  value={language}
+                  onChange={(event) =>
+                    onLanguageChange(event.currentTarget.value as CodingLanguage)
+                  }
+                  className="coding-language-select h-8 min-w-[132px] appearance-none rounded-md border border-[var(--border2)] bg-[var(--surface)] py-1 pl-2.5 pr-8 text-xs font-medium text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                >
+                  {LANGUAGES.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-2.5 size-3.5 text-[var(--dim)]"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={onResetCode}
+                aria-label="Reset code"
+                title="Reset code"
+                className="flex size-7 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--dim)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
+              >
+                <RotateCcw aria-hidden="true" className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={onToggleFullscreen}
+                aria-label="Exit fullscreen editor"
+                title="Minimize"
+                className="flex size-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--dim)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
+              >
+                <Minimize2 aria-hidden="true" className="size-4" />
+              </button>
+            </div>
+          </header>
+          <div className="min-h-0 flex-1">
+            <CodingEditor language={language} value={code} onChange={onCodeChange} />
+          </div>
         </div>
       </div>
       {reviewDialog}

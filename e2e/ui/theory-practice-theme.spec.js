@@ -167,9 +167,11 @@ test('renders theory practice setup, question, feedback, and completion in both 
           isRefreshing: false,
           isEnding: false,
           isCompleting: false,
+          isRestarting: false,
           canContinue: true,
           onRetryEvaluation: () => {},
           onContinue: () => {},
+          onPracticeSameTopic: () => (globalThis.__practiceSameTopicClicked = true),
           onEnd: () => {},
         })
       );
@@ -179,6 +181,7 @@ test('renders theory practice setup, question, feedback, and completion in both 
           session,
           answers: [answer],
           onPracticeAgain: () => {},
+          onGoToDashboard: () => {},
         })
       );
     });
@@ -190,6 +193,11 @@ test('renders theory practice setup, question, feedback, and completion in both 
       .getByRole('heading', { name: 'How does React preserve state between renders?' })
       .locator('xpath=ancestor::section[1]');
     const feedbackCard = page.getByRole('region', { name: 'Answer feedback' });
+    const nextQuestionButton = feedbackCard.getByRole('button', { name: 'Next Question' });
+    const practiceAgainButton = feedbackCard.getByRole('button', {
+      name: 'Practice Same Topic Again',
+    });
+    const endSessionButton = feedbackCard.getByRole('button', { name: 'End Session' });
     const completeCard = page.locator('#practice-complete main');
     const evaluationError = page.getByText('Evaluation could not be refreshed.', { exact: true });
     await expect(setupCard).toBeVisible();
@@ -210,6 +218,11 @@ test('renders theory practice setup, question, feedback, and completion in both 
     await expect(questionCard).toBeVisible();
     await expect(feedbackCard).toBeVisible();
     await expect(completeCard).toBeVisible();
+    await expect(nextQuestionButton).toBeVisible();
+    await expect(practiceAgainButton).toHaveClass(/w-full/);
+    await expect(endSessionButton).toBeVisible();
+    await practiceAgainButton.click();
+    await expect.poll(() => page.evaluate(() => globalThis.__practiceSameTopicClicked)).toBe(true);
 
     const cards = [setupCard, questionCard, feedbackCard, completeCard];
     for (const card of cards) {

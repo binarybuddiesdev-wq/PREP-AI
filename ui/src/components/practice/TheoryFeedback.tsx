@@ -9,9 +9,11 @@ export const TheoryFeedback = (props: ITheoryFeedbackProps) => {
     isRefreshing,
     isEnding,
     isCompleting,
+    isRestarting,
     canContinue,
     onRetryEvaluation,
     onContinue,
+    onPracticeSameTopic,
     onEnd,
   } = props;
   const isPending = answer.status === 'queued' || answer.status === 'running';
@@ -90,22 +92,30 @@ export const TheoryFeedback = (props: ITheoryFeedbackProps) => {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-[var(--border)] pt-4">
+      <div className="mt-4 flex flex-col gap-2 border-t border-[var(--border)] pt-4">
         <button
           type="button"
-          disabled={isCompleting}
-          onClick={onEnd}
-          className="min-h-10 rounded-lg px-3.5 text-sm text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-50"
+          disabled={!canContinue || isEnding || isCompleting || isRestarting}
+          onClick={onContinue}
+          className="min-h-10 w-full rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-foreground)] transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isEnding ? 'Waiting to finish…' : 'End Session'}
+          Next Question
         </button>
         <button
           type="button"
-          disabled={!canContinue || isEnding || isCompleting}
-          onClick={onContinue}
-          className="min-h-10 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!canContinue || isEnding || isCompleting || isRestarting}
+          onClick={onPracticeSameTopic}
+          className="min-h-10 w-full rounded-lg border border-[var(--border2)] px-4 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-50"
         >
-          Next Question
+          {isRestarting ? 'Starting again…' : 'Practice Same Topic Again'}
+        </button>
+        <button
+          type="button"
+          disabled={isCompleting || isRestarting}
+          onClick={onEnd}
+          className="min-h-10 w-full rounded-lg px-3.5 text-sm text-[var(--dim)] transition hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-50"
+        >
+          {isEnding ? 'Waiting to finish…' : 'End Session'}
         </button>
       </div>
     </section>

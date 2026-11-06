@@ -7,9 +7,11 @@ export const CodingValue = (props: ICodingValueProps) => {
   return (
     <pre
       aria-label={ariaLabel}
-      className="min-w-0 overflow-hidden font-mono text-xs text-[var(--dim)]"
+      className="m-0 min-w-0 overflow-hidden font-mono text-xs text-[var(--dim)]"
     >
-      <code className={`block truncate font-mono ${className || 'text-[var(--dim)]'}`}>
+      <code
+        className={`block truncate whitespace-nowrap font-mono ${className || 'text-[var(--dim)]'}`}
+      >
         {formatCodingValue(value)}
       </code>
     </pre>

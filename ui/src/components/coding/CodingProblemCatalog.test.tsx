@@ -43,8 +43,11 @@ describe('CodingProblemCatalog', () => {
 
     expect(screen.getByRole('button', { name: /Two Sum/ })).toHaveClass('bg-[var(--card)]');
     expect(screen.getByText('Solved')).toHaveClass('text-[var(--success-strong)]');
-    expect(screen.getByText('2 problems')).toBeInTheDocument();
     expect(screen.getByText('Solved')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Two Sum/ })).toHaveClass(
+      'rounded-[14px]',
+      'border-l-[3px]'
+    );
     await user.click(screen.getByRole('button', { name: /Two Sum/ }));
     expect(props.onSelectProblem).toHaveBeenCalledWith('two-sum');
   });
@@ -61,8 +64,9 @@ describe('CodingProblemCatalog', () => {
     const topicFilters = within(screen.getByRole('group', { name: 'Filter by topic' }));
     const difficultyFilters = within(screen.getByRole('group', { name: 'Filter by difficulty' }));
     expect(topicFilters.getByRole('button', { name: 'Trees' })).toHaveClass(
-      'border-[var(--accent-border)]',
-      'bg-[var(--accent-bg)]'
+      'border-[var(--accent)]',
+      'bg-[var(--accent)]',
+      'text-black'
     );
     expect(topicFilters.getByRole('button', { name: 'Trees' })).toHaveAttribute(
       'aria-pressed',
@@ -72,7 +76,7 @@ describe('CodingProblemCatalog', () => {
       'aria-pressed',
       'true'
     );
-    expect(screen.getByText('No problems match these filters')).toBeInTheDocument();
+    expect(screen.getByText('No problems found')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(props.onSelectTopic).toHaveBeenCalledWith(null);
     expect(props.onSelectDifficulty).toHaveBeenCalledWith(null);

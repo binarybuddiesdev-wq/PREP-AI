@@ -35,9 +35,11 @@ const createProps = (overrides: Partial<ITheoryFeedbackProps> = {}): ITheoryFeed
   isRefreshing: false,
   isEnding: false,
   isCompleting: false,
+  isRestarting: false,
   canContinue: false,
   onRetryEvaluation: vi.fn(),
   onContinue: vi.fn(),
+  onPracticeSameTopic: vi.fn(),
   onEnd: vi.fn(),
   ...overrides,
 });
@@ -79,6 +81,36 @@ describe('TheoryFeedback', () => {
     await user.click(screen.getByRole('button', { name: 'Next Question' }));
 
     expect(onContinue).toHaveBeenCalledOnce();
+  });
+
+  it('offers a same-topic restart and disables it while restart is active', async () => {
+    const user = userEvent.setup();
+    const onPracticeSameTopic = vi.fn();
+    const { rerender } = render(
+      <TheoryFeedback
+        {...createProps({
+          answer: createAnswer('completed', 8),
+          canContinue: true,
+          onPracticeSameTopic,
+        })}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Practice Same Topic Again' }));
+    expect(onPracticeSameTopic).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: 'Next Question' })).toBeVisible();
+
+    rerender(
+      <TheoryFeedback
+        {...createProps({
+          answer: createAnswer('completed', 8),
+          canContinue: true,
+          isRestarting: true,
+          onPracticeSameTopic,
+        })}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Starting again…' })).toBeDisabled();
   });
 
   it('shows failed evaluations as unscored with the server failure message', () => {

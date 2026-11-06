@@ -70,15 +70,17 @@ describe('CodingProblemWorkspace', () => {
     const props = createProps();
     render(<CodingProblemWorkspace {...props} />);
 
-    expect(screen.getByRole('region', { name: 'Coding workspace' })).toHaveClass(
-      'border-[var(--border)]',
-      'bg-[var(--surface)]'
+    expect(screen.getByTestId('coding-workspace-grid')).toHaveClass(
+      'min-h-[calc(100vh-180px)]',
+      'lg:grid-cols-2'
     );
+    expect(screen.getByRole('region', { name: 'Run results' })).toHaveClass('h-[200px]');
     expect(screen.getAllByRole('heading', { name: 'Problem' })[0].closest('section')).toHaveClass(
       'border-[var(--border)]',
       'bg-[var(--card)]'
     );
     expect(screen.getByRole('button', { name: 'Run' })).toHaveClass('bg-[var(--accent)]');
+    expect(screen.getByRole('button', { name: 'AI Review' })).toBeDisabled();
     expect(screen.getByRole('combobox', { name: 'Programming language' })).toHaveClass(
       'border-[var(--border2)]',
       'bg-[var(--surface)]',
@@ -132,17 +134,31 @@ describe('CodingProblemWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Show problem description' })).toBeInTheDocument();
   });
 
-  it('keeps the problem panel available in the fullscreen workspace', () => {
+  it('renders pre-run test examples in the reference horizontal result rows', () => {
+    render(<CodingProblemWorkspace {...createProps()} outputTab="testcases" />);
+
+    const resultPanel = screen.getByRole('tabpanel');
+    const firstPreviewCase = within(resultPanel).getAllByRole('listitem')[0];
+    expect(firstPreviewCase).toHaveClass('px-[0.65rem]', 'py-2');
+    expect(within(firstPreviewCase).getByText('Input')).toBeInTheDocument();
+    expect(within(firstPreviewCase).getByText('Expected')).toBeInTheDocument();
+    expect(within(firstPreviewCase).getByText('-')).toBeInTheDocument();
+  });
+
+  it('shows the reference fullscreen editor surface without the problem or run panels', () => {
     const props = { ...createProps(), isFullscreen: true };
     render(<CodingProblemWorkspace {...props} />);
 
     expect(screen.getByRole('dialog', { name: 'Fullscreen coding editor' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Exit fullscreen editor' })).toBeInTheDocument();
-    expect(
-      within(screen.getByRole('dialog', { name: 'Fullscreen coding editor' })).getByText(
-        problem.title
-      )
-    ).toBeInTheDocument();
+    const dialog = within(screen.getByRole('dialog', { name: 'Fullscreen coding editor' }));
+    expect(dialog.getByText('twoSum.js')).toBeInTheDocument();
+    expect(dialog.getByRole('combobox', { name: 'Programming language' })).toBeInTheDocument();
+    expect(dialog.getByRole('button', { name: 'Reset code' })).toBeInTheDocument();
+    expect(dialog.getByRole('textbox', { name: 'Code editor' })).toHaveValue(problem.codeJs);
+    expect(dialog.queryByText(problem.title)).not.toBeInTheDocument();
+    expect(dialog.queryByRole('button', { name: 'Run' })).not.toBeInTheDocument();
+    expect(dialog.queryByRole('region', { name: 'Run results' })).not.toBeInTheDocument();
   });
 
   it('emits separate Run and Submit actions', async () => {
@@ -316,10 +332,7 @@ describe('CodingProblemWorkspace', () => {
   it('gives test results enough space to read at a glance', () => {
     render(<CodingProblemWorkspace {...createProps()} />);
 
-    expect(screen.getByRole('region', { name: 'Run results' })).toHaveClass(
-      'min-h-[180px]',
-      'max-h-[38vh]'
-    );
+    expect(screen.getByRole('region', { name: 'Run results' })).toHaveClass('h-[200px]');
   });
 
   it('shows request errors and retries the same action on request', async () => {
@@ -558,7 +571,7 @@ describe('CodingProblemWorkspace', () => {
   it.each([
     ['run', 'completed'],
     ['submit', 'running'],
-  ] as const)('does not offer a review for a %s execution that is %s', (operation, status) => {
+  ] as const)('keeps AI Review disabled for a %s execution that is %s', (operation, status) => {
     const props = createProps();
     const execution: ICodingExecution = {
       id: 'execution-one',
@@ -576,7 +589,7 @@ describe('CodingProblemWorkspace', () => {
     };
     render(<CodingProblemWorkspace {...props} execution={execution} outputTab="testcases" />);
 
-    expect(screen.queryByRole('button', { name: /AI Review/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'AI Review' })).toBeDisabled();
   });
 
   it('shows review request errors and keeps a retry action available', async () => {
@@ -646,14 +659,14 @@ describe('CodingProblemWorkspace', () => {
     await user.click(fullscreenButton);
 
     const dialog = screen.getByRole('dialog', { name: 'Fullscreen coding editor' });
-    const firstButton = within(dialog).getByRole('button', { name: 'Back to problems' });
+    const firstFocusableElement = within(dialog).getByRole('button', { name: 'Reset code' });
     const lastFocusableElement = within(dialog).getByRole('textbox', { name: 'Code editor' });
     expect(dialog).toHaveFocus();
 
     lastFocusableElement.focus();
     await user.tab();
-    expect(firstButton).toHaveFocus();
-    firstButton.focus();
+    expect(firstFocusableElement).toHaveFocus();
+    firstFocusableElement.focus();
     await user.tab({ shift: true });
     expect(lastFocusableElement).toHaveFocus();
 

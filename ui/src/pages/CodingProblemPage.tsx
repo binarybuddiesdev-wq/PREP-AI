@@ -202,7 +202,15 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
       : null;
 
   return (
-    <main className="h-[calc(100svh-116px)] min-h-[420px] w-full min-w-0">
+    <main className="min-h-[calc(100svh-180px)] w-full min-w-0">
+      <header className="mb-6">
+        <h1 className="mb-[0.2rem] text-[1.35rem] font-bold text-[var(--text-h)]">
+          {problem.title}
+        </h1>
+        <p className="mb-6 text-[0.9rem] text-[var(--dim)]">
+          {problem.difficulty} • {problem.topic}
+        </p>
+      </header>
       <CodingProblemWorkspace
         problem={problem}
         language={language}

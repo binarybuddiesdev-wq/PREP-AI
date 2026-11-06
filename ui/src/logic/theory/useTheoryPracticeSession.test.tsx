@@ -247,6 +247,133 @@ describe('useTheoryPracticeSession', () => {
     expect(result.current.evaluation).toEqual(answer);
   });
 
+  it('completes a scored session before starting another with the same settings', async () => {
+    const nextSession = { ...session, id: 'session-two' };
+    state.startMutation.mockResolvedValueOnce(session).mockResolvedValueOnce(nextSession);
+    state.evaluation = { ...answer, status: 'completed', aiScore: 8, aiFeedback: 'Good.' };
+    const { result } = renderHook(() => useTheoryPracticeSession());
+
+    await act(async () => {
+      await result.current.start(startBody);
+    });
+    act(() => result.current.setAnswerDraft('A state hook'));
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    let restartedSession: ITheorySession | null = null;
+    await act(async () => {
+      restartedSession = await result.current.restart(startBody);
+    });
+
+    expect(state.completeMutation).toHaveBeenCalledWith('session-one');
+    expect(state.startMutation).toHaveBeenNthCalledWith(2, {
+      body: startBody,
+      idempotencyKey: expect.any(String),
+    });
+    expect(restartedSession).toEqual(nextSession);
+    expect(result.current.sessionId).toBe('session-two');
+    expect(result.current.phase).toBe('question');
+    expect(result.current.savedAnswers).toEqual([]);
+  });
+
+  it('keeps the feedback session active when completing it for a restart fails', async () => {
+    state.evaluation = { ...answer, status: 'completed', aiScore: 8, aiFeedback: 'Good.' };
+    state.completeMutation.mockRejectedValue(new Error('Could not complete session.'));
+    const { result } = renderHook(() => useTheoryPracticeSession());
+
+    await act(async () => {
+      await result.current.start(startBody);
+    });
+    act(() => result.current.setAnswerDraft('A state hook'));
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    await act(async () => {
+      await result.current.restart(startBody);
+    });
+
+    expect(state.startMutation).toHaveBeenCalledOnce();
+    expect(result.current.sessionId).toBe('session-one');
+    expect(result.current.completionError).toBe('Could not complete session.');
+    expect(result.current.phase).toBe('submitted');
+  });
+
+  it('retries the full restart after the current session completion recovers', async () => {
+    const nextSession = { ...session, id: 'session-two' };
+    state.startMutation.mockResolvedValueOnce(session).mockResolvedValueOnce(nextSession);
+    state.completeMutation.mockRejectedValueOnce(new Error('Temporary completion failure.'));
+    state.evaluation = { ...answer, status: 'completed', aiScore: 8, aiFeedback: 'Good.' };
+    const { result } = renderHook(() => useTheoryPracticeSession());
+    await act(async () => {
+      await result.current.start(startBody);
+    });
+    act(() => result.current.setAnswerDraft('A state hook'));
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    await act(async () => {
+      await result.current.restart(startBody);
+    });
+    expect(result.current.canRetryRestart).toBe(true);
+    expect(state.startMutation).toHaveBeenCalledOnce();
+
+    act(() => result.current.retryRestart());
+    await waitFor(() => expect(result.current.sessionId).toBe('session-two'));
+
+    expect(state.completeMutation).toHaveBeenCalledTimes(2);
+    expect(state.startMutation).toHaveBeenCalledTimes(2);
+    expect(result.current.canRetryRestart).toBe(false);
+  });
+
+  it('does not restart while answer evaluation is still pending', async () => {
+    state.evaluation = answer;
+    const { result } = renderHook(() => useTheoryPracticeSession());
+    await act(async () => {
+      await result.current.start(startBody);
+    });
+    act(() => result.current.setAnswerDraft('A state hook'));
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    let restartedSession: ITheorySession | null = null;
+    await act(async () => {
+      restartedSession = await result.current.restart(startBody);
+    });
+
+    expect(restartedSession).toBeNull();
+    expect(state.completeMutation).not.toHaveBeenCalled();
+    expect(state.startMutation).toHaveBeenCalledOnce();
+    expect(result.current.phase).toBe('submitted');
+  });
+
+  it('returns to setup with the actual start error if the replacement session cannot start', async () => {
+    state.startMutation
+      .mockResolvedValueOnce(session)
+      .mockRejectedValueOnce(new Error('Daily session limit reached.'));
+    state.evaluation = { ...answer, status: 'completed', aiScore: 8, aiFeedback: 'Good.' };
+    const { result } = renderHook(() => useTheoryPracticeSession());
+    await act(async () => {
+      await result.current.start(startBody);
+    });
+    act(() => result.current.setAnswerDraft('A state hook'));
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    await act(async () => {
+      await result.current.restart(startBody);
+    });
+
+    expect(state.completeMutation).toHaveBeenCalledOnce();
+    expect(result.current.sessionId).toBe('');
+    expect(result.current.phase).toBe('setup');
+    expect(result.current.startError).toBe('Daily session limit reached.');
+  });
+
   it('reuses the frozen answer body and key after a timeout', async () => {
     state.answerMutation
       .mockRejectedValueOnce(new Error('Request timed out'))

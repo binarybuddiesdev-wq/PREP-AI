@@ -6,8 +6,10 @@ export interface ITheoryFeedbackProps {
   isRefreshing: boolean;
   isEnding: boolean;
   isCompleting: boolean;
+  isRestarting: boolean;
   canContinue: boolean;
   onRetryEvaluation: () => void;
   onContinue: () => void;
+  onPracticeSameTopic: () => void;
   onEnd: () => void;
 }
