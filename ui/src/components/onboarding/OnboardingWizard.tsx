@@ -18,10 +18,10 @@ const STEPS = [
 const fieldClassName =
   'mt-1.5 w-full rounded-lg border border-[var(--border2)] bg-[var(--bg2)] px-4 py-2 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--dim)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-bg)]';
 const primaryButtonClassName =
-  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-amber-950 transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
+  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-amber-950 whitespace-nowrap transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-wait disabled:opacity-60';
 
 const secondaryButtonClassName =
-  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-5 py-2 text-sm font-medium text-[var(--text)] transition hover:border-[var(--border2)] hover:bg-[var(--surface2)] hover:text-[var(--text-h)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60';
+  'inline-flex min-h-10 flex-1 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-5 py-2 text-sm font-medium text-[var(--text)] whitespace-nowrap transition hover:border-[var(--border2)] hover:bg-[var(--surface2)] hover:text-[var(--text-h)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60';
 
 export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   const {
@@ -49,15 +49,15 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
   return (
     <main
       aria-label="Profile setup"
-      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-clip bg-[var(--bg)] px-3 py-2 font-['DM_Sans',sans-serif] text-[var(--text)] sm:px-4"
+      className="onboarding-screen fixed inset-0 isolate flex h-dvh min-h-0 w-full items-center justify-center overflow-y-auto bg-[var(--bg)] px-0 py-0 font-['DM_Sans',sans-serif] text-[var(--text)] sm:px-4 sm:py-2"
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_42%,rgba(245,158,11,0.08),transparent_34rem)]"
+        className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.06),transparent_70%)]"
       />
       <section
         aria-labelledby="onboarding-title"
-        className="onboarding-card onboarding-card--compact onboarding-card--viewport-fit relative w-full min-w-0 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]"
+        className="onboarding-card onboarding-card--viewport-fit relative w-full min-w-0 max-w-[520px] shrink-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]"
       >
         <header className="onboarding-header mb-3 text-center">
           <div className="mb-1 flex justify-center">{brand}</div>
@@ -67,12 +67,14 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
           >
             Let’s set up your profile
           </h1>
-          <p className="mt-1 text-sm text-[var(--dim)]">Practice that fits your goals.</p>
+          <p className="mt-1 text-sm text-[var(--dim)]">
+            This helps us personalize your interview prep experience.
+          </p>
         </header>
 
         <ol
           aria-label="Setup progress"
-          className="onboarding-progress mb-3 flex items-center gap-2 px-1 sm:gap-3"
+          className="onboarding-progress mb-8 flex items-center gap-2 px-1 sm:gap-3"
         >
           {STEPS.map((currentStep) => (
             <li
@@ -87,13 +89,12 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   'flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
                   step === currentStep.value &&
                     'border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent-strong)]',
-                  step > currentStep.value &&
-                    'border-[var(--green)] bg-[var(--green-bg)] text-[var(--success-strong)]',
+                  step > currentStep.value && 'border-[var(--green)] bg-[var(--green)] text-white',
                   step < currentStep.value &&
                     'border-[var(--border2)] bg-[var(--bg)] text-[var(--dim)]'
                 )}
               >
-                {step > currentStep.value ? '✓' : currentStep.value}
+                {currentStep.value}
               </span>
               {currentStep.value < STEPS.length && (
                 <span
@@ -118,7 +119,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Tell us about your target role
               </h2>
               <p className="mt-1 text-sm text-[var(--dim)]">
-                Save your target role and experience level to your profile.
+                We&apos;ll tailor questions to match your interview goals.
               </p>
 
               <div className="onboarding-fields mt-3 space-y-2">
@@ -127,7 +128,6 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   label="Target Role"
                   placeholder="Select your target role"
                   options={ONBOARDING_ROLE_OPTIONS}
-                  density="compact"
                   value={values.targetRole}
                   disabled={isSaving}
                   onChange={(targetRole) =>
@@ -139,7 +139,6 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   label="Experience Level"
                   placeholder="Select your experience level"
                   options={ONBOARDING_EXPERIENCE_OPTIONS}
-                  density="compact"
                   value={values.experienceLevel}
                   disabled={isSaving}
                   onChange={(experienceLevel) =>
@@ -173,7 +172,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Where are you applying?
               </h2>
               <p className="mt-1 text-sm text-[var(--dim)]">
-                Optional — focus questions on companies you want to join.
+                Optional &mdash; we&apos;ll bias questions toward what those companies ask.
               </p>
 
               <div className="onboarding-content-section mt-3">
@@ -225,7 +224,7 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                 Pick your focus areas
               </h2>
               <p className="mt-1 text-sm text-[var(--dim)]">
-                Choose your focus topics for practice.
+                Select topics you want to practice most. You can change these later.
               </p>
 
               <div className="onboarding-content-section mt-3">
@@ -267,7 +266,6 @@ export const OnboardingWizard = (props: IOnboardingWizardProps) => {
                   label="Default Difficulty"
                   placeholder="Select difficulty"
                   options={ONBOARDING_DIFFICULTY_OPTIONS}
-                  density="compact"
                   value={values.defaultDifficulty}
                   disabled={isSaving}
                   onChange={(defaultDifficulty) =>

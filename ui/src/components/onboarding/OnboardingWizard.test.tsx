@@ -36,20 +36,19 @@ describe('OnboardingWizard', () => {
     const { container } = render(<OnboardingWizard {...createWizardProps()} />);
 
     expect(screen.getByRole('main', { name: 'Profile setup' })).toBeInTheDocument();
-    expect(container.querySelector('.onboarding-screen')).toHaveClass('h-dvh', 'overflow-clip');
+    expect(container.querySelector('.onboarding-screen')).toHaveClass('h-dvh', 'overflow-y-auto');
     expect(container.querySelector('.onboarding-card')).toHaveClass(
       'onboarding-card--viewport-fit',
       'overflow-hidden'
     );
-    expect(container.querySelector('.onboarding-card')).toHaveClass('onboarding-card--compact');
-    expect(container.querySelector('.onboarding-card')).not.toHaveClass('overflow-y-auto');
+    expect(container.querySelector('.onboarding-card')).not.toHaveClass('onboarding-card--compact');
     expect(screen.getByRole('heading', { name: 'Tell us about your target role' })).toBeVisible();
     expect(screen.queryByText('Step 1 of 3')).not.toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Setup progress' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Target Role' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Experience Level' })).toBeInTheDocument();
     expect(
-      screen.getByText('Save your target role and experience level to your profile.')
+      screen.getByText("We'll tailor questions to match your interview goals.")
     ).toBeInTheDocument();
     expect(screen.queryByText(/tailor questions for your target role/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
@@ -162,8 +161,10 @@ describe('OnboardingWizard', () => {
     await user.click(roleDropdown);
     const option = await screen.findByRole('option', { name: 'Frontend Engineer' });
     expect(option.closest('.settings-select-popup')).toBeInTheDocument();
-    expect(option.closest('.settings-select-popup')).toHaveClass('settings-select-popup--dense');
-    expect(option).toHaveClass('settings-select-item--dense');
+    expect(option.closest('.settings-select-popup')).not.toHaveClass(
+      'settings-select-popup--dense'
+    );
+    expect(option).not.toHaveClass('settings-select-item--dense');
     expect(option).toBeVisible();
   });
 });
