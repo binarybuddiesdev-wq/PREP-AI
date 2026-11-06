@@ -58,7 +58,8 @@ const formatSessionDate = (value: string): string => {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
 };
 
-const formatScore = (score: number): string => `${score.toFixed(1)}/10`;
+const formatScore = (score: number): string => score.toFixed(1);
+const formatScorePercent = (score: number): string => `${Math.round(score * 10)}%`;
 
 export const DashboardOverview = (props: IDashboardOverviewProps) => {
   const {
@@ -239,10 +240,30 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                           <td className="truncate px-1.5 py-1 text-[0.65rem] text-[var(--dim)] sm:px-2 sm:text-xs">
                             {formatSessionDate(session.startedAt)}
                           </td>
-                          <td className="truncate px-1.5 py-1 text-[0.65rem] tabular-nums text-[var(--dim)] sm:px-2 sm:text-xs">
-                            {session.averageScore === null
-                              ? '—'
-                              : formatScore(session.averageScore)}
+                          <td className="truncate px-1.5 py-1 text-[0.65rem] tabular-nums sm:px-2 sm:text-xs">
+                            {session.averageScore === null ? (
+                              <span className="text-[var(--dim)]">—</span>
+                            ) : (
+                              <span
+                                aria-label={`Score: ${formatScore(session.averageScore)} out of 10`}
+                                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-1 text-[0.6rem] font-medium leading-none sm:px-2 sm:text-[0.7rem] ${
+                                  session.averageScore >= 7
+                                    ? 'bg-[var(--green-bg)] text-[var(--success-strong)]'
+                                    : session.averageScore >= 5
+                                      ? 'bg-[var(--accent-bg)] text-[var(--accent-strong)]'
+                                      : 'bg-[var(--red-bg)] text-[var(--danger-strong)]'
+                                }`}
+                              >
+                                {session.averageScore >= 7 ? (
+                                  <Check aria-hidden="true" className="size-3" />
+                                ) : session.averageScore >= 5 ? (
+                                  <span aria-hidden="true">~</span>
+                                ) : (
+                                  <span aria-hidden="true">!</span>
+                                )}
+                                {formatScore(session.averageScore)}
+                              </span>
+                            )}
                           </td>
                           <td className="px-1.5 py-1 sm:px-2">
                             <span
@@ -375,7 +396,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                         <div className="mb-1.5 flex justify-between gap-3 text-xs">
                           <span className="truncate text-[var(--text)]">{area.topicName}</span>
                           <span className="tabular-nums text-[var(--dim)]">
-                            {formatScore(area.avgScore)} · {area.sessionsCount} sessions
+                            {formatScorePercent(area.avgScore)} · {area.sessionsCount} sessions
                           </span>
                         </div>
                         <div

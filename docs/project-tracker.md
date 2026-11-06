@@ -511,6 +511,10 @@ unrelated or user-owned files.
   score thresholds, and concise numeric values. New assertions failed before
   the change and pass now (6 tests); History theme/responsive previews pass in
   both browser projects (2/2).
+- Dashboard score labels now follow the prototype's compact score and percent
+  formats, including the matching recent-score pill thresholds. The new
+  regression checks pass with 18 DashboardOverview tests; both responsive theme
+  previews pass (2/2).
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

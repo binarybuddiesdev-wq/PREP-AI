@@ -208,7 +208,8 @@ describe('DashboardOverview', () => {
     ).toBeVisible();
     expect(screen.getByText('3')).toBeVisible();
     expect(screen.getByText('14')).toBeVisible();
-    expect(screen.getByText('7.5/10')).toBeVisible();
+    expect(screen.getByText('7.5')).toBeVisible();
+    expect(screen.getByText('55% · 2 sessions')).toBeVisible();
     const sessionsMetric = screen.getByText('Sessions Completed').closest('article');
     expect(sessionsMetric).toHaveClass('bg-[var(--card)]');
     expect(within(sessionsMetric!).getByText('Sessions Completed')).toHaveClass(
@@ -235,8 +236,32 @@ describe('DashboardOverview', () => {
         .map((header) => header.textContent)
     ).toEqual(['Topic', 'Date', 'Score', 'Status']);
     const sessionRow = within(sessionsTable).getByRole('row', { name: /React/ });
-    expect(within(sessionRow).getByText('8.0/10')).toBeVisible();
+    const sessionScore = within(sessionRow).getByLabelText('Score: 8.0 out of 10');
+    expect(sessionScore).toHaveClass('bg-[var(--green-bg)]', 'text-[var(--success-strong)]');
+    expect(sessionScore.querySelector('svg')).toBeInTheDocument();
     expect(within(sessionRow).getByText('Completed')).toBeVisible();
+  });
+
+  it('uses amber and red score pills for scores below the green threshold', () => {
+    const baseSession = summary.recentSessions[0];
+    const { unmount } = renderOverview({
+      summary: { ...summary, recentSessions: [{ ...baseSession, averageScore: 6.2 }] },
+    });
+
+    expect(screen.getByLabelText('Score: 6.2 out of 10')).toHaveClass(
+      'bg-[var(--accent-bg)]',
+      'text-[var(--accent-strong)]'
+    );
+
+    unmount();
+    renderOverview({
+      summary: { ...summary, recentSessions: [{ ...baseSession, averageScore: 4.4 }] },
+    });
+
+    expect(screen.getByLabelText('Score: 4.4 out of 10')).toHaveClass(
+      'bg-[var(--red-bg)]',
+      'text-[var(--danger-strong)]'
+    );
   });
 
   it('shows an in-progress label and no fabricated score for unfinished sessions', () => {

@@ -1239,6 +1239,19 @@ New layout, one folder per purpose. A layer may import only from the layers list
   (2/2) for light/dark themes and mobile overflow. Scoped ESLint and Prettier
   pass.
 
+## 2026-11-06 - Dashboard score display parity
+
+- Matched dashboard score formatting to the prototype: the Average Score KPI
+  and recent-session badges show compact one-decimal values; recent-session
+  badges use check/tilde/exclamation and green/amber/red thresholds. Weak-area
+  averages now show percentages consistent with the progress bars. The score
+  scale remains available in the badge's accessible label.
+- TDD evidence: the updated KPI and recent-score assertions failed against the
+  old `/10` formatting, then passed. A weak-area assertion now checks the
+  percentage presentation. DashboardOverview passes (18 tests); the responsive
+  theme preview passes in both browser projects (2/2). Scoped ESLint and
+  Prettier pass.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to
