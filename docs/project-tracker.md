@@ -366,7 +366,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 556 UI unit tests (125 files) pass; UI
+**Latest evidence (2026-11-06):** All 574 UI unit tests (130 files) pass; UI
 lint, TypeScript project check, and production build pass. The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
@@ -491,12 +491,14 @@ unrelated or user-owned files.
   format commands still include failing user-owned untracked files, so Phase 10
   remains open.
 
-- Tracked route-preview evidence refreshed (2026-11-06): all 19 UI preview
-  tests pass in both configured browser projects (38/38). They cover dark/light
-  rendering and responsive layouts at 320, 390, 768, and 1440 px. The onboarding
-  preview now updates saved theme state as well as the document theme, avoiding
-  interference from the hidden app root. These previews use fixtures; real
-  signed-in API state acceptance remains open.
+- Route-preview verification refreshed (2026-11-06): the configured `ui` and
+  `ui-chromium` Playwright projects each pass 23/23 tests (46 total). This run
+  also included four untracked smoke tests already present in the worktree;
+  tracked preview tests cover dark/light rendering and responsive layouts at
+  320, 390, 768, and 1440 px. UI lint and production build pass. These previews
+  use fixture data and verify responsive/theme behavior, not pixel-level
+  comparison against `prepai-ui.html`; direct reference review and real
+  signed-in API acceptance remain open.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
