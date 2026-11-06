@@ -134,6 +134,8 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
     const scoreTrendChart = page.getByRole('img', { name: /Score trend for the last 2 sessions/ });
     await expect(scoreTrendChart).toBeVisible();
     await expect(scoreTrendChart.locator('[data-score-trend-point]')).toHaveCount(2);
+    await expect(page.getByText('Last 2 sessions', { exact: true })).toBeVisible();
+    await expect(page.getByText('Based on your weak areas, we recommend:')).toBeVisible();
     const recentSessionsTable = page.getByRole('table', { name: 'Recent Sessions' });
     await expect(recentSessionsTable.getByRole('columnheader')).toHaveText([
       'Topic',

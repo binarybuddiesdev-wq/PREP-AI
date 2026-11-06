@@ -220,6 +220,8 @@ describe('DashboardOverview', () => {
     expect(screen.getByText('React')).toBeVisible();
     expect(screen.getByRole('link', { name: 'Practice Node.js' })).toBeVisible();
     expect(screen.getByText('Choose focus topics')).toBeVisible();
+    expect(screen.getByText('Based on your weak areas, we recommend:')).toBeVisible();
+    expect(screen.getByText('Last 1 session')).toBeVisible();
     expect(screen.getByRole('img', { name: /score trend/i })).toBeInTheDocument();
   });
 

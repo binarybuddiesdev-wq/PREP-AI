@@ -1155,3 +1155,15 @@ New layout, one folder per purpose. A layer may import only from the layers list
   build, and the dashboard Playwright preview. Root lint still has 14 errors
   in the unrelated untracked `types/piston.js`; repository formatting still
   reports 57 unrelated or user-owned files.
+
+## 2026-11-06 - Dashboard trend and recommendation context
+
+- Added the reference's recommendation intro and a truthful “Last N sessions”
+  score-chart caption, with singular wording when only one score is available.
+  The captions use the user's returned data and stay hidden during chart errors.
+- The dashboard component test failed before the recommendation intro existed
+  and passes now. Latest frontend verification: 129 UI test files / 569 tests,
+  UI lint, TypeScript project check, production build, scoped formatting, the
+  dashboard Playwright preview, and all 23 UI Playwright tests pass. Root lint
+  still reports 14 errors in the unrelated untracked `types/piston.js`; root
+  format check still reports 57 unrelated or user-owned files.

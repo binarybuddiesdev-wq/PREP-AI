@@ -274,18 +274,23 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                 'Retry suggestions',
                 'No weak areas to work on yet',
                 summary.suggestions.length > 0 ? (
-                  <ul className="flex flex-wrap gap-2">
-                    {summary.suggestions.map((area) => (
-                      <li key={area.topicId}>
-                        <Link
-                          to={`${ROUTES.practice}?topicId=${encodeURIComponent(area.topicId)}`}
-                          className="inline-flex min-h-9 items-center rounded-full border border-[var(--accent-border)] bg-[var(--accent-bg)] px-3 py-1.5 text-sm text-[var(--accent-strong)] transition hover:border-[var(--accent)] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                        >
-                          Practice {area.topicName}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-3">
+                    <p className="text-xs leading-5 text-[var(--dim)]">
+                      Based on your weak areas, we recommend:
+                    </p>
+                    <ul className="flex flex-wrap gap-2">
+                      {summary.suggestions.map((area) => (
+                        <li key={area.topicId}>
+                          <Link
+                            to={`${ROUTES.practice}?topicId=${encodeURIComponent(area.topicId)}`}
+                            className="inline-flex min-h-9 items-center rounded-full border border-[var(--accent-border)] bg-[var(--accent-bg)] px-3 py-1.5 text-sm text-[var(--accent-strong)] transition hover:border-[var(--accent)] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                          >
+                            Practice {area.topicName}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : null
               )}
             </div>
@@ -333,8 +338,14 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
           </section>
 
           <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
-            <header className="border-b border-[var(--border)] px-4 py-3 sm:px-5">
+            <header className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3 sm:px-5">
               <h2 className="text-sm font-semibold text-[var(--text-h)]">Score Trend</h2>
+              {!scoreTrendStatus.isError && summary.scoreTrend.length > 0 && (
+                <span className="text-xs text-[var(--dim)]">
+                  Last {summary.scoreTrend.length} session
+                  {summary.scoreTrend.length === 1 ? '' : 's'}
+                </span>
+              )}
             </header>
             <div className="p-4 sm:p-5">
               {getPanelContent(

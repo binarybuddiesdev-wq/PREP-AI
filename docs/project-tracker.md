@@ -297,6 +297,8 @@ parity and responsive/accessibility acceptance remain.**
       and Status table while keeping its rows usable on mobile.
 - [x] Match the dashboard score trend to the reference's labeled line chart,
       using the server's score history and shared theme tokens.
+- [x] Show the recommendation context and actual session count on the dashboard
+      so the suggestion and score-trend panels explain their data.
 - [x] Move PDF Library reader surfaces, controls, and error states onto shared
       theme tokens while keeping the document page white in the native viewer.
 - [x] Match PDF Study source rows to the reference with a PDF badge, readable
