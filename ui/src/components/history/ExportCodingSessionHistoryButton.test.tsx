@@ -41,7 +41,7 @@ describe('ExportCodingSessionHistoryButton', () => {
     vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
     render(<ExportCodingSessionHistoryButton sessions={sessions} page={3} />);
 
-    const exportButton = screen.getByRole('button', { name: 'Export current page CSV' });
+    const exportButton = screen.getByRole('button', { name: 'Export CSV' });
     expect(exportButton).toHaveClass('border-[var(--border2)]');
     await user.click(exportButton);
 

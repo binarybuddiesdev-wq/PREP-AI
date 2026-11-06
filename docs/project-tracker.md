@@ -322,6 +322,8 @@ parity and responsive/accessibility acceptance remain.**
       loading/error/empty states, pagination, and CSV controls onto the shared
       theme tokens; keep the separate theory detail route in the full-route
       parity review.
+- [x] Match the Session History title and CSV export control to the compact
+      reference header while keeping exports scoped to returned page data.
 - [x] Move Theory Session Detail summary, saved answers, completion states, and
       missing/not-found screens onto the shared theme tokens; full-route parity
       remains open until all screens are checked.

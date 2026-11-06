@@ -159,6 +159,13 @@ describe('SessionHistoryPage', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { name: 'Session History' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Session History' })).toHaveClass(
+      'text-[1.35rem]',
+      'font-bold'
+    );
+    expect(
+      screen.queryByText('Review your practice sessions, coding attempts, and saved feedback.')
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Practice' })).toHaveClass('bg-[var(--accent-bg)]');
     expect(screen.getByRole('tab', { name: 'Coding' })).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('heading', { name: 'No sessions yet' })).toBeVisible();

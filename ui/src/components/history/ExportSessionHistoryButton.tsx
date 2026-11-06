@@ -22,10 +22,10 @@ export const ExportSessionHistoryButton = (props: IExportSessionHistoryButtonPro
     <button
       type="button"
       onClick={handleExport}
-      className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--border2)] px-3 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      className="inline-flex min-h-8 items-center gap-2 rounded-lg border border-[var(--border2)] px-4 py-[0.45rem] text-[0.8rem] font-medium text-[var(--text)] transition hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
     >
-      <Download aria-hidden="true" className="size-4" />
-      Export current page CSV
+      <Download aria-hidden="true" className="size-[13px]" />
+      Export CSV
     </button>
   );
 };

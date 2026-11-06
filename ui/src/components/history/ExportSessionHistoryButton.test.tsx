@@ -42,7 +42,7 @@ describe('ExportSessionHistoryButton', () => {
     );
     const createElement = vi.spyOn(document, 'createElement');
 
-    const exportButton = screen.getByRole('button', { name: 'Export current page CSV' });
+    const exportButton = screen.getByRole('button', { name: 'Export CSV' });
     expect(exportButton).toHaveClass('border-[var(--border2)]');
     await user.click(exportButton);
 

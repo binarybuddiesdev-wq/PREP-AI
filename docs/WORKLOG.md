@@ -1317,6 +1317,17 @@ session`, then passed after the label correction. TheoryFeedback passes
   pass in both browser projects (4/4). The full UI suite passes (130 files / 590
   tests), with UI lint, TypeScript check, and production build passing.
 
+## 2026-11-06 - Session History header parity
+
+- Matched the reference's compact `Session History` title and `Export CSV`
+  button label and sizing. Removed the extra subtitle while retaining separate
+  Practice/Coding tabs and page-scoped exports backed by real API data.
+- TDD evidence: the new header/export assertions failed against the larger
+  title and verbose button text, then passed after the refinement. The History
+  page and export suites pass (14 tests); the History theme preview passes in
+  both browser projects (2/2). Full UI verification passes at 130 files / 590
+  tests, with UI lint, TypeScript check, and production build passing.
+
 ## 2026-11-06 - Practice topic selector parity
 
 - Replaced the Practice topic dropdown with wrapping single-select pills to

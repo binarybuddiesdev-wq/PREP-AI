@@ -92,13 +92,8 @@ export const SessionHistoryPage = () => {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--text-h)]">Session History</h1>
-          <p className="mt-1 text-sm text-[var(--dim)]">
-            Review your practice sessions, coding attempts, and saved feedback.
-          </p>
-        </div>
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-[1.35rem] font-bold text-[var(--text-h)]">Session History</h1>
         {activeTab === 'practice' ? (
           <ExportSessionHistoryButton
             sessions={historyQuery.isError ? [] : (historyQuery.data?.sessions ?? [])}
