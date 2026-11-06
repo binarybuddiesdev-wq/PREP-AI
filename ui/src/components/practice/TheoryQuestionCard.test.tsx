@@ -37,21 +37,20 @@ describe('TheoryQuestionCard', () => {
   it('renders question progress, elapsed time, and a labeled response field', () => {
     render(<TheoryQuestionCard {...createProps()} />);
 
-    expect(screen.getByRole('main')).toHaveClass('w-full');
-    expect(screen.getByRole('heading', { name: 'Practice Session' })).toHaveClass('text-[1.35rem]');
+    expect(screen.getByRole('region', { name: question.question })).toHaveClass(
+      'rounded-2xl',
+      'p-6',
+      'sm:p-8'
+    );
     expect(screen.getByRole('heading', { name: question.question })).toHaveClass(
       'text-[1.05rem]',
-      'leading-[1.7]'
-    );
-    expect(screen.getByRole('heading', { name: question.question }).closest('section')).toHaveClass(
-      'rounded-2xl',
-      'border-[var(--border)]',
-      'bg-[var(--card)]'
+      'leading-[1.7]',
+      'font-normal'
     );
     expect(screen.getByRole('textbox', { name: 'Your answer' })).toHaveClass(
       'min-h-[150px]',
       'p-4',
-      'bg-[var(--bg2)]'
+      'bg-[var(--bg)]'
     );
     expect(screen.getByRole('heading', { name: question.question })).toBeVisible();
     expect(screen.getByRole('progressbar', { name: 'Question progress' })).toHaveAttribute(
@@ -76,6 +75,16 @@ describe('TheoryQuestionCard', () => {
 
     expect(onAnswerChange).toHaveBeenCalled();
     expect(onSubmit).toHaveBeenCalledOnce();
+  });
+
+  it('lets the learner end the active session from the question card', async () => {
+    const user = userEvent.setup();
+    const onEnd = vi.fn();
+    render(<TheoryQuestionCard {...createProps({ onEnd })} />);
+
+    await user.click(screen.getByRole('button', { name: 'End session' }));
+
+    expect(onEnd).toHaveBeenCalledOnce();
   });
 
   it('shows retryable submit errors and locks the saved answer for evaluation', () => {

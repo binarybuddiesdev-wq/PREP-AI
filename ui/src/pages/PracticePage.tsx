@@ -197,39 +197,55 @@ export const PracticePage = () => {
     if (!practice.activeQuestion) return null;
 
     return (
-      <main className="mx-auto w-full max-w-4xl">
-        <TheoryQuestionCard
-          question={practice.activeQuestion}
-          currentQuestion={practice.progress.current}
-          totalQuestions={practice.progress.total}
-          elapsedSeconds={practice.elapsedSeconds}
-          answerDraft={practice.answerDraft}
-          isSubmitting={practice.isSubmitting}
-          isAnswerFrozen={practice.isAnswerFrozen}
-          submitError={practice.submitError}
-          submitted={practice.phase === 'submitted'}
-          onAnswerChange={practice.setAnswerDraft}
-          onSubmit={() => void practice.submit()}
-          onSkip={practice.skip}
-          onEnd={practice.end}
-        />
-        {practice.phase === 'submitted' && practice.evaluation ? (
-          <TheoryFeedback
-            answer={practice.evaluation}
-            evaluationError={
-              practice.evaluationQuery.isError ? practice.evaluationQuery.error.message : null
-            }
-            isRefreshing={practice.evaluationQuery.isFetching}
-            isEnding={practice.isEnding}
-            isCompleting={practice.isCompleting}
-            isRestarting={practice.isRestarting}
-            canContinue={practice.canContinue}
-            onRetryEvaluation={() => void practice.evaluationQuery.refetch()}
-            onContinue={practice.continueAfterSubmit}
-            onPracticeSameTopic={handlePracticeSameTopic}
-            onEnd={() => void practice.end()}
-          />
-        ) : null}
+      <main className="mx-auto w-full pt-1">
+        <h1 className="mb-4 mt-0 text-[1.35rem] font-bold text-[var(--text-h)]">
+          Practice Session
+        </h1>
+        <div className="grid gap-5 min-[1025px]:grid-cols-[minmax(0,1fr)_320px]">
+          {practice.phase === 'submitted' ? (
+            practice.evaluation ? (
+              <TheoryFeedback
+                answer={practice.evaluation}
+                evaluationError={
+                  practice.evaluationQuery.isError ? practice.evaluationQuery.error.message : null
+                }
+                isRefreshing={practice.evaluationQuery.isFetching}
+                isEnding={practice.isEnding}
+                isCompleting={practice.isCompleting}
+                isRestarting={practice.isRestarting}
+                canContinue={practice.canContinue}
+                onRetryEvaluation={() => void practice.evaluationQuery.refetch()}
+                onContinue={practice.continueAfterSubmit}
+                onPracticeSameTopic={handlePracticeSameTopic}
+                onEnd={() => void practice.end()}
+              />
+            ) : (
+              <aside
+                role="status"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--dim)] sm:p-8"
+              >
+                Evaluation is being prepared.
+              </aside>
+            )
+          ) : (
+            <TheoryQuestionCard
+              question={practice.activeQuestion}
+              currentQuestion={practice.progress.current}
+              totalQuestions={practice.progress.total}
+              elapsedSeconds={practice.elapsedSeconds}
+              answerDraft={practice.answerDraft}
+              isSubmitting={practice.isSubmitting}
+              isAnswerFrozen={practice.isAnswerFrozen}
+              submitError={practice.submitError}
+              submitted={false}
+              onAnswerChange={practice.setAnswerDraft}
+              onSubmit={() => void practice.submit()}
+              onSkip={practice.skip}
+              onEnd={practice.end}
+            />
+          )}
+          <div aria-hidden="true" className="hidden min-[1025px]:block" />
+        </div>
         {practice.completionError ? (
           <div
             role="alert"

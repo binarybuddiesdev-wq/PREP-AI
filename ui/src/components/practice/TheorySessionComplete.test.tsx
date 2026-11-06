@@ -52,7 +52,7 @@ describe('TheorySessionComplete', () => {
       />
     );
 
-    expect(screen.getByRole('main')).toHaveClass(
+    expect(screen.getByRole('region', { name: 'Session Complete!' })).toHaveClass(
       'max-w-[30rem]',
       'rounded-2xl',
       'p-6',
@@ -61,6 +61,11 @@ describe('TheorySessionComplete', () => {
       'border-[var(--border)]',
       'bg-[var(--card)]'
     );
+    expect(screen.getByRole('heading', { name: 'Session Complete!' })).toHaveClass(
+      'm-0',
+      'leading-[1.6]'
+    );
+    expect(screen.getByText('🎉')).toBeVisible();
     expect(screen.getByText('0.0')).toBeVisible();
     const metrics = document.querySelector('dl')!;
     expect(metrics).toHaveClass('flex', 'justify-center', 'gap-8');

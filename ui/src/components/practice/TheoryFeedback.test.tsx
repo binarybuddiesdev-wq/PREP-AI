@@ -59,12 +59,16 @@ describe('TheoryFeedback', () => {
       />
     );
 
-    expect(screen.getByRole('region', { name: 'Answer feedback' })).toHaveClass(
+    expect(screen.getByRole('region', { name: 'Answer feedback: 0.0 out of 10' })).toHaveClass(
       'border-[var(--border)]',
       'bg-[var(--card)]'
     );
-    expect(screen.getByText('0.0/10')).toHaveClass('text-[var(--accent-strong)]');
-    expect(screen.getByText('0.0/10')).toBeVisible();
+    expect(screen.getByText('0.0')).toHaveClass('text-[var(--text)]');
+    expect(screen.getByRole('progressbar', { name: 'Answer score' })).toHaveAttribute(
+      'aria-valuenow',
+      '0'
+    );
+    expect(screen.getByText('Decent Answer!')).toBeVisible();
     expect(screen.getByText('Clear explanation.')).toBeVisible();
   });
 
