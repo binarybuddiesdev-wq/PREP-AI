@@ -1176,3 +1176,13 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Full UI checks pass: 129 files / 570 tests, UI lint, TypeScript project
   check, and production build. This component test verifies rendering from an
   Admin role value; live signed-in Admin API verification remains in Phase 10.
+
+## 2026-11-06 - Coding result browser regression
+
+- Updated the Two Sum browser regression to assert numbered positional inputs
+  and the expected/actual values used by the shared coding result components.
+  It checks responsive overflow at 320, 390, 768, and 1440 px.
+- The stale browser assertion failed before the test update; the focused test
+  then passed. The full Chromium UI suite passes 23/23. These previews use
+  component/API fixtures; signed-in live API verification remains open in
+  Phase 10.

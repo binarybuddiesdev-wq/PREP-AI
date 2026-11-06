@@ -283,8 +283,8 @@ parity and responsive/accessibility acceptance remain.**
       explicit light/dark canvas, text, surface, amber accent, and status tokens.
 - [ ] Match screen-level surfaces, spacing, cards, and status treatments to the
       reference across the full route set.
-- [x] Match Coding problem examples to the reference's single compact
-      Input/Output/Explanation code block; inspect desktop and mobile renders.
+- [x] Show coding example inputs as distinct numbered arguments with the
+      expected output beside them, and keep explanations below the values.
 - [x] Keep keyboard focus inside the fullscreen coding editor and restore it to
       the launch control when the editor closes.
 - [x] Move Dashboard cards and status colors onto theme-aware tokens; keep the
@@ -339,10 +339,9 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Move Coding problem details, workspace controls/results, review dialog,
       and missing/not-found states onto shared theme tokens; preserve the
       dark editor surface and verify the detail/review screens in both themes.
-- [x] Format coding examples and test-case input/results as readable code
-      blocks; keep short values compact, show clear run progress, poll through
-      background tabs, and provide a status retry if a run stays queued for 45
-      seconds.
+- [x] Format coding examples and test-case results with distinct positional
+      inputs, readable expected/actual values, clear run progress, background
+      polling, and a status retry when a run stays queued for 45 seconds.
 - [x] Keep the theme preference in Redux and persist it across page loads and
       authenticated route changes.
 - [x] Add global route/topic search with keyboard navigation and accessible
@@ -476,6 +475,15 @@ passed. Chromium desktop and 390 px mobile previews had no horizontal overflow.
 The full UI suite passes at 125 files / 550 tests; UI lint, type-check, and
 production build pass. Root lint and repository-wide formatting remain red on
 unrelated or user-owned files.
+
+- The coding-results browser regression now asserts numbered inputs and
+  expected/actual outputs at 320, 390, 768, and 1440 px. Its stale combined-
+  input selector failed before the test update, then passed. The Chromium
+  route-preview suite passes 23/23; the UI unit suite passes 129 files / 570
+  tests, lint, TypeScript project check, and build. Browser component previews
+  use fixture data. Signed-in live API states remain unverified, and root
+  lint/format still fail on unrelated or user-owned files, so Phase 10 remains
+  open.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.
