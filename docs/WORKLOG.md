@@ -1401,3 +1401,21 @@ session`, then passed after the label correction. TheoryFeedback passes
   UI tests (130 files), UI lint, TypeScript/build, and the Theory Practice
   responsive theme preview pass. Vite's existing native-config and Monaco
   chunk-size warnings remain non-failing.
+
+## 2026-11-06 - Frontend acceptance follow-up
+
+- Corrected a stale Coding workspace browser-preview assertion: it expected a
+  page-level `h1` while mounting the child detail component, whose actual
+  problem title is an `h2`; the AI review dialog also hides background headings
+  from accessibility role queries. The preview now checks the component title.
+- Verification: 597 UI tests, UI lint, UI project type-check, and production
+  build pass. All 38 tracked UI browser previews pass in both configured
+  projects. A live browser smoke confirms the UI loads, Clerk publishable-key
+  configuration passes validation, the signed-out dashboard redirects to
+  sign-in, browser fetch reaches backend health at `localhost:3000`, and the
+  unauthenticated profile endpoint correctly returns 401. No browser errors.
+- Full release acceptance remains open: signed-in/free/premium/admin API states
+  and all provider-backed flows need real accounts and data. The repository-wide
+  lint check is blocked by errors in untracked `types/piston.js`; the format
+  check reports 57 files outside this focused change. The untracked files were
+  left untouched.

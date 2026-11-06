@@ -387,6 +387,12 @@ browser projects.
 The latest Practice detail-screen pass aligns the active question layout and
 the 480 px completion card with the HTML reference; all 597 UI tests, the
 responsive Practice preview, lint, TypeScript check, and production build pass.
+The complete tracked UI preview suite now passes (38/38 across both browser
+projects). Live smoke checks confirm the configured Clerk publishable key,
+signed-out redirect, UI load, browser-to-API connectivity, and expected
+unauthenticated `/users/me` 401 response. Signed-in account/provider flows are
+still open. Repository-wide lint and format checks also remain red on unrelated
+files; see the latest entry in `docs/WORKLOG.md`.
 The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop

@@ -103,7 +103,7 @@ test('renders coding problem details and AI review in both themes without mobile
     const preview = page.locator('#coding-workspace-preview');
     const detailCard = page.locator('article > div').first();
     const reviewDialog = page.getByRole('dialog', { name: 'AI Review: Two Sum' });
-    await expect(page.locator('#coding-workspace-preview h1')).toBeVisible();
+    await expect(preview.locator('article header h2')).toHaveText('Two Sum');
     await expect(reviewDialog).toBeVisible();
     await expect
       .poll(() =>
