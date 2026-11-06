@@ -116,6 +116,9 @@ describe('PracticeSetup', () => {
 
     expect(screen.getByText('Choose 1–5 ready PDFs to focus this session.')).toBeVisible();
     expect(screen.getByRole('button', { name: /Start/ })).toBeDisabled();
+    expect(screen.getAllByText('PDF')).toHaveLength(2);
+    expect(screen.getByText('12 pages')).toBeVisible();
+    expect(screen.getByText('20 pages')).toBeVisible();
     await user.click(screen.getByRole('checkbox', { name: /React notes.pdf/ }));
     expect(onPdfSelectionChange).toHaveBeenCalledWith(['pdf-one']);
 

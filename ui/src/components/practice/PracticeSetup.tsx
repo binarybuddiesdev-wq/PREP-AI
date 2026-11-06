@@ -281,14 +281,14 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                 </button>
               </div>
             ) : (
-              <ul aria-label="Ready study PDFs" className="grid gap-2 sm:grid-cols-2">
+              <ul aria-label="Ready study PDFs" className="flex flex-col gap-2">
                 {readyPdfSources.map((source) => {
                   const checked = selectedPdfIds.includes(source.id);
                   const atLimit = selectedPdfIds.length >= 5 && !checked;
                   return (
                     <li key={source.id}>
                       <label
-                        className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2 transition ${checked ? 'border-[var(--accent-border)] bg-[var(--accent-bg)]' : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border2)]'} ${atLimit ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        className={`flex min-h-[52px] items-center gap-3 rounded-[10px] border px-3 py-2.5 transition ${checked ? 'border-[var(--accent-border)] bg-[var(--accent-bg)]' : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border2)]'} ${atLimit ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                       >
                         <input
                           type="checkbox"
@@ -303,11 +303,21 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
                           }
                           className="size-4 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                         />
-                        <span className="min-w-0 flex-1 truncate text-sm text-[var(--text)]">
-                          {source.displayName}
+                        <span
+                          aria-hidden="true"
+                          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--red-bg)] text-[0.65rem] font-bold text-[var(--danger-strong)]"
+                        >
+                          PDF
                         </span>
-                        <span className="shrink-0 text-xs text-[var(--dim)]">
-                          {source.pageCount ?? '—'}p
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-sm font-medium text-[var(--text)]">
+                            {source.displayName}
+                          </span>
+                          <span className="text-[0.7rem] text-[var(--dim)]">
+                            {source.pageCount === null
+                              ? 'Page count unavailable'
+                              : `${source.pageCount} ${source.pageCount === 1 ? 'page' : 'pages'}`}
+                          </span>
                         </span>
                       </label>
                     </li>

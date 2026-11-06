@@ -288,6 +288,8 @@ parity and responsive/accessibility acceptance remain.**
       route-wide visual parity item open until the remaining screens are checked.
 - [x] Move PDF Library reader surfaces, controls, and error states onto shared
       theme tokens while keeping the document page white in the native viewer.
+- [x] Match PDF Study source rows to the reference with a PDF badge, readable
+      filename and page-count hierarchy, and stacked mobile-friendly selection.
 - [x] Move Settings > Documents upload and list surfaces, states, and actions
       onto shared theme tokens; verify theme changes and mobile overflow.
 - [x] Move Settings > Plan cards, usage metrics, billing errors, and plan
@@ -413,6 +415,13 @@ overflows horizontally. The focused coding detail browser check passed in
 Chromium in both themes. The full UI suite passes at 123 files / 538 tests,
 alongside UI lint, TypeScript project check, production build, scoped Prettier,
 and `git diff --check`. The cross-route visual parity item remains open.
+
+PDF Study source rows now follow the prototype's stacked list treatment with a
+red PDF badge and full page-count labels. The PracticeSetup component test
+failed before the badge and page labels were added, then passed. Chromium
+previews at 1440 px and 390 px had no horizontal overflow. The full UI suite
+passes at 123 files / 538 tests; UI lint, type-check, and production build pass.
+Root lint and repo-wide formatting still report unrelated or user-owned files.
 
 - [ ] Verify every reference screen and primary flow against `prepai-ui.html`
       at desktop and mobile sizes.

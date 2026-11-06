@@ -990,3 +990,14 @@ New layout, one folder per purpose. A layer may import only from the layers list
   `tsc -b`, production build, changed-file Prettier, Impeccable detector, and
   `git diff --check` passed. The broader route-wide accessibility checklist
   remains open.
+
+## 2026-11-06 - Match PDF Study source rows to the reference
+
+- Reworked selected document rows into the prototype's vertical list with a
+  red PDF badge, filename, and readable page count.
+- Added assertions for the badge and page labels. The focused component test
+  failed before the visual treatment was added, then passed.
+- Chromium previews at 1440 px and 390 px show the rows without horizontal
+  overflow. The full UI suite passes (123 files / 538 tests), with UI lint,
+  type-check, and production build also passing. Root lint and repository-wide
+  formatting still fail on unrelated or user-owned files.
