@@ -300,6 +300,8 @@ parity and responsive/accessibility acceptance remain.**
       preselected from the existing route query parameter.
 - [x] Match Practice topic selection to the reference's wrapping single-select
       pills, with accessible selected and loading states and query preselection.
+- [x] Match Dashboard, Practice, and Coding screen heading size and copy to the
+      prototype; keep the dynamic dashboard greeting data-driven.
 - [x] Show dashboard recent sessions in the reference's Topic, Date, Score,
       and Status table while keeping its rows usable on mobile.
 - [x] Match the dashboard score trend to the reference's labeled line chart,
@@ -377,7 +379,7 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
-**Latest evidence (2026-11-06):** All 595 UI unit tests (130 files) pass; UI
+**Latest evidence (2026-11-06):** All 597 UI unit tests (130 files) pass; UI
 lint, TypeScript project check, and production build pass. Coding run results
 and Practice reference previews pass in both configured browser projects.
 Settings form and PDF Library theme previews also pass in both configured

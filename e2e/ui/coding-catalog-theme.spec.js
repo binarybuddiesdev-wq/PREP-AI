@@ -85,7 +85,7 @@ test('renders coding catalog and statistics in both themes without mobile overfl
 
     const preview = page.locator('#coding-catalog-preview');
     const problem = page.getByRole('button', { name: /Two Sum/ });
-    const metric = page.getByRole('group', { name: 'Coding statistics' }).locator('div').first();
+    const metric = page.getByRole('group', { name: 'Coding statistics' });
     const error = page.getByRole('alert');
     await expect(problem).toBeVisible();
     await expect(error).toContainText('Stats service unavailable');

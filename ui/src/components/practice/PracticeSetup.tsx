@@ -88,11 +88,13 @@ export const PracticeSetup = (props: IPracticeSetupProps) => {
   const selectedTopic = topics.find((topic) => topic.id === topicId);
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-5 sm:space-y-6">
+    <main className="mx-auto w-full space-y-5 sm:space-y-6">
       <header>
-        <h1 className="mb-1 text-2xl font-semibold text-[var(--text-h)]">Practice</h1>
-        <p className="text-sm text-[var(--dim)]">
-          Choose a practice mode and set the focus for your next session.
+        <h1 className="mb-[0.2rem] text-[1.35rem] font-bold text-[var(--text-h)]">
+          Practice Session
+        </h1>
+        <p className="text-[0.9rem] text-[var(--dim)]">
+          Choose how you want to practice, then configure your session.
         </p>
       </header>
 

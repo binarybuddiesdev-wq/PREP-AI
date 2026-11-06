@@ -127,10 +127,12 @@ describe('coding pages', () => {
   it('shows the server stats bar above the coding catalogue', async () => {
     renderCodingRoutes('/coding');
 
-    expect(await screen.findByRole('group', { name: 'Coding statistics' })).toHaveTextContent('7');
+    const heading = screen.getByRole('heading', { name: 'Coding Questions' });
+    expect(heading).toHaveClass('text-[1.35rem]', 'font-bold');
     expect(
-      screen.getByText('Practice algorithm and data structure problems with AI feedback.')
-    ).toHaveClass('text-[var(--dim)]');
+      screen.getByText('Practice algorithm and data structure problems with AI feedback')
+    ).toHaveClass('text-[0.9rem]', 'text-[var(--dim)]');
+    expect(await screen.findByRole('group', { name: 'Coding statistics' })).toHaveTextContent('7');
     expect(screen.getByText('Today')).toBeVisible();
     expect(screen.getByText('2 / 5')).toBeVisible();
     expect(screen.getByRole('button', { name: /Two Sum/ })).toBeVisible();

@@ -106,6 +106,15 @@ const renderOverview = (overrides: Partial<IDashboardOverviewProps> = {}) =>
   );
 
 describe('DashboardOverview', () => {
+  it('uses the prototype dashboard greeting scale and greeting mark', () => {
+    renderOverview();
+
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toHaveClass('text-[1.35rem]', 'font-bold');
+    expect(heading).toHaveTextContent(/Good (morning|afternoon|evening), Asha/);
+    expect(heading).toHaveTextContent(String.fromCodePoint(0x1f44b));
+  });
+
   it('shows clear dashboard shortcuts to Practice and Coding', () => {
     renderOverview();
 

@@ -90,6 +90,19 @@ const createProps = (overrides: Partial<IPracticeSetupProps> = {}): IPracticeSet
 });
 
 describe('PracticeSetup', () => {
+  it('uses the reference Practice Session heading and subtitle scale', () => {
+    render(<PracticeSetup {...createProps()} />);
+
+    expect(screen.getByRole('heading', { name: 'Practice Session' })).toHaveClass(
+      'text-[1.35rem]',
+      'font-bold'
+    );
+    expect(
+      screen.getByText('Choose how you want to practice, then configure your session.')
+    ).toHaveClass('text-[0.9rem]', 'text-[var(--dim)]');
+    expect(screen.getByRole('main')).not.toHaveClass('max-w-5xl');
+  });
+
   it('offers topic, weak-area, and PDF study modes', () => {
     render(<PracticeSetup {...createProps()} />);
 

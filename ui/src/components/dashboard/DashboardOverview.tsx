@@ -104,8 +104,8 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
   return (
     <main className="mx-auto w-full max-w-6xl space-y-5">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-h)]">
-          {greetingForCurrentTime()}, {name}
+        <h1 className="text-[1.35rem] font-bold text-[var(--text-h)]">
+          {greetingForCurrentTime()}, {name} {String.fromCodePoint(0x1f44b)}
         </h1>
         <p className="mt-1 text-sm text-[var(--dim)]">
           {metrics.completedSessions > 0

@@ -1,3 +1,16 @@
+## 2026-11-06 - Match Dashboard, Practice, and Coding headers to prototype
+
+- Matched the dashboard greeting and its heading size to the reference. Set the
+  Practice setup heading, subtitle, and content width to the reference, and
+  reduced the Coding catalogue heading and subtitle to the same screen-title
+  scale.
+- Fixed the Coding catalogue theme preview to assert the statistics card's
+  actual background surface instead of its transparent inner metric wrapper.
+- Verification: full UI suite passes (130 files / 597 tests), UI lint,
+  TypeScript project check, production build, and Dashboard/Practice/Coding
+  theme previews in both configured browser projects pass. The build retains
+  the known Monaco chunk-size warning.
+
 ## 2026-11-06 - Match PDF Library to the prototype
 
 - Changed Library to the reference PDF card grid with Select/Delete actions and

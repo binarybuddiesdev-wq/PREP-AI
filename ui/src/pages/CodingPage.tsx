@@ -43,11 +43,11 @@ export const CodingPage = () => {
   return (
     <main className="mx-auto w-full max-w-6xl space-y-5">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-h)]">
+        <h1 className="mb-[0.2rem] text-[1.35rem] font-bold text-[var(--text-h)]">
           Coding Questions
         </h1>
-        <p className="mt-1 text-sm text-[var(--dim)]">
-          Practice algorithm and data structure problems with AI feedback.
+        <p className="text-[0.9rem] text-[var(--dim)]">
+          Practice algorithm and data structure problems with AI feedback
         </p>
       </header>
       <CodingStatsBar
