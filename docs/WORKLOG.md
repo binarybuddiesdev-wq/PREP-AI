@@ -1414,8 +1414,11 @@ session`, then passed after the label correction. TheoryFeedback passes
   configuration passes validation, the signed-out dashboard redirects to
   sign-in, browser fetch reaches backend health at `localhost:3000`, and the
   unauthenticated profile endpoint correctly returns 401. No browser errors.
+- The UI formatting check passes with Windows line endings honored using
+  Prettier's `--end-of-line auto` option. The repository-wide format check now
+  reports only 13 untracked user files.
 - Full release acceptance remains open: signed-in/free/premium/admin API states
   and all provider-backed flows need real accounts and data. The repository-wide
   lint check is blocked by errors in untracked `types/piston.js`; the format
-  check reports 57 files outside this focused change. The untracked files were
-  left untouched.
+  check now flags only 13 untracked user files. Those untracked files were left
+  untouched.

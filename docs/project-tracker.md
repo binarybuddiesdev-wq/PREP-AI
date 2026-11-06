@@ -391,8 +391,9 @@ The complete tracked UI preview suite now passes (38/38 across both browser
 projects). Live smoke checks confirm the configured Clerk publishable key,
 signed-out redirect, UI load, browser-to-API connectivity, and expected
 unauthenticated `/users/me` 401 response. Signed-in account/provider flows are
-still open. Repository-wide lint and format checks also remain red on unrelated
-files; see the latest entry in `docs/WORKLOG.md`.
+still open. UI-wide formatting passes with Windows line endings honored.
+Repository-wide lint and format checks remain red on untracked user files; see
+the latest entry in `docs/WORKLOG.md`.
 The Chrome
 theme/landing check passes, including persisted theme, a 320 px no-overflow
 viewport, visible hero-preview text, and readable heading colors. Desktop
