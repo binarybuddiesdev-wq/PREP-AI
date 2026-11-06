@@ -53,7 +53,10 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
         },
         week: [],
         recentSessions: [],
-        scoreTrend: [],
+        scoreTrend: [
+          { date: '2026-11-05', avgScore: 7.5 },
+          { date: '2026-11-06', avgScore: 8 },
+        ],
         suggestions: [],
         setupChecklist: [],
       };
@@ -110,6 +113,9 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
 
     const metricLabel = page.getByText('Sessions Completed', { exact: true });
     await expect(metricLabel).toBeVisible();
+    const scoreTrendChart = page.getByRole('img', { name: /Score trend for the last 2 sessions/ });
+    await expect(scoreTrendChart).toBeVisible();
+    await expect(scoreTrendChart.locator('[data-score-trend-point]')).toHaveCount(2);
     await expect(page.getByRole('link', { name: 'Practice React' })).toHaveAttribute(
       'href',
       '/practice?topicId=topic-react'

@@ -1116,3 +1116,17 @@ New layout, one folder per purpose. A layer may import only from the layers list
   TypeScript project check, and production build pass. Root lint still reports
   errors in the unrelated, untracked `types/piston.js`; repository format check
   still reports 57 unrelated or user-owned files.
+
+## 2026-11-06 - Dashboard score trend chart
+
+- Replaced the dashboard's unlabeled bars with the reference's responsive SVG
+  line chart, including a 0–10 score scale, date labels, trend line, and shaded
+  area. It reads only the authenticated score-trend API data and exposes a
+  complete text summary to assistive technology.
+- The new chart test failed before the component existed and passes now. The
+  dashboard Playwright preview verifies rendered chart points in both themes
+  and no overflow at 320, 390, 768, and 1440 px. The full UI suite passes
+  (129 files / 566 tests), UI lint, TypeScript project check, and production
+  build pass. Root lint still reports 14 errors in the unrelated untracked
+  `types/piston.js`; root Prettier still reports 57 unrelated or user-owned
+  files.

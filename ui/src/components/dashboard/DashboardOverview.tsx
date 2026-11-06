@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 
 import { ROUTES } from '@/core';
 import { DashboardPracticeCoding } from './DashboardPracticeCoding';
+import { ScoreTrendChart } from './ScoreTrendChart';
 import type { IDashboardPanelStatus, IDashboardOverviewProps } from './DashboardOverview.types';
 
 const greetingForCurrentTime = (): string => {
@@ -75,9 +76,6 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
     onOpenSession,
   } = props;
   const { metrics } = summary;
-  const scoreTrendLabel = summary.scoreTrend
-    .map((point) => `${formatSessionDate(point.date)}: ${formatScore(point.avgScore)}`)
-    .join(', ');
 
   const metricCards = [
     {
@@ -305,20 +303,7 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                 'Retry score trend',
                 'Complete a practice session to see your scores.',
                 summary.scoreTrend.length > 0 ? (
-                  <div
-                    role="img"
-                    aria-label={`Score trend for the last ${summary.scoreTrend.length} practice days: ${scoreTrendLabel}`}
-                    className="flex h-28 items-end gap-2 border-b border-[var(--border2)] px-1"
-                  >
-                    {summary.scoreTrend.map((point) => (
-                      <div
-                        key={point.date}
-                        className="min-w-0 flex-1 rounded-t bg-[var(--accent)]"
-                        style={{ height: `${Math.max(8, Math.min(100, point.avgScore * 10))}%` }}
-                        title={`${formatSessionDate(point.date)} · ${formatScore(point.avgScore)}`}
-                      />
-                    ))}
-                  </div>
+                  <ScoreTrendChart points={summary.scoreTrend} />
                 ) : null
               )}
             </div>
