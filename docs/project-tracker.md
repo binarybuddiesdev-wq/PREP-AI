@@ -325,6 +325,8 @@ parity and responsive/accessibility acceptance remain.**
 - [x] Check responsive overflow at 320, 390, 768, and 1440 px across the
       tracked authentication, onboarding, dashboard, practice, coding, history,
       PDF, and settings previews.
+- [x] Verify the Study Chat popup/fullscreen and Notifications popover in both
+      themes, including viewport positioning from phone through desktop widths.
 - [ ] Match desktop, tablet, and mobile layouts; preserve keyboard focus,
       reduced-motion preferences, semantic controls, and screen-reader names.
 
@@ -367,7 +369,8 @@ errors. The full UI gate remains green at 123 files / 536 tests, lint,
 type-check, and build. The route-wide theme and responsive suite passes 30/30
 in both configured browser projects, including rendered Clerk sign-in/sign-up
 buttons. Tracked screen previews stay within the viewport at 320, 390, 768,
-and 1440 px.
+and 1440 px. Study Chat and Notifications overlays also render in dark/light
+themes and remain inside the viewport across those widths.
 The app-shell reduced-motion browser check also passes with the preference set
 to `reduce`; its mobile sidebar no longer animates for 200 ms. Sidebar
 destinations now use native links; unit and browser checks cover the active

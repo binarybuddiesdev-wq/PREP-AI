@@ -951,3 +951,13 @@ New layout, one folder per purpose. A layer may import only from the layers list
 - Verification: all 30 tracked theme and responsive browser checks passed in
   both configured browser projects. The tested previews had no horizontal
   overflow at any of the four widths.
+
+## 2026-11-06 - Check Study Chat and Notifications overlays
+
+- Added browser previews for the persistent Study Chat panel in popup and
+  fullscreen modes, and for the Notifications popover with a real internal
+  notification link.
+- Verified dark/light surfaces and checked that both overlays remain inside
+  the viewport at 320, 390, 768, and 1440 px.
+- Verification: both overlay browser checks passed in both configured browser
+  projects. Scoped Prettier, E2E lint, and `git diff --check` passed.
