@@ -75,7 +75,9 @@ export const CodingStatsBar = (props: ICodingStatsBarProps) => {
             <dd className="mb-[0.15rem] font-mono text-[1.3rem] font-bold leading-none text-[var(--text)]">
               {metric.value}
             </dd>
-            <dt className="text-[0.72rem] text-[var(--dim)]">{metric.label}</dt>
+            <dt className="flex h-[1.6rem] items-center justify-center text-[0.72rem] text-[var(--dim)]">
+              {metric.label}
+            </dt>
           </div>
         ))}
       </dl>

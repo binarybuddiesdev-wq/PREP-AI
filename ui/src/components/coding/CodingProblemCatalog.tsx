@@ -6,6 +6,8 @@ import type { ICodingProblemCatalogProps } from './CodingProblemCatalog.types';
 
 const DIFFICULTIES: readonly CodingDifficulty[] = ['Easy', 'Medium', 'Hard'];
 
+const topicFilterLabel = (topic: string) => (topic === 'Dynamic Programming' ? 'DP' : topic);
+
 const difficultyClassName: Record<CodingDifficulty, string> = {
   Easy: 'bg-[var(--green-bg)] text-[var(--success-strong)]',
   Medium: 'bg-[var(--accent-bg)] text-[var(--accent-strong)]',
@@ -13,7 +15,7 @@ const difficultyClassName: Record<CodingDifficulty, string> = {
 };
 
 const filterButtonClassName = (active: boolean) =>
-  `min-h-8 rounded-full border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+  `mb-[0.35rem] mr-[0.35rem] min-h-8 rounded-full border px-[0.9rem] text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
     active
       ? 'border-[var(--accent)] bg-[var(--accent)] text-black'
       : 'border-[var(--border)] bg-[var(--surface)] text-[var(--dim)] hover:border-[var(--border2)] hover:text-[var(--text)]'
@@ -52,57 +54,57 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
     <section aria-label="Coding problem catalogue">
       <div className="mb-5 border-b border-[var(--border)] pb-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-[0.6rem]">
-            <span className="mr-1 text-xs font-medium text-[var(--dim)]">Topic</span>
-            <div role="group" aria-label="Filter by topic" className="flex flex-wrap gap-[0.6rem]">
-              <button
-                type="button"
-                aria-pressed={selectedTopic === null}
-                className={filterButtonClassName(selectedTopic === null)}
-                onClick={() => onSelectTopic(null)}
-              >
-                All
-              </button>
-              {topics.map((topic) => (
-                <button
-                  key={topic}
-                  type="button"
-                  aria-pressed={selectedTopic === topic}
-                  className={filterButtonClassName(selectedTopic === topic)}
-                  onClick={() => onSelectTopic(topic)}
-                >
-                  {topic}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-[0.6rem]">
-            <span className="mr-1 text-xs font-medium text-[var(--dim)]">Difficulty</span>
-            <div
-              role="group"
-              aria-label="Filter by difficulty"
-              className="flex flex-wrap gap-[0.6rem]"
+          <div
+            role="group"
+            aria-label="Filter by topic"
+            className="flex flex-wrap items-center gap-[0.6rem]"
+          >
+            <span className="mr-1 text-[0.78rem] font-medium text-[var(--faint)]">Topic</span>
+            <button
+              type="button"
+              aria-pressed={selectedTopic === null}
+              className={filterButtonClassName(selectedTopic === null)}
+              onClick={() => onSelectTopic(null)}
             >
+              All
+            </button>
+            {topics.map((topic) => (
               <button
+                key={topic}
                 type="button"
-                aria-pressed={selectedDifficulty === null}
-                className={filterButtonClassName(selectedDifficulty === null)}
-                onClick={() => onSelectDifficulty(null)}
+                aria-pressed={selectedTopic === topic}
+                className={filterButtonClassName(selectedTopic === topic)}
+                onClick={() => onSelectTopic(topic)}
               >
-                All
+                {topicFilterLabel(topic)}
               </button>
-              {DIFFICULTIES.map((difficulty) => (
-                <button
-                  key={difficulty}
-                  type="button"
-                  aria-pressed={selectedDifficulty === difficulty}
-                  className={filterButtonClassName(selectedDifficulty === difficulty)}
-                  onClick={() => onSelectDifficulty(difficulty)}
-                >
-                  {difficulty}
-                </button>
-              ))}
-            </div>
+            ))}
+          </div>
+          <div
+            role="group"
+            aria-label="Filter by difficulty"
+            className="flex flex-wrap items-center gap-[0.6rem]"
+          >
+            <span className="mr-1 text-[0.78rem] font-medium text-[var(--faint)]">Difficulty</span>
+            <button
+              type="button"
+              aria-pressed={selectedDifficulty === null}
+              className={filterButtonClassName(selectedDifficulty === null)}
+              onClick={() => onSelectDifficulty(null)}
+            >
+              All
+            </button>
+            {DIFFICULTIES.map((difficulty) => (
+              <button
+                key={difficulty}
+                type="button"
+                aria-pressed={selectedDifficulty === difficulty}
+                className={filterButtonClassName(selectedDifficulty === difficulty)}
+                onClick={() => onSelectDifficulty(difficulty)}
+              >
+                {difficulty}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -123,7 +125,10 @@ export const CodingProblemCatalog = (props: ICodingProblemCatalogProps) => {
           </button>
         </div>
       ) : (
-        <ul aria-label="Coding problems" className="space-y-0">
+        <ul
+          aria-label="Coding problems"
+          className="max-h-[calc(100vh-300px)] space-y-0 overflow-y-auto pr-2"
+        >
           {filteredProblems.map((problem, index) => (
             <li key={problem.id}>
               <button

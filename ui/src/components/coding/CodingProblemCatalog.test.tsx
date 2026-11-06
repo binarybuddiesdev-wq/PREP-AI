@@ -82,6 +82,32 @@ describe('CodingProblemCatalog', () => {
     expect(props.onSelectDifficulty).toHaveBeenCalledWith(null);
   });
 
+  it('shortens the dynamic programming pill while retaining its full filter value', async () => {
+    const user = userEvent.setup();
+    const props = baseProps();
+    render(
+      <CodingProblemCatalog
+        {...props}
+        problems={[
+          ...problems,
+          {
+            id: 'dp',
+            title: 'Climbing Stairs',
+            slug: 'climbing-stairs',
+            description: 'Count the ways to climb stairs.',
+            difficulty: 'Easy',
+            topic: 'Dynamic Programming',
+            isSolved: false,
+          },
+        ]}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'DP' }));
+
+    expect(props.onSelectTopic).toHaveBeenCalledWith('Dynamic Programming');
+  });
+
   it('shows an explicit empty catalogue message without filter controls', () => {
     render(<CodingProblemCatalog {...baseProps()} problems={[]} />);
 
