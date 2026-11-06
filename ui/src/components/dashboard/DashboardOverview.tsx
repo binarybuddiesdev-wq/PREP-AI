@@ -276,11 +276,13 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
                 summary.suggestions.length > 0 ? (
                   <ul className="flex flex-wrap gap-2">
                     {summary.suggestions.map((area) => (
-                      <li
-                        key={area.topicId}
-                        className="rounded-full border border-[var(--accent-border)] bg-[var(--accent-bg)] px-3 py-1.5 text-sm text-[var(--accent-strong)]"
-                      >
-                        {area.topicName}
+                      <li key={area.topicId}>
+                        <Link
+                          to={`${ROUTES.practice}?topicId=${encodeURIComponent(area.topicId)}`}
+                          className="inline-flex min-h-9 items-center rounded-full border border-[var(--accent-border)] bg-[var(--accent-bg)] px-3 py-1.5 text-sm text-[var(--accent-strong)] transition hover:border-[var(--accent)] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        >
+                          Practice {area.topicName}
+                        </Link>
                       </li>
                     ))}
                   </ul>

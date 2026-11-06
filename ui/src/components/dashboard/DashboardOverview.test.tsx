@@ -132,6 +132,15 @@ describe('DashboardOverview', () => {
     );
   });
 
+  it('opens Practice with the selected weak-area topic', () => {
+    renderOverview();
+
+    expect(screen.getByRole('link', { name: 'Practice Node.js' })).toHaveAttribute(
+      'href',
+      '/practice?topicId=topic-node'
+    );
+  });
+
   it('shows loading feedback while the topic and coding catalogues load', () => {
     renderOverview({
       practiceTopicsStatus: { ...ready(), isPending: true },
@@ -209,7 +218,7 @@ describe('DashboardOverview', () => {
     expect(within(problemsSolved!).getByText('2')).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Recent Sessions' })).toBeVisible();
     expect(screen.getByText('React')).toBeVisible();
-    expect(screen.getAllByText('Node.js')).toHaveLength(2);
+    expect(screen.getByRole('link', { name: 'Practice Node.js' })).toBeVisible();
     expect(screen.getByText('Choose focus topics')).toBeVisible();
     expect(screen.getByRole('img', { name: /score trend/i })).toBeInTheDocument();
   });
@@ -310,7 +319,7 @@ describe('DashboardOverview', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(2);
     expect(screen.getAllByRole('alert')[0]).toHaveTextContent('Theory history is unavailable');
     expect(screen.getAllByRole('status', { name: 'Unavailable' })).toHaveLength(3);
-    expect(screen.getAllByText('Node.js')).toHaveLength(2);
+    expect(screen.getByText('Node.js')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Retry recent sessions' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });

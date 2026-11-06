@@ -41,7 +41,7 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       const failed = {
         ...ready,
         isError: true,
-        error: new Error('Practice history is unavailable'),
+        error: new Error('Coding history is unavailable'),
       };
       const summary = {
         metrics: {
@@ -67,7 +67,15 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
           { date: '2026-11-05', avgScore: 7.5 },
           { date: '2026-11-06', avgScore: 8 },
         ],
-        suggestions: [],
+        suggestions: [
+          {
+            topicId: 'topic-node',
+            topicName: 'Node.js',
+            avgScore: 5.5,
+            sessionsCount: 2,
+            lastPracticed: '2026-11-05T07:00:00.000Z',
+          },
+        ],
         setupChecklist: [],
       };
       const practiceTopics = [
@@ -109,10 +117,10 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
             practiceTopics,
             codingProblems,
             theoryStatus: ready,
-            codingStatus: ready,
+            codingStatus: failed,
             codingProblemsStatus: ready,
             scoreTrendStatus: ready,
-            weakAreasStatus: failed,
+            weakAreasStatus: ready,
             practiceTopicsStatus: ready,
             settingsStatus: ready,
             onOpenSession: () => {},
@@ -134,6 +142,10 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
       'Status',
     ]);
     await expect(recentSessionsTable.getByRole('cell', { name: 'Completed' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Practice Node.js' })).toHaveAttribute(
+      'href',
+      '/practice?topicId=topic-node'
+    );
     await expect(page.getByRole('link', { name: 'Practice React' })).toHaveAttribute(
       'href',
       '/practice?topicId=topic-react'
@@ -149,7 +161,7 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
     await expect
       .poll(() =>
         page
-          .getByText('Practice history is unavailable', { exact: true })
+          .getByText('Coding history is unavailable', { exact: true })
           .first()
           .evaluate((element) => globalThis.getComputedStyle(element).color)
       )
@@ -162,7 +174,7 @@ test('renders dashboard surfaces and status colors in both themes on mobile and 
     await expect
       .poll(() =>
         page
-          .getByText('Practice history is unavailable', { exact: true })
+          .getByText('Coding history is unavailable', { exact: true })
           .first()
           .evaluate((element) => globalThis.getComputedStyle(element).color)
       )

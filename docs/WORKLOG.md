@@ -1142,3 +1142,16 @@ New layout, one folder per purpose. A layer may import only from the layers list
   suite passes (129 files / 568 tests), UI lint, TypeScript project check, and
   production build pass. Root lint and formatting still report unrelated or
   user-owned worktree issues.
+
+## 2026-11-06 - Actionable dashboard weak-area suggestions
+
+- Changed weak-area suggestions from static tags into native Practice links
+  that preselect the matching topic through the existing `topicId` query
+  parameter. No new API or client state was introduced.
+- The new component test failed before the link existed and passes now. The
+  dashboard browser preview verifies the suggestion href in both themes and
+  the existing Practice page test covers topic preselection. Full UI checks
+  pass: 129 files / 569 tests, UI lint, TypeScript project check, production
+  build, and the dashboard Playwright preview. Root lint still has 14 errors
+  in the unrelated untracked `types/piston.js`; repository formatting still
+  reports 57 unrelated or user-owned files.
