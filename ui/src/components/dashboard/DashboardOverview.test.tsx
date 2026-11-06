@@ -224,6 +224,15 @@ describe('DashboardOverview', () => {
     expect(onOpenSession).toHaveBeenCalledWith('session-1');
   });
 
+  it('links the Recent Sessions panel to the complete session history', () => {
+    renderOverview();
+
+    expect(screen.getByRole('link', { name: 'View all sessions' })).toHaveAttribute(
+      'href',
+      '/history'
+    );
+  });
+
   it('shows empty states without sample dashboard values', () => {
     renderOverview({
       summary: {

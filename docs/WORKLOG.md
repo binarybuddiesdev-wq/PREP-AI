@@ -1105,3 +1105,14 @@ New layout, one folder per purpose. A layer may import only from the layers list
   reduced-motion, route semantics, and responsive previews. The AppShell unit
   tests pass (10/10), UI lint and TypeScript checks pass, and the production UI
   build succeeds. The build reports the existing large Monaco chunk warning.
+
+## 2026-11-06 - Dashboard session-history shortcut
+
+- Added the prototype's View All action to the Recent Sessions panel, linking
+  to the full session history with native React Router navigation.
+- The component test failed before the link was added and passes afterward.
+  Dashboard Playwright preview passes in both themes at 320, 390, 768, and
+  1440 px. The full UI suite passes (128 files / 565 tests); UI lint,
+  TypeScript project check, and production build pass. Root lint still reports
+  errors in the unrelated, untracked `types/piston.js`; repository format check
+  still reports 57 unrelated or user-owned files.

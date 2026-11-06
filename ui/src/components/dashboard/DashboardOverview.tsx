@@ -1,6 +1,8 @@
 import { Check, Circle, RotateCw } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Link } from 'react-router';
 
+import { ROUTES } from '@/core';
 import { DashboardPracticeCoding } from './DashboardPracticeCoding';
 import type { IDashboardPanelStatus, IDashboardOverviewProps } from './DashboardOverview.types';
 
@@ -182,8 +184,14 @@ export const DashboardOverview = (props: IDashboardOverviewProps) => {
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)]">
         <div className="space-y-5">
           <section className="app-shell-panel rounded-xl border border-[var(--border)] bg-[var(--card)]">
-            <header className="border-b border-[var(--border)] px-4 py-3 sm:px-5">
+            <header className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3 sm:px-5">
               <h2 className="text-sm font-semibold text-[var(--text-h)]">Recent Sessions</h2>
+              <Link
+                to={ROUTES.history}
+                className="inline-flex min-h-9 shrink-0 items-center rounded-md px-2 text-xs font-medium text-[var(--dim)] transition hover:bg-[var(--surface)] hover:text-[var(--text-h)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              >
+                View all sessions
+              </Link>
             </header>
             <div className="p-4 sm:p-5">
               {getPanelContent(
