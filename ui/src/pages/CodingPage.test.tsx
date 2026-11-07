@@ -179,6 +179,33 @@ describe('coding pages', () => {
     expect(await screen.findByRole('heading', { name: 'Coding Questions' })).toBeInTheDocument();
   });
 
+  it('keeps the coding statistics bar visible on the problem workspace route', () => {
+    renderCodingRoutes('/coding/two-sum');
+
+    expect(screen.getByRole('group', { name: 'Coding statistics' })).toHaveTextContent('7');
+    expect(screen.getByText('Today')).toBeVisible();
+    expect(screen.getByText('2 / 5')).toBeVisible();
+  });
+
+  it('keeps the problem workspace usable and lets the user retry when its stats fail', async () => {
+    const user = userEvent.setup();
+    const refetch = vi.fn();
+    queries.stats.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error('Stats service unavailable'),
+      isFetching: false,
+      refetch,
+    });
+    renderCodingRoutes('/coding/two-sum');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Stats service unavailable');
+    expect(screen.getByRole('button', { name: 'Run' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Retry coding stats' }));
+    expect(refetch).toHaveBeenCalledOnce();
+  });
+
   it('keeps the workspace compact and switches between language starter templates', async () => {
     const user = userEvent.setup();
     renderCodingRoutes('/coding/two-sum');

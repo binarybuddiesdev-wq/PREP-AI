@@ -1,0 +1,20 @@
+.coding-problem-title {
+  line-height: 1.6;
+}
+
+.coding-problem-description {
+  margin-bottom: 1rem;
+}
+
+.coding-problem-content code {
+  display: inline;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+
+.coding-problem-content code.coding-problem-example-output {
+  font-family: var(--mono);
+}

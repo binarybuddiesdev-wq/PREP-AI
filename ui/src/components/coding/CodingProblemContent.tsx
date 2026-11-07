@@ -3,6 +3,7 @@ import type { ICodingProblemContentProps } from './CodingProblemContent.types';
 import { CodingInputArguments } from './CodingInputArguments';
 import { getCodingArgumentNames } from '@/utils';
 import { formatCodingValue } from '@/utils';
+import './CodingProblemContent.css';
 
 const difficultyClassName = {
   Easy: 'bg-[var(--green-bg)] text-[var(--success-strong)]',
@@ -20,7 +21,7 @@ const Example = (props: {
   return (
     <figure
       aria-label={`Example ${index + 1}`}
-      className="mb-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-[0.85rem]"
+      className="coding-problem-example mb-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-[0.85rem]"
     >
       <figcaption className="mb-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-[var(--accent)]">
         Example {index + 1}
@@ -37,7 +38,7 @@ const Example = (props: {
         />
         {'\n'}
         <strong className="font-sans font-semibold">Output:</strong>{' '}
-        <code aria-label="Example output" className="font-mono">
+        <code aria-label="Example output" className="coding-problem-example-output font-mono">
           {formatCodingValue(example.output)}
         </code>
         {example.explanation ? (
@@ -56,9 +57,11 @@ export const CodingProblemContent = (props: ICodingProblemContentProps) => {
   const argumentNames = getCodingArgumentNames(problem);
 
   return (
-    <div className="p-5">
+    <div className="coding-problem-content p-5">
       <header>
-        <h2 className="mb-2 text-[1.15rem] font-bold text-[var(--text-h)]">{problem.title}</h2>
+        <h2 className="coding-problem-title mb-2 text-[1.15rem] font-bold text-[var(--text-h)]">
+          {problem.title}
+        </h2>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span
             className={`rounded-full px-[0.6rem] py-[0.2rem] text-[0.72rem] font-semibold ${difficultyClassName[problem.difficulty]}`}
@@ -75,7 +78,7 @@ export const CodingProblemContent = (props: ICodingProblemContentProps) => {
         <h2 id="coding-problem-description" className="sr-only">
           Problem
         </h2>
-        <p className="mb-4 max-w-3xl whitespace-pre-line text-[0.875rem] leading-[1.75] text-[var(--dim)]">
+        <p className="coding-problem-description max-w-3xl whitespace-pre-line text-[0.875rem] leading-[1.75] text-[var(--dim)]">
           {problem.description}
         </p>
       </section>

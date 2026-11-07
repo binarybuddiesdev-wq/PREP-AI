@@ -204,7 +204,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
       >
         {!isProblemCollapsed ? (
           <section className="flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)]">
-            <div className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border)] px-5">
+            <div className="flex h-[53px] shrink-0 items-center justify-between border-b border-[var(--border)] px-5">
               <h2 className="text-xs font-semibold text-[var(--text-h)]">Problem</h2>
               <button
                 type="button"
@@ -223,9 +223,9 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
         ) : null}
 
         <div className="flex min-h-0 min-w-0 flex-col gap-4">
-          <section className="flex min-h-[480px] min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)]">
-            <header className="flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--surface2)] px-2 py-1 sm:flex-nowrap sm:gap-0 sm:px-0 sm:py-0">
-              <span className="flex h-11 min-w-0 flex-1 items-center gap-2 border-r border-[var(--border)] bg-[var(--card)] px-4 font-mono text-xs text-[var(--dim)]">
+          <section className="flex min-h-[521px] min-w-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)]">
+            <header className="flex h-auto min-h-[39px] shrink-0 flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--bg2)] px-2 py-1 sm:h-[39px] sm:flex-nowrap sm:gap-0 sm:px-0 sm:py-0">
+              <span className="flex h-8 min-w-0 flex-1 items-center gap-2 border-r border-[var(--border)] bg-[var(--card)] px-4 font-mono text-xs text-[var(--dim)] sm:h-full">
                 <span
                   aria-hidden="true"
                   className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]"
@@ -316,7 +316,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
               <div
                 role="tablist"
                 aria-label="Run result views"
-                className="flex h-9 shrink-0 items-center gap-1 border-b border-[var(--border)] px-2"
+                className="flex h-[39px] shrink-0 items-center gap-0 border-b border-[var(--border)] bg-[var(--bg2)] px-2"
               >
                 {(['output', 'testcases'] as const).map((tab) => (
                   <button
@@ -325,7 +325,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
                     role="tab"
                     aria-selected={outputTab === tab}
                     onClick={() => onOutputTabChange(tab)}
-                    className={`relative h-full px-4 text-xs transition ${outputTab === tab ? 'text-[var(--accent-strong)] after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--accent)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}
+                    className={`relative h-full px-4 text-xs transition ${outputTab === tab ? 'bg-[var(--card)] text-[var(--accent-strong)] after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--accent)]' : 'text-[var(--dim)] hover:text-[var(--text)]'}`}
                   >
                     {tab === 'output' ? 'Output' : 'Test Cases'}
                   </button>

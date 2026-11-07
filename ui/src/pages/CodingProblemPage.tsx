@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { CodingProblemWorkspace } from '@/components/coding';
+import { CodingProblemWorkspace, CodingStatsBar } from '@/components/coding';
 import { LoadingScreen, QueryErrorState } from '@/components/layout';
 import type {
   CodingExecutionOperation,
@@ -20,6 +20,7 @@ import {
   useCodingProblemReader,
   useCodingReviewCommand,
   useCodingSessionCommand,
+  useCodingStatsReader,
 } from '@/logic';
 
 interface ICodingExecutionAttempt {
@@ -129,7 +130,14 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
   const executionCommand = useCodingExecutionCommand();
   const reviewCommand = useCodingReviewCommand();
   const executionQuery = useCodingExecutionReader(sessionId, executionId);
+  const statsQuery = useCodingStatsReader();
   const code = codeByLanguage[language] ?? starterCode(problem, language);
+  const statsErrorDetail = statsQuery.error instanceof Error ? statsQuery.error.message.trim() : '';
+  const statsErrorMessage = statsQuery.isError
+    ? statsErrorDetail
+      ? `Coding stats could not be loaded: ${statsErrorDetail}`
+      : 'Coding stats could not be loaded.'
+    : null;
 
   const executeAttempt = async (attempt: ICodingExecutionAttempt) => {
     if (actionInProgress.current) return;
@@ -211,6 +219,13 @@ const CodingProblemWorkspacePage = (props: { problem: ICodingProblem; onBack: ()
           {problem.difficulty} • {problem.topic}
         </p>
       </header>
+      <CodingStatsBar
+        stats={statsQuery.data ?? null}
+        isLoading={statsQuery.isPending}
+        isRetrying={statsQuery.isFetching && !statsQuery.isPending}
+        errorMessage={statsErrorMessage}
+        onRetry={() => void statsQuery.refetch()}
+      />
       <CodingProblemWorkspace
         problem={problem}
         language={language}
