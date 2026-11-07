@@ -80,7 +80,7 @@ test('renders plan, usage, and billing colors in both themes without mobile over
       .poll(() =>
         currentPlan.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
       )
-      .toBe('rgb(24, 24, 27)');
+      .toBe('rgba(255, 255, 255, 0.04)');
     await expect
       .poll(() =>
         page
@@ -94,7 +94,7 @@ test('renders plan, usage, and billing colors in both themes without mobile over
       .poll(() =>
         currentPlan.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
       )
-      .toBe('rgb(255, 255, 255)');
+      .toBe('rgba(0, 0, 0, 0.04)');
     await expect
       .poll(() =>
         page
@@ -112,11 +112,11 @@ test('renders plan, usage, and billing colors in both themes without mobile over
     await expect
       .poll(() =>
         page
-          .getByText('Practice sessions today')
+          .getByText('Practice Sessions')
           .locator('xpath=..')
           .evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
       )
-      .toBe('rgb(255, 255, 255)');
+      .toBe('rgb(248, 249, 250)');
 
     for (const viewport of [
       { width: 320, height: 740 },

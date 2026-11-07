@@ -92,6 +92,10 @@ body:has(.onboarding-screen) {
   background: var(--bg);
 }
 
+.onboarding-screen .settings-select-trigger {
+  min-height: 2.25rem;
+}
+
 .onboarding-screen .settings-select-icon {
   color: var(--faint);
 }
@@ -121,8 +125,23 @@ body:has(.onboarding-screen) {
 }
 
 .onboarding-topic {
-  padding: 0.5rem 1rem;
-  font-size: 0.825rem;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.onboarding-screen [aria-labelledby='onboarding-topics-label'] {
+  gap: 0.375rem;
+}
+
+@media (max-width: 639px) {
+  .onboarding-topic {
+    padding-inline: 1rem;
+    font-size: 0.825rem;
+  }
+
+  .onboarding-screen [aria-labelledby='onboarding-topics-label'] {
+    gap: 0.5rem;
+  }
 }
 
 .onboarding-topic[aria-pressed='true'] {

@@ -82,31 +82,41 @@ test('renders Settings documents with readable surfaces in both themes', async (
     const documentList = page.getByRole('list', { name: 'Uploaded documents' });
     await expect(uploadPanel).toBeVisible();
     await expect(documentList).toBeVisible();
-    const darkUploadSurface = await uploadPanel.evaluate(
-      (element) => globalThis.getComputedStyle(element).backgroundColor
-    );
-    const darkListSurface = await documentList.evaluate(
-      (element) => globalThis.getComputedStyle(element).backgroundColor
-    );
+    const darkUploadBorder = await uploadPanel
+      .locator('div')
+      .first()
+      .evaluate((element) => globalThis.getComputedStyle(element).borderColor);
+    const darkListSurface = await documentList
+      .locator('li')
+      .first()
+      .evaluate((element) => globalThis.getComputedStyle(element).backgroundColor);
     const darkDescription = await page
-      .getByText('Upload searchable PDFs to read and use in a study session.')
+      .getByText('Upload PDF documents to use as question sources. Drag files or click to browse.')
       .evaluate((element) => globalThis.getComputedStyle(element).color);
 
     await page.locator('html').evaluate((element) => (element.dataset.theme = 'light'));
     await expect
       .poll(() =>
-        uploadPanel.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
+        uploadPanel
+          .locator('div')
+          .first()
+          .evaluate((element) => globalThis.getComputedStyle(element).borderColor)
       )
-      .not.toBe(darkUploadSurface);
+      .not.toBe(darkUploadBorder);
     await expect
       .poll(() =>
-        documentList.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
+        documentList
+          .locator('li')
+          .first()
+          .evaluate((element) => globalThis.getComputedStyle(element).backgroundColor)
       )
       .not.toBe(darkListSurface);
     await expect
       .poll(() =>
         page
-          .getByText('Upload searchable PDFs to read and use in a study session.')
+          .getByText(
+            'Upload PDF documents to use as question sources. Drag files or click to browse.'
+          )
           .evaluate((element) => globalThis.getComputedStyle(element).color)
       )
       .not.toBe(darkDescription);

@@ -91,9 +91,11 @@ test('matches all three onboarding step frames at desktop and mobile sizes', asy
         ).toContainText('1');
       }
       const implementation = await readCard(page, '.onboarding-card');
-
       expect(Math.abs(implementation.x - reference.x)).toBeLessThanOrEqual(2);
-      expect(Math.abs(implementation.y - reference.y)).toBeLessThanOrEqual(8);
+      expect(
+        Math.abs(implementation.y - reference.y),
+        JSON.stringify({ viewport, step, implementation, reference })
+      ).toBeLessThanOrEqual(8);
       expect(Math.abs(implementation.width - reference.width)).toBeLessThanOrEqual(2);
       expect(Math.abs(implementation.height - reference.height)).toBeLessThanOrEqual(16);
 

@@ -186,9 +186,7 @@ test('renders theory practice setup, question, feedback, and completion in both 
       );
     });
 
-    const setupCard = page
-      .getByRole('heading', { name: 'Choose a topic' })
-      .locator('xpath=ancestor::section[1]');
+    const setupCard = page.locator('#practice-setup .app-shell-panel');
     const questionCard = page
       .getByRole('heading', { name: 'How does React preserve state between renders?' })
       .locator('xpath=ancestor::section[1]');
@@ -198,7 +196,9 @@ test('renders theory practice setup, question, feedback, and completion in both 
       name: 'Practice Same Topic Again',
     });
     const endSessionButton = feedbackCard.getByRole('button', { name: 'End Session' });
-    const completeCard = page.locator('#practice-complete main');
+    const completeCard = page.locator(
+      '#practice-complete [aria-labelledby="theory-session-complete-title"]'
+    );
     const evaluationError = page.getByText('Evaluation could not be refreshed.', { exact: true });
     await expect(setupCard).toBeVisible();
     const topicGroup = page.getByRole('group', { name: 'Topics' });

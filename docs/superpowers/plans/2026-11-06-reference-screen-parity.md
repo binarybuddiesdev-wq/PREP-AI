@@ -52,7 +52,7 @@ For each screen: inspect the corresponding HTML/CSS and prototype interaction; i
 16. [x] PDF document manager upload/list states. Matched the Documents title, uploaded PDF row, and upload zone against the reference at 1440px; row dimensions are within 1px and the heading/drop-zone positions are within 3px. Put the uploaded list before the uploader, aligned the PDF row surface/icon, and retained truthful upload constraints and ready/indexing/error actions. Verified file selection, upload callback, delete confirmation, failure/empty/loading states, full UI lint, TypeScript production build, focused Vitest (9 tests), Prettier, and Chromium parity/interaction (1 test). Build retains the existing Vite config and Monaco chunk warnings.
 17. [x] Library screen and PDF study/reader interactions. Compared all six PDF cards at 1440×900 and aligned card sizing, row spacing, header/icon spacing, and PDF reader height to the prototype; list and reader bounds pass within 4px horizontally, 6px vertically, and 8px in height. Verified selection and delete confirmation, opening a document, page navigation, zoom, and no horizontal overflow at 390px. Focused PdfLibrary Vitest (5 tests), Chromium parity/interaction (1 test), ESLint, TypeScript production build, Prettier, and `git diff --check` passed. Build retains the existing Vite config and Monaco chunk warnings.
 18. [x] Global search, persistent Study Chat, and notification popover interactions. Replaced the centered search dialog with the reference inline toolbar search and compact result dropdown while retaining Ctrl/Cmd+K, arrow-key selection, retry, and outside-click/Escape dismissal. Matched the 340px notification panel and 320px scroll area, and aligned Study Chat to the 380×520px reference panel, header, welcome bubble, and 63px composer. Chromium checked search and notification bounds, chat panel/header/composer bounds, result selection, mark-all-read, chat send, and mobile overflow. Full UI Vitest (620 tests), Chromium overlay parity/interaction (1 test), ESLint, TypeScript production build, Prettier, and `git diff --check` passed; build retains existing Vite config and Monaco chunk warnings.
-19. [ ] Final route-wide visual review, responsive checks, and frontend quality gate.
+19. [x] Final route-wide visual review, responsive checks, and frontend quality gate. Re-ran the full 33-spec Chromium suite covering landing/auth, onboarding, shell/dashboard, practice, coding, history, settings, documents/library, and global overlays at their desktop/mobile sizes; all passed. Corrected stale settings-theme assertions to match current rendered controls and fixed the onboarding topic layout so the extra DSA option fits the desktop card while mobile chips retain the reference sizing. Verified all 620 UI unit tests, UI ESLint, TypeScript/Vite production build, and Prettier; all passed. The production build reports the existing Vite config and Monaco chunk-size warnings.
 
 ## Completion Evidence
 
@@ -60,3 +60,12 @@ For each screen: inspect the corresponding HTML/CSS and prototype interaction; i
 - Run the focused test and visual check after each pass; push the completed pass before proceeding.
 - Run the assembled UI lint, format, type-check, build, and unit-test gate plus the tracked UI Playwright suite at the end.
 - Keep real signed-in account/provider verification marked pending if no authorized test account is available; do not substitute fixture evidence for a live provider flow.
+
+### Final route-wide verification details
+
+- Chromium suite: 33/33 passed. Coverage includes landing/auth; onboarding; shell and dashboard; practice setup/question/history; coding catalogue/workspace/results; settings profile/preferences/notifications/AI/documents/plan/danger; PDF manager/library/reader; search/chat/notifications overlays; theme and reduced-motion states.
+- UI unit suite: 132 files, 620 tests passed.
+- `pnpm --dir ui lint`: passed.
+- `pnpm --dir ui build`: passed (TypeScript and Vite build).
+- Prettier check on the changed UI, E2E, and plan files: passed.
+- Real signed-in provider flows remain subject to the pending live-account check described above.

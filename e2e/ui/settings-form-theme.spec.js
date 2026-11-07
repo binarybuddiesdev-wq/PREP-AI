@@ -69,43 +69,37 @@ test('renders editable Settings tabs with readable theme-aware controls', async 
     });
 
     const formCard = page.locator('#settings-form-theme-preview .app-shell-panel');
-    const companyInput = page.getByRole('textbox', { name: 'Target companies' });
+    const preview = page.locator('#settings-form-theme-preview');
+    const companyInput = preview.getByRole('textbox', { name: 'Target companies' });
+    const firstNameInput = preview.getByRole('textbox', { name: 'First Name' });
     await expect(formCard).toBeVisible();
     await expect(companyInput).toHaveValue('Acme, Example Co.');
 
     const readStyles = async () => ({
-      cardBackground: await formCard.evaluate(
-        (element) => globalThis.getComputedStyle(element).backgroundColor
-      ),
-      cardBorder: await formCard.evaluate(
-        (element) => globalThis.getComputedStyle(element).borderColor
-      ),
-      inputBackground: await companyInput.evaluate(
-        (element) => globalThis.getComputedStyle(element).backgroundColor
-      ),
-      inputText: await companyInput.evaluate(
+      ...(await formCard.evaluate((element) => ({
+        cardBackground: globalThis.getComputedStyle(element).backgroundColor,
+        cardBorder: globalThis.getComputedStyle(element).borderColor,
+      }))),
+      ...(await companyInput.evaluate((element) => ({
+        inputBackground: globalThis.getComputedStyle(element).backgroundColor,
+        inputText: globalThis.getComputedStyle(element).color,
+      }))),
+      ...(await preview.evaluate((container) => ({
+        selectedTabText: globalThis.getComputedStyle(
+          container.querySelector('[role="tab"][aria-selected="true"]')
+        ).color,
+        statusText: globalThis.getComputedStyle(container.querySelector('[role="status"]')).color,
+      }))),
+      identityText: await firstNameInput.evaluate(
         (element) => globalThis.getComputedStyle(element).color
       ),
-      selectedTabText: await page
-        .locator('#settings-form-theme-preview [role="tab"][aria-selected="true"]')
-        .evaluate((element) => globalThis.getComputedStyle(element).color),
-      identityText: await page
-        .locator('#settings-form-theme-preview')
-        .getByText('Asha Rao')
-        .evaluate((element) => globalThis.getComputedStyle(element).color),
-      statusText: await page
-        .locator('#settings-form-theme-preview [role="status"]')
-        .evaluate((element) => globalThis.getComputedStyle(element).color),
     });
     const darkStyles = await readStyles();
 
-    await page.locator('#root').evaluate((element) => (element.hidden = false));
-    await page.getByRole('button', { name: 'Switch to light theme' }).click();
-    await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
+    await page.locator('html').evaluate((element) => (element.dataset.theme = 'light'));
     await page
       .locator('#settings-form-theme-preview')
       .evaluate((element) => (element.dataset.theme = 'light'));
-    await page.locator('#root').evaluate((element) => (element.hidden = true));
     await expect
       .poll(async () => {
         const currentStyles = await readStyles();
@@ -123,21 +117,21 @@ test('renders editable Settings tabs with readable theme-aware controls', async 
       ).not.toBe(darkStyles[property]);
     }
 
-    await page.getByRole('tab', { name: 'Notifications' }).click();
-    const reminderCheckbox = page.getByRole('checkbox', { name: 'Daily practice reminder' });
-    const reminderTime = page.getByLabel('Reminder time');
-    await expect(reminderCheckbox).toBeVisible();
+    await preview.getByRole('tab', { name: 'Notifications' }).click();
+    const reminderSwitch = preview.getByRole('switch', { name: 'Daily Practice Reminder' });
+    const reminderTime = preview.getByLabel('Reminder time');
+    await expect(reminderSwitch).toBeVisible();
     await expect(reminderTime).toHaveValue('19:00');
-    const checkboxAccent = await reminderCheckbox.evaluate(
-      (element) => globalThis.getComputedStyle(element).accentColor
+    const reminderSwitchBackground = await reminderSwitch.evaluate(
+      (element) => globalThis.getComputedStyle(element).backgroundColor
     );
-    await page.getByRole('tab', { name: 'Practice Preferences' }).click();
-    await expect(page.getByRole('heading', { name: 'Focus topics' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'React' })).toHaveAttribute(
+    await preview.getByRole('tab', { name: 'Practice Preferences' }).click();
+    await expect(preview.getByText('Preferred Topics')).toBeVisible();
+    await expect(preview.getByRole('button', { name: 'React' })).toHaveAttribute(
       'aria-pressed',
       'true'
     );
-    expect(checkboxAccent).not.toBe('auto');
+    expect(reminderSwitchBackground).not.toBe('transparent');
 
     for (const viewport of [
       { width: 320, height: 740 },
