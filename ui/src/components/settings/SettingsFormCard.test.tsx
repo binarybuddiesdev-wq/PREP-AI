@@ -206,7 +206,7 @@ describe('SettingsFormCard', () => {
     const { onOpenDocuments } = renderCard();
 
     await user.click(screen.getByRole('tab', { name: 'Documents' }));
-    await user.click(screen.getByRole('button', { name: 'Manage documents' }));
+    await user.click(screen.getByRole('button', { name: 'Upload or manage PDFs' }));
 
     expect(onOpenDocuments).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'Save Settings' })).not.toBeInTheDocument();

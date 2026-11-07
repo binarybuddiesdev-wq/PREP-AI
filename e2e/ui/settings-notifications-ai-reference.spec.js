@@ -146,7 +146,9 @@ test('settings notifications and AI sources retain reference layout and real con
               onSave: () => {
                 globalThis.window.__settingsSaved = values;
               },
-              onOpenDocuments: () => {},
+              onOpenDocuments: () => {
+                globalThis.window.__openDocuments = true;
+              },
               planPanel,
               pdfSources: sources,
               isLoadingPdfSources: false,
@@ -221,6 +223,24 @@ test('settings notifications and AI sources retain reference layout and real con
     await pdfSwitch.click();
     await expect(pdfSwitch).toHaveAttribute('aria-checked', 'false');
     expect(await preview.getByRole('switch', { name: 'Web Search' }).isDisabled()).toBe(true);
+
+    await reference.getByRole('button', { name: 'Documents' }).click();
+    await preview.getByRole('tab', { name: 'Documents' }).click();
+    const referencePdfDropzone = await reference.locator('#set-docs .pdf-drop').boundingBox();
+    const reactPdfDropzone = await preview
+      .getByRole('button', { name: 'Upload or manage PDFs' })
+      .boundingBox();
+    expect(
+      Math.abs(reactPdfDropzone.y - referencePdfDropzone.y),
+      JSON.stringify({ reactPdfDropzone, referencePdfDropzone })
+    ).toBeLessThanOrEqual(5);
+    expect(Math.abs(reactPdfDropzone.width - referencePdfDropzone.width)).toBeLessThanOrEqual(2);
+    expect(
+      Math.abs(reactPdfDropzone.height - referencePdfDropzone.height),
+      JSON.stringify({ reactPdfDropzone, referencePdfDropzone })
+    ).toBeLessThanOrEqual(5);
+    await preview.getByRole('button', { name: 'Upload or manage PDFs' }).click();
+    await expect.poll(() => reactPage.evaluate(() => globalThis.window.__openDocuments)).toBe(true);
 
     await Promise.all([
       reactPage.locator('html').evaluate((element) => (element.dataset.theme = 'light')),

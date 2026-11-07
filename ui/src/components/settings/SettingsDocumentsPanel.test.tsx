@@ -9,7 +9,9 @@ describe('SettingsDocumentsPanel', () => {
     const onOpenDocuments = vi.fn();
     render(<SettingsDocumentsPanel onOpenDocuments={onOpenDocuments} />);
 
-    await user.click(screen.getByRole('button', { name: 'Manage documents' }));
+    expect(screen.getByText(/Upload PDF documents to use as question sources/i)).toBeVisible();
+    expect(screen.getByText('Open the document manager to browse and upload files')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Upload or manage PDFs' }));
 
     expect(onOpenDocuments).toHaveBeenCalledOnce();
   });
