@@ -106,7 +106,7 @@ Four failure modes a denylist cannot catch:
 - Every new component, hook and pure function gets a test, in **Arrange → Act → Assert** shape, named by the behaviour a user sees (`"shows an error message when the email is empty"`).
 - Test behaviour through the DOM and accessible roles, not internal state.
 - Tests are isolated and mock the network and Clerk, not your own modules.
-- The mechanics are in `frontend-testing`. `ui/` currently has no tests, so your change owes its own.
+- The mechanics are in `frontend-testing`. UI tests are colocated beside source files; add or update tests for changed behavior.
 
 ## Code quality
 

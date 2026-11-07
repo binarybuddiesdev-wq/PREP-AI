@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_ONBOARDING_DRAFT, type IUserSettings } from '@/core';
+import { DEFAULT_ONBOARDING_DRAFT, type IUserSettings, type OnboardingTopic } from '@/core';
 import { getOnboardingState, toOnboardingSettingsBody } from './onboardingSettings';
 
 const settings = (overrides: Partial<IUserSettings>): IUserSettings => ({
@@ -46,6 +46,15 @@ describe('getOnboardingState', () => {
       },
       step: 3,
     });
+  });
+
+  it('restores the DSA topic supported by the onboarding selector', () => {
+    const dsaTopic: OnboardingTopic = 'DSA';
+
+    expect(
+      getOnboardingState(settings({ preferences: { preferredTopics: [dsaTopic] } })).draft
+        .preferredTopics
+    ).toEqual([dsaTopic]);
   });
 
   it('falls back safely when saved values are malformed or unsupported', () => {

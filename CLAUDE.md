@@ -79,7 +79,7 @@ pnpm report             # open HTML report
 
 ### Where the stack rules live
 
-Backend rules (two databases, modules, auth, the response envelope, constants, logging and config, ESM imports, Mastra) are in [`server/CLAUDE.md`](server/CLAUDE.md). Frontend rules (routing, state, the API client, styling, the 7-layer target) are in [`ui/CLAUDE.md`](ui/CLAUDE.md). They load when you work in that directory.
+Backend rules (two databases, modules, auth, the response envelope, constants, logging and config, ESM imports, Mastra) are in [`server/CLAUDE.md`](server/CLAUDE.md). Frontend rules (routing, state, the API client, styling, and implemented layer boundaries) are in [`ui/CLAUDE.md`](ui/CLAUDE.md). They load when you work in that directory.
 
 Before starting, changing, or troubleshooting local containers, read [`docs/development-containers.md`](docs/development-containers.md). It is the source of truth for Podman prerequisites, environment configuration, host and container networking, start/stop commands, and persistent volumes. The project uses separate root, server, and UI package installs; do not assume it is a pnpm workspace.
 

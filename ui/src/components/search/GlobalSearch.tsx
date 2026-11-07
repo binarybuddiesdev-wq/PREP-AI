@@ -1,6 +1,6 @@
 import { ArrowRight, BookOpen, LoaderCircle, Search, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 import type { IGlobalSearchResult } from '@/core';
 import type { IGlobalSearchProps } from './GlobalSearch.types';
@@ -30,7 +30,7 @@ export const GlobalSearch = (props: IGlobalSearchProps) => {
   const isLight = theme === 'light';
 
   useEffect(() => {
-    const openFromKeyboard = (event: KeyboardEvent) => {
+    const openFromKeyboard: (event: WindowEventMap['keydown']) => void = (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
         event.preventDefault();
         onOpenChange(true);
@@ -68,7 +68,7 @@ export const GlobalSearch = (props: IGlobalSearchProps) => {
     handleOpenChange(false);
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown' && results.length > 0) {
       event.preventDefault();
       setActiveIndex((current) => Math.min(current + 1, results.length - 1));

@@ -144,6 +144,36 @@ describe('PracticePage', () => {
     expect(screen.getByRole('button', { name: 'React' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('falls back to an available topic when the requested topic no longer exists', async () => {
+    renderPracticePage('/practice?topicId=deleted-topic');
+
+    expect(await screen.findByRole('button', { name: 'React' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getByRole('button', { name: /start practice/i })).toBeEnabled();
+  });
+
+  it('preselects the first available topic and can start a session without extra setup clicks', async () => {
+    const userEventInstance = userEvent.setup();
+    renderPracticePage();
+
+    expect(await screen.findByRole('button', { name: 'React' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    const startButton = screen.getByRole('button', { name: /start practice/i });
+    expect(startButton).toBeEnabled();
+    await userEventInstance.click(startButton);
+
+    expect(mocks.startPractice).toHaveBeenCalledWith({
+      topicId: 'topic-react',
+      mode: 'topic',
+      difficulty: 'Mid',
+      totalQuestions: 10,
+    });
+  });
+
   it('shows server-owned remaining practice sessions and retries a failed usage read', async () => {
     const userEventInstance = userEvent.setup();
     const refetch = vi.fn();

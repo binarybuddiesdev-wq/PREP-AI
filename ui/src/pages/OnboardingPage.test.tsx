@@ -17,7 +17,14 @@ const serviceMocks = vi.hoisted(() => ({
 
 vi.mock('@clerk/clerk-react', () => ({
   useAuth: () => ({ isLoaded: true, isSignedIn: true, getToken: vi.fn(), signOut: vi.fn() }),
-  useUser: () => ({ user: null }),
+  useUser: () => ({
+    user: {
+      id: 'clerk-user-1',
+      firstName: 'Asha',
+      emailAddresses: [{ emailAddress: 'asha@example.com' }],
+      createdAt: new Date('2025-01-01T00:00:00.000Z'),
+    },
+  }),
 }));
 
 vi.mock('@/service/api', async (importOriginal) => ({

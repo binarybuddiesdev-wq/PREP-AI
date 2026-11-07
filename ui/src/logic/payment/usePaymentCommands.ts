@@ -24,7 +24,7 @@ export const usePaymentCommands = () => {
   const invalidatePlanState = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: paymentKeys.subscription(userId) }),
-      queryClient.invalidateQueries({ queryKey: userKeys.me() }),
+      queryClient.invalidateQueries({ queryKey: userKeys.me(userId) }),
       queryClient.invalidateQueries({ queryKey: theoryKeys.stats(userId) }),
       queryClient.invalidateQueries({ queryKey: codingKeys.stats(userId) }),
     ]);

@@ -10,7 +10,7 @@ const serviceMocks = vi.hoisted(() => ({ setupComplete: vi.fn() }));
 
 vi.mock('@clerk/clerk-react', () => ({
   useAuth: () => ({ isLoaded: true, isSignedIn: true, getToken: vi.fn(), signOut: vi.fn() }),
-  useUser: () => ({ user: null }),
+  useUser: () => ({ user: { id: 'clerk-user-1', emailAddresses: [] } }),
 }));
 
 vi.mock('@/service/api', async (importOriginal) => ({
@@ -24,7 +24,7 @@ describe('useSetupCompleteCommand', () => {
   it('marks setup complete and refreshes the cached current user', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const currentUser = { id: 'user-1', isNewUser: true };
-    queryClient.setQueryData(userKeys.me(), currentUser);
+    queryClient.setQueryData(userKeys.me('clerk-user-1'), currentUser);
     serviceMocks.setupComplete.mockResolvedValue({
       success: true,
       message: 'Setup completed',
@@ -42,7 +42,7 @@ describe('useSetupCompleteCommand', () => {
 
     expect(serviceMocks.setupComplete).toHaveBeenCalledOnce();
     await waitFor(() => {
-      expect(queryClient.getQueryState(userKeys.me())?.isInvalidated).toBe(true);
+      expect(queryClient.getQueryState(userKeys.me('clerk-user-1'))?.isInvalidated).toBe(true);
     });
   });
 });

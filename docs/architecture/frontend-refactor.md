@@ -29,14 +29,17 @@ A layer may import only from layers listed before it. `app` may import everythin
 
 ```
 ui/src/
-  app/         App, AppProviders, AppRoutes, RouteGuards
-  components/  auth, dashboard, form, layout, settings, ui (shadcn)
-  core/        api, user, env.ts, routes.ts
-  data/        Redux Toolkit store and client-side state
-  logic/       api, auth, user, queryClient.ts
-  pages/       DashboardPage, SettingsPage, SignInPage, SignUpPage, index.ts
-  service/     api (ky client, user.api.ts), auth (Clerk adapter, widgets)
-  utils/       cn.ts, formatDate.ts
+  app/         App, AppProviders, AppRoutes (lazy route loading), RouteGuards
+  components/  feature UI (coding, dashboard, practice, pdf, settings, ...)
+               and shared primitives under ui/ (shadcn)
+  core/        domain types, constants, environment, and route definitions
+  data/        Redux Toolkit store and client-owned slices
+  logic/       resource Readers/Commands, query-key factories, queryClient.ts
+  pages/       route-level screen composition
+  service/     API transport/endpoints and auth adapters/widgets
+  utils/       shared pure helpers
+  test/        shared test setup and provider helpers
+  assets/      static frontend assets
 ```
 
 Conventions: arrow-function components with `X.tsx` + `X.types.ts` (props `IXProps`), a barrel `index.ts` per folder, named exports for pages.

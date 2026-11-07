@@ -16,6 +16,7 @@ export type OnboardingTopic =
   | 'TypeScript'
   | 'HTML'
   | 'CSS'
+  | 'DSA'
   | 'Node.js'
   | 'ExpressJS'
   | 'NestJS'

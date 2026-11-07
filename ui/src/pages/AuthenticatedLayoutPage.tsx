@@ -14,10 +14,15 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { matchRoutes, Outlet, useLocation, useNavigate } from 'react-router';
 
-import { AppShell, BrandLink, type IAppShellNavigationGroup } from '@/components/layout';
+import {
+  AppShell,
+  BrandLink,
+  LoadingScreen,
+  type IAppShellNavigationGroup,
+} from '@/components/layout';
 import { GlobalSearch } from '@/components/search';
 import { ROUTES, type AppShellRoute, type IGlobalSearchResult } from '@/core';
 import { useGlobalSearch, useSessionReader, useThemePreference } from '@/logic';
@@ -155,7 +160,13 @@ export const AuthenticatedLayoutPage = () => {
         userMenu={<UserMenu />}
         userName={userName}
       >
-        <Outlet />
+        <Suspense
+          fallback={
+            <LoadingScreen label={`Loading ${pageTitle.toLowerCase()}...`} layout="embedded" />
+          }
+        >
+          <Outlet />
+        </Suspense>
       </AppShell>
       <StudyChatWidget theme={theme} />
     </>

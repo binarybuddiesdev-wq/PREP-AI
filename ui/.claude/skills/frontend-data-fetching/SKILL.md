@@ -11,15 +11,15 @@ How `ui/` talks to the backend: one client, one cache, one place per concern. Co
 
 - **`useApiClient()`** (`ui/src/service/api/`) returns a `ky` instance prefixed with `${VITE_API_BASE_URL}/api/v1` (default `http://localhost:3000`). Its `beforeRequest` hook reads the Clerk session token with `getToken()` and sets `Authorization: Bearer …`. `throwHttpErrors` is on, so a non-2xx response **throws** a ky `HTTPError` whose `error.response.status` is the status.
 - **Endpoint functions** in `service/api/` (`getMe`, `getSettings`, `updateSettings`, `setupComplete`) take the client as their first argument and return the parsed JSON.
-- **The response envelope** is `{ success, message, data }`. Today those functions type `data` as `unknown`.
-- **Providers** (`main.tsx`, outermost first): `ClerkProvider` → Redux `Provider` → `QueryClientProvider` (a default `new QueryClient()`) → `BrowserRouter`. TanStack Query is installed and wired, but no code uses `useQuery` or `useMutation` yet.
+- **The response envelope** is `IApiEnvelope<TData>` (`success`, `message`, `data`); endpoint functions use typed resource responses.
+- **Providers** (`AppProviders.tsx`, outermost first): `ClerkProvider` → Redux `Provider` → `QueryClientProvider` (configured by `createQueryClient`) → `BrowserRouter`. Readers and Commands in `logic/` use TanStack Query for server state.
 
 ## Non-negotiable rules
 
 1. **Every server call goes through `useApiClient()`.** Never `fetch` or `ky` directly in a component, page or hook.
 2. **Server data is TanStack Query**, not `useEffect` + `useState`. Reads are `useQuery`; writes are `useMutation`.
 3. **Never touch the token.** No `getToken()` in a page, no hand-built `Authorization` header, nothing in Redux or `localStorage`. The client attaches it.
-4. **Query keys come from one factory per resource,** hierarchical arrays that include every parameter: `['users', 'me']`, `['users', 'settings']`, `['questions', { topicId, difficulty }]`. No ad-hoc string literals scattered across components.
+4. **Query keys come from one factory per resource,** hierarchical arrays that include every parameter, including the Clerk user ID for user-owned data. No ad-hoc string literals scattered across components.
 5. **Gate queries on Clerk.** `enabled: isLoaded && isSignedIn`, so no request is sent before the token exists.
 6. **A mutation refreshes what it changed.** In `onSuccess`, `invalidateQueries({ queryKey })` for every key the write affects. Use an optimistic update only with a rollback in `onError`.
 7. **Every request renders three states:** loading (`isPending`), error (`isError`) and empty. A screen with only the happy path is incomplete.
@@ -34,33 +34,34 @@ How `ui/` talks to the backend: one client, one cache, one place per concern. Co
 // logic/<resource>/<resource>.keys.ts
 export const userKeys = {
   all: ['users'] as const,
-  me: () => [...userKeys.all, 'me'] as const,
-  settings: () => [...userKeys.all, 'settings'] as const,
+  me: (userId: string) => [...userKeys.all, userId, 'me'] as const,
+  settings: (userId: string) => [...userKeys.all, userId, 'settings'] as const,
 };
 ```
 
 ```tsx
-// pages/settings/useUserSettings.ts
-import { useAuth } from '@clerk/clerk-react';
+// logic/user/useUserSettings.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { IUpdateSettingsBody } from '@/core';
 import { getSettings, updateSettings, useApiClient } from '@/service/api';
-import { userKeys } from '@/lib/queryKeys';
-import type { IUpdateSettingsBody } from './settings.types';
+import { useSessionReader } from '../auth';
+import { userKeys } from './user.keys';
 
 export const useUserSettings = () => {
   const api = useApiClient();
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, user } = useSessionReader();
+  const userId = user?.id ?? '';
   const queryClient = useQueryClient();
 
   const settingsQuery = useQuery({
-    queryKey: userKeys.settings(),
+    queryKey: userKeys.settings(userId),
     queryFn: () => getSettings(api),
-    enabled: isLoaded && isSignedIn,
+    enabled: isLoaded && isSignedIn && Boolean(userId),
   });
 
   const saveSettings = useMutation({
     mutationFn: (body: IUpdateSettingsBody) => updateSettings(api, body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.settings() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.settings(userId) }),
   });
 
   return { settingsQuery, saveSettings };
@@ -79,15 +80,11 @@ Per ADR-0009:
 
 ## Retries and errors
 
-TanStack Query retries failed queries three times by default. For a 4xx that is wasteful and delays the error. Pass a `retry` function that does not retry client errors (`error.response.status < 500`) when you add the first real query, and prefer to set it once on the `QueryClient`. Read the server's message with `await error.response.json()` inside a `try`, and fall back to a generic message if the body is not JSON.
+The app's `createQueryClient()` retries server errors and network failures up to two times, but does not retry HTTP client errors (4xx). Keep this policy centralized; use `retry: false` only for queries where repeating the request is specifically undesirable. Parse server error details in the service/API error mapper and retain a safe fallback when the response body is malformed.
 
-## Known backlog (do not copy, do not flag)
+## Current implementation
 
-- `pages/DashboardPage.tsx` syncs the user in a `useEffect` and `console.log`s the result.
-- `pages/SettingsPage.tsx` calls `fetch` three times with a hand-built `Authorization` header, keeps the data in `useState`, and writes debugging `console.error` lines (including whether a token was retrieved).
-- `service/api/` types `data` as `unknown`.
-
-Replace these when a change substantially rewrites the file, or in a dedicated change. New code uses the pattern above.
+The old backlog of direct `fetch` calls, manually attached Clerk tokens, untyped API envelopes, and unused TanStack Query has been resolved. Screens compose Readers and Commands from `logic/`; user-scoped query keys include the authenticated Clerk user ID to prevent cached profile or settings from appearing after an account switch.
 
 ## Common mistakes
 

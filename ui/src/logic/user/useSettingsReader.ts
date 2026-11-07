@@ -7,11 +7,12 @@ import { userKeys } from './user.keys';
 
 export const useSettingsReader = (): UseQueryResult<IUserSettings | null, Error> => {
   const api = useApiClient();
-  const { isLoaded, isSignedIn } = useSessionReader();
+  const { isLoaded, isSignedIn, user } = useSessionReader();
+  const userId = user?.id ?? '';
 
   return useQuery<IUserSettings | null, Error>({
-    queryKey: userKeys.settings(),
+    queryKey: userKeys.settings(userId),
     queryFn: async () => (await getSettings(api)).data,
-    enabled: isLoaded && isSignedIn,
+    enabled: isLoaded && isSignedIn && Boolean(userId),
   });
 };

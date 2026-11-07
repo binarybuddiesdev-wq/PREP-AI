@@ -13,7 +13,7 @@ How `ui/` tests are written, and the traps in this repo's setup. The gate that r
 - **Libraries:** `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom` (matchers registered in `src/test/setup.ts`).
 - **Discovery:** `**/*.{test,spec}.?(c|m)[jt]s?(x)`. Put a test **next to the code** as `Name.test.tsx` (`useThing.test.ts` for a hook).
 - **Not installed:** `msw`. Do not assume network interception exists; mock the API client (below). Adding a dependency goes through `ui-upgrade-packages`.
-- **Current state:** `ui/` has **no tests**. `pnpm test -- --run` exits 1 with "No test files found" until the first file exists. Your change owes its own test.
+- **Current state:** UI tests are colocated beside components, pages, logic, service functions, core contracts, and utilities. Add or update focused tests for changed user-visible behavior; do not rely on whole-page snapshots.
 
 ## Traps in this repo
 

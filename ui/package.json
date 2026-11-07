@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

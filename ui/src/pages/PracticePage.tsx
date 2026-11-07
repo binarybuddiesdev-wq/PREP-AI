@@ -53,10 +53,19 @@ export const PracticePage = () => {
   }, [savedDifficulty]);
 
   useEffect(() => {
-    if (!requestedTopicId || !topicsQuery.data?.some((topic) => topic.id === requestedTopicId)) {
+    const availableTopics = topicsQuery.data;
+    if (!availableTopics?.length) return;
+
+    if (requestedTopicId && availableTopics.some((topic) => topic.id === requestedTopicId)) {
+      setTopicId(requestedTopicId);
       return;
     }
-    setTopicId(requestedTopicId);
+
+    setTopicId((currentTopicId) =>
+      availableTopics.some((topic) => topic.id === currentTopicId)
+        ? currentTopicId
+        : availableTopics[0].id
+    );
   }, [requestedTopicId, topicsQuery.data]);
 
   useEffect(() => {

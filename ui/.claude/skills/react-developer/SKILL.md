@@ -37,23 +37,10 @@ These govern **new and substantially modified code** (see § Existing code and k
 10. **Naming:** components `PascalCase.tsx`; hooks `useCamelCase.ts`; everything else `camelCase.ts`; types `Name.types.ts`; barrels `index.ts`; tests beside the code as `Name.test.tsx`.
 11. **Props arrive as one `props` argument and are destructured on the next line**, not in the signature.
 
-## Existing code and known backlog
+## Existing code
 
-The rules above govern **new and substantially modified code**. Some existing files predate them. Treat these as a known backlog, not as precedent:
+The earlier backlog of default-exported pages, direct `fetch` calls in `SettingsPage`, an empty Redux store, and missing colocated tests has been resolved. Pages use named exports, server data uses the service and logic layers, the Redux store holds client-owned slices, and tests live beside their code. Do not rely on that historical backlog as an exemption for current code. Keep any newly confirmed exception documented here with evidence.
 
-| Existing code                                                          | Rule it does not meet                     |
-| ---------------------------------------------------------------------- | ----------------------------------------- |
-| `App.tsx` and the four pages in `pages/` are `export default function` | #6 named exports, #7 arrow functions      |
-| `service/api/` declares `useApiClient` with `function`                 | #7 arrow functions                        |
-| `pages/SettingsPage.tsx` calls `fetch` directly, three times           | all API calls go through `useApiClient()` |
-| `store/index.ts` holds only a placeholder reducer                      | no real slices exist yet                  |
-| No `*.test.tsx` files exist                                            | `frontend-testing`                        |
-
-How to apply this:
-
-- **Never copy a backlog pattern into new code** because a neighbouring file does it. "The existing page does it" is not a justification.
-- **Convert a backlog file only when your change substantially rewrites it** (more than a quarter of its lines) or in a dedicated refactor change. Do not convert files as a drive-by inside an unrelated feature.
-- **Reviewers flag only what the diff adds**, never the backlog. A changed line inside a default-exported page is not a new violation.
 - **Generated or vendored code** (`components/ui/*`, Vite scaffolding) is exempt.
 
 ## Component size and accessibility
@@ -87,4 +74,4 @@ How to apply this:
 
 ## When in doubt
 
-Mirror the structure in [`references/structure-and-example.md`](references/structure-and-example.md), not the nearest page: the existing pages are backlog. Where existing code does something the rules do not cover, it is the source of truth; where it contradicts a rule, the rule wins for new code.
+Mirror the structure in [`references/structure-and-example.md`](references/structure-and-example.md), while following the current layer responsibilities in `docs/architecture/frontend-refactor.md`. Where existing code does something the rules do not cover, it is the source of truth; where it contradicts a rule, the rule wins for new code and confirmed legacy violations should be fixed when in scope.

@@ -1,3 +1,38 @@
+## 2026-11-07 - Frontend architecture, cache, and coverage audit
+
+- Fixed the DSA onboarding type contract, browser-vs-React keyboard event
+  typing, and the Settings test fixture's out-of-scope variable. The production
+  build now runs `tsc -b` before Vite so TypeScript errors cannot be hidden by
+  the solution-style root tsconfig.
+- Scoped profile and settings query-cache keys by authenticated Clerk user ID
+  and updated cache invalidations. Added regression coverage showing cached
+  profile data is not reused across accounts.
+- Replaced stale frontend guidance that described the pre-refactor folder
+  layout, absent tests, old query retry behavior, and build command. Updated
+  the architecture guide and created
+  [`docs/frontend-test-coverage.md`](frontend-test-coverage.md) to distinguish
+  unit/component, UI integration, browser-preview, and full backend E2E proof.
+- Split page screens into on-demand route imports. A new Playwright check first
+  failed because the landing route downloaded every screen module; it now
+  verifies only the current route loads, and checks landing-to-sign-in
+  navigation. Initial JavaScript fell from 1.27 MB (342 KB gzip) to 396 KB
+  (118 KB gzip). Monaco editor and worker assets remain separate, lazy-loaded
+  chunks. Replaced `__dirname` with `import.meta.dirname` in Vite configs.
+- Verification: UI lint and project-reference type-check pass; production
+  build passes; Vitest passes (136 files / 630 tests); all 34 route/theme/
+  interaction browser checks pass, with the updated route-loading test also
+  passing separately; `check:agent-docs`, scoped Prettier, and `git diff
+--check` pass. The build still reports large Monaco chunks, which are loaded
+  only when opening Coding.
+- Root lint remains blocked by 14 errors in the untracked user-owned
+  `types/piston.js`; it also reports nine existing warnings. Root format reports
+  13 untracked files. These files were not modified.
+  Authenticated browser-to-API acceptance remains open because the local API at
+  `localhost:3000` is unavailable here and no Clerk browser session is active;
+  the Playwright screen previews use fixtures. Provider-backed evaluation,
+  storage, and billing E2E must be validated with the project's test account
+  and service credentials before release.
+
 ## 2026-11-06 - Match Dashboard, Practice, and Coding headers to prototype
 
 - Matched the dashboard greeting and its heading size to the reference. Set the

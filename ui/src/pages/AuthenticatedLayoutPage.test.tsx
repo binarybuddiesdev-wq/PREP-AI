@@ -53,6 +53,7 @@ const renderAuthenticatedRoutes = (initialPath = '/dashboard') =>
           <Route path="/history" element={<h2>History route content</h2>} />
           <Route path="/history/:sessionId" element={<h2>Session detail route content</h2>} />
           <Route path="/settings" element={<h2>Settings route content</h2>} />
+          <Route path="/library" element={<h2>Library route content</h2>} />
         </Route>
       </Routes>
       <CurrentPath />
@@ -76,6 +77,26 @@ describe('AuthenticatedLayoutPage', () => {
     expect(await within(screen.getByRole('banner')).findByText('Settings')).toBeVisible();
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByLabelText('Current route')).toHaveTextContent('/settings');
+  });
+
+  it.each([
+    ['Dashboard', '/dashboard', 'Dashboard route content'],
+    ['Practice', '/practice', 'Practice route content'],
+    ['Coding', '/coding', 'Coding route content'],
+    ['History', '/history', 'History route content'],
+    ['Settings', '/settings', 'Settings route content'],
+  ])('replaces Library content when navigating to %s', async (label, path, expectedContent) => {
+    const user = userEvent.setup();
+    renderAuthenticatedRoutes('/library');
+
+    expect(screen.getByRole('heading', { name: 'Library route content' })).toBeVisible();
+    await user.click(screen.getByRole('link', { name: label }));
+
+    expect(await screen.findByRole('heading', { name: expectedContent })).toBeVisible();
+    expect(
+      screen.queryByRole('heading', { name: 'Library route content' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Current route')).toHaveTextContent(path);
   });
 
   it('routes theme changes through the existing theme preference', async () => {

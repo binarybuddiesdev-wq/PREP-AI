@@ -113,6 +113,7 @@ describe('SettingsPage', () => {
   });
 
   it('loads plan and usage data only after the Plan tab is opened', async () => {
+    const patchBodies: unknown[] = [];
     const requestedUrls: string[] = [];
     vi.stubGlobal(
       'fetch',

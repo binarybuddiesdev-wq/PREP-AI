@@ -29,19 +29,19 @@ The principle is `superpowers:verification-before-completion`: evidence before a
 
 All are non-mutating. **The gate never uses `prettier --write`, `eslint --fix` or `pnpm lint:fix`.**
 
-| #   | Check      | Command              | Where     | Notes                                                                                                                                                                                                                                                                                                                |
-| --- | ---------- | -------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Lint       | `pnpm lint`          | `ui/`     | `eslint . --ext ts,tsx` with `ui/eslint.config.js`                                                                                                                                                                                                                                                                   |
-| 2   | Repo lint  | `pnpm lint`          | repo root | The root flat config (what CI's lint job runs)                                                                                                                                                                                                                                                                       |
-| 3   | Format     | `pnpm format:check`  | repo root | Prettier, no writes (what CI runs)                                                                                                                                                                                                                                                                                   |
-| 4   | Type-check | `pnpm exec tsc -b`   | `ui/`     | **The only real type-check.** `pnpm build` runs plain `tsc`, and the root `tsconfig.json` is solution-style (`files: []`), so that step compiles zero files: a type error does not fail the build. `tsc -b` follows the project references (`tsconfig.app.json` for `src`, `tsconfig.node.json` for the Vite config) |
-| 5   | Build      | `pnpm build`         | `ui/`     | `tsc && vite build`; Vite does not type-check                                                                                                                                                                                                                                                                        |
-| 6   | Unit tests | `pnpm test -- --run` | `ui/`     | **Never bare `pnpm test`: it is `vitest` in watch mode and never exits.** This is the exact invocation CI uses                                                                                                                                                                                                       |
+| #   | Check      | Command              | Where     | Notes                                                                                                          |
+| --- | ---------- | -------------------- | --------- | -------------------------------------------------------------------------------------------------------------- |
+| 1   | Lint       | `pnpm lint`          | `ui/`     | `eslint . --ext ts,tsx` with `ui/eslint.config.js`                                                             |
+| 2   | Repo lint  | `pnpm lint`          | repo root | The root flat config (what CI's lint job runs)                                                                 |
+| 3   | Format     | `pnpm format:check`  | repo root | Prettier, no writes (what CI runs)                                                                             |
+| 4   | Type-check | `pnpm exec tsc -b`   | `ui/`     | Follows the project references (`tsconfig.app.json` for `src`, `tsconfig.node.json` for the Vite config)       |
+| 5   | Build      | `pnpm build`         | `ui/`     | `tsc -b && vite build`; the build runs the project-reference type-check before Vite                            |
+| 6   | Unit tests | `pnpm test -- --run` | `ui/`     | **Never bare `pnpm test`: it is `vitest` in watch mode and never exits.** This is the exact invocation CI uses |
 
 How to judge a result:
 
 - **Lint warnings do not fail the gate; errors do.** Judge warnings only on lines your change adds.
-- **Row 6 with no test files** prints `No test files found, exiting with code 1`. That is the repo's current state, not your regression. Your change owes its own test (`frontend-testing`), and that test makes the command pass.
+- UI has a colocated Vitest suite. Run it in full for code changes; do not treat a test-discovery failure as expected project state.
 - **Windows and CRLF.** With `core.autocrlf=true` the working tree has CRLF endings and `pnpm format:check` can flag files you never touched. Judge formatting on touched files with `pnpm exec prettier --check --end-of-line auto <files>`; CI (Linux, LF) is the authority.
 - **Root lint can fail on files you did not touch.** If the root `pnpm lint` reports parser errors across the repo rather than rule violations, that is a configuration state to compare with the merge-base (§ Baseline evidence), not something your change caused.
 

@@ -17,7 +17,7 @@ export const AppProviders = ({ children }: IAppProvidersProps) => {
     <AuthProvider>
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>{children}</BrowserRouter>
+          <BrowserRouter useTransitions={false}>{children}</BrowserRouter>
         </QueryClientProvider>
       </Provider>
     </AuthProvider>

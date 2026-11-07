@@ -122,6 +122,23 @@ describe('AppShell', () => {
     expect(screen.getByRole('button', { name: 'Open navigation menu' })).toHaveFocus();
   });
 
+  it('dispatches a desktop sidebar destination through the navigation callback', async () => {
+    const user = userEvent.setup();
+    const props = createShellProps({
+      navigation: [
+        {
+          label: 'Main',
+          items: [{ label: 'Practice', route: ROUTES.practice, icon: <span>P</span> }],
+        },
+      ],
+    });
+    render(<AppShell {...props} />);
+
+    await user.click(screen.getByRole('link', { name: 'Practice' }));
+
+    expect(props.onNavigate).toHaveBeenCalledWith(ROUTES.practice);
+  });
+
   it('closes the mobile drawer when the brand link is used', async () => {
     const user = userEvent.setup();
     render(<AppShell {...createShellProps({ brand: <button type="button">PrepAI</button> })} />);

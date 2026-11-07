@@ -1,6 +1,6 @@
 # PrepAI project tracker
 
-Last reviewed: 2026-11-06
+Last reviewed: 2026-11-07
 
 This is the project-wide progress list for the backend, frontend, shared
 integration, and production readiness. Use it to choose the next feature and
@@ -379,6 +379,22 @@ parity and responsive/accessibility acceptance remain.**
 
 ### Phase 10 — Frontend acceptance and release
 
+**Latest evidence (2026-11-07):** Frontend audit fixes include restoring the
+DSA onboarding topic type, correcting DOM keyboard event typing, fixing the
+Settings test fixture scope, enforcing Clerk user-scoped profile/settings
+cache keys, making production builds run `tsc -b`, correcting stale frontend
+architecture guidance, and loading route screens on demand. The feature-level
+unit/integration/browser coverage map is in
+[`docs/frontend-test-coverage.md`](frontend-test-coverage.md). UI verification
+passes at 630 tests across 136 files; UI lint, project type-check, and build
+pass. The 33 existing Playwright previews pass serially, and the new route
+loading regression passes separately. Full authenticated browser-to-API E2E
+coverage remains open because the local API is unavailable and there is no
+active Clerk browser session. Build output still contains large optional
+Monaco editor/worker chunks, which are loaded only when the coding editor is
+opened. Repository-wide lint and format checks remain blocked by unrelated
+user-owned untracked files.
+
 **Latest evidence (2026-11-06):** All 597 UI unit tests (130 files) pass; UI
 lint, TypeScript project check, and production build pass. Coding run results
 and Practice reference previews pass in both configured browser projects.
@@ -577,6 +593,11 @@ unrelated or user-owned files.
       states for each connected feature.
 - [ ] Run the frontend quality gate, unit tests, relevant Playwright flows,
       and a visual browser check. Record evidence in this tracker.
+- [x] Inventory unit/component, UI integration, and browser-preview coverage
+      for every product feature in the frontend test matrix.
+- [ ] Add and run full route-to-API Playwright E2E flows for authenticated
+      features using a seeded test account and test provider services; do not
+      count fixture component previews as full E2E acceptance.
 - [x] Remove demo fixtures, random results, and temporary feature flags before
       marking a ported screen complete.
 

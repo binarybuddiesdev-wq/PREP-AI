@@ -23,7 +23,7 @@ Then the findings, **ranked most-severe first**, each as:
 
 **"No findings" is a valid result.** Report it plainly. Do not pad a clean review with nits: that trains the reader to skim, which is how a real Blocker gets missed.
 
-A finding that is only about code the diff did not add (the backlog `react-developer` lists: default-exported pages, `fetch` in `SettingsPage`) is not reported. If you clear a finding by leaning on an exemption, a classification or a pre-existing-debt argument, **name the exemption in one line** ("not flagged: `DashboardPage.tsx` is a default export, listed backlog in `react-developer`") so a disagreement is visible instead of an invisible miss.
+A confirmed architectural violation is reported with evidence even if its code predates the current diff. The former default-export and direct-fetch backlog was resolved; do not use it as a general exemption. When a finding is demonstrably unrelated to the reviewed scope, state that boundary and the evidence in one line.
 
 ## File-shape findings — their own section, after the main findings
 

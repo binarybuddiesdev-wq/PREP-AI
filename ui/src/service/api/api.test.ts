@@ -2,7 +2,7 @@ import { HTTPError } from 'ky';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from './apiClient';
 import { getHttpStatus } from './getHttpStatus';
-import { getMe, updateSettings } from './user.api';
+import { getMe, getSettings, setupComplete, updateSettings } from './user.api';
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -86,6 +86,28 @@ describe('updateSettings', () => {
     expect(request.method).toBe('PATCH');
     expect(request.url).toBe('http://api.test/api/v1/users/settings');
     expect(JSON.parse(bodies[0])).toEqual({ profile: { targetRole: 'Backend' } });
+  });
+});
+
+describe('remaining user endpoints', () => {
+  it('reads persisted settings from the settings resource', async () => {
+    const envelope = { success: true, message: 'ok', data: null };
+    const { api, fetchImplementation } = setup(async () => 'tok', jsonResponse(envelope));
+
+    await expect(getSettings(api)).resolves.toEqual(envelope);
+    expect(sentRequest(fetchImplementation).url).toBe('http://api.test/api/v1/users/settings');
+    expect(sentRequest(fetchImplementation).method).toBe('GET');
+  });
+
+  it('marks onboarding complete through the dedicated setup endpoint', async () => {
+    const { api, fetchImplementation } = setup(async () => 'tok', jsonResponse({ data: {} }));
+
+    await setupComplete(api);
+
+    expect(sentRequest(fetchImplementation).url).toBe(
+      'http://api.test/api/v1/users/setup-complete'
+    );
+    expect(sentRequest(fetchImplementation).method).toBe('PATCH');
   });
 });
 

@@ -83,8 +83,8 @@ Merge every gate's findings and the walk block into one report in the format of 
 - **Read-only, always.** Findings route to a named owner; the user decides what to fix and when.
 - **Never run the fix-and-re-review loop from here.**
 - **Evidence, not assertions.** Paste real gate output. Never call a gate green without it. For a visible change, say whether the screen was actually run.
-- **Flag only what the diff adds.** The backlog `react-developer` lists (default-exported pages, `fetch` in `SettingsPage`, the placeholder store) is not a finding on a change that did not add it.
-- **The 7 layers are a target, not yet the code.** Apply layer checks only to layers whose folders exist (`references/checklist.md`).
+- **Flag confirmed violations.** The former backlog (default-exported pages, `fetch` in `SettingsPage`, an empty store) was resolved; do not cite it as an exemption for current code.
+- **The seven layers are implemented under `ui/src`.** Apply all layer checks against current import rules in `docs/architecture/frontend-refactor.md` and `references/checklist.md`.
 - **Dispatch prompts are self-contained.** Assume the subagent knows nothing of this conversation; carry the review-only line verbatim.
 - **State the fallback you took.**
 - **All subagents go in one message.**

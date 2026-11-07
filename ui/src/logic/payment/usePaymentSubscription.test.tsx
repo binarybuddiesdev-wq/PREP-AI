@@ -123,7 +123,7 @@ describe('payment subscription logic', () => {
     const userId = 'user-one';
     for (const queryKey of [
       paymentKeys.subscription(userId),
-      userKeys.me(),
+      userKeys.me(userId),
       theoryKeys.stats(userId),
       codingKeys.stats(userId),
     ]) {
@@ -165,7 +165,7 @@ describe('payment subscription logic', () => {
     );
     for (const queryKey of [
       paymentKeys.subscription(userId),
-      userKeys.me(),
+      userKeys.me(userId),
       theoryKeys.stats(userId),
       codingKeys.stats(userId),
     ]) {
@@ -179,7 +179,7 @@ describe('payment subscription logic', () => {
     const userId = 'user-one';
     for (const queryKey of [
       paymentKeys.subscription(userId),
-      userKeys.me(),
+      userKeys.me(userId),
       theoryKeys.stats(userId),
       codingKeys.stats(userId),
     ]) {
@@ -199,7 +199,7 @@ describe('payment subscription logic', () => {
     expect(cancelCurrentSubscription).toHaveBeenCalledWith({});
     for (const queryKey of [
       paymentKeys.subscription(userId),
-      userKeys.me(),
+      userKeys.me(userId),
       theoryKeys.stats(userId),
       codingKeys.stats(userId),
     ]) {

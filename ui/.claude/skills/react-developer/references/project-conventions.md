@@ -48,7 +48,7 @@ attaches the bearer token on every request.
 
 ### API client
 
-Server data is fetched with TanStack Query through `useApiClient()`. The client, query keys, mutations, error and loading handling, and the current backlog are all in the **`frontend-data-fetching`** skill; read it before calling the API. Never `fetch` or `ky` from a component.
+Server data is fetched with TanStack Query through `useApiClient()`. The client, query keys, mutations, and error/loading handling are described in the **`frontend-data-fetching`** skill; read it before calling the API. Never `fetch` or `ky` from a component.
 
 ### Styling
 
