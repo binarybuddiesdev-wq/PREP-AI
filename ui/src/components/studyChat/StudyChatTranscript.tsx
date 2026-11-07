@@ -1,4 +1,4 @@
-import { Bot, LoaderCircle, RotateCw, Sparkles, X } from 'lucide-react';
+import { Bot, LoaderCircle, RotateCw, X } from 'lucide-react';
 
 import { StudyChatMessage } from './StudyChatMessage';
 import type { IStudyChatTranscriptProps } from './StudyChatTranscript.types';
@@ -63,20 +63,11 @@ export const StudyChatTranscript = (props: IStudyChatTranscriptProps) => {
             )}
           </div>
         ) : messages.length === 0 ? (
-          <div className="m-auto max-w-[260px] py-5 text-center">
-            <span className="mx-auto mb-3 grid size-10 place-items-center rounded-xl border border-amber-400/15 bg-amber-300/[0.07] text-amber-300">
-              <Sparkles aria-hidden="true" className="size-5" />
-            </span>
-            <h3
-              className={`text-sm font-semibold ${theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}`}
-            >
-              What are you working on?
-            </h3>
-            <p
-              className={`mt-1.5 text-xs leading-5 ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}`}
-            >
-              Ask about interview prep, coding concepts, or how to use PrepAI.
-            </p>
+          <div
+            className={`mr-auto max-w-[85%] rounded-xl rounded-bl-[4px] border px-4 py-3 text-[0.85rem] leading-[1.5] ${theme === 'dark' ? 'border-white/[0.08] bg-white/[0.04] text-zinc-300' : 'border-black/[0.06] bg-black/[0.03] text-zinc-700'}`}
+          >
+            Hi! I&apos;m PrepAI&apos;s assistant. Ask me anything about coding, interview prep, or
+            how to use the platform.
           </div>
         ) : (
           messages.map((message, index) => (

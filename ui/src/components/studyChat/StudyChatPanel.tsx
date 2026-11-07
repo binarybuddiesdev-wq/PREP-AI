@@ -19,7 +19,7 @@ export const StudyChatPanel = (props: IStudyChatPanelProps) => {
 
   const isDarkTheme = theme === 'dark';
   const controlClass = cn(
-    'grid size-8 shrink-0 place-items-center rounded-lg transition focus-visible:outline-2 focus-visible:outline-amber-400',
+    'grid size-7 shrink-0 place-items-center rounded-md transition focus-visible:outline-2 focus-visible:outline-amber-400',
     isDarkTheme
       ? 'text-zinc-400 hover:bg-white/[0.07] hover:text-zinc-100'
       : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
@@ -44,16 +44,11 @@ export const StudyChatPanel = (props: IStudyChatPanelProps) => {
     >
       <header
         className={cn(
-          'flex min-h-14 shrink-0 items-center gap-2 border-b px-3.5',
+          'flex min-h-[61px] shrink-0 items-center gap-3 border-b px-5',
           isDarkTheme ? 'border-white/[0.08] bg-[#18181b]' : 'border-zinc-200 bg-zinc-50'
         )}
       >
-        <span
-          aria-hidden="true"
-          className="relative grid size-8 shrink-0 place-items-center rounded-full bg-amber-300 text-zinc-950"
-        >
-          <MessageSquareText className="size-4" />
-        </span>
+        <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-emerald-400" />
         <div className="min-w-0 flex-1">
           <h2
             className={cn(
@@ -63,9 +58,6 @@ export const StudyChatPanel = (props: IStudyChatPanelProps) => {
           >
             PrepAI Assistant
           </h2>
-          <p className={cn('text-[11px]', isDarkTheme ? 'text-zinc-500' : 'text-zinc-600')}>
-            Interview & coding help
-          </p>
         </div>
         <button
           type="button"

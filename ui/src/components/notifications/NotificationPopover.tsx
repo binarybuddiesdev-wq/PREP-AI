@@ -69,7 +69,7 @@ export const NotificationPopover = (props: INotificationPopoverProps) => {
           <Popover.Popup
             aria-label="Notifications"
             className={cn(
-              'flex max-h-[min(72dvh,32rem)] w-[min(24rem,calc(100vw-1.5rem))] origin-top-right flex-col overflow-hidden rounded-2xl border shadow-[0_20px_65px_rgba(0,0,0,0.42)] outline-none data-[open]:animate-in data-[open]:fade-in data-[open]:zoom-in-95',
+              'flex max-h-[min(72dvh,32rem)] w-[min(21.25rem,calc(100vw-1.5rem))] origin-top-right flex-col overflow-hidden rounded-xl border shadow-[0_12px_40px_rgba(0,0,0,0.4)] outline-none data-[open]:animate-in data-[open]:fade-in data-[open]:zoom-in-95',
               isDark
                 ? 'border-white/[0.1] bg-[#151518] text-zinc-100'
                 : 'border-zinc-200 bg-white text-zinc-900'
@@ -77,36 +77,34 @@ export const NotificationPopover = (props: INotificationPopoverProps) => {
           >
             <header
               className={cn(
-                'flex shrink-0 items-center gap-3 border-b px-4 py-3',
+                'flex shrink-0 items-center gap-3 border-b px-4 py-[0.85rem]',
                 isDark ? 'border-white/[0.08]' : 'border-zinc-200'
               )}
             >
               <div className="min-w-0 flex-1">
                 <Popover.Title
                   className={cn(
-                    'text-sm font-semibold',
+                    'text-[0.85rem] font-semibold',
                     isDark ? 'text-zinc-100' : 'text-zinc-900'
                   )}
                 >
                   Notifications
                 </Popover.Title>
-                <p className={cn('mt-0.5 text-[11px]', isDark ? 'text-zinc-400' : 'text-zinc-600')}>
-                  {unreadCount === null ? 'Your latest updates' : `${unreadCount} unread`}
-                </p>
               </div>
               {hasUnread && (
                 <button
                   type="button"
+                  aria-label="Mark all as read"
                   disabled={isMarkingAllRead}
                   onClick={onMarkAllRead}
                   className={cn(
-                    'rounded-md px-2 py-1.5 text-[11px] font-medium transition focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-50',
+                    'rounded-md px-1 py-1 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-amber-400 disabled:opacity-50',
                     isDark
                       ? 'text-amber-300 hover:bg-white/[0.06]'
                       : 'text-amber-800 hover:bg-amber-50'
                   )}
                 >
-                  {isMarkingAllRead ? 'Marking read' : 'Mark all as read'}
+                  {isMarkingAllRead ? 'Marking read' : 'Mark all read'}
                 </button>
               )}
             </header>
@@ -194,7 +192,10 @@ export const NotificationPopover = (props: INotificationPopoverProps) => {
                 </p>
               </div>
             ) : (
-              <ul aria-label="Notification list" className="min-h-0 flex-1 overflow-y-auto">
+              <ul
+                aria-label="Notification list"
+                className="min-h-0 max-h-80 flex-1 overflow-y-auto"
+              >
                 {notifications.map((notification) => (
                   <NotificationRow
                     key={notification.id}

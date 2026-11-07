@@ -202,7 +202,7 @@ describe('StudyChatWidget', () => {
     expect(screen.getByRole('textbox', { name: 'Message PrepAI Assistant' })).toHaveValue(
       'New draft.'
     );
-    expect(screen.getByText(/What are you working on/)).toBeVisible();
+    expect(screen.getByText(/Hi! I'm PrepAI's assistant/)).toBeVisible();
     expect(screen.queryByText('A closure retains lexical scope.')).not.toBeInTheDocument();
   });
 
@@ -339,7 +339,7 @@ describe('StudyChatWidget', () => {
     expect(screen.getByText('A closure retains lexical scope.')).toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Message PrepAI Assistant' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Start a new conversation' }));
-    expect(screen.getByText(/Ask about interview prep/)).toBeVisible();
+    expect(screen.getByText(/Ask me anything about coding/)).toBeVisible();
   });
 
   it('confirms deleting the selected conversation and clears that selection only after success', async () => {
@@ -402,7 +402,7 @@ describe('StudyChatWidget', () => {
     rejectSend?.(new Error('The conversation no longer exists.'));
     await user.click(screen.getByRole('button', { name: 'Back to chat' }));
 
-    expect(screen.getByText(/What are you working on/)).toBeVisible();
+    expect(screen.getByText(/Hi! I'm PrepAI's assistant/)).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

@@ -17,8 +17,8 @@ const messages: IStudyChatMessage[] = [
 describe('StudyChatTranscript', () => {
   it('shows purposeful guidance when a conversation has no messages', () => {
     render(<StudyChatTranscript messages={[]} />);
-    expect(screen.getByText(/ask about interview prep/i)).toBeInTheDocument();
-    expect(screen.queryByText(/I am an assistant/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Hi! I'm PrepAI's assistant/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ask me anything about coding/i)).toBeInTheDocument();
   });
 
   it('shows saved messages and announces a pending assistant response', () => {

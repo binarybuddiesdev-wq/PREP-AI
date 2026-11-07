@@ -112,6 +112,7 @@ describe('GlobalSearch', () => {
     await user.keyboard('{Control>}k{/Control}');
 
     expect(props.onOpenChange).toHaveBeenCalledWith(true);
-    expect(screen.getByRole('dialog')).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Search pages and topics' })).toBeVisible();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

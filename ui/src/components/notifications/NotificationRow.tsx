@@ -30,7 +30,7 @@ export const NotificationRow = ({
   return (
     <li
       className={cn(
-        'group relative flex gap-2.5 border-b px-3 py-3 last:border-b-0',
+        'group relative flex gap-3 border-b px-4 py-3 last:border-b-0',
         isDark ? 'border-white/[0.06]' : 'border-zinc-100',
         notification.readAt
           ? isDark
@@ -44,7 +44,7 @@ export const NotificationRow = ({
       <span
         aria-hidden="true"
         className={cn(
-          'mt-0.5 grid size-8 shrink-0 place-items-center rounded-full',
+          'mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg',
           isDark ? 'bg-white/[0.06] text-amber-300' : 'bg-amber-100 text-amber-800'
         )}
       >
@@ -97,7 +97,7 @@ export const NotificationRow = ({
           </time>
         </div>
       </div>
-      <div className="flex shrink-0 items-start gap-0.5">
+      <div className="absolute right-1 top-1 flex shrink-0 items-start gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
         {!notification.readAt && (
           <button
             type="button"
