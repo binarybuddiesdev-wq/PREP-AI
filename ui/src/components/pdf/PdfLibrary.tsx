@@ -104,7 +104,7 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
   };
 
   return (
-    <main className="mx-auto flex w-full flex-col gap-5">
+    <main className="mx-auto flex w-full flex-col gap-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="mb-[0.2rem] text-[1.35rem] font-bold text-[var(--text-h)]">Library</h1>
@@ -199,10 +199,10 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
           ) : null}
 
           <ul
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            className="grid grid-cols-1 gap-x-4 gap-y-9 sm:grid-cols-2 xl:grid-cols-3"
             aria-label="PDF documents"
           >
-            {readySources.map((source, index) => {
+            {readySources.map((source) => {
               const isSelected = selectedPdfIds.includes(source.id);
               return (
                 <li key={source.id}>
@@ -212,11 +212,11 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                     onClick={() =>
                       isSelectMode ? toggleSelection(source.id) : onSelectSource(source.id)
                     }
-                    className={`group relative min-h-36 w-full overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)] p-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--border2)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${isSelected ? 'ring-2 ring-[var(--accent)]' : ''}`}
+                    className={`group relative min-h-[10.3rem] w-full overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--card)] p-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--border2)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${isSelected ? 'ring-2 ring-[var(--accent)]' : ''}`}
                   >
-                    <span className="mb-3 flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded bg-[var(--red-bg)] px-1.5 py-0.5 font-mono text-[0.65rem] font-semibold text-[var(--danger-strong)]">
-                        <FileText aria-hidden="true" className="size-3" /> PDF #{index + 1}
+                    <span className="mb-2 flex items-center justify-between gap-2">
+                      <span className="grid size-8 place-items-center rounded-lg bg-[var(--red-bg)] text-[var(--danger-strong)]">
+                        <FileText aria-hidden="true" className="size-5" />
                       </span>
                       <span className="rounded-full bg-[var(--surface2)] px-2 py-0.5 text-[0.68rem] text-[var(--dim)]">
                         {formatSize(source.byteSize)}
@@ -228,7 +228,7 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
                     <span className="mt-1 block text-xs text-[var(--dim)]">
                       {source.pageCount ?? '—'} pages · Ready to read
                     </span>
-                    <span className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3 text-[0.7rem] text-[var(--dim)]">
+                    <span className="mt-3 flex items-center justify-between border-t border-[var(--border)] pt-3 text-[0.7rem] text-[var(--dim)]">
                       <span>PDF Document</span>
                       <span>{isSelectMode ? (isSelected ? 'Selected' : 'Select') : 'Open →'}</span>
                     </span>
@@ -295,14 +295,14 @@ export const PdfLibrary = (props: IPdfLibraryProps) => {
           <button
             type="button"
             onClick={onBackToList}
-            className="mb-3 inline-flex min-h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-[var(--dim)] hover:bg-[var(--surface)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+            className="mb-4 inline-flex min-h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-[var(--dim)] hover:bg-[var(--surface)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
           >
             <ChevronLeft aria-hidden="true" className="size-3.5" /> Back to Library
           </button>
           <section
             aria-label="PDF reader"
             ref={viewerRef}
-            className="flex min-h-[65dvh] min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]"
+            className="flex min-h-[calc(100dvh-8.75rem)] min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]"
           >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-3 py-2.5 sm:px-4">
               <div className="min-w-0">
