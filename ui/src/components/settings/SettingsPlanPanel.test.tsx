@@ -59,15 +59,18 @@ describe('SettingsPlanPanel', () => {
     render(<SettingsPlanPanel {...makeProps()} />);
 
     expect(screen.getByRole('heading', { name: 'Your Plan' })).toBeVisible();
-    expect(screen.getByRole('region', { name: 'Current plan' })).toHaveClass('bg-[var(--card)]');
-    expect(screen.getByText('Practice sessions today').closest('div')).toHaveClass(
-      'bg-[var(--card)]'
-    );
+    expect(screen.getByRole('region', { name: 'Current plan' })).toHaveClass('bg-[var(--surface)]');
+    expect(screen.getByText('Practice Sessions')).toBeVisible();
+    expect(
+      screen.getByText('Practice Sessions').closest('[aria-label="Current plan"]')
+    ).toBeTruthy();
     expect(screen.getByText('Free plan')).toBeVisible();
     expect(screen.getByText('2 / 3')).toBeVisible();
-    expect(screen.getByText('10 questions')).toBeVisible();
+    expect(screen.getByText('10', { exact: true })).toBeVisible();
     expect(screen.getByText('2 / 5')).toBeVisible();
     expect(screen.getByText('1 / 3')).toBeVisible();
+    expect(screen.getAllByText('Higher daily practice limits')).toHaveLength(2);
+    expect(screen.getAllByText('More questions per session')).toHaveLength(2);
   });
 
   it('shows administrative access without offering purchase or cancellation controls', () => {
@@ -75,7 +78,7 @@ describe('SettingsPlanPanel', () => {
 
     expect(screen.getByText('Admin access')).toBeVisible();
     expect(
-      screen.getByText('Administrative access includes all current product capabilities.')
+      screen.getByText('Administrative access includes all product capabilities.')
     ).toBeVisible();
     expect(screen.queryByRole('button', { name: /upgrade to premium/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel subscription/i })).not.toBeInTheDocument();

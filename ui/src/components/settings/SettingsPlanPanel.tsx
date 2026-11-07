@@ -7,9 +7,34 @@ import { formatDate, safeRazorpayCheckoutUrl } from '@/utils';
 import type { ISettingsPlanPanelProps } from './SettingsPlanPanel.types';
 import { SettingsUsageMetric } from './SettingsUsageMetric';
 
-const PLAN_OPTIONS: readonly { plan: PaymentPlan; period: string; detail: string }[] = [
-  { plan: 'monthly', period: 'Monthly', detail: 'Billed monthly' },
-  { plan: 'yearly', period: 'Yearly', detail: 'Billed yearly' },
+const PLAN_OPTIONS: readonly {
+  plan: PaymentPlan;
+  period: string;
+  detail: string;
+  features: readonly string[];
+}[] = [
+  {
+    plan: 'monthly',
+    period: 'Monthly',
+    detail: 'per month',
+    features: [
+      'Higher daily practice limits',
+      'More questions per session',
+      'More daily coding solutions',
+      'More AI reviews',
+    ],
+  },
+  {
+    plan: 'yearly',
+    period: 'Yearly',
+    detail: 'per year',
+    features: [
+      'Higher daily practice limits',
+      'More questions per session',
+      'More daily coding solutions',
+      'More AI reviews',
+    ],
+  },
 ];
 
 const getPlanLabel = (role: string): string => {
@@ -59,32 +84,29 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
     !['cancelled', 'completed', 'expired'].includes(subscription?.status ?? '');
 
   return (
-    <section aria-label="Plan and billing" className="space-y-5">
+    <section aria-label="Plan and billing" className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-[var(--text-h)]">Your Plan</h2>
-        <p className="mt-1 text-sm text-[var(--dim)]">
-          Your access and daily limits are managed by PrepAI.
-        </p>
       </div>
 
       <section
         aria-label="Current plan"
-        className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5"
+        className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6"
       >
-        <div className="flex items-start gap-3">
+        <div className="mb-7 flex items-center gap-4">
           <span
-            className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-[11px] font-bold uppercase tracking-wide ${role === 'PREMIUM' || role === 'ADMIN' ? 'bg-[var(--accent-bg)] text-[var(--accent-strong)]' : 'bg-[var(--surface)] text-[var(--text)]'}`}
+            className={`inline-flex min-h-7 items-center rounded-lg px-3 text-xs font-bold uppercase tracking-wide ${role === 'PREMIUM' || role === 'ADMIN' ? 'bg-[var(--accent-bg)] text-[var(--accent-strong)]' : 'bg-[var(--bg2)] text-[var(--dim)]'}`}
           >
-            {role === 'ADMIN' ? 'Admin' : role === 'PREMIUM' ? 'Premium' : 'Free'}
+            {role === 'ADMIN' ? 'ADMIN' : role === 'PREMIUM' ? 'PREMIUM' : 'FREE'}
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-[var(--text-h)]">{getPlanLabel(role)}</h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--dim)]">
+            <h3 className="text-lg font-semibold text-[var(--text-h)]">{getPlanLabel(role)}</h3>
+            <p className="text-xs leading-5 text-[var(--dim)]">
               {role === 'PREMIUM'
-                ? 'Your Premium access is controlled by the server and payment status.'
+                ? 'Premium access with expanded daily limits'
                 : role === 'ADMIN'
-                  ? 'Administrative access includes all current product capabilities.'
-                  : 'Your account is on the free plan. Upgrade to increase your daily limits.'}
+                  ? 'Administrative access includes all product capabilities.'
+                  : 'Basic access with daily limits'}
             </p>
           </div>
           {(role === 'PREMIUM' || role === 'ADMIN') && (
@@ -210,20 +232,12 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             )}
           </div>
         )}
-      </section>
 
-      <section aria-label="Daily limits" className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold text-[var(--text-h)]">Daily limits</h3>
-          <p className="mt-1 text-xs text-[var(--dim)]">
-            Usage and limits from your account today.
-          </p>
-        </div>
         {usage.isLoading ? (
-          <div role="status" className="flex min-h-20 items-center gap-2 text-xs text-[var(--dim)]">
+          <p role="status" className="flex min-h-20 items-center gap-2 text-xs text-[var(--dim)]">
             <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
             Loading usage
-          </div>
+          </p>
         ) : usage.errorMessage ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-[var(--danger-strong)]">{usage.errorMessage}</p>
@@ -236,55 +250,61 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             </button>
           </div>
         ) : usage.theoryStats && usage.codingStats ? (
-          <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-label="Daily limits">
             <SettingsUsageMetric
-              label="Practice sessions today"
+              label="Practice Sessions"
               value={`${usage.theoryStats.dailySessions.used} / ${usage.theoryStats.dailySessions.limit}`}
             />
             <SettingsUsageMetric
-              label="Questions per session"
-              value={`${usage.theoryStats.questionsPerSession} questions`}
+              label="Questions per Session"
+              value={`${usage.theoryStats.questionsPerSession}`}
             />
             <SettingsUsageMetric
-              label="Coding problems today"
+              label="Coding Problems"
               value={`${usage.codingStats.dailySolved.used} / ${usage.codingStats.dailySolved.limit}`}
             />
             <SettingsUsageMetric
-              label="AI reviews today"
+              label="AI Reviews"
               value={`${usage.codingStats.dailyReviews.used} / ${usage.codingStats.dailyReviews.limit}`}
             />
           </dl>
         ) : (
-          <p className="rounded-lg border border-[var(--border)] px-3 py-3 text-xs text-[var(--dim)]">
-            Usage details are not available yet.
-          </p>
+          <p className="text-xs text-[var(--dim)]">Usage details are not available yet.</p>
         )}
       </section>
 
       {role !== 'PREMIUM' && role !== 'ADMIN' && !isSubscriptionInProgress && (
-        <section aria-label="Upgrade plan" className="space-y-3">
+        <section aria-label="Upgrade plan" className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-[var(--text-h)]">Upgrade to Premium</h3>
-            <p className="mt-1 text-xs text-[var(--dim)]">
+            <h3 className="text-[1.1rem] font-semibold text-[var(--text-h)]">Upgrade to Premium</h3>
+            <p className="mt-1 text-sm text-[var(--dim)]">
               Higher daily limits and access to the Premium features available in PrepAI.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {PLAN_OPTIONS.map((option) => (
               <button
                 key={option.plan}
                 type="button"
                 aria-pressed={selectedPlan === option.plan}
                 onClick={() => setSelectedPlan(option.plan)}
-                className={`min-h-20 rounded-xl border p-3 text-left transition focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${selectedPlan === option.plan ? 'border-[var(--accent-border)] bg-[var(--accent-bg)]' : 'border-[var(--border)] bg-[var(--card)] hover:border-[var(--border2)]'}`}
+                className={`min-h-[13.1rem] rounded-xl border px-4 py-5 text-center transition focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${selectedPlan === option.plan ? 'border-[var(--accent-border)] bg-[var(--accent-bg)]' : 'border-[var(--border)] bg-[var(--card)] hover:border-[var(--border2)]'}`}
               >
-                <span className="flex items-center justify-between text-sm font-semibold text-[var(--text-h)]">
+                <span className="block text-sm font-semibold text-[var(--text-h)]">
                   {option.period}
-                  {selectedPlan === option.plan && (
-                    <Check aria-hidden="true" className="size-4 text-[var(--accent-strong)]" />
-                  )}
                 </span>
                 <span className="mt-1 block text-xs text-[var(--dim)]">{option.detail}</span>
+                <ul className="mt-3 space-y-1 text-left text-xs leading-5 text-[var(--dim)]">
+                  {option.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2">
+                      <Check
+                        aria-hidden="true"
+                        className="mt-1 size-3 shrink-0 text-[var(--accent-strong)]"
+                      />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </button>
             ))}
           </div>
@@ -296,7 +316,7 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
             type="button"
             disabled={billing.isCreating || Boolean(billing.createdSubscription)}
             onClick={() => billing.onCreateCheckout(selectedPlan)}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-zinc-950 transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait disabled:opacity-60"
           >
             {billing.isCreating ? (
               <>

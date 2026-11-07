@@ -41,6 +41,8 @@ test('settings notifications and AI sources retain reference layout and real con
         const reactDom = await loadDependency('react-dom_client');
         const createRoot = reactDom.createRoot ?? reactDom.default?.createRoot;
         const { SettingsFormCard } = await import('/src/components/settings/SettingsFormCard.tsx');
+        const { SettingsPlanPanel } =
+          await import('/src/components/settings/SettingsPlanPanel.tsx');
         const preview = globalThis.document.createElement('main');
         preview.id = 'settings-secondary-reference-preview';
         preview.style.cssText = `position:fixed;left:${referenceTitle.x}px;top:${referenceTitle.y - 32}px;width:${referenceTitle.width}px`;
@@ -85,6 +87,36 @@ test('settings notifications and AI sources retain reference layout and real con
         const Harness = () => {
           const [values, setValues] = useState(initialValues);
           const [activeTab, setActiveTab] = useState('notifications');
+          const planPanel = createElement(SettingsPlanPanel, {
+            role: 'USER',
+            usage: {
+              theoryStats: { dailySessions: { used: 2, limit: 3 }, questionsPerSession: 10 },
+              codingStats: {
+                solved: 8,
+                dailySolved: { used: 2, limit: 5 },
+                dailyReviews: { used: 1, limit: 3 },
+                streakDays: 4,
+              },
+              isLoading: false,
+              errorMessage: null,
+              onRetry: () => {},
+            },
+            billing: {
+              subscription: null,
+              isLoading: false,
+              errorMessage: null,
+              createErrorMessage: null,
+              createdSubscription: null,
+              isCreating: false,
+              cancelErrorMessage: null,
+              isCancelling: false,
+              onRetry: () => {},
+              onCreateCheckout: (plan) => {
+                globalThis.window.__selectedPlan = plan;
+              },
+              onCancelSubscription: () => {},
+            },
+          });
           return createElement(
             react.default?.Fragment ?? react.Fragment,
             null,
@@ -115,7 +147,7 @@ test('settings notifications and AI sources retain reference layout and real con
                 globalThis.window.__settingsSaved = values;
               },
               onOpenDocuments: () => {},
-              planPanel: null,
+              planPanel,
               pdfSources: sources,
               isLoadingPdfSources: false,
               pdfSourcesError: null,
@@ -219,6 +251,47 @@ test('settings notifications and AI sources retain reference layout and real con
     await expect(preview.getByRole('button', { name: 'Reset Progress' })).toBeDisabled();
     await expect(preview.getByRole('button', { name: 'Delete Account' })).toBeDisabled();
     await expect(preview.getByRole('button', { name: 'Export Data' })).toBeDisabled();
+
+    await reference.getByRole('button', { name: 'Plan' }).click();
+    await preview.getByRole('tab', { name: 'Plan' }).click();
+    const referencePlanCard = await reference.locator('#plan-current-card').boundingBox();
+    const reactPlanCard = await preview.getByRole('region', { name: 'Current plan' }).boundingBox();
+    expect(
+      Math.abs(reactPlanCard.y - referencePlanCard.y),
+      JSON.stringify({ reactPlanCard, referencePlanCard })
+    ).toBeLessThanOrEqual(8);
+    expect(Math.abs(reactPlanCard.width - referencePlanCard.width)).toBeLessThanOrEqual(2);
+    expect(Math.abs(reactPlanCard.height - referencePlanCard.height)).toBeLessThanOrEqual(8);
+    const referenceLimits = reference.locator('#plan-current-card .plan-limit-item');
+    const reactLimits = preview.locator('[aria-label="Daily limits"] > div');
+    for (let index = 0; index < 4; index += 1) {
+      const referenceLimit = await referenceLimits.nth(index).boundingBox();
+      const reactLimit = await reactLimits.nth(index).boundingBox();
+      expect(
+        Math.abs(reactLimit.y - referenceLimit.y),
+        JSON.stringify({ index, reactLimit, referenceLimit })
+      ).toBeLessThanOrEqual(4);
+      expect(Math.abs(reactLimit.height - referenceLimit.height)).toBeLessThanOrEqual(3);
+    }
+    expect(await preview.getByText('2 / 3').isVisible()).toBe(true);
+    await reference.locator('#plan-modal-monthly').click();
+    await preview.getByRole('button', { name: /monthly/i }).click();
+    const referenceMonthly = await reference.locator('#plan-modal-monthly').boundingBox();
+    const reactMonthly = await preview.getByRole('button', { name: /monthly/i }).boundingBox();
+    expect(
+      Math.abs(reactMonthly.y - referenceMonthly.y),
+      JSON.stringify({ reactMonthly, referenceMonthly })
+    ).toBeLessThanOrEqual(8);
+    expect(Math.abs(reactMonthly.width - referenceMonthly.width)).toBeLessThanOrEqual(8);
+    expect(Math.abs(reactMonthly.height - referenceMonthly.height)).toBeLessThanOrEqual(12);
+    await preview.getByRole('button', { name: 'Upgrade to Premium' }).click();
+    await expect
+      .poll(() => reactPage.evaluate(() => globalThis.window.__selectedPlan))
+      .toBe('monthly');
+    expect(await preview.getByRole('button', { name: /yearly/i })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
 
     await reactPage.setViewportSize({ width: 390, height: 844 });
     await preview.evaluate((element) => {

@@ -163,7 +163,7 @@ describe('SettingsPage', () => {
     );
 
     await user.click(screen.getByRole('tab', { name: 'Plan' }));
-    await screen.findByText('Practice sessions today');
+    await screen.findByText('Practice Sessions');
 
     await waitFor(() => {
       expect(requestedUrls.some((url) => url.endsWith('/theory/stats'))).toBe(true);
@@ -273,7 +273,7 @@ describe('SettingsPage', () => {
       'aria-selected',
       'true'
     );
-    expect(await screen.findByText('Practice sessions today')).toBeVisible();
+    expect(await screen.findByText('Practice Sessions')).toBeVisible();
   });
 
   it('shows the API validation message when saving settings fails', async () => {

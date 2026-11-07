@@ -6,11 +6,9 @@ interface ISettingsUsageMetricProps {
 export const SettingsUsageMetric = (props: ISettingsUsageMetricProps) => {
   const { label, value } = props;
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-3">
-      <dt className="text-[11px] font-medium text-[var(--dim)]">{label}</dt>
-      <dd className="mt-1 font-mono text-sm font-semibold tabular-nums text-[var(--text-h)]">
-        {value}
-      </dd>
+    <div className="flex min-h-10 items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-xs">
+      <dt className="text-[var(--dim)]">{label}</dt>
+      <dd className="font-semibold tabular-nums text-[var(--text)]">{value}</dd>
     </div>
   );
 };
