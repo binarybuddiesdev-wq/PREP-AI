@@ -25,7 +25,8 @@ const isSettingsTab = (value: string | null): value is SettingsTab =>
   value === 'preferences' ||
   value === 'ai' ||
   value === 'documents' ||
-  value === 'plan';
+  value === 'plan' ||
+  value === 'danger';
 
 export const SettingsPage = () => {
   const navigate = useNavigate();

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { ISettingsFormCardProps, SettingsTab } from './SettingsFormCard.types';
 import { SettingsDocumentsPanel } from './SettingsDocumentsPanel';
+import { SettingsDangerZonePanel } from './SettingsDangerZonePanel';
 import { SettingsAIAndSourcesPanel } from './SettingsAIAndSourcesPanel';
 import { SettingsNotificationsPanel } from './SettingsNotificationsPanel';
 import { SettingsPracticePreferencesPanel } from './SettingsPracticePreferencesPanel';
@@ -33,7 +34,7 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
   const changeActiveTab = onActiveTabChange ?? setInternalActiveTab;
   const activeIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);
   const isDocumentsTab = activeTab === 'documents';
-  const showSaveFooter = !isDocumentsTab && activeTab !== 'plan';
+  const showSaveFooter = !isDocumentsTab && activeTab !== 'plan' && activeTab !== 'danger';
   const saveActionLabel = activeTab === 'profile' ? 'Save Changes' : 'Save Preferences';
   const panelTitle =
     activeTab === 'plan'
@@ -82,6 +83,8 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
         return <SettingsDocumentsPanel onOpenDocuments={onOpenDocuments} />;
       case 'plan':
         return planPanel;
+      case 'danger':
+        return <SettingsDangerZonePanel />;
     }
   };
 

@@ -202,6 +202,24 @@ test('settings notifications and AI sources retain reference layout and real con
       .evaluate((element) => globalThis.getComputedStyle(element).backgroundColor);
     expect(reactPanelBackground).toBe(referencePanelBackground);
 
+    await reference.getByRole('button', { name: 'Danger Zone' }).click();
+    await preview.getByRole('tab', { name: 'Danger Zone' }).click();
+    const referenceDangerRows = reference.locator('#set-danger > div[style*="border:1px solid"]');
+    const reactDangerRows = preview.locator('[aria-labelledby^="settings-danger-"]');
+    await expect(reactDangerRows).toHaveCount(3);
+    for (let index = 0; index < 3; index += 1) {
+      const referenceRow = await referenceDangerRows.nth(index).boundingBox();
+      const reactRow = await reactDangerRows.nth(index).boundingBox();
+      expect(
+        Math.abs(reactRow.y - referenceRow.y),
+        JSON.stringify({ index, reactRow, referenceRow })
+      ).toBeLessThanOrEqual(5);
+      expect(Math.abs(reactRow.height - referenceRow.height)).toBeLessThanOrEqual(8);
+    }
+    await expect(preview.getByRole('button', { name: 'Reset Progress' })).toBeDisabled();
+    await expect(preview.getByRole('button', { name: 'Delete Account' })).toBeDisabled();
+    await expect(preview.getByRole('button', { name: 'Export Data' })).toBeDisabled();
+
     await reactPage.setViewportSize({ width: 390, height: 844 });
     await preview.evaluate((element) => {
       element.style.left = '0px';

@@ -90,6 +90,15 @@ describe('SettingsFormCard', () => {
     ).toBeVisible();
   });
 
+  it('opens the Danger Zone panel from its settings tab', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByRole('tab', { name: 'Danger Zone' }));
+
+    expect(screen.getByRole('heading', { name: 'Danger Zone' })).toBeVisible();
+  });
+
   it('uses theme-aware tabs, content panel, and save action colors', () => {
     renderCard();
 

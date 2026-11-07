@@ -22,4 +22,5 @@ export interface ISettingsFormCardProps {
   onDeletePdfSource?: (pdfId: string) => void;
 }
 
-export type SettingsTab = 'profile' | 'notifications' | 'preferences' | 'ai' | 'documents' | 'plan';
+export type SettingsTab =
+  'profile' | 'notifications' | 'preferences' | 'ai' | 'documents' | 'plan' | 'danger';

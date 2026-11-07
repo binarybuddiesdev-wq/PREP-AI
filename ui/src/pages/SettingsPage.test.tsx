@@ -90,7 +90,9 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeVisible();
     expect(screen.getByText('Manage your profile and preferences')).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Profile' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByText(/weekly report|AI model|danger zone/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/weekly report|AI model|reset all progress/i)
+    ).not.toBeInTheDocument();
     await user.clear(screen.getByRole('textbox', { name: 'Target companies' }));
     await user.type(screen.getByRole('textbox', { name: 'Target companies' }), 'Stripe, Acme');
     await user.click(screen.getByRole('tab', { name: 'Notifications' }));
