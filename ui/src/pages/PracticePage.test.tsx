@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   useTheoryPracticeReader: vi.fn(),
   useTheoryStatsReader: vi.fn(),
   usePdfSourcesReader: vi.fn(),
+  useSettingsReader: vi.fn(),
   useTheoryPracticeSession: vi.fn(),
   startPractice: vi.fn(),
 }));
@@ -29,6 +30,7 @@ vi.mock('@/logic', () => ({
   useTheoryPracticeReader: mocks.useTheoryPracticeReader,
   useTheoryStatsReader: mocks.useTheoryStatsReader,
   usePdfSourcesReader: mocks.usePdfSourcesReader,
+  useSettingsReader: mocks.useSettingsReader,
   useTheoryPracticeSession: mocks.useTheoryPracticeSession,
 }));
 
@@ -101,6 +103,7 @@ describe('PracticePage', () => {
       isError: false,
       refetch: vi.fn(),
     });
+    mocks.useSettingsReader.mockReturnValue({ data: { preferences: {} }, isPending: false });
     mocks.useTheoryPracticeSession.mockReturnValue({
       session: null,
       phase: 'setup',
@@ -266,6 +269,33 @@ describe('PracticePage', () => {
       pdfIds: ['pdf-one'],
       difficulty: 'Mid',
       totalQuestions: 10,
+    });
+  });
+
+  it('uses saved difficulty, session length, and PDF source choices when starting practice', async () => {
+    const userEventInstance = userEvent.setup();
+    mocks.useSettingsReader.mockReturnValue({
+      data: {
+        preferences: {
+          defaultDifficulty: 'Senior',
+          sessionLength: 5,
+          enabledPdfSourceIds: ['pdf-one'],
+        },
+      },
+      isPending: false,
+    });
+
+    renderPracticePage();
+    await userEventInstance.click(screen.getByRole('button', { name: 'PDF Study' }));
+    expect(screen.getByRole('checkbox', { name: /React notes.pdf/ })).toBeChecked();
+    expect(screen.getByText('5 questions', { exact: false })).toBeVisible();
+    await userEventInstance.click(screen.getByRole('button', { name: /Start practice/ }));
+
+    expect(mocks.startPractice).toHaveBeenCalledWith({
+      mode: 'pdf',
+      pdfIds: ['pdf-one'],
+      difficulty: 'Senior',
+      totalQuestions: 5,
     });
   });
 

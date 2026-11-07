@@ -18,6 +18,10 @@ const values: ISettingsFormValues = {
   dailyReminder: false,
   dailyReminderTime: '19:00',
   timezone: 'Asia/Kolkata',
+  weeklyProgressReport: true,
+  newQuestionsAlert: false,
+  streakMilestoneAlerts: true,
+  emailDigest: false,
 };
 
 const renderCard = (overrides: Partial<ISettingsFormCardProps> = {}) => {
@@ -72,6 +76,18 @@ describe('SettingsFormCard', () => {
       expect(panelId).toBeTruthy();
       expect(document.getElementById(panelId!)).toBeInTheDocument();
     }
+  });
+
+  it('opens the AI and source preferences panel from its settings tab', async () => {
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByRole('tab', { name: 'AI & Sources' }));
+
+    expect(screen.getByRole('heading', { name: 'AI & Sources' })).toBeVisible();
+    expect(
+      screen.getByText('AI provider and model are managed by your server configuration.')
+    ).toBeVisible();
   });
 
   it('uses theme-aware tabs, content panel, and save action colors', () => {
@@ -160,7 +176,7 @@ describe('SettingsFormCard', () => {
     expect(screen.getByLabelText('Reminder time')).toHaveValue('19:00');
     expect(screen.getByRole('textbox', { name: 'Time zone' })).toHaveValue('Asia/Kolkata');
 
-    await user.click(screen.getByRole('checkbox', { name: 'Daily practice reminder' }));
+    await user.click(screen.getByRole('switch', { name: 'Daily Practice Reminder' }));
 
     expect(onChange).toHaveBeenCalledWith({ ...values, dailyReminder: true });
     expect(screen.queryByText(/weekly report/i)).not.toBeInTheDocument();
@@ -172,7 +188,7 @@ describe('SettingsFormCard', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Notifications' }));
 
-    expect(screen.getByRole('checkbox', { name: 'Daily practice reminder' })).toBeDisabled();
+    expect(screen.getByRole('switch', { name: 'Daily Practice Reminder' })).toBeDisabled();
     expect(onChange).not.toHaveBeenCalled();
   });
 

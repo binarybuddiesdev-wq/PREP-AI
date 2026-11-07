@@ -8,7 +8,7 @@ import { pdfKeys } from './pdf.keys';
 const PDF_POLL_INTERVAL_MS = 1500;
 const INDEXING_STATUSES = new Set(['uploading', 'queued', 'processing']);
 
-export const usePdfSourcesReader = (limit = 20) => {
+export const usePdfSourcesReader = (limit = 20, enabled = true) => {
   const api = useApiClient();
   const { isLoaded, isSignedIn, user } = useSessionReader();
   const userId = user?.id ?? '';
@@ -16,7 +16,7 @@ export const usePdfSourcesReader = (limit = 20) => {
   return useQuery({
     queryKey: pdfKeys.list(userId),
     queryFn: async () => (await getPdfSources(api, limit)).data,
-    enabled: isLoaded && isSignedIn && Boolean(userId),
+    enabled: enabled && isLoaded && isSignedIn && Boolean(userId),
     refetchInterval: (query) =>
       query.state.data?.some((source) => INDEXING_STATUSES.has(source.status))
         ? PDF_POLL_INTERVAL_MS

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import {
@@ -15,6 +15,7 @@ import {
   getPracticePolicy,
   usePdfSourcesReader,
   useSessionReader,
+  useSettingsReader,
   useTheoryPracticeReader,
   useTheoryPracticeSession,
   useTheoryStatsReader,
@@ -27,6 +28,7 @@ export const PracticePage = () => {
   const requestedTopicId = searchParams.get('topicId');
   const { isLoaded } = useSessionReader();
   const userQuery = useUserReader();
+  const settingsQuery = useSettingsReader();
   const { topicsQuery, weakAreasQuery } = useTheoryPracticeReader();
   const pdfSourcesQuery = usePdfSourcesReader();
   const practice = useTheoryPracticeSession();
@@ -37,6 +39,18 @@ export const PracticePage = () => {
   const [topicId, setTopicId] = useState('');
   const [difficulty, setDifficulty] = useState<TheoryDifficulty>('Mid');
   const [selectedPdfIds, setSelectedPdfIds] = useState<string[]>([]);
+  const difficultyWasChanged = useRef(false);
+  const pdfSelectionWasInitialized = useRef(false);
+
+  const savedDifficulty = settingsQuery.data?.preferences?.defaultDifficulty;
+  useEffect(() => {
+    if (
+      !difficultyWasChanged.current &&
+      (savedDifficulty === 'Junior' || savedDifficulty === 'Mid' || savedDifficulty === 'Senior')
+    ) {
+      setDifficulty(savedDifficulty);
+    }
+  }, [savedDifficulty]);
 
   useEffect(() => {
     if (!requestedTopicId || !topicsQuery.data?.some((topic) => topic.id === requestedTopicId)) {
@@ -46,22 +60,39 @@ export const PracticePage = () => {
   }, [requestedTopicId, topicsQuery.data]);
 
   useEffect(() => {
-    if (!pdfSourcesQuery.data) return;
+    if (!pdfSourcesQuery.data || settingsQuery.isPending) return;
     const readyIds = new Set(
       pdfSourcesQuery.data.filter((source) => source.status === 'ready').map((source) => source.id)
     );
     setSelectedPdfIds((current) => {
+      if (!pdfSelectionWasInitialized.current) {
+        pdfSelectionWasInitialized.current = true;
+        const savedPdfIds = settingsQuery.data?.preferences?.enabledPdfSourceIds;
+        if (Array.isArray(savedPdfIds)) {
+          return savedPdfIds.filter(
+            (id): id is string => typeof id === 'string' && readyIds.has(id)
+          );
+        }
+      }
       const next = current.filter((id) => readyIds.has(id));
       return next.length === current.length ? current : next;
     });
-  }, [pdfSourcesQuery.data]);
+  }, [pdfSourcesQuery.data, settingsQuery.data, settingsQuery.isPending]);
 
   if (!isLoaded || userQuery.isPending) {
     return <LoadingScreen label="Loading practice setup…" layout="embedded" />;
   }
 
   const profileUnavailable = userQuery.isError || !userQuery.data;
-  const { isPremium, totalQuestions } = getPracticePolicy(userQuery.data?.role ?? 'USER');
+  const { isPremium, totalQuestions: planQuestionLimit } = getPracticePolicy(
+    userQuery.data?.role ?? 'USER'
+  );
+  const preferredSessionLength = settingsQuery.data?.preferences?.sessionLength;
+  const isSupportedSessionLength = [5, 10, 15, 20].includes(preferredSessionLength as number);
+  const totalQuestions = Math.min(
+    isSupportedSessionLength ? (preferredSessionLength as number) : planQuestionLimit,
+    planQuestionLimit
+  );
 
   const createSessionBody = (): IStartTheorySessionBody => ({
     ...(mode === 'topic' ? { topicId } : {}),
@@ -341,7 +372,10 @@ export const PracticePage = () => {
         startError={practice.startError}
         onModeChange={setMode}
         onTopicChange={setTopicId}
-        onDifficultyChange={setDifficulty}
+        onDifficultyChange={(nextDifficulty) => {
+          difficultyWasChanged.current = true;
+          setDifficulty(nextDifficulty);
+        }}
         onStart={handleStart}
       />
     </div>

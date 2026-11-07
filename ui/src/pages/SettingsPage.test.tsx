@@ -94,7 +94,7 @@ describe('SettingsPage', () => {
     await user.clear(screen.getByRole('textbox', { name: 'Target companies' }));
     await user.type(screen.getByRole('textbox', { name: 'Target companies' }), 'Stripe, Acme');
     await user.click(screen.getByRole('tab', { name: 'Notifications' }));
-    await user.click(screen.getByRole('checkbox', { name: 'Daily practice reminder' }));
+    await user.click(screen.getByRole('switch', { name: 'Daily Practice Reminder' }));
     await user.clear(screen.getByRole('textbox', { name: 'Time zone' }));
     await user.type(screen.getByRole('textbox', { name: 'Time zone' }), 'Europe/London');
     await user.click(screen.getByRole('tab', { name: 'Profile' }));
@@ -118,6 +118,10 @@ describe('SettingsPage', () => {
         requestedUrls.push(request.url);
         if (request.url.endsWith('/users/me')) {
           return Response.json({ success: true, message: 'ok', data: userProfile });
+        }
+        if (request.method === 'PATCH') {
+          patchBodies.push(await request.clone().json());
+          return Response.json({ success: true, message: 'ok', data: userSettings });
         }
         if (request.url.endsWith('/users/settings')) {
           return Response.json({ success: true, message: 'ok', data: userSettings });
@@ -166,6 +170,63 @@ describe('SettingsPage', () => {
         true
       );
     });
+  });
+
+  it('loads PDF sources only on AI & Sources and saves the selected source IDs', async () => {
+    const requestedUrls: string[] = [];
+    const patchBodies: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request) => {
+        requestedUrls.push(request.url);
+        if (request.url.endsWith('/users/me')) {
+          return Response.json({ success: true, message: 'ok', data: userProfile });
+        }
+        if (request.method === 'PATCH') {
+          patchBodies.push(await request.clone().json());
+          return Response.json({ success: true, message: 'ok', data: userSettings });
+        }
+        if (request.url.endsWith('/users/settings')) {
+          return Response.json({ success: true, message: 'ok', data: userSettings });
+        }
+        if (request.url.includes('/pdfs?')) {
+          return Response.json({
+            success: true,
+            message: 'ok',
+            data: [
+              {
+                id: 'pdf-source-1',
+                displayName: 'React notes.pdf',
+                byteSize: 2048,
+                pageCount: 8,
+                status: 'ready',
+                activeRevision: 1,
+                failureCode: null,
+                createdAt: '2026-11-06T00:00:00.000Z',
+                updatedAt: '2026-11-06T00:00:00.000Z',
+              },
+            ],
+          });
+        }
+        return Response.json({ success: false, message: 'Not found' }, { status: 404 });
+      })
+    );
+    const user = userEvent.setup();
+    renderSettingsPage();
+
+    await screen.findByRole('textbox', { name: 'First Name' });
+    expect(requestedUrls.some((url) => url.includes('/pdfs?'))).toBe(false);
+    await user.click(screen.getByRole('tab', { name: 'AI & Sources' }));
+    const sourceSwitch = await screen.findByRole('switch', {
+      name: 'Include React notes.pdf as a question source',
+    });
+    expect(sourceSwitch).toHaveAttribute('aria-checked', 'true');
+    await user.click(sourceSwitch);
+    await user.click(screen.getByRole('button', { name: 'Save Preferences' }));
+
+    await waitFor(() => expect(patchBodies).toHaveLength(1));
+    expect(patchBodies[0]).toMatchObject({ preferences: { enabledPdfSourceIds: [] } });
+    expect(requestedUrls.some((url) => url.includes('/pdfs?'))).toBe(true);
   });
 
   it('opens the Plan tab for a plan shortcut query parameter', async () => {

@@ -90,6 +90,10 @@ test('settings profile and practice preferences match the reference structure', 
           dailyReminder: false,
           dailyReminderTime: '19:00',
           timezone: 'Asia/Kolkata',
+          weeklyProgressReport: true,
+          newQuestionsAlert: false,
+          streakMilestoneAlerts: true,
+          emailDigest: false,
         };
         const SettingsHarness = () => {
           const [currentValues, setCurrentValues] = useState(values);

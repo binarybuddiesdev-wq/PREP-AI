@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { ISettingsFormCardProps, SettingsTab } from './SettingsFormCard.types';
 import { SettingsDocumentsPanel } from './SettingsDocumentsPanel';
+import { SettingsAIAndSourcesPanel } from './SettingsAIAndSourcesPanel';
 import { SettingsNotificationsPanel } from './SettingsNotificationsPanel';
 import { SettingsPracticePreferencesPanel } from './SettingsPracticePreferencesPanel';
 import { SettingsProfilePanel } from './SettingsProfilePanel';
@@ -20,6 +21,12 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
     onOpenDocuments,
     planPanel,
     onActiveTabChange,
+    pdfSources = [],
+    isLoadingPdfSources = false,
+    pdfSourcesError = null,
+    deletingPdfId = null,
+    onRetryPdfSources = () => {},
+    onDeletePdfSource = () => {},
   } = props;
   const [internalActiveTab, setInternalActiveTab] = useState<SettingsTab>('profile');
   const activeTab = props.activeTab ?? internalActiveTab;
@@ -55,6 +62,20 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
             values={values}
             isSaving={isSaving}
             onChange={onChange}
+          />
+        );
+      case 'ai':
+        return (
+          <SettingsAIAndSourcesPanel
+            values={values}
+            pdfSources={pdfSources}
+            isLoading={isLoadingPdfSources}
+            errorMessage={pdfSourcesError}
+            deletingPdfId={deletingPdfId}
+            onChange={onChange}
+            onRetry={onRetryPdfSources}
+            onDeletePdf={onDeletePdfSource}
+            onOpenDocuments={onOpenDocuments}
           />
         );
       case 'documents':

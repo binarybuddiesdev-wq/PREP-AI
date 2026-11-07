@@ -21,6 +21,10 @@ export const DEFAULT_SETTINGS_FORM_VALUES: ISettingsFormValues = {
   dailyReminder: false,
   dailyReminderTime: '19:00',
   timezone: getBrowserTimezone(),
+  weeklyProgressReport: true,
+  newQuestionsAlert: false,
+  streakMilestoneAlerts: true,
+  emailDigest: false,
 };
 
 export const getSettingsFormValues = (
@@ -73,6 +77,27 @@ export const getSettingsFormValues = (
         : typeof notifications?.timezone === 'string'
           ? notifications.timezone
           : DEFAULT_SETTINGS_FORM_VALUES.timezone,
+    weeklyProgressReport:
+      typeof notifications?.weeklyProgressReport === 'boolean'
+        ? notifications.weeklyProgressReport
+        : DEFAULT_SETTINGS_FORM_VALUES.weeklyProgressReport,
+    newQuestionsAlert:
+      typeof notifications?.newQuestionsAlert === 'boolean'
+        ? notifications.newQuestionsAlert
+        : DEFAULT_SETTINGS_FORM_VALUES.newQuestionsAlert,
+    streakMilestoneAlerts:
+      typeof notifications?.streakMilestoneAlerts === 'boolean'
+        ? notifications.streakMilestoneAlerts
+        : DEFAULT_SETTINGS_FORM_VALUES.streakMilestoneAlerts,
+    emailDigest:
+      typeof notifications?.emailDigest === 'boolean'
+        ? notifications.emailDigest
+        : DEFAULT_SETTINGS_FORM_VALUES.emailDigest,
+    enabledPdfSourceIds: Array.isArray(settings?.preferences?.enabledPdfSourceIds)
+      ? settings.preferences.enabledPdfSourceIds.filter(
+          (value): value is string => typeof value === 'string'
+        )
+      : undefined,
   };
 };
 
@@ -94,6 +119,7 @@ export const toUpdateSettingsBody = (
     timerPerQuestion: values.timerPerQuestion,
     showHintsOnSkip: values.showHintsOnSkip,
     autoAdvance: values.autoAdvance,
+    ...(values.enabledPdfSourceIds ? { enabledPdfSourceIds: values.enabledPdfSourceIds } : {}),
   },
   notifications: {
     ...settings?.notifications,
@@ -101,5 +127,9 @@ export const toUpdateSettingsBody = (
     email: values.dailyReminder,
     dailyReminderTime: values.dailyReminderTime,
     timezone: values.timezone,
+    weeklyProgressReport: values.weeklyProgressReport,
+    newQuestionsAlert: values.newQuestionsAlert,
+    streakMilestoneAlerts: values.streakMilestoneAlerts,
+    emailDigest: values.emailDigest,
   },
 });

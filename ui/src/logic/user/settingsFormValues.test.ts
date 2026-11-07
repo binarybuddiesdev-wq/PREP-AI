@@ -40,6 +40,10 @@ describe('getSettingsFormValues', () => {
         },
         notifications: {
           dailyReminder: true,
+          weeklyProgressReport: false,
+          newQuestionsAlert: true,
+          streakMilestoneAlerts: false,
+          emailDigest: true,
           dailyReminderTime: '20:15',
           timezone: 'Asia/Kolkata',
         },
@@ -61,6 +65,11 @@ describe('getSettingsFormValues', () => {
       dailyReminder: true,
       dailyReminderTime: '20:15',
       timezone: 'Asia/Kolkata',
+      weeklyProgressReport: false,
+      newQuestionsAlert: true,
+      streakMilestoneAlerts: false,
+      emailDigest: true,
+      enabledPdfSourceIds: undefined,
     });
   });
 
@@ -90,9 +99,14 @@ describe('toUpdateSettingsBody', () => {
           timerPerQuestion: 0,
           showHintsOnSkip: false,
           autoAdvance: true,
+          enabledPdfSourceIds: ['pdf-1'],
           dailyReminder: true,
           dailyReminderTime: '18:30',
           timezone: 'Europe/London',
+          weeklyProgressReport: true,
+          newQuestionsAlert: false,
+          streakMilestoneAlerts: true,
+          emailDigest: false,
         },
         settings({
           profile: { customProfileField: 'keep' },
@@ -116,6 +130,7 @@ describe('toUpdateSettingsBody', () => {
         timerPerQuestion: 0,
         showHintsOnSkip: false,
         autoAdvance: true,
+        enabledPdfSourceIds: ['pdf-1'],
       },
       notifications: {
         weeklyReport: false,
@@ -124,6 +139,10 @@ describe('toUpdateSettingsBody', () => {
         email: true,
         dailyReminderTime: '18:30',
         timezone: 'Europe/London',
+        weeklyProgressReport: true,
+        newQuestionsAlert: false,
+        streakMilestoneAlerts: true,
+        emailDigest: false,
       },
     });
   });

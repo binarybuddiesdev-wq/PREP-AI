@@ -18,6 +18,10 @@ const values: ISettingsFormValues = {
   dailyReminder: false,
   dailyReminderTime: '19:00',
   timezone: 'Asia/Kolkata',
+  weeklyProgressReport: true,
+  newQuestionsAlert: false,
+  streakMilestoneAlerts: true,
+  emailDigest: false,
 };
 
 describe('SettingsProfilePanel', () => {

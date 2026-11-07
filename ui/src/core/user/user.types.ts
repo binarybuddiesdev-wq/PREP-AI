@@ -20,6 +20,10 @@ export interface IUserProfile {
 export interface IUserNotifications {
   email?: boolean;
   dailyReminder?: boolean;
+  weeklyProgressReport?: boolean;
+  newQuestionsAlert?: boolean;
+  streakMilestoneAlerts?: boolean;
+  emailDigest?: boolean;
   dailyReminderTime?: string;
   timezone?: string;
   [key: string]: unknown;
@@ -55,6 +59,11 @@ export interface ISettingsFormValues {
   dailyReminder: boolean;
   dailyReminderTime: string;
   timezone: string;
+  weeklyProgressReport: boolean;
+  newQuestionsAlert: boolean;
+  streakMilestoneAlerts: boolean;
+  emailDigest: boolean;
+  enabledPdfSourceIds?: string[];
 }
 
 export interface ISettingsSaveStatus {

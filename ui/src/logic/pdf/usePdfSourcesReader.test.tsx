@@ -50,6 +50,16 @@ describe('usePdfSourcesReader', () => {
     expect(queryClient.getQueryCache().find({ queryKey: pdfKeys.list('user-one') })).toBeDefined();
   });
 
+  it('leaves the source query idle until its settings tab is opened', () => {
+    const queryClient = new QueryClient();
+    const { result } = renderHook(() => usePdfSourcesReader(20, false), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(getPdfSources).not.toHaveBeenCalled();
+  });
+
   it.each([
     [['queued'], 1500],
     [['processing', 'ready'], 1500],

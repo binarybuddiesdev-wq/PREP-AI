@@ -9,6 +9,7 @@ export const SETTINGS_TABS: readonly { id: SettingsTab; label: string }[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'preferences', label: 'Practice Preferences' },
+  { id: 'ai', label: 'AI & Sources' },
   { id: 'documents', label: 'Documents' },
   { id: 'plan', label: 'Plan' },
 ];

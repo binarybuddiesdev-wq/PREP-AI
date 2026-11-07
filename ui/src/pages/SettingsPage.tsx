@@ -9,6 +9,8 @@ import {
   useSessionReader,
   useCodingStatsReader,
   useCurrentSubscriptionReader,
+  usePdfDeleteCommand,
+  usePdfSourcesReader,
   usePaymentCommands,
   useSettingsReader,
   useTheoryStatsReader,
@@ -21,6 +23,7 @@ const isSettingsTab = (value: string | null): value is SettingsTab =>
   value === 'profile' ||
   value === 'notifications' ||
   value === 'preferences' ||
+  value === 'ai' ||
   value === 'documents' ||
   value === 'plan';
 
@@ -41,6 +44,9 @@ export const SettingsPage = () => {
     idempotencyKey: string;
   } | null>(null);
   const isPlanTab = activeTab === 'plan';
+  const isAiTab = activeTab === 'ai';
+  const pdfSourcesQuery = usePdfSourcesReader(20, isAiTab);
+  const deletePdfSource = usePdfDeleteCommand();
   const theoryStatsQuery = useTheoryStatsReader(isPlanTab);
   const codingStatsQuery = useCodingStatsReader(isPlanTab);
   const subscriptionQuery = useCurrentSubscriptionReader(isPlanTab);
@@ -117,6 +123,27 @@ export const SettingsPage = () => {
     paymentCommands.create.mutate({ body: { plan }, idempotencyKey: request.idempotencyKey });
   };
 
+  const handleDeletePdfSource = (pdfId: string) => {
+    const source = pdfSourcesQuery.data?.find((item) => item.id === pdfId);
+    if (!source || !globalThis.confirm(`Remove ${source.displayName} from your PDF sources?`))
+      return;
+    setDraft((current) => ({
+      ...(current ?? getSettingsFormValues(settingsQuery.data)),
+      enabledPdfSourceIds: (
+        current?.enabledPdfSourceIds ??
+        pdfSourcesQuery.data?.filter((item) => item.status === 'ready').map((item) => item.id) ??
+        []
+      ).filter((id) => id !== pdfId),
+    }));
+    deletePdfSource.mutate(
+      { pdfId },
+      {
+        onSuccess: () => toast.success('PDF source removed.'),
+        onError: (error) => toast.error(error.message || 'PDF source could not be removed.'),
+      }
+    );
+  };
+
   const planErrorMessage = (error: Error | null, fallback: string) =>
     error?.message.trim() || fallback;
   const planPanel = (
@@ -179,6 +206,14 @@ export const SettingsPage = () => {
         }}
         onSave={handleSave}
         onOpenDocuments={() => navigate(ROUTES.settingsDocuments)}
+        pdfSources={pdfSourcesQuery.data ?? []}
+        isLoadingPdfSources={pdfSourcesQuery.isLoading}
+        pdfSourcesError={pdfSourcesQuery.isError ? pdfSourcesQuery.error.message : null}
+        deletingPdfId={
+          deletePdfSource.isPending ? (deletePdfSource.variables?.pdfId ?? null) : null
+        }
+        onRetryPdfSources={() => void pdfSourcesQuery.refetch()}
+        onDeletePdfSource={handleDeletePdfSource}
       />
     </main>
   );

@@ -1,4 +1,5 @@
 import type { ISettingsFormValues, ISettingsSaveStatus } from '@/core';
+import type { IPdfSource } from '@/core';
 import type { ReactNode } from 'react';
 
 export interface ISettingsFormCardProps {
@@ -13,6 +14,12 @@ export interface ISettingsFormCardProps {
   activeTab?: SettingsTab;
   onActiveTabChange?: (tab: SettingsTab) => void;
   planPanel?: ReactNode;
+  pdfSources?: IPdfSource[];
+  isLoadingPdfSources?: boolean;
+  pdfSourcesError?: string | null;
+  deletingPdfId?: string | null;
+  onRetryPdfSources?: () => void;
+  onDeletePdfSource?: (pdfId: string) => void;
 }
 
-export type SettingsTab = 'profile' | 'notifications' | 'preferences' | 'documents' | 'plan';
+export type SettingsTab = 'profile' | 'notifications' | 'preferences' | 'ai' | 'documents' | 'plan';
