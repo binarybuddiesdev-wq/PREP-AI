@@ -11,13 +11,17 @@ const values: ISettingsFormValues = {
   targetCompanies: 'Google, Stripe',
   preferredTopics: ['React'],
   defaultDifficulty: 'Mid',
+  sessionLength: 10,
+  timerPerQuestion: 5,
+  showHintsOnSkip: true,
+  autoAdvance: false,
   dailyReminder: false,
   dailyReminderTime: '19:00',
   timezone: 'Asia/Kolkata',
 };
 
 describe('SettingsProfilePanel', () => {
-  it('shows Clerk identity and the saved company list', () => {
+  it('shows Clerk identity in read-only profile fields and the saved company list', () => {
     render(
       <SettingsProfilePanel
         values={values}
@@ -28,11 +32,13 @@ describe('SettingsProfilePanel', () => {
       />
     );
 
-    expect(screen.getByText('Asha Rao')).toBeInTheDocument();
-    expect(screen.getByText('asha@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'First Name' })).toHaveValue('Asha');
+    expect(screen.getByRole('textbox', { name: 'First Name' })).toHaveAttribute('readonly');
+    expect(screen.getByRole('textbox', { name: 'Last Name' })).toHaveValue('Rao');
+    expect(screen.getByRole('textbox', { name: 'Last Name' })).toHaveAttribute('readonly');
+    expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('asha@example.com');
+    expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('readonly');
     expect(screen.getByRole('textbox', { name: 'Target companies' })).toHaveValue('Google, Stripe');
-    expect(screen.getByText('Asha Rao')).toHaveClass('text-[var(--text)]');
-    expect(screen.getByText('Name')).toHaveClass('text-[var(--dim)]');
     expect(screen.getByRole('textbox', { name: 'Target companies' })).toHaveClass(
       'border-[var(--border2)]',
       'bg-[var(--bg2)]',

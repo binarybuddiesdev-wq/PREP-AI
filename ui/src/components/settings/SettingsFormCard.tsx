@@ -79,16 +79,20 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
           className="min-h-[12rem] p-4 outline-none sm:p-8"
         >
           {panelTitle && (
-            <h2 className="mb-6 text-[1.15rem] font-semibold text-[var(--text-h)]">{panelTitle}</h2>
+            <h2 className="mb-6 text-[1.15rem] font-semibold leading-[1.6] text-[var(--text-h)]">
+              {panelTitle}
+            </h2>
           )}
           {getPanel()}
           {showSaveFooter && (
-            <footer className="mt-5 flex min-h-9 flex-wrap items-center gap-3">
+            <footer
+              className={`flex min-h-9 flex-wrap items-center gap-3 ${activeTab === 'preferences' ? 'mt-7' : 'mt-5'}`}
+            >
               <button
                 type="button"
                 onClick={onSave}
                 disabled={isSaving}
-                className="inline-flex min-h-9 items-center rounded-lg bg-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-strong)] disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex min-h-[37px] items-center rounded-lg bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--accent-foreground)] transition hover:bg-[var(--accent2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-strong)] disabled:cursor-wait disabled:opacity-60"
               >
                 {isSaving ? 'Saving…' : saveActionLabel}
               </button>

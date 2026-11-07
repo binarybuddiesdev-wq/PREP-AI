@@ -19,6 +19,7 @@ export const ONBOARDING_TOPICS = [
   'TypeScript',
   'HTML',
   'CSS',
+  'DSA',
   'Node.js',
   'ExpressJS',
   'NestJS',

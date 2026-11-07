@@ -86,7 +86,7 @@ describe('SettingsPage', () => {
     const user = userEvent.setup();
     renderSettingsPage();
 
-    expect(await screen.findByText('Asha Rao')).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'First Name' })).toHaveValue('Asha');
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeVisible();
     expect(screen.getByText('Manage your profile and preferences')).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Profile' })).toHaveAttribute('aria-selected', 'true');
@@ -150,7 +150,7 @@ describe('SettingsPage', () => {
     const user = userEvent.setup();
     renderSettingsPage();
 
-    await screen.findByText('Asha Rao');
+    await screen.findByRole('textbox', { name: 'First Name' });
     expect(requestedUrls.some((url) => /\/(theory|coding)\/stats$/.test(url))).toBe(false);
     expect(requestedUrls.some((url) => url.endsWith('/payments/subscriptions/current'))).toBe(
       false
@@ -232,7 +232,7 @@ describe('SettingsPage', () => {
     const user = userEvent.setup();
     renderSettingsPage();
 
-    await screen.findByText('Asha Rao');
+    await screen.findByRole('textbox', { name: 'First Name' });
     await user.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(

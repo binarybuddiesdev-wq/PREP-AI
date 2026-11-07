@@ -14,6 +14,10 @@ export const DEFAULT_SETTINGS_FORM_VALUES: ISettingsFormValues = {
   targetCompanies: '',
   preferredTopics: [...DEFAULT_ONBOARDING_DRAFT.preferredTopics],
   defaultDifficulty: DEFAULT_ONBOARDING_DRAFT.defaultDifficulty,
+  sessionLength: 10,
+  timerPerQuestion: 5,
+  showHintsOnSkip: true,
+  autoAdvance: false,
   dailyReminder: false,
   dailyReminderTime: '19:00',
   timezone: getBrowserTimezone(),
@@ -35,6 +39,22 @@ export const getSettingsFormValues = (
         : DEFAULT_SETTINGS_FORM_VALUES.targetCompanies,
     preferredTopics: draft.preferredTopics,
     defaultDifficulty: draft.defaultDifficulty,
+    sessionLength:
+      typeof settings?.preferences?.sessionLength === 'number'
+        ? settings.preferences.sessionLength
+        : DEFAULT_SETTINGS_FORM_VALUES.sessionLength,
+    timerPerQuestion:
+      typeof settings?.preferences?.timerPerQuestion === 'number'
+        ? settings.preferences.timerPerQuestion
+        : DEFAULT_SETTINGS_FORM_VALUES.timerPerQuestion,
+    showHintsOnSkip:
+      typeof settings?.preferences?.showHintsOnSkip === 'boolean'
+        ? settings.preferences.showHintsOnSkip
+        : DEFAULT_SETTINGS_FORM_VALUES.showHintsOnSkip,
+    autoAdvance:
+      typeof settings?.preferences?.autoAdvance === 'boolean'
+        ? settings.preferences.autoAdvance
+        : DEFAULT_SETTINGS_FORM_VALUES.autoAdvance,
     dailyReminder:
       typeof settings?.dailyReminderEnabled === 'boolean'
         ? settings.dailyReminderEnabled
@@ -70,6 +90,10 @@ export const toUpdateSettingsBody = (
     ...settings?.preferences,
     preferredTopics: values.preferredTopics,
     defaultDifficulty: values.defaultDifficulty,
+    sessionLength: values.sessionLength,
+    timerPerQuestion: values.timerPerQuestion,
+    showHintsOnSkip: values.showHintsOnSkip,
+    autoAdvance: values.autoAdvance,
   },
   notifications: {
     ...settings?.notifications,

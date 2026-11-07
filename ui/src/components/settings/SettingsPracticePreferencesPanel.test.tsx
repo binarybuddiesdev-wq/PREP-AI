@@ -10,6 +10,10 @@ const values: ISettingsFormValues = {
   targetCompanies: 'Google, Stripe',
   preferredTopics: ['React', 'TypeScript'],
   defaultDifficulty: 'Mid',
+  sessionLength: 10,
+  timerPerQuestion: 5,
+  showHintsOnSkip: true,
+  autoAdvance: false,
   dailyReminder: false,
   dailyReminderTime: '19:00',
   timezone: 'Asia/Kolkata',
@@ -23,12 +27,7 @@ describe('SettingsPracticePreferencesPanel', () => {
 
     const unselectedTopic = screen.getByRole('button', { name: 'Node.js' });
 
-    expect(screen.getByRole('heading', { name: 'Focus topics' })).toHaveClass(
-      'text-[var(--text-h)]'
-    );
-    expect(screen.getByText('Choose the topics you want to practice.')).toHaveClass(
-      'text-[var(--dim)]'
-    );
+    expect(screen.getByText('Preferred Topics')).toHaveClass('text-[var(--dim)]');
     expect(unselectedTopic).toHaveClass(
       'border-[var(--border)]',
       'bg-[var(--surface)]',
@@ -48,5 +47,47 @@ describe('SettingsPracticePreferencesPanel', () => {
 
     expect(onChange).toHaveBeenCalledWith({ ...values, preferredTopics: ['React'] });
     expect(screen.getByRole('button', { name: 'React' })).not.toBeDisabled();
+  });
+
+  it('reports default difficulty changes', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <SettingsPracticePreferencesPanel values={values} isSaving={false} onChange={onChange} />
+    );
+
+    await user.click(screen.getByRole('combobox', { name: 'Default Difficulty' }));
+    await user.click(screen.getByRole('option', { name: 'Senior' }));
+
+    expect(onChange).toHaveBeenCalledWith({ ...values, defaultDifficulty: 'Senior' });
+  });
+
+  it('saves session length and question timer preferences as numbers', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <SettingsPracticePreferencesPanel values={values} isSaving={false} onChange={onChange} />
+    );
+
+    await user.click(screen.getByRole('combobox', { name: 'Session Length' }));
+    await user.click(screen.getByRole('option', { name: '15 questions' }));
+    expect(onChange).toHaveBeenLastCalledWith({ ...values, sessionLength: 15 });
+
+    await user.click(screen.getByRole('combobox', { name: 'Timer per Question' }));
+    await user.click(screen.getByRole('option', { name: 'No timer' }));
+    expect(onChange).toHaveBeenLastCalledWith({ ...values, timerPerQuestion: 0 });
+  });
+
+  it('updates skip hint and automatic advance switches', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <SettingsPracticePreferencesPanel values={values} isSaving={false} onChange={onChange} />
+    );
+
+    await user.click(screen.getByRole('switch', { name: 'Show hints after skip' }));
+    expect(onChange).toHaveBeenLastCalledWith({ ...values, showHintsOnSkip: false });
+    await user.click(screen.getByRole('switch', { name: 'Auto-advance to next question' }));
+    expect(onChange).toHaveBeenLastCalledWith({ ...values, autoAdvance: true });
   });
 });

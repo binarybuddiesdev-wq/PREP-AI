@@ -48,6 +48,10 @@ export interface ISettingsFormValues {
   targetCompanies: string;
   preferredTopics: string[];
   defaultDifficulty: string;
+  sessionLength: number;
+  timerPerQuestion: number;
+  showHintsOnSkip: boolean;
+  autoAdvance: boolean;
   dailyReminder: boolean;
   dailyReminderTime: string;
   timezone: string;

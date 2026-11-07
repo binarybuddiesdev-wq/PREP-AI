@@ -11,6 +11,10 @@ const values: ISettingsFormValues = {
   targetCompanies: 'Google, Stripe',
   preferredTopics: ['React', 'TypeScript'],
   defaultDifficulty: 'Mid',
+  sessionLength: 10,
+  timerPerQuestion: 5,
+  showHintsOnSkip: true,
+  autoAdvance: false,
   dailyReminder: false,
   dailyReminderTime: '19:00',
   timezone: 'Asia/Kolkata',
@@ -37,8 +41,9 @@ describe('SettingsFormCard', () => {
     renderCard();
 
     expect(screen.getByRole('tab', { name: 'Profile' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('Asha Rao')).toBeInTheDocument();
-    expect(screen.getByText('asha@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'First Name' })).toHaveValue('Asha');
+    expect(screen.getByRole('textbox', { name: 'Last Name' })).toHaveValue('Rao');
+    expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('asha@example.com');
     expect(screen.getByRole('combobox', { name: 'Target Role' })).toHaveTextContent('Backend');
     expect(screen.getByRole('textbox', { name: 'Target companies' })).toHaveValue('Google, Stripe');
     expect(screen.queryByText(/UserSettings Model|Raw UserSettings JSON/)).not.toBeInTheDocument();
@@ -119,7 +124,7 @@ describe('SettingsFormCard', () => {
       'aria-selected',
       'true'
     );
-    expect(within(panel).getByRole('combobox', { name: 'Default difficulty' })).toHaveTextContent(
+    expect(within(panel).getByRole('combobox', { name: 'Default Difficulty' })).toHaveTextContent(
       'Mid'
     );
     expect(within(panel).getByRole('button', { name: 'React' })).toHaveAttribute(
