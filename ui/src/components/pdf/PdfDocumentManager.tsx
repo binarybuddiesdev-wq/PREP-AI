@@ -1,4 +1,4 @@
-import { BookOpen, Check, CloudUpload, FileText, RotateCw, Trash2, X } from 'lucide-react';
+import { BookOpen, FileText, RotateCw, Trash2, X } from 'lucide-react';
 import { useRef } from 'react';
 import { Link } from 'react-router';
 
@@ -86,39 +86,27 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
   };
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-6">
+    <main className="mx-auto flex w-full flex-col gap-4">
       <header>
-        <h1 className="text-2xl font-semibold text-[var(--text-h)]">Your documents</h1>
+        <h1 className="text-[1.15rem] font-semibold leading-[1.6] text-[var(--text-h)]">
+          Documents
+        </h1>
         <p className="mt-1 text-sm text-[var(--dim)]">
-          Upload searchable PDFs to read and use in a study session.
+          Upload PDF documents to use as question sources. Drag files or click to browse.
         </p>
       </header>
 
-      <section
-        aria-labelledby="pdf-upload-title"
-        className="app-shell-panel rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5"
-      >
-        <div className="mb-4 flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-bg)] text-[var(--accent-strong)]">
-            <CloudUpload aria-hidden="true" className="size-4" />
-          </span>
-          <div>
-            <h2 id="pdf-upload-title" className="text-sm font-semibold text-[var(--text-h)]">
-              Add a study document
-            </h2>
-            <p className="mt-0.5 text-xs leading-5 text-[var(--dim)]">
-              PDF with selectable text, up to 10 MB and 100 pages.
-            </p>
-          </div>
-        </div>
-
+      <section aria-labelledby="pdf-upload-title" className="order-2 -mt-4">
+        <h2 id="pdf-upload-title" className="sr-only">
+          Add a study document
+        </h2>
         <div
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault();
             if (!isUploading) selectFirstPdf(event.dataTransfer.files);
           }}
-          className="rounded-xl border border-dashed border-[var(--border2)] bg-[var(--surface)] px-4 py-5 text-center transition-colors hover:border-[var(--accent-border)] sm:py-6"
+          className="mt-3 min-h-[10.85rem] rounded-xl border-2 border-dashed border-[var(--border2)] px-4 py-8 text-center transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--surface)]"
         >
           <input
             ref={inputRef}
@@ -132,8 +120,11 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
               event.currentTarget.value = '';
             }}
           />
-          <FileText aria-hidden="true" className="mx-auto size-6 text-[var(--dim)]" />
-          <p className="mt-2 text-sm font-medium text-[var(--text)]">
+          <FileText
+            aria-hidden="true"
+            className="mx-auto mb-2 size-8 text-[var(--dim)] opacity-60"
+          />
+          <p className="text-sm font-medium text-[var(--text)]">
             Drop a PDF here or{' '}
             <button
               type="button"
@@ -144,7 +135,9 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
               browse files
             </button>
           </p>
-          <p className="mt-1 text-xs text-[var(--dim)]">One document per upload</p>
+          <p className="mt-1 text-xs text-[var(--dim)]">
+            PDF with selectable text, up to 10 MB and 100 pages. One document per upload.
+          </p>
         </div>
 
         {validationError ? (
@@ -201,18 +194,10 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
         ) : null}
       </section>
 
-      <section aria-labelledby="pdf-documents-title">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 id="pdf-documents-title" className="text-base font-semibold text-[var(--text-h)]">
-            Uploaded documents
-          </h2>
-          {!isLoading && !listError ? (
-            <span className="text-xs text-[var(--dim)]">
-              {sources.length} {sources.length === 1 ? 'document' : 'documents'}
-            </span>
-          ) : null}
-        </div>
-
+      <section aria-labelledby="pdf-documents-title" className="order-1">
+        <h2 id="pdf-documents-title" className="sr-only">
+          Uploaded documents
+        </h2>
         {listError ? (
           <div
             role="alert"
@@ -242,26 +227,19 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
             <p className="mt-1 text-xs text-[var(--dim)]">Your uploaded PDFs will appear here.</p>
           </div>
         ) : (
-          <ul
-            aria-labelledby="pdf-documents-title"
-            className="divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 sm:px-5"
-          >
+          <ul aria-labelledby="pdf-documents-title" className="space-y-2">
             {sources.map((source) => {
               const canReindex = source.status === 'ready' || source.status === 'failed';
               const isConfirming = confirmingDeleteId === source.id;
               return (
-                <li key={source.id} className="py-4">
+                <li
+                  key={source.id}
+                  className="min-h-[4.375rem] rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4"
+                >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface)] text-[var(--dim)]">
-                        {source.status === 'ready' ? (
-                          <Check
-                            aria-hidden="true"
-                            className="size-4 text-[var(--success-strong)]"
-                          />
-                        ) : (
-                          <FileText aria-hidden="true" className="size-4" />
-                        )}
+                      <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--red-bg)] text-[0.6rem] font-bold text-[var(--danger-strong)]">
+                        PDF
                       </span>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-[var(--text)]">

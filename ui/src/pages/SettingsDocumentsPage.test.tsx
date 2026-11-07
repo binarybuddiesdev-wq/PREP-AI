@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -51,7 +51,7 @@ describe('SettingsDocumentsPage', () => {
     hooks.remove.error = null;
   });
 
-  it('keeps the document breadcrumb readable with the app theme tokens', () => {
+  it('presents the document manager using the reference title and upload guidance', () => {
     renderPage();
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Settings sections' });
@@ -61,7 +61,11 @@ describe('SettingsDocumentsPage', () => {
       'hover:text-[var(--accent-strong)]',
       'focus-visible:text-[var(--text-h)]'
     );
-    expect(screen.getByText('Documents')).toHaveClass('text-[var(--text-h)]');
+    expect(within(breadcrumb).getByText('Documents')).toHaveClass('text-[var(--text-h)]');
+    expect(screen.getByRole('heading', { name: 'Documents', level: 1 })).toBeVisible();
+    expect(screen.getByText(/Upload PDF documents to use as question sources/i)).toBeVisible();
+    expect(screen.getByLabelText('Choose a PDF file')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'browse files' })).toBeVisible();
   });
 
   it('rejects an invalid PDF signature before making an upload request', async () => {

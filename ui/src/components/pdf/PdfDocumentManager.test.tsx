@@ -55,15 +55,14 @@ describe('PdfDocumentManager', () => {
     const uploadPanel = screen.getByRole('region', { name: 'Add a study document' });
     const documentList = screen.getByRole('list', { name: 'Uploaded documents' });
 
-    expect(uploadPanel).toHaveClass('border-[var(--border)]', 'bg-[var(--card)]');
+    expect(uploadPanel).toHaveClass('order-2');
     expect(
-      screen.getByText('Upload searchable PDFs to read and use in a study session.')
+      screen.getByText(
+        'Upload PDF documents to use as question sources. Drag files or click to browse.'
+      )
     ).toHaveClass('text-[var(--dim)]');
-    expect(documentList).toHaveClass(
-      'divide-[var(--border)]',
-      'border-[var(--border)]',
-      'bg-[var(--card)]'
-    );
+    expect(documentList).toHaveClass('space-y-2');
+    expect(documentList.closest('section')).toHaveClass('order-1');
     expect(screen.getByText('ready.pdf')).toHaveClass('text-[var(--text)]');
   });
 
