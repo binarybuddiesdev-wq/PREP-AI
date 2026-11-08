@@ -5,7 +5,7 @@
  * providers today, both OpenAI-API-compatible:
  *
  *   1. **NVIDIA NIM** (primary)  — `process.env.NVIDIA_API_KEY`
- *      Model: meta/llama-3.1-8b-instruct (or NVIDIA_MODEL override)
+ *      Model: nvidia/nemotron-3.5-bolt-e4b (or NVIDIA_MODEL override)
  *      URL:   https://integrate.api.nvidia.com/v1
  *
  *   2. **Groq** (fallback)        — `process.env.GROQ_API_KEY`
@@ -41,7 +41,7 @@ import { createOpenAI } from '@ai-sdk/openai';
  * llama-3.3-nemotron-super-49b-v1.5; Groq has openai/gpt-oss-120b, etc.).
  */
 export const defaultModel = {
-  nvidia: () => process.env.NVIDIA_MODEL || 'meta/llama-3.1-8b-instruct',
+  nvidia: () => process.env.NVIDIA_MODEL || 'nvidia/nemotron-3.5-bolt-e4b',
   groq: () => process.env.GROQ_MODEL || 'qwen/qwen3.8-27b',
 } as const;
 

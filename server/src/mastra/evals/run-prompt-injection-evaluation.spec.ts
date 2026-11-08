@@ -40,7 +40,7 @@ describe('prompt-injection evaluation CLI', () => {
       benignCases: 20,
       estimatedDetectorCalls: 40,
       provider: 'nvidia',
-      modelName: 'meta/llama-3.1-8b-instruct',
+      modelName: 'nvidia/nemotron-3.5-bolt-e4b',
     });
     expect(dependencies.run).not.toHaveBeenCalled();
     expect(dependencies.saveReport).not.toHaveBeenCalled();

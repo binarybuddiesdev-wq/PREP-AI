@@ -80,6 +80,10 @@ export class StudyChatModelService {
             ...(signal ? { abortSignal: signal } : {}),
           });
           if (injectionDetected) throw new PromptInjectionBlockedError();
+          if (!generated.text.trim()) {
+            this.logger.warn({ provider }, 'Study coach returned an empty reply');
+            throw new Error('Study coach returned an empty reply');
+          }
           return generated;
         },
         (from, to) => this.metrics.recordProviderFailover(from, to),
@@ -110,10 +114,6 @@ export class StudyChatModelService {
       );
     }
     const reply = response.text.trim();
-    if (!reply) {
-      this.logger.warn('Study coach returned an empty reply');
-      throw new Error('Study coach returned an empty reply');
-    }
     return reply;
   }
 }

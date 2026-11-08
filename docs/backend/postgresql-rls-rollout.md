@@ -6,8 +6,8 @@ and a separate API-credential pool in development otherwise. Production
 requires the restricted URL. The disposable isolation suite provisions
 restricted runtime roles and applies the base, audit, PDF, and payment policy
 SQL. It verifies PostgreSQL RLS for theory, coding, PDF, and payment data,
-including payment admin lookups, worker operation scope, and bounded
-reconciliation/retention functions:
+including payment admin lookups, worker operation scope, question exposure
+history, and bounded reconciliation/retention functions:
 
 ```powershell
 pnpm test:database:isolation
@@ -63,6 +63,9 @@ then use the same policy order as the isolation harness:
    bounded worker functions.
 4. `server/prisma/rls/003-payment-rls.sql` installs payment owner policies and
    worker-only global reconciliation/retention functions.
+5. `server/prisma/rls/004-question-exposure-rls.sql` installs learner-scoped
+   question exposure/rotation policies and grants the worker insert access to
+   validated generated coding questions.
 
 `003-payment-rls.sql` enables and forces RLS on the four payment tables. The
 API reads and writes its tenant's rows. The guarded ADMIN refund flow receives

@@ -68,6 +68,26 @@ describe('PdfIndexingService', () => {
     );
   });
 
+  it('claims a failed source when reindexing its requested revision', async () => {
+    const { service, prisma, source, storage } = setup();
+    prisma.pdfSource.findUnique.mockResolvedValue({
+      ...source,
+      status: 'failed',
+      requestedRevision: 2,
+    });
+
+    await service.ingest('source_1', 2);
+
+    expect(prisma.pdfSource.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: { in: ['queued', 'processing', 'ready', 'failed'] },
+        }),
+      })
+    );
+    expect(storage.download).toHaveBeenCalledOnce();
+  });
+
   it('ignores missing, deleting, or stale revision jobs without loading a file', async () => {
     const { service, prisma, storage } = setup();
     prisma.pdfSource.findUnique.mockResolvedValueOnce(null);

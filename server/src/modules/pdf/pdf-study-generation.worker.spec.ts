@@ -142,7 +142,7 @@ describe('PdfStudyGenerationWorker', () => {
     );
     await worker.onModuleInit();
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.any(Object),
+      expect.objectContaining({ err: expect.any(Error) }),
       'PDF question generation reconciliation failed'
     );
     await worker.onModuleDestroy();

@@ -6,6 +6,7 @@ export const JOB_QUEUE_NAMES = {
   EMAIL: 'email-queue',
   PAYMENT_RECONCILIATION: 'payment-reconcile-queue',
   CODING_EXECUTION: 'coding-execution-queue',
+  QUESTION_BANK: 'question-bank-replenishment-queue',
 } as const;
 
 export type TJobQueueName = (typeof JOB_QUEUE_NAMES)[keyof typeof JOB_QUEUE_NAMES];
@@ -19,6 +20,7 @@ export const JOB_QUEUE_POLICIES: Record<TJobQueueName, { concurrency: number; at
     [JOB_QUEUE_NAMES.EMAIL]: { concurrency: 10, attempts: 5 },
     [JOB_QUEUE_NAMES.PAYMENT_RECONCILIATION]: { concurrency: 1, attempts: 3 },
     [JOB_QUEUE_NAMES.CODING_EXECUTION]: { concurrency: 5, attempts: 3 },
+    [JOB_QUEUE_NAMES.QUESTION_BANK]: { concurrency: 1, attempts: 3 },
   };
 
 export const JOB_QUEUE_BACKOFF_DELAY_MS = 1000;

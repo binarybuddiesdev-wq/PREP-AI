@@ -26,7 +26,7 @@ const createWrapper =
 describe('PDF commands', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('forwards file identity and progress callback to upload and refreshes the source list', async () => {
+  it('forwards file identity and refreshes the source list after upload', async () => {
     vi.mocked(uploadPdfSource).mockResolvedValue(envelope({ id: 'pdf-1' } as never));
     const queryClient = new QueryClient();
     const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
@@ -34,13 +34,11 @@ describe('PDF commands', () => {
       wrapper: createWrapper(queryClient),
     });
     const file = new File(['pdf'], 'study.pdf', { type: 'application/pdf' });
-    const onProgress = vi.fn();
-
     await act(async () => {
-      await result.current.mutateAsync({ file, idempotencyKey: 'upload-1', onProgress });
+      await result.current.mutateAsync({ file, idempotencyKey: 'upload-1' });
     });
 
-    expect(uploadPdfSource).toHaveBeenCalledWith({}, file, 'upload-1', onProgress);
+    expect(uploadPdfSource).toHaveBeenCalledWith({}, file, 'upload-1');
     await waitFor(() =>
       expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: pdfKeys.list('user-one') })
     );

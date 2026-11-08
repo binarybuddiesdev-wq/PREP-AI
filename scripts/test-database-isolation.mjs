@@ -193,6 +193,16 @@ try {
     { input: paymentPolicySql }
   );
 
+  const questionExposurePolicySql = await readFile(
+    path.join(serverDirectory, 'prisma', 'rls', '004-question-exposure-rls.sql'),
+    'utf8'
+  );
+  run(
+    'podman',
+    ['exec', '-i', `${projectName}_postgres_1`, 'psql', '-U', 'postgres', '-d', databaseName],
+    { input: questionExposurePolicySql }
+  );
+
   run('pnpm', ['test:e2e'], { cwd: serverDirectory, env: childEnvironment });
 } catch (error) {
   primaryError = error;

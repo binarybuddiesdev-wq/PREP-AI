@@ -15,7 +15,6 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024;
 interface IUploadAttempt {
   file: File;
   idempotencyKey: string;
-  progress: number;
 }
 
 const createIdempotencyKey = () => {
@@ -66,7 +65,7 @@ export const SettingsDocumentsPage = () => {
       return;
     }
 
-    setUploadAttempt({ file, idempotencyKey: createIdempotencyKey(), progress: 0 });
+    setUploadAttempt({ file, idempotencyKey: createIdempotencyKey() });
   };
 
   const runUpload = (attempt: IUploadAttempt | null) => {
@@ -76,10 +75,6 @@ export const SettingsDocumentsPage = () => {
       {
         file: attempt.file,
         idempotencyKey: attempt.idempotencyKey,
-        onProgress: ({ percent }) =>
-          setUploadAttempt((current) =>
-            current ? { ...current, progress: Math.round(percent * 100) } : current
-          ),
       },
       {
         onSuccess: () => setUploadAttempt(null),
@@ -128,7 +123,6 @@ export const SettingsDocumentsPage = () => {
         listError={sourcesQuery.isError ? getErrorMessage(sourcesQuery.error) : null}
         isUploading={uploadCommand.isPending}
         uploadFileName={uploadAttempt?.file.name ?? null}
-        uploadProgress={uploadAttempt?.progress ?? 0}
         uploadError={uploadError}
         validationError={validationError}
         reindexingId={reindexCommand.isPending ? (reindexCommand.variables?.pdfId ?? null) : null}

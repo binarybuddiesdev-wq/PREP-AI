@@ -32,6 +32,7 @@ model TheorySession {
   pdfGenerationStatus  String?
   pdfGenerationError   String?
   pdfQuestions         Json?
+  questionIds          String[]       @default([])
   pdfDispatchClaimedAt DateTime?
   startedAt            DateTime       @default(now())
   completedAt          DateTime?
@@ -40,6 +41,31 @@ model TheorySession {
 
   @@index([userId])
   @@index([userId, createdAt])
+}
+
+model QuestionExposure {
+  id           String   @id @default(uuid())
+  userId       String
+  questionKind String // "theory" | "coding"
+  bucketKey    String // topic and difficulty for efficient per-bucket lookups
+  questionId   String // Mongo ObjectId for theory; PostgreSQL UUID for coding
+  sessionId    String
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, questionKind, questionId])
+  @@index([userId, questionKind, bucketKey, createdAt])
+  @@index([sessionId])
+}
+
+model QuestionRotation {
+  id           String   @id @default(uuid())
+  userId       String
+  questionKind String // "theory" | "coding"; incrementing this row serializes claims
+  revision     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, questionKind])
 }
 
 model PdfChunk {
@@ -117,6 +143,8 @@ model CodingQuestion {
   codeJs      String // JavaScript boilerplate
   codeTs      String // TypeScript boilerplate
   codePy      String // Python boilerplate
+  conceptFingerprint String? @unique
+  promptFingerprint  String? @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

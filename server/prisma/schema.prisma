@@ -132,6 +132,23 @@ model QuestionUniqueness {
   questionId  String @unique
 }
 
+model QuestionConceptUniqueness {
+  fingerprint String @id @map("_id")
+  questionId  String @unique
+  topicId     String   @db.ObjectId
+  difficulty  String
+
+  @@index([topicId, difficulty])
+}
+
+model QuestionPromptUniqueness {
+  fingerprint String @id @map("_id")
+  questionId  String @unique
+  topicId     String   @db.ObjectId
+
+  @@index([topicId])
+}
+
 model IdempotencyOperation {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   operationId        String   @unique

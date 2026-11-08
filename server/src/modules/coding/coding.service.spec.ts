@@ -455,6 +455,19 @@ describe('CodingService', () => {
       await expect(service.getProblem('two-sum')).resolves.toEqual(problem);
       expect(pg().codingQuestion.findFirst).toHaveBeenCalledWith({
         where: { OR: [{ id: 'two-sum' }, { slug: 'two-sum' }] },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          difficulty: true,
+          topic: true,
+          examples: true,
+          constraints: true,
+          codeJs: true,
+          codeTs: true,
+          codePy: true,
+        },
       });
 
       pg().codingQuestion.findFirst.mockResolvedValueOnce(null);
@@ -597,6 +610,30 @@ describe('CodingService', () => {
       });
     });
 
+    it('assigns unseen coding problems and persists the selected set for automatic sessions', async () => {
+      pg().codingSession.findFirst.mockResolvedValueOnce(null);
+      const assignCodingProblems = vi.fn().mockResolvedValue([secondProblemId]);
+      Object.assign(service, { questionAssignment: { assignCodingProblems } });
+
+      const result = await service.startSession({}, userId, 'unseen-session');
+
+      expect(assignCodingProblems).toHaveBeenCalledWith(
+        userId,
+        createIdempotencyOperationId(userId, 'coding-session', 'unseen-session'),
+        'all-coding-topics',
+        [problemId],
+        10
+      );
+      expect(result.problemIds).toEqual([secondProblemId]);
+      expect(pg().codingSession.create).toHaveBeenCalledWith({
+        data: {
+          id: result.id,
+          userId,
+          problemIds: [],
+        },
+      });
+    });
+
     it('returns 404 when there are no coding problems to start with', async () => {
       pg().codingQuestion.findMany.mockResolvedValueOnce([]);
 
@@ -672,6 +709,10 @@ describe('CodingService', () => {
 
       expect(pg().codingSession.findFirst).toHaveBeenCalledWith({
         where: { id: sessionId, userId },
+      });
+      expect(pg().codingQuestion.findFirst).toHaveBeenCalledWith({
+        where: { id: problemId },
+        select: { examples: true },
       });
       expect(jobs.enqueue).toHaveBeenCalledWith(
         JOB_QUEUE_NAMES.CODING_EXECUTION,

@@ -75,10 +75,14 @@ export const AppShell = (props: IAppShellProps) => {
   };
 
   return (
-    <div data-theme={theme} data-collapsed={isCollapsed} className="app-shell">
+    <div
+      data-theme={theme}
+      data-collapsed={isCollapsed}
+      className="app-shell h-dvh overflow-hidden"
+    >
       <div
         className={cn(
-          'min-h-svh transition-colors',
+          'flex h-full min-h-0 transition-colors',
           isDarkTheme ? 'bg-[#09090b] text-zinc-100' : 'bg-zinc-50 text-zinc-900'
         )}
       >
@@ -283,13 +287,13 @@ export const AppShell = (props: IAppShellProps) => {
 
         <div
           className={cn(
-            'min-h-svh transition-[padding] duration-200 min-[769px]:pl-[240px]',
+            'flex h-full min-h-0 min-w-0 flex-1 flex-col transition-[padding] duration-200 min-[769px]:pl-[240px]',
             isCollapsed && 'min-[769px]:pl-[60px]'
           )}
         >
           <header
             className={cn(
-              'sticky top-0 z-20 flex h-[62px] items-center justify-between border-b px-8 backdrop-blur-xl max-[767px]:h-[73px] max-[767px]:px-4',
+              'sticky top-0 z-20 flex h-[62px] shrink-0 items-center justify-between border-b px-8 backdrop-blur-xl max-[767px]:h-[73px] max-[767px]:px-4',
               isDarkTheme ? 'border-white/[0.08] bg-[#09090b]/90' : 'border-zinc-200 bg-white/90'
             )}
           >
@@ -339,7 +343,12 @@ export const AppShell = (props: IAppShellProps) => {
               {userMenu}
             </div>
           </header>
-          <div className="px-4 py-6 min-[769px]:px-8">{children}</div>
+          <div
+            data-app-shell-content
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 min-[769px]:px-8"
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import type {
   ISubmitTheoryAnswerBody,
   ITheorySession,
 } from '@/core';
+import { getApiErrorMessage } from '@/utils/apiErrorMessage';
 import { useTheoryAnswerCommand } from './useTheoryAnswerCommand';
 import { useTheoryCompleteSessionCommand } from './useTheoryCompleteSessionCommand';
 import { useTheoryEvaluationReader } from './useTheoryEvaluationReader';
@@ -158,7 +159,7 @@ export const useTheoryPracticeSession = () => {
         setView('question');
         return startedSession;
       } catch (error) {
-        setStartError(error instanceof Error ? error.message : 'Could not start this session.');
+        setStartError(getApiErrorMessage(error, 'start this practice session'));
         return null;
       } finally {
         startLock.current = false;

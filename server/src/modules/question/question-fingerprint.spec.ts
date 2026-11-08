@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createQuestionFingerprint } from './question-fingerprint.js';
+import { createQuestionFingerprint } from '@/modules/question/question-fingerprint.js';
 
 describe('createQuestionFingerprint', () => {
   it('hashes the exact topic, difficulty, and question tuple to a fixed-length key', () => {

@@ -315,7 +315,7 @@ export const PracticePage = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-4">
+    <div className="w-full space-y-4">
       {profileUnavailable ? (
         <section
           role="alert"

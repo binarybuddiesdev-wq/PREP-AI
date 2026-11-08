@@ -621,11 +621,32 @@ describe('TheoryService', () => {
       });
       expect(prisma.question.findMany).toHaveBeenCalledWith({
         where: { topicId: 'topic_001', difficulty: 'Mid' },
-        take: 10,
-        select: expect.any(Object),
+        select: { id: true },
       });
-      expect(prisma.question.findMany.mock.calls[0][0].select).not.toHaveProperty(
+      expect(prisma.question.findMany).toHaveBeenLastCalledWith({
+        where: { id: { in: ['q_001', 'q_002'] } },
+        select: { id: true, question: true, topicId: true, difficulty: true },
+      });
+      expect(prisma.question.findMany.mock.calls[1][0].select).not.toHaveProperty(
         'referenceAnswer'
+      );
+    });
+
+    it('returns only the IDs assigned to this learner and session', async () => {
+      postgres.client_.theorySession.findFirst.mockResolvedValue(mockSession);
+      prisma.question.findMany.mockResolvedValue(mockQuestions);
+      const assignTheoryQuestions = vi.fn().mockResolvedValue(['q_002']);
+      Object.assign(service, { questionAssignment: { assignTheoryQuestions } });
+
+      const result = await service.getSessionQuestions('session_001', 'user_001', dto);
+
+      expect(result).toEqual([mockQuestions[1]]);
+      expect(assignTheoryQuestions).toHaveBeenCalledWith(
+        'user_001',
+        'session_001',
+        'topic_001:Mid',
+        ['q_001', 'q_002'],
+        10
       );
     });
 
@@ -654,7 +675,11 @@ describe('TheoryService', () => {
 
       await service.getSessionQuestions('session_001', 'user_001', { limit: 5 });
 
-      expect(prisma.question.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 5 }));
+      expect(prisma.question.findMany).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          where: { id: { in: ['q_001', 'q_002'] } },
+        })
+      );
     });
 
     it('should fetch questions for weak mode', async () => {
@@ -668,10 +693,13 @@ describe('TheoryService', () => {
       expect(result).toEqual(mockQuestions);
       expect(prisma.question.findMany).toHaveBeenCalledWith({
         where: { difficulty: 'Mid' },
-        take: 10,
-        select: expect.any(Object),
+        select: { id: true },
       });
-      expect(prisma.question.findMany.mock.calls[0][0].select).not.toHaveProperty(
+      expect(prisma.question.findMany).toHaveBeenLastCalledWith({
+        where: { id: { in: ['q_001', 'q_002'] } },
+        select: { id: true, question: true, topicId: true, difficulty: true },
+      });
+      expect(prisma.question.findMany.mock.calls[1][0].select).not.toHaveProperty(
         'referenceAnswer'
       );
     });

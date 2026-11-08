@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 import { ROUTES } from '@/core';
+import { getApiErrorMessage } from '@/utils/apiErrorMessage';
 import { DashboardPracticeCoding } from './DashboardPracticeCoding';
 import { ScoreTrendChart } from './ScoreTrendChart';
 import type { IDashboardPanelStatus, IDashboardOverviewProps } from './DashboardOverview.types';
@@ -33,7 +34,12 @@ const getPanelContent = (
     return (
       <div role="alert" className="space-y-3">
         <p className="text-sm text-[var(--danger-strong)]">
-          {status.error?.message || 'This dashboard data could not be loaded.'}
+          {status.error
+            ? getApiErrorMessage(
+                status.error,
+                `load ${retryLabel.toLowerCase().replace(/^retry /, '')}`
+              )
+            : 'This dashboard data could not be loaded.'}
         </p>
         <button
           type="button"

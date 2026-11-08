@@ -60,7 +60,15 @@ describe('HealthService', () => {
 
   describe('readiness', () => {
     it('should mark ready when Mongo, Postgres, and Redis are all up', async () => {
-      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      const queryRaw = vi.fn().mockResolvedValue([
+        {
+          has_theory_question_ids: true,
+          has_coding_fingerprints: true,
+          has_question_assignment_tables: true,
+          has_payment_webhook_claim_function: true,
+          has_payment_refund_claim_function: true,
+        },
+      ]);
       postgres.client_ = { $queryRaw: queryRaw } as never;
       prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
 
@@ -100,7 +108,15 @@ describe('HealthService', () => {
     });
 
     it('should mark up when Postgres client is configured and responding', async () => {
-      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      const queryRaw = vi.fn().mockResolvedValue([
+        {
+          has_theory_question_ids: true,
+          has_coding_fingerprints: true,
+          has_question_assignment_tables: true,
+          has_payment_webhook_claim_function: true,
+          has_payment_refund_claim_function: true,
+        },
+      ]);
       postgres.client_ = { $queryRaw: queryRaw } as never;
       prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
 
@@ -109,9 +125,41 @@ describe('HealthService', () => {
       expect(queryRaw).toHaveBeenCalled();
     });
 
+    it('should mark Postgres down when the required application schema is missing', async () => {
+      const queryRaw = vi.fn().mockResolvedValue([
+        {
+          has_theory_question_ids: false,
+          has_coding_fingerprints: true,
+          has_question_assignment_tables: false,
+          has_payment_webhook_claim_function: false,
+          has_payment_refund_claim_function: false,
+        },
+      ]);
+      postgres.client_ = { $queryRaw: queryRaw } as never;
+      prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
+
+      const result = await service.readiness();
+
+      expect(result.status).toBe('not-ready');
+      expect(result.checks.postgres.status).toBe('down');
+      expect(result.checks.postgres.error).toContain('TheorySession.questionIds');
+      expect(result.checks.postgres.error).toContain(
+        'prepai_claim_pending_payment_webhook_events(integer)'
+      );
+      expect(result.checks.postgres.error).toContain('QuestionExposure and QuestionRotation');
+    });
+
     it('validates the RLS runtime posture in production readiness', async () => {
       vi.stubEnv('NODE_ENV', 'production');
-      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      const queryRaw = vi.fn().mockResolvedValue([
+        {
+          has_theory_question_ids: true,
+          has_coding_fingerprints: true,
+          has_question_assignment_tables: true,
+          has_payment_webhook_claim_function: true,
+          has_payment_refund_claim_function: true,
+        },
+      ]);
       postgres.client_ = { $queryRaw: queryRaw } as never;
       prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
 
@@ -123,7 +171,15 @@ describe('HealthService', () => {
 
     it('marks Postgres down when the production RLS runtime posture is incomplete', async () => {
       vi.stubEnv('NODE_ENV', 'production');
-      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      const queryRaw = vi.fn().mockResolvedValue([
+        {
+          has_theory_question_ids: true,
+          has_coding_fingerprints: true,
+          has_question_assignment_tables: true,
+          has_payment_webhook_claim_function: true,
+          has_payment_refund_claim_function: true,
+        },
+      ]);
       postgres.client_ = { $queryRaw: queryRaw } as never;
       postgres.assertProductionRlsReady.mockRejectedValue(
         new Error('PostgreSQL role prepai_api must not bypass row-level security')
@@ -139,7 +195,15 @@ describe('HealthService', () => {
 
     it('does not run production RLS checks in development', async () => {
       vi.stubEnv('NODE_ENV', 'development');
-      const queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+      const queryRaw = vi.fn().mockResolvedValue([
+        {
+          has_theory_question_ids: true,
+          has_coding_fingerprints: true,
+          has_question_assignment_tables: true,
+          has_payment_webhook_claim_function: true,
+          has_payment_refund_claim_function: true,
+        },
+      ]);
       postgres.client_ = { $queryRaw: queryRaw } as never;
       prisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
 

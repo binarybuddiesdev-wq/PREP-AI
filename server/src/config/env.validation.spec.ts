@@ -24,6 +24,17 @@ describe('background worker environment validation', () => {
     expect(result.JOBS_WORKER_ENABLED).toBe(false);
   });
 
+  it('bounds question-bank generation with a configurable positive daily batch cap', () => {
+    expect(envSchema.parse({ NODE_ENV: 'test' }).QUESTION_BANK_MAX_BATCHES_PER_DAY).toBe(40);
+    expect(
+      envSchema.parse({ NODE_ENV: 'test', QUESTION_BANK_MAX_BATCHES_PER_DAY: '12' })
+        .QUESTION_BANK_MAX_BATCHES_PER_DAY
+    ).toBe(12);
+    expect(
+      envSchema.safeParse({ NODE_ENV: 'test', QUESTION_BANK_MAX_BATCHES_PER_DAY: '0' }).success
+    ).toBe(false);
+  });
+
   it('requires the restricted PostgreSQL worker URL in production even when jobs are disabled', () => {
     const base = {
       NODE_ENV: 'production',

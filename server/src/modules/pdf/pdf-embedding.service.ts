@@ -1,6 +1,8 @@
 export const PDF_EMBEDDING_MODEL = 'nvidia/nemotron-3.5-embed-1b';
 export const PDF_EMBEDDING_DIMENSIONS = 1024;
-const MAX_BATCH_SIZE = 32;
+// The configured NVIDIA embedding endpoint currently returns 500 for requests
+// containing more than one input, even though it accepts each input alone.
+const MAX_INPUTS_PER_REQUEST = 1;
 const REQUEST_TIMEOUT_MS = 30_000;
 
 export type PdfEmbeddingInputType = 'passage' | 'query';
@@ -22,8 +24,8 @@ export class PdfEmbeddingService {
     ).replace(/\/+$/u, '');
     const result: number[][] = [];
 
-    for (let offset = 0; offset < texts.length; offset += MAX_BATCH_SIZE) {
-      const batch = texts.slice(offset, offset + MAX_BATCH_SIZE);
+    for (let offset = 0; offset < texts.length; offset += MAX_INPUTS_PER_REQUEST) {
+      const batch = texts.slice(offset, offset + MAX_INPUTS_PER_REQUEST);
       const response = await fetch(`${baseUrl}/embeddings`, {
         method: 'POST',
         headers: {

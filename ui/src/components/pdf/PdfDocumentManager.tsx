@@ -11,7 +11,6 @@ export interface IPdfDocumentManagerProps {
   listError: string | null;
   isUploading: boolean;
   uploadFileName: string | null;
-  uploadProgress: number;
   uploadError: string | null;
   validationError: string | null;
   reindexingId: string | null;
@@ -62,7 +61,6 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
     listError,
     isUploading,
     uploadFileName,
-    uploadProgress,
     uploadError,
     validationError,
     reindexingId,
@@ -153,16 +151,10 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
               {isUploading ? (
                 <div
                   aria-label={`Uploading ${uploadFileName}`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={uploadProgress}
                   className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface2)]"
                   role="progressbar"
                 >
-                  <span
-                    className="block h-full rounded-full bg-[var(--accent)] transition-[width] duration-150"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
+                  <span className="block h-full w-full origin-left rounded-full bg-[var(--accent)] animate-pulse" />
                 </div>
               ) : null}
               {uploadError ? (

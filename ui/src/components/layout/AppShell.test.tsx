@@ -39,6 +39,23 @@ const createShellProps = (overrides: Partial<IAppShellProps> = {}): IAppShellPro
   }) as IAppShellProps;
 
 describe('AppShell', () => {
+  it('keeps route content scrollable inside a fixed-height app viewport', () => {
+    const { container } = render(<AppShell {...createShellProps()} />);
+
+    expect(container.querySelector('.app-shell')).toHaveClass('h-dvh', 'overflow-hidden');
+    expect(container.querySelector('[data-app-shell-content]')).toHaveClass(
+      'min-h-0',
+      'flex-1',
+      'overflow-y-auto'
+    );
+  });
+
+  it('preserves a single main landmark when routed content provides its own', () => {
+    render(<AppShell {...createShellProps({ children: <main>Page content</main> })} />);
+
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
   it('shows the current section and disables routes that are not implemented', () => {
     render(<AppShell {...createShellProps()} />);
 

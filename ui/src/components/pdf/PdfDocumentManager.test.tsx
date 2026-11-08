@@ -28,7 +28,6 @@ const renderManager = (overrides: Partial<ComponentProps<typeof PdfDocumentManag
         listError={null}
         isUploading={false}
         uploadFileName={null}
-        uploadProgress={0}
         uploadError={null}
         validationError={null}
         reindexingId={null}
@@ -85,7 +84,6 @@ describe('PdfDocumentManager', () => {
           listError={null}
           isUploading={false}
           uploadFileName={null}
-          uploadProgress={0}
           uploadError={null}
           validationError={null}
           reindexingId={null}
@@ -107,12 +105,11 @@ describe('PdfDocumentManager', () => {
     expect(screen.getByRole('status')).toHaveClass('border-[var(--border)]', 'text-[var(--dim)]');
   });
 
-  it('shows upload progress and real document status details', () => {
-    renderManager({ isUploading: true, uploadFileName: 'notes.pdf', uploadProgress: 45 });
+  it('shows an indeterminate upload state and real document status details', () => {
+    renderManager({ isUploading: true, uploadFileName: 'notes.pdf' });
 
-    expect(screen.getByRole('progressbar', { name: 'Uploading notes.pdf' })).toHaveAttribute(
-      'aria-valuenow',
-      '45'
+    expect(screen.getByRole('progressbar', { name: 'Uploading notes.pdf' })).not.toHaveAttribute(
+      'aria-valuenow'
     );
     expect(screen.getByText('Ready')).toBeInTheDocument();
     expect(screen.getByText('Indexing')).toBeInTheDocument();

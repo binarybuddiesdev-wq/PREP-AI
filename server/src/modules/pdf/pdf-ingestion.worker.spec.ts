@@ -100,7 +100,25 @@ describe('PdfIngestionWorker', () => {
       new Error('retry')
     );
     expect(logger.error).toHaveBeenCalledWith(
-      expect.objectContaining({ requestId }),
+      expect.objectContaining({ requestId, errorMessage: 'retry' }),
+      'PDF background job failed'
+    );
+    await failedHandler?.(
+      {
+        id: 'job',
+        name: 'ingest',
+        data: { sourceId: 's', revision: 1 },
+        attemptsMade: 1,
+        opts: { attempts: 2 },
+      },
+      new Error(
+        'download failed at https://storage.example/file?signature=private with Bearer private'
+      )
+    );
+    expect(logger.error).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        errorMessage: 'download failed at [url] with Bearer [redacted]',
+      }),
       'PDF background job failed'
     );
     expect(indexing.markFailed).not.toHaveBeenCalled();

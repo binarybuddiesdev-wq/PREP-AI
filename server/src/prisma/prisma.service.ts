@@ -7,6 +7,8 @@ import { MetricsService } from '../modules/metrics/metrics.service.js';
 const RLS_PROTECTED_TABLES = [
   'TheorySession',
   'TheoryAnswer',
+  'QuestionExposure',
+  'QuestionRotation',
   'CodingSession',
   'CodingExecution',
   'CodingAnswer',
@@ -22,6 +24,8 @@ const RLS_REQUIRED_POLICIES = [
   ['TheorySession', 'theory_session_worker_tenant', 'prepai_worker'],
   ['TheoryAnswer', 'theory_answer_api_tenant', 'prepai_api'],
   ['TheoryAnswer', 'theory_answer_worker_job', 'prepai_worker'],
+  ['QuestionExposure', 'question_exposure_api_tenant', 'prepai_api'],
+  ['QuestionRotation', 'question_rotation_api_tenant', 'prepai_api'],
   ['CodingSession', 'coding_session_api_tenant', 'prepai_api'],
   ['CodingSession', 'coding_session_worker_tenant', 'prepai_worker'],
   ['CodingExecution', 'coding_execution_api_tenant', 'prepai_api'],
@@ -375,7 +379,7 @@ export class PrismaPostgresqlService implements OnModuleInit, OnModuleDestroy {
     const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
     const rows = await client.$queryRaw<Array<{ session_id: string }>>`
       SELECT session_id
-      FROM public.prepai_list_queued_pdf_study_session_ids(${safeLimit})
+      FROM public.prepai_list_queued_pdf_study_session_ids(${safeLimit}::integer)
     `;
     return rows.map((row) => row.session_id);
   }

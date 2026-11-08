@@ -50,7 +50,11 @@ describe('PostgreSQL coding data isolation', () => {
       {} as never,
       logger as never
     );
-    executionService = new CodingExecutionService(database.postgresProvider, logger as never);
+    executionService = new CodingExecutionService(
+      database.postgresProvider,
+      logger as never,
+      { get: (key: string) => process.env[key] } as never
+    );
 
     problem = await database.postgres.codingQuestion.create({
       data: {
@@ -239,6 +243,61 @@ describe('PostgreSQL coding data isolation', () => {
     await expect(service.getExecution(sessionB.id, executionB.id, userA)).rejects.toBeInstanceOf(
       NotFoundException
     );
+  });
+
+  it('isolates question exposure history and rotation locks by learner', async () => {
+    const createExposure = (userId: string, sessionId: string) =>
+      withTestUserContext(database!, userId, (transaction) =>
+        transaction.questionExposure.create({
+          data: {
+            userId,
+            questionKind: 'coding',
+            bucketKey: 'all-coding-topics',
+            questionId: problem.id,
+            sessionId,
+          },
+        })
+      );
+    await Promise.all([createExposure(userA, sessionA.id), createExposure(userB, sessionB.id)]);
+    await expect(
+      withTestUserContext(database!, userA, (transaction) =>
+        transaction.questionExposure.create({
+          data: {
+            userId: userB,
+            questionKind: 'coding',
+            bucketKey: 'all-coding-topics',
+            questionId: randomUUID(),
+            sessionId: sessionA.id,
+          },
+        })
+      )
+    ).rejects.toThrow();
+
+    const createRotation = (userId: string) =>
+      withTestUserContext(database!, userId, (transaction) =>
+        transaction.questionRotation.upsert({
+          where: { userId_questionKind: { userId, questionKind: 'coding' } },
+          update: { revision: { increment: 1 } },
+          create: { userId, questionKind: 'coding' },
+        })
+      );
+    await Promise.all([createRotation(userA), createRotation(userB)]);
+
+    await expect(
+      withTestUserContext(database!, userA, (transaction) =>
+        transaction.questionExposure.findMany({ where: { questionId: problem.id } })
+      )
+    ).resolves.toMatchObject([{ userId: userA }]);
+    await expect(
+      withTestUserContext(database!, userB, (transaction) =>
+        transaction.questionExposure.findMany({ where: { questionId: problem.id } })
+      )
+    ).resolves.toMatchObject([{ userId: userB }]);
+    await expect(
+      withTestUserContext(database!, userA, (transaction) =>
+        transaction.questionRotation.findMany({ where: { questionKind: 'coding' } })
+      )
+    ).resolves.toMatchObject([{ userId: userA, questionKind: 'coding' }]);
   });
 
   it('limits coding history and counts to the caller', async () => {

@@ -6,15 +6,16 @@ BullMQ stores jobs in the existing Redis service. The API and worker share the s
 
 Coding run and submit requests first create a `CodingExecution` row in PostgreSQL, then enqueue Piston work on `coding-execution-queue` and return HTTP 202 with the execution ID. Clients read current state and result from the session-scoped execution lookup. The worker marks the row running, executes through `PistonClient`, and persists completion and submission side effects transactionally.
 
-| Queue                           | Concurrency | Attempts | Current consumer                                       |
-| ------------------------------- | ----------: | -------: | ------------------------------------------------------ |
-| `coding-execution-queue`        |           5 |        3 | Piston code execution                                  |
-| `theory-eval-queue`             |           5 |        3 | Mastra theory evaluator                                |
-| `code-review-queue`             |           3 |        3 | Mastra coding review with structured feedback          |
-| `pdf-ingest-queue`              |           2 |        5 | PDF extraction, embeddings, indexing, revision cleanup |
-| `pdf-question-generation-queue` |           3 |        3 | Mastra PDF-grounded question generation                |
-| `email-queue`                   |          10 |        5 | Opt-in daily study reminders through Resend            |
-| `payment-reconcile-queue`       |           1 |        3 | Razorpay subscription inbox reconciliation             |
+| Queue                               | Concurrency | Attempts | Current consumer                                            |
+| ----------------------------------- | ----------: | -------: | ----------------------------------------------------------- |
+| `coding-execution-queue`            |           5 |        3 | Piston code execution                                       |
+| `theory-eval-queue`                 |           5 |        3 | Mastra theory evaluator                                     |
+| `code-review-queue`                 |           3 |        3 | Mastra coding review with structured feedback               |
+| `pdf-ingest-queue`                  |           2 |        5 | PDF extraction, embeddings, indexing, revision cleanup      |
+| `pdf-question-generation-queue`     |           3 |        3 | Mastra PDF-grounded question generation                     |
+| `email-queue`                       |          10 |        5 | Opt-in daily study reminders through Resend                 |
+| `payment-reconcile-queue`           |           1 |        3 | Razorpay subscription inbox reconciliation                  |
+| `question-bank-replenishment-queue` |           1 |        3 | Background theory/coding question generation and validation |
 
 All jobs use exponential backoff starting at one second. Completed jobs are retained for up to seven days or 1,000 jobs; failed jobs are retained for up to seven days or 5,000 jobs. Worker failure logs include the queue job ID and attempt count, never the source code or job payload. Inspect retained failures using BullMQ tooling or a Redis-aware operator workflow; a dashboard is not configured yet.
 
@@ -25,6 +26,26 @@ If Redis is unavailable or the API stops after persisting a queued row but befor
 A queue submission failure marks the execution failed and returns HTTP 503. After an unrecoverable stall or final retry, the worker persists failure and releases its owned solve reservation. If PostgreSQL is unavailable during that write, the failed BullMQ job remains retained and a worker reconciliation loop retries the database update; it removes the retained job only after persistence succeeds.
 
 AI coding reviews are requested for completed submissions and counted against both a role-based daily review quota and the shared role-based daily AI token budget. Every provider attempt reserves a fresh allowance for a conservative estimate of prompt, detector, and bounded output tokens; failed provider attempts retain their reservations, and worker retries reserve again. A provider-matched Mastra prompt-injection detector runs before generation; a detection marks the review failed with the existing safe `review_unavailable` status and stops provider failover. The API persists `queued` before enqueueing, and the worker scans queued answers on startup and every 30 seconds using a restricted security-definer claim function. Queue payloads contain the execution ID as both the shared queue API's idempotency key and worker lookup key, with no source or user data. The worker reloads the persisted owner, session, problem, and source inside a worker transaction, stores bounded structured feedback and provider/model/prompt provenance, and writes a safe `review_unavailable` failure code after terminal retries. The answer row is the source of truth; callers observe `aiReviewStatus` and review data through coding session/execution reads. A review request retry returns its current queued, running, or completed state without consuming more quota. Applying the PostgreSQL schema and RLS SQL is required for restricted-role deployments.
+
+The question bank uses the registered Mastra generator agent and NVIDIA/Groq
+failover. A ten-minute worker scan checks all theory and coding topic/difficulty
+buckets; low-water thresholds are 20 theory or 8 coding items. It fills bounded
+batches of 10 and 5 toward targets of 50 and 20, with one worker and a default
+ceiling of 40 batches per UTC day (`QUESTION_BANK_MAX_BATCHES_PER_DAY`). Theory
+questions are scenario-based and deduplicated by normalized prompt plus
+learning-objective/scenario claims. Coding problems are run against every
+example in JavaScript, TypeScript, and Python through Piston before a database
+transaction saves them. Reference solutions are transient and never stored.
+Provider/database failures retry through BullMQ and do not invalidate existing
+questions.
+
+Automatic theory and coding sessions claim unseen IDs in a PostgreSQL exposure
+ledger and persist their ordered IDs on the session. A per-learner rotation row
+serializes concurrent claims; refreshes replay the same assignment and an ID
+already delivered to a learner is never automatically reused. If the bank has
+fewer unseen questions than requested, the session returns only the unseen
+items while the background scan works to refill it. Restricted-role deployments
+must apply `004-question-exposure-rls.sql` after the existing RLS scripts.
 
 Opt-in daily study reminders persist one in-app inbox item and can also use the `email-queue`. A minute scheduler selects users whose reminder preference is enabled and checks their configured local time and IANA timezone. Inbox and email delivery are independent: in-app items are created without email configuration, and an inbox persistence failure does not suppress email scheduling. Inbox items use a unique per-user/local-date key. Resend requests include a matching idempotency key and a signed one-click `List-Unsubscribe` endpoint. Browser GETs display a confirmation page; the opt-out changes only after POST, avoiding automatic unsubscribe by mail scanners. Delivery remains disabled unless `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `EMAIL_UNSUBSCRIBE_SECRET`, and externally reachable `API_BASE_URL` are configured. A daily worker cleanup deletes inbox items older than 90 days.
 

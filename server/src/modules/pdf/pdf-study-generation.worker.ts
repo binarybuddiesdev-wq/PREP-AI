@@ -130,10 +130,7 @@ export class PdfStudyGenerationWorker implements OnModuleInit, OnModuleDestroy {
         await job.remove().catch(() => undefined);
       }
     } catch (error) {
-      this.logger.warn(
-        { errorName: error instanceof Error ? error.name : 'UnknownError' },
-        'PDF question generation reconciliation failed'
-      );
+      this.logger.warn({ err: error }, 'PDF question generation reconciliation failed');
     }
   }
 }

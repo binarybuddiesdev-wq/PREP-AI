@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
-import type { IPdfReindexResult, IPdfSource, IPdfUploadProgress } from '@/core';
+import type { IPdfReindexResult, IPdfSource } from '@/core';
 import { deletePdfSource, reindexPdfSource, uploadPdfSource } from '@/service/api';
 import { useApiClient } from '../api';
 import { useSessionReader } from '../auth';
@@ -9,7 +9,6 @@ import { pdfKeys } from './pdf.keys';
 export interface IUploadPdfVariables {
   file: File;
   idempotencyKey: string;
-  onProgress?: (progress: IPdfUploadProgress) => void;
 }
 
 export interface IPdfSourceVariables {
@@ -31,8 +30,8 @@ export const usePdfUploadCommand = (): UseMutationResult<
   const userId = user?.id ?? '';
 
   return useMutation({
-    mutationFn: async ({ file, idempotencyKey, onProgress }) =>
-      (await uploadPdfSource(api, file, idempotencyKey, onProgress)).data,
+    mutationFn: async ({ file, idempotencyKey }) =>
+      (await uploadPdfSource(api, file, idempotencyKey)).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: pdfKeys.list(userId) }),
   });
 };

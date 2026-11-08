@@ -10,6 +10,7 @@ import {
   SessionHistoryTable,
 } from '@/components/history';
 import { ROUTES } from '@/core';
+import { getApiErrorMessage } from '@/utils/apiErrorMessage';
 import {
   useCodingProblemsReader,
   useCodingSessionDetailReader,
@@ -156,7 +157,11 @@ export const SessionHistoryPage = () => {
           limit={historyQuery.data?.limit ?? HISTORY_PAGE_SIZE}
           total={historyQuery.data?.total ?? 0}
           isLoading={historyQuery.isPending && !historyQuery.data}
-          errorMessage={historyQuery.isError ? historyQuery.error.message : null}
+          errorMessage={
+            historyQuery.isError
+              ? getApiErrorMessage(historyQuery.error, 'load your practice session history')
+              : null
+          }
           onRetryHistory={() => void historyQuery.refetch()}
           onPageChange={handlePracticePageChange}
           onStartPractice={() => navigate(ROUTES.practice)}
@@ -170,7 +175,7 @@ export const SessionHistoryPage = () => {
               isDetailLoading={expandedPracticeSessionId === session.id && detailQuery.isPending}
               detailError={
                 expandedPracticeSessionId === session.id && detailQuery.isError
-                  ? detailQuery.error.message
+                  ? getApiErrorMessage(detailQuery.error, 'load this practice session')
                   : null
               }
               onToggle={handleToggleSession}
@@ -191,9 +196,15 @@ export const SessionHistoryPage = () => {
           limit={codingHistoryQuery.data?.limit ?? HISTORY_PAGE_SIZE}
           total={codingHistoryQuery.data?.total ?? 0}
           isLoading={codingHistoryQuery.isPending && !codingHistoryQuery.data}
-          errorMessage={codingHistoryQuery.isError ? codingHistoryQuery.error.message : null}
+          errorMessage={
+            codingHistoryQuery.isError
+              ? getApiErrorMessage(codingHistoryQuery.error, 'load your coding session history')
+              : null
+          }
           problemTitleErrorMessage={
-            codingProblemsQuery.isError ? codingProblemsQuery.error.message : null
+            codingProblemsQuery.isError
+              ? getApiErrorMessage(codingProblemsQuery.error, 'load coding problem titles')
+              : null
           }
           onRetryHistory={() => void codingHistoryQuery.refetch()}
           onRetryProblemTitles={() => void codingProblemsQuery.refetch()}
@@ -212,7 +223,7 @@ export const SessionHistoryPage = () => {
               }
               detailError={
                 expandedCodingSessionId === session.id && codingDetailQuery.isError
-                  ? codingDetailQuery.error.message
+                  ? getApiErrorMessage(codingDetailQuery.error, 'load this coding session')
                   : null
               }
               onToggle={handleToggleCodingSession}

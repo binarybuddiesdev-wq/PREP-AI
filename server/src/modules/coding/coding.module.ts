@@ -9,9 +9,10 @@ import { CodingReviewService } from './coding-review.service.js';
 import { CodingReviewWorker } from './coding-review.worker.js';
 import { MetricsModule } from '../metrics/metrics.module.js';
 import { TheoryModule } from '../theory/theory.module.js';
+import { QuestionBankModule } from '../question-bank/question-bank.module.js';
 
 @Module({
-  imports: [JobQueueModule, MetricsModule, TheoryModule],
+  imports: [JobQueueModule, MetricsModule, TheoryModule, QuestionBankModule],
   controllers: [CodingController],
   providers: [
     CodingService,

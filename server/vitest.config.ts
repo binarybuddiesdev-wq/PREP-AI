@@ -8,6 +8,12 @@ export default defineConfig({
     root: './',
     include: ['src/**/*.spec.ts'],
     alias: {
+      '@/modules/question/question-seed.js': fileURLToPath(
+        new URL('./src/modules/question/question-seed.ts', import.meta.url)
+      ),
+      '@/modules/question/question-fingerprint.js': fileURLToPath(
+        new URL('./src/modules/question/question-fingerprint.ts', import.meta.url)
+      ),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
     coverage: {

@@ -24,6 +24,7 @@ export class MetricsService {
     'theory_evaluator',
     'coding_review',
     'pdf_question_generator',
+    'question_bank',
   ]);
   private readonly validPrismaModels = new Set([
     'TheorySession',

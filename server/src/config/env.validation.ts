@@ -25,6 +25,7 @@ export const envSchema = z
       .optional()
       .default('true')
       .transform((value) => value === 'true'),
+    QUESTION_BANK_MAX_BATCHES_PER_DAY: z.coerce.number().int().positive().optional().default(40),
     CORS_ORIGIN: z.string().optional().default('*'),
     CLERK_SECRET_KEY: z.string().optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
@@ -35,7 +36,7 @@ export const envSchema = z
     MASTRA_API_KEY: z.string().optional(),
     NVIDIA_API_KEY: z.string().optional(),
     NVIDIA_BASE_URL: z.string().optional().default('https://integrate.api.nvidia.com/v1'),
-    NVIDIA_MODEL: z.string().optional().default('meta/llama-3.1-8b-instruct'),
+    NVIDIA_MODEL: z.string().optional().default('nvidia/nemotron-3.5-bolt-e4b'),
     GROQ_API_KEY: z.string().optional(),
     GROQ_BASE_URL: z.string().optional().default('https://api.groq.com/openai/v1'),
     GROQ_MODEL: z.string().optional().default('qwen/qwen3.8-27b'),

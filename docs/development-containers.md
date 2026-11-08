@@ -123,6 +123,21 @@ schema to the existing local database before using the affected feature:
 pnpm --filter server prisma:push:mongodb
 ```
 
+The background question bank adds Mongo prompt/concept claims and PostgreSQL
+session assignment/exposure fields. Apply both schemas after updating code:
+
+```powershell
+pnpm --filter server prisma:push:mongodb
+pnpm --filter server prisma:push:postgresql
+```
+
+For restricted PostgreSQL roles, apply
+`server/prisma/rls/004-question-exposure-rls.sql` after the existing RLS scripts.
+Question generation needs an NVIDIA or Groq provider key; coding generation
+also needs Piston reachable at `PISTON_URL`. Keep `JOBS_WORKER_ENABLED=true` to
+run the worker. `QUESTION_BANK_MAX_BATCHES_PER_DAY` defaults to 40. In the full
+Podman profile, the periodic scan runs in `prepai-worker`.
+
 For example, keyed admin topic/question creation needs the `IdempotencyOperation`
 collection and its unique operation index. Question uniqueness also needs its
 fingerprint claim collection and the existing-question backfill before the

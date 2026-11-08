@@ -77,7 +77,55 @@ export class HealthService {
       return { status: 'skipped', error: 'POSTGRESQL_URL not configured' };
     }
     try {
-      await this.withTimeout(client.$queryRaw`SELECT 1`, PING_TIMEOUT_MS);
+      const [schema] = await this.withTimeout(
+        client.$queryRaw<
+          Array<{
+            has_theory_question_ids: boolean;
+            has_coding_fingerprints: boolean;
+            has_question_assignment_tables: boolean;
+            has_payment_webhook_claim_function: boolean;
+            has_payment_refund_claim_function: boolean;
+          }>
+        >`
+          SELECT
+            EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = 'public' AND table_name = 'TheorySession' AND column_name = 'questionIds'
+            ) AS has_theory_question_ids,
+            (
+              EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'CodingQuestion' AND column_name = 'conceptFingerprint'
+              ) AND EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'CodingQuestion' AND column_name = 'promptFingerprint'
+              )
+            ) AS has_coding_fingerprints,
+            (
+              to_regclass('public."QuestionExposure"') IS NOT NULL AND
+              to_regclass('public."QuestionRotation"') IS NOT NULL
+            ) AS has_question_assignment_tables,
+            to_regprocedure('public.prepai_claim_pending_payment_webhook_events(integer)') IS NOT NULL
+              AS has_payment_webhook_claim_function,
+            to_regprocedure('public.prepai_claim_pending_payment_refunds(integer)') IS NOT NULL
+              AS has_payment_refund_claim_function
+        `,
+        PING_TIMEOUT_MS
+      );
+      const missingSchemaItems = [
+        !schema?.has_theory_question_ids && 'TheorySession.questionIds',
+        !schema?.has_coding_fingerprints && 'CodingQuestion fingerprint columns',
+        !schema?.has_question_assignment_tables && 'QuestionExposure and QuestionRotation tables',
+        !schema?.has_payment_webhook_claim_function &&
+          'prepai_claim_pending_payment_webhook_events(integer)',
+        !schema?.has_payment_refund_claim_function &&
+          'prepai_claim_pending_payment_refunds(integer)',
+      ].filter((item): item is string => Boolean(item));
+      if (missingSchemaItems.length > 0) {
+        throw new Error(
+          `PostgreSQL schema is missing required objects: ${missingSchemaItems.join(', ')}`
+        );
+      }
       if (process.env['NODE_ENV'] === 'production') {
         await this.withTimeout(this.postgres.assertProductionRlsReady(), PING_TIMEOUT_MS);
       }

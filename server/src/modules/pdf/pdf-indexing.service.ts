@@ -38,7 +38,7 @@ export class PdfIndexingService {
         id: sourceId,
         userId: source.userId,
         requestedRevision: revision,
-        status: { in: ['queued', 'processing', 'ready'] },
+        status: { in: ['queued', 'processing', 'ready', 'failed'] },
       },
       data: { status: 'processing', failureCode: null, dispatchNeeded: false },
     });

@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { HTTPError } from 'ky';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -387,6 +388,23 @@ describe('DashboardOverview', () => {
     expect(screen.getByText('Node.js')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Retry recent sessions' }));
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('explains dashboard server failures without showing the raw internal error', () => {
+    const error = new HTTPError(
+      new Response(null, { status: 500 }),
+      new Request('http://api.test/api/v1/theory/sessions'),
+      {} as never
+    );
+    error.message = 'Internal server error';
+    renderOverview({
+      theoryStatus: { ...ready(), isError: true, error },
+    });
+
+    expect(screen.getAllByRole('alert')[0]).toHaveTextContent(
+      "Couldn't load recent sessions because the API returned HTTP 500. Check the backend/database and retry."
+    );
+    expect(screen.getAllByRole('alert')[0]).not.toHaveTextContent('Internal server error');
   });
 
   it('offers a retry when coding history is unavailable', async () => {

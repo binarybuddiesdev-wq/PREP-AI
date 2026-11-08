@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { chatWithFailover, getModel, pickProvider, streamWithFailover } from './providers.js';
+import {
+  chatWithFailover,
+  defaultModel,
+  getModel,
+  pickProvider,
+  streamWithFailover,
+} from './providers.js';
 
 async function* chunks(...values: string[]) {
   yield* values;
@@ -175,6 +181,16 @@ describe('chatWithFailover', () => {
         }
       )
     ).resolves.toBe('groq response');
+  });
+});
+
+describe('defaultModel', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('uses a currently available NVIDIA NIM model by default', () => {
+    vi.stubEnv('NVIDIA_MODEL', '');
+
+    expect(defaultModel.nvidia()).toBe('nvidia/nemotron-3.5-bolt-e4b');
   });
 });
 

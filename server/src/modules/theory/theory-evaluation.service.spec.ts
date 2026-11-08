@@ -116,7 +116,7 @@ describe('TheoryEvaluationService', () => {
         aiScore: 8,
         aiFeedback: 'Clear answer.',
         evaluationProvider: 'nvidia',
-        evaluationModel: 'meta/llama-3.1-8b-instruct',
+        evaluationModel: 'nvidia/nemotron-3.5-bolt-e4b',
         evaluationPromptVersion: THEORY_EVALUATOR_PROMPT_VERSION,
         completedAt: expect.any(Date),
       },

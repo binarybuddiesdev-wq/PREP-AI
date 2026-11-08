@@ -1,4 +1,5 @@
 import { PrismaClient } from '../src/generated/postgresql-client/index.js';
+import { balancedParenthesesQuestion } from '../src/modules/coding/coding-question-seeds.js';
 
 const databaseUrl = process.env['POSTGRESQL_URL'];
 if (!databaseUrl) throw new Error('POSTGRESQL_URL is required');
@@ -49,7 +50,12 @@ try {
       codePy: 'def solution(nums, target):\n    # Write your solution here\n    return []',
     },
   });
-  console.info('Seeded the Two Sum coding problem into local PostgreSQL.');
+  await prisma.codingQuestion.upsert({
+    where: { slug: balancedParenthesesQuestion.slug },
+    create: balancedParenthesesQuestion,
+    update: balancedParenthesesQuestion,
+  });
+  console.info('Seeded local Two Sum and balanced-parentheses coding problems into PostgreSQL.');
 } finally {
   await prisma.$disconnect();
 }

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
   ConflictException,
+  Optional,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -40,6 +41,8 @@ import {
   THEORY_ANSWER_EVALUATION_IN_PROGRESS,
 } from '@/common/constants/api.constants.js';
 import { TOPIC_NOT_FOUND } from '@/common/schemas/topics/topics.response.schema.js';
+import { QuestionAssignmentService } from '@/modules/question-bank/question-assignment.service.js';
+import { QuestionBankReplenishmentService } from '@/modules/question-bank/question-bank-replenishment.service.js';
 
 @Injectable()
 export class TheoryService {
@@ -49,7 +52,9 @@ export class TheoryService {
     private readonly redis: RedisService,
     private readonly jobs: JobQueueService,
     private readonly config: ConfigService,
-    @InjectPinoLogger(TheoryService.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(TheoryService.name) private readonly logger: PinoLogger,
+    @Optional() private readonly questionAssignment?: QuestionAssignmentService,
+    @Optional() private readonly questionBank?: QuestionBankReplenishmentService
   ) {}
 
   async getStats(userId: string) {
@@ -313,34 +318,90 @@ export class TheoryService {
       questions = Array.isArray(session.pdfQuestions) ? session.pdfQuestions.slice(0, limit) : [];
     } else if (session.mode === 'topic') {
       if (!session.topicId) throw new BadRequestException(THEORY_TOPIC_ID_REQUIRED);
-      questions = await this.prisma.question.findMany({
+      const candidates = await this.prisma.question.findMany({
         where: {
           topicId: session.topicId,
           difficulty: session.difficulty,
         },
-        take: limit,
-        select: {
-          id: true,
-          question: true,
-          topicId: true,
-          difficulty: true,
-        },
+        select: { id: true },
       });
+      let assignedIds = candidates.map(({ id }) => id);
+      if (this.questionAssignment) {
+        assignedIds = await this.questionAssignment.assignTheoryQuestions(
+          userId,
+          sessionId,
+          `${session.topicId}:${session.difficulty}`,
+          assignedIds,
+          limit
+        );
+      } else {
+        assignedIds = assignedIds.slice(0, limit);
+      }
+      const topic = await this.prisma.topic.findUnique({
+        where: { id: session.topicId },
+        select: { slug: true },
+      });
+      if (topic && this.questionBank) {
+        await this.questionBank
+          .request({ kind: 'theory', topic: topic.slug, difficulty: session.difficulty })
+          .catch((error: unknown) =>
+            this.logger.warn(
+              { sessionId, errorName: error instanceof Error ? error.name : 'UnknownError' },
+              'Could not queue theory question refill'
+            )
+          );
+      }
+      const selected = assignedIds.length
+        ? await this.prisma.question.findMany({
+            where: { id: { in: assignedIds } },
+            select: {
+              id: true,
+              question: true,
+              topicId: true,
+              difficulty: true,
+            },
+          })
+        : [];
+      const selectedById = new Map(selected.map((question) => [question.id, question]));
+      questions = assignedIds.flatMap((id) =>
+        selectedById.has(id) ? [selectedById.get(id)!] : []
+      );
     } else if (session.mode === 'weak') {
       const weakTopicIds = await this.getWeakTopicIds(userId);
-      questions = await this.prisma.question.findMany({
+      const candidates = await this.prisma.question.findMany({
         where: {
           ...(weakTopicIds.length > 0 ? { topicId: { in: weakTopicIds } } : {}),
           difficulty: session.difficulty,
         },
-        take: limit,
-        select: {
-          id: true,
-          question: true,
-          topicId: true,
-          difficulty: true,
-        },
+        select: { id: true },
       });
+      let assignedIds = candidates.map(({ id }) => id);
+      if (this.questionAssignment) {
+        assignedIds = await this.questionAssignment.assignTheoryQuestions(
+          userId,
+          sessionId,
+          `weak:${session.difficulty}`,
+          assignedIds,
+          limit
+        );
+      } else {
+        assignedIds = assignedIds.slice(0, limit);
+      }
+      const selected = assignedIds.length
+        ? await this.prisma.question.findMany({
+            where: { id: { in: assignedIds } },
+            select: {
+              id: true,
+              question: true,
+              topicId: true,
+              difficulty: true,
+            },
+          })
+        : [];
+      const selectedById = new Map(selected.map((question) => [question.id, question]));
+      questions = assignedIds.flatMap((id) =>
+        selectedById.has(id) ? [selectedById.get(id)!] : []
+      );
     } else {
       throw new BadRequestException(THEORY_MODE_NOT_SUPPORTED);
     }

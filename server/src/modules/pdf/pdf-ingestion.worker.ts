@@ -83,6 +83,7 @@ export class PdfIngestionWorker implements OnModuleInit, OnModuleDestroy {
         sourceId: job?.data.sourceId,
         requestId: job?.data.requestId,
         errorName: error.name,
+        errorMessage: safeJobErrorMessage(error.message),
       },
       'PDF background job failed'
     );
@@ -136,3 +137,9 @@ export class PdfIngestionWorker implements OnModuleInit, OnModuleDestroy {
     }
   }
 }
+
+const safeJobErrorMessage = (message: string): string =>
+  message
+    .replace(/https?:\/\/\S+/giu, '[url]')
+    .replace(/Bearer\s+\S+/giu, 'Bearer [redacted]')
+    .slice(0, 250);

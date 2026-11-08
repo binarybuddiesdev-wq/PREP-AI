@@ -162,6 +162,25 @@ describe('useTheoryPracticeSession', () => {
     expect(result.current.phase).toBe('question');
   });
 
+  it('shows a safe and actionable message when the API cannot start a practice session', async () => {
+    const error = new HTTPError(
+      new Response(null, { status: 500 }),
+      new Request('http://api.test/api/v1/theory/session/start'),
+      {} as never
+    );
+    error.message = 'Internal server error';
+    state.startMutation.mockRejectedValueOnce(error);
+    const { result } = renderHook(() => useTheoryPracticeSession());
+
+    await act(async () => {
+      await result.current.start(startBody);
+    });
+
+    expect(result.current.startError).toBe(
+      "Couldn't start this practice session because the API returned HTTP 500. Check the backend/database and retry."
+    );
+  });
+
   it('keeps PDF question generation conflicts in the preparing state', async () => {
     const pendingError = new HTTPError(
       new Response(null, { status: 409 }),

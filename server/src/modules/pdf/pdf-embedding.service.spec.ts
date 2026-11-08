@@ -85,12 +85,11 @@ describe('PdfEmbeddingService', () => {
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({
-            data: [
-              { index: 1, embedding: Array(1024).fill(0.2) },
-              { index: 0, embedding: Array(1024).fill(0.1) },
-            ],
-          }),
+          json: async () => ({ data: [{ index: 0, embedding: Array(1024).fill(0.1) }] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: [{ index: 0, embedding: Array(1024).fill(0.2) }] }),
         })
     );
     vi.stubEnv('NVIDIA_API_KEY', 'test-key');
@@ -120,7 +119,29 @@ describe('PdfEmbeddingService', () => {
       'passage'
     );
     expect(vectors).toHaveLength(33);
+    expect(fetchMock).toHaveBeenCalledTimes(33);
+  });
+
+  it('sends one text per request because the configured provider rejects multi-text batches', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (_url: string, options: { body: string }) => {
+        const input = JSON.parse(options.body).input as string[];
+        if (input.length > 1) return { ok: false };
+        return { ok: true, json: async () => ({ data: [{ embedding: Array(1024).fill(0.1) }] }) };
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('NVIDIA_API_KEY', 'test-key');
+
+    await expect(
+      new PdfEmbeddingService().embed(['first chunk', 'second chunk'], 'passage')
+    ).resolves.toHaveLength(2);
+
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map(([, options]) => JSON.parse(options.body).input)).toEqual([
+      ['first chunk'],
+      ['second chunk'],
+    ]);
   });
 
   it('uses the default NVIDIA endpoint when no endpoint override is configured', async () => {

@@ -144,6 +144,12 @@ describe('PracticePage', () => {
     expect(screen.getByRole('button', { name: 'React' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('uses the available page width for the practice setup layout', () => {
+    renderPracticePage();
+
+    expect(screen.getByRole('main').parentElement).not.toHaveClass('max-w-4xl');
+  });
+
   it('falls back to an available topic when the requested topic no longer exists', async () => {
     renderPracticePage('/practice?topicId=deleted-topic');
 

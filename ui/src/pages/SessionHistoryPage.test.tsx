@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { HTTPError } from 'ky';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -237,6 +238,29 @@ describe('SessionHistoryPage', () => {
     await user.click(screen.getByRole('button', { name: 'Retry history' }));
 
     expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it('shows actionable guidance when the history API returns an internal error', () => {
+    const error = new HTTPError(
+      new Response(null, { status: 500 }),
+      new Request('http://api.test/api/v1/theory/sessions'),
+      {} as never
+    );
+    error.message = 'Internal server error';
+    mocks.useTheorySessionHistoryReader.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isFetching: false,
+      isError: true,
+      error,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "Couldn't load your practice session history because the API returned HTTP 500. Check the backend/database and retry."
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Internal server error');
   });
 
   it('loads real coding sessions only after selecting the Coding tab', async () => {

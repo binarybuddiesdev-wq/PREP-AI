@@ -61,6 +61,8 @@ const expectedRlsPolicies = [
   ['TheorySession', 'theory_session_worker_tenant', 'prepai_worker'],
   ['TheoryAnswer', 'theory_answer_api_tenant', 'prepai_api'],
   ['TheoryAnswer', 'theory_answer_worker_job', 'prepai_worker'],
+  ['QuestionExposure', 'question_exposure_api_tenant', 'prepai_api'],
+  ['QuestionRotation', 'question_rotation_api_tenant', 'prepai_api'],
   ['CodingSession', 'coding_session_api_tenant', 'prepai_api'],
   ['CodingSession', 'coding_session_worker_tenant', 'prepai_worker'],
   ['CodingExecution', 'coding_execution_api_tenant', 'prepai_api'],
@@ -369,6 +371,9 @@ describe('Prisma services', () => {
 
     await expect(service.listQueuedPdfStudySessionIds(25)).resolves.toEqual(['session_1']);
     expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledOnce();
+    expect((prismaMocks.postgresQueryRaw.mock.calls[0]?.[0] as string[]).join('')).toContain(
+      '::integer'
+    );
     await service.onModuleDestroy();
   });
 
@@ -426,6 +431,8 @@ describe('Prisma services', () => {
         [
           'TheorySession',
           'TheoryAnswer',
+          'QuestionExposure',
+          'QuestionRotation',
           'CodingSession',
           'CodingExecution',
           'CodingAnswer',
@@ -463,6 +470,18 @@ describe('Prisma services', () => {
     await expect(service.assertProductionRlsReady()).resolves.toBeUndefined();
 
     expect(prismaMocks.postgresQueryRaw).toHaveBeenCalledTimes(5);
+    expect(prismaMocks.postgresQueryRaw.mock.calls[2]?.flat(Infinity)).toContain(
+      'QuestionExposure'
+    );
+    expect(prismaMocks.postgresQueryRaw.mock.calls[2]?.flat(Infinity)).toContain(
+      'QuestionRotation'
+    );
+    expect(prismaMocks.postgresQueryRaw.mock.calls[3]?.flat(Infinity)).toContain(
+      'question_exposure_api_tenant'
+    );
+    expect(prismaMocks.postgresQueryRaw.mock.calls[3]?.flat(Infinity)).toContain(
+      'question_rotation_api_tenant'
+    );
     await service.onModuleDestroy();
   });
 
@@ -550,6 +569,8 @@ describe('Prisma services', () => {
         [
           'TheorySession',
           'TheoryAnswer',
+          'QuestionExposure',
+          'QuestionRotation',
           'CodingSession',
           'CodingExecution',
           'CodingAnswer',
@@ -604,6 +625,8 @@ describe('Prisma services', () => {
         [
           'TheorySession',
           'TheoryAnswer',
+          'QuestionExposure',
+          'QuestionRotation',
           'CodingSession',
           'CodingExecution',
           'CodingAnswer',
@@ -652,6 +675,8 @@ describe('Prisma services', () => {
         [
           'TheorySession',
           'TheoryAnswer',
+          'QuestionExposure',
+          'QuestionRotation',
           'CodingSession',
           'CodingExecution',
           'CodingAnswer',
@@ -699,6 +724,8 @@ describe('Prisma services', () => {
         [
           'TheorySession',
           'TheoryAnswer',
+          'QuestionExposure',
+          'QuestionRotation',
           'CodingSession',
           'CodingExecution',
           'CodingAnswer',

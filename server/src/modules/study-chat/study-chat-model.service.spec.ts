@@ -193,6 +193,27 @@ describe('StudyChatModelService', () => {
     expect(logger.warn).toHaveBeenCalledOnce();
   });
 
+  it('tries the fallback provider when the primary returns an empty response', async () => {
+    agent.generate
+      .mockResolvedValueOnce({ text: '   ' })
+      .mockResolvedValueOnce({ text: 'Fallback study coach answer' });
+    chatWithFailover.mockImplementationOnce(async (call) => {
+      try {
+        return await call('nvidia');
+      } catch {
+        return call('groq');
+      }
+    });
+
+    await expect(
+      service.generateReply('clerk-user-1', [{ role: 'user', content: 'Explain queues' }])
+    ).resolves.toBe('Fallback study coach answer');
+
+    expect(agent.generate).toHaveBeenCalledTimes(2);
+    expect(agent.generate.mock.calls[0]?.[1]).toMatchObject({ model: 'nvidia' });
+    expect(agent.generate.mock.calls[1]?.[1]).toMatchObject({ model: 'groq' });
+  });
+
   it("does not call the model when the user's daily token budget is exhausted", async () => {
     tokenBudget.reserve.mockResolvedValueOnce({
       allowed: false,

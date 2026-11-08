@@ -41,27 +41,20 @@ describe('PDF API', () => {
     expect(api.get).toHaveBeenCalledWith('pdfs/pdf%2Fsource%201');
   });
 
-  it('uploads one file with an idempotency key and reports byte progress', async () => {
+  it('uploads multipart form data without a streaming progress wrapper', async () => {
     const response = { success: true, message: 'ok', data: source };
     const json = vi.fn().mockResolvedValue(response);
     const post = vi.fn().mockReturnValue({ json });
     const api = { post };
-    const onProgress = vi.fn();
     const file = new File(['pdf-bytes'], 'systems.pdf', { type: 'application/pdf' });
 
-    await expect(uploadPdfSource(api as never, file, 'upload-key-1', onProgress)).resolves.toEqual(
-      response
-    );
+    await expect(uploadPdfSource(api as never, file, 'upload-key-1')).resolves.toEqual(response);
 
     const [path, options] = post.mock.calls[0] as [string, Record<string, unknown>];
     expect(path).toBe('pdfs');
     expect(options.headers).toEqual({ 'Idempotency-Key': 'upload-key-1' });
     expect((options.body as FormData).get('file')).toBe(file);
-    expect(options.onUploadProgress).toEqual(expect.any(Function));
-    (options.onUploadProgress as (progress: { percent: number; transferredBytes: number }) => void)(
-      { percent: 0.5, transferredBytes: 4 }
-    );
-    expect(onProgress).toHaveBeenCalledWith({ percent: 0.5, transferredBytes: 4 });
+    expect(options.onUploadProgress).toBeUndefined();
   });
 
   it('fetches private PDF bytes as a Blob without a storage URL', async () => {

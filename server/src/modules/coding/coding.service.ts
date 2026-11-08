@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
   HttpException,
   HttpStatus,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
@@ -41,6 +42,7 @@ import {
   ListCodingProblemsDto,
   StartCodingSessionDto,
 } from './dto/index.js';
+import { QuestionAssignmentService } from '@/modules/question-bank/question-assignment.service.js';
 
 const CODING_EXECUTION_RATE_LIMIT = 10;
 const CODING_EXECUTION_RATE_WINDOW_SECONDS = 60;
@@ -53,7 +55,8 @@ export class CodingService {
     private readonly redis: RedisService,
     private readonly jobs: JobQueueService,
     private readonly config: ConfigService,
-    @InjectPinoLogger(CodingService.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(CodingService.name) private readonly logger: PinoLogger,
+    @Optional() private readonly questionAssignment?: QuestionAssignmentService
   ) {}
 
   async listProblems(dto: ListCodingProblemsDto, userId: string) {
@@ -99,6 +102,19 @@ export class CodingService {
     try {
       const problem = await pg.codingQuestion.findFirst({
         where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          difficulty: true,
+          topic: true,
+          examples: true,
+          constraints: true,
+          codeJs: true,
+          codeTs: true,
+          codePy: true,
+        },
       });
       if (!problem) throw new NotFoundException('Coding problem not found');
       return problem;
@@ -127,31 +143,75 @@ export class CodingService {
 
     try {
       const existing = await findExistingSession();
-      if (existing) return this.replaySessionStart(existing, dto.problemIds);
+      if (existing) {
+        const replay = this.replaySessionStart(existing, dto.problemIds);
+        return dto.problemIds?.length ? replay : this.assignAutoProblems(replay, userId, pg);
+      }
 
       const selected = dto.problemIds?.length
         ? await pg.codingQuestion.findMany({
             where: { id: { in: dto.problemIds } },
             select: { id: true },
           })
-        : await pg.codingQuestion.findMany({ select: { id: true }, take: 10 });
+        : await pg.codingQuestion.findMany({ select: { id: true }, take: 10_000 });
       const problemIds = selected.map((problem: { id: string }) => problem.id);
       if (dto.problemIds?.length && problemIds.length !== dto.problemIds.length) {
         throw new NotFoundException('One or more coding problems were not found');
       }
       if (problemIds.length === 0) throw new NotFoundException('No coding problems are available');
-      return await this.postgres.withTenantContext(userId, (transaction) =>
-        transaction.codingSession.create({ data: { id: sessionId, userId, problemIds } })
+      const created = await this.postgres.withTenantContext(userId, (transaction) =>
+        transaction.codingSession.create({
+          data: {
+            id: sessionId,
+            userId,
+            problemIds: dto.problemIds?.length
+              ? problemIds
+              : this.questionAssignment
+                ? []
+                : problemIds.slice(0, 10),
+          },
+        })
       );
+      return dto.problemIds?.length
+        ? created
+        : this.assignAutoProblems(created, userId, pg, problemIds);
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       if (this.isUniqueViolation(error)) {
         const winner = await findExistingSession();
-        if (winner) return this.replaySessionStart(winner, dto.problemIds);
+        if (winner) {
+          const replay = this.replaySessionStart(winner, dto.problemIds);
+          return dto.problemIds?.length ? replay : this.assignAutoProblems(replay, userId, pg);
+        }
       }
       if (error instanceof ConflictException) throw error;
       throw this.databaseError(error);
     }
+  }
+
+  private async assignAutoProblems<T extends { id: string; problemIds: string[] }>(
+    session: T,
+    userId: string,
+    pg: PostgresPrismaClient,
+    suppliedCandidates?: string[]
+  ): Promise<T> {
+    if (!this.questionAssignment || session.problemIds.length) return session;
+    const candidates =
+      suppliedCandidates ??
+      (
+        await pg.codingQuestion.findMany({
+          select: { id: true },
+          take: 10_000,
+        })
+      ).map(({ id }) => id);
+    const problemIds = await this.questionAssignment.assignCodingProblems(
+      userId,
+      session.id,
+      'all-coding-topics',
+      candidates,
+      10
+    );
+    return { ...session, problemIds };
   }
 
   private replaySessionStart<T extends { problemIds: string[] }>(
@@ -581,7 +641,10 @@ export class CodingService {
     }
 
     try {
-      const problem = await this.database().codingQuestion.findFirst({ where: { id: problemId } });
+      const problem = await this.database().codingQuestion.findFirst({
+        where: { id: problemId },
+        select: { examples: true },
+      });
       if (!problem) throw new NotFoundException('Coding problem not found');
       return problem;
     } catch (error) {
