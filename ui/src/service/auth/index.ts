@@ -1,5 +1,5 @@
 export { SignedIn, SignedOut } from '@clerk/clerk-react';
-export type { IAuthProviderProps, IAuthSession, IAuthUser } from './auth.types';
+export type { IAuthProfileUpdate, IAuthProviderProps, IAuthSession, IAuthUser } from './auth.types';
 export { AuthProvider } from './AuthProvider';
 export { SignInWidget } from './SignInWidget';
 export { SignUpWidget } from './SignUpWidget';

@@ -7,19 +7,25 @@ import {
 import type { ISettingsProfilePanelProps } from './SettingsProfilePanel.types';
 
 export const SettingsProfilePanel = (props: ISettingsProfilePanelProps) => {
-  const { values, userName, userEmail, isSaving, onChange } = props;
-  const [firstName = 'Not set', ...lastNameParts] = userName?.trim().split(/\s+/) ?? [];
-  const lastName = lastNameParts.join(' ');
+  const { values, firstName, lastName, userEmail, isSaving, onIdentityChange, onChange } = props;
 
-  const identityField = (label: string, value: string, type = 'text') => (
+  const identityField = (
+    label: string,
+    value: string,
+    onValueChange: (value: string) => void,
+    type = 'text',
+    readOnly = false
+  ) => (
     <label className="mb-[1.1rem] space-y-1.5">
       <span className="block text-[0.8rem] font-medium text-[var(--dim)]">{label}</span>
       <input
         aria-label={label}
         className={SETTINGS_INPUT_CLASS_NAME}
-        readOnly
+        disabled={isSaving}
+        readOnly={readOnly}
         type={type}
         value={value}
+        onChange={(event) => onValueChange(event.target.value)}
       />
     </label>
   );
@@ -27,10 +33,16 @@ export const SettingsProfilePanel = (props: ISettingsProfilePanelProps) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 min-[769px]:grid-cols-2 min-[769px]:gap-3">
-        {identityField('First Name', firstName)}
-        {identityField('Last Name', lastName)}
+        {identityField('First Name', firstName, (next) =>
+          onIdentityChange({ firstName: next, lastName })
+        )}
+        {identityField('Last Name', lastName, (next) =>
+          onIdentityChange({ firstName, lastName: next })
+        )}
       </div>
-      <div className="flow-root">{identityField('Email', userEmail || 'Not set', 'email')}</div>
+      <div className="flow-root">
+        {identityField('Email', userEmail || 'Not set', () => {}, 'email', true)}
+      </div>
       <div className="grid grid-cols-1 gap-4 min-[769px]:grid-cols-2 min-[769px]:gap-3">
         <div className="mb-[1.1rem]">
           <SelectField

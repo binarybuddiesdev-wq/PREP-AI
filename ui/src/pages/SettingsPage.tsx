@@ -15,6 +15,7 @@ import {
   useSettingsReader,
   useTheoryStatsReader,
   useUpdateSettingsCommand,
+  useUpdateAuthProfileCommand,
   useToastCommand,
   useUserReader,
 } from '@/logic';
@@ -36,6 +37,7 @@ export const SettingsPage = () => {
   const userQuery = useUserReader();
   const settingsQuery = useSettingsReader();
   const updateSettings = useUpdateSettingsCommand();
+  const updateAuthProfile = useUpdateAuthProfileCommand();
   const toast = useToastCommand();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
     isSettingsTab(requestedTab) ? requestedTab : 'profile'
@@ -53,6 +55,10 @@ export const SettingsPage = () => {
   const subscriptionQuery = useCurrentSubscriptionReader(isPlanTab);
   const paymentCommands = usePaymentCommands();
   const [draft, setDraft] = useState<ISettingsFormValues | null>(null);
+  const [identityDraft, setIdentityDraft] = useState<{
+    firstName: string;
+    lastName: string;
+  } | null>(null);
   const [status, setStatus] = useState<ISettingsSaveStatus | null>(null);
 
   useEffect(() => {
@@ -98,21 +104,46 @@ export const SettingsPage = () => {
   }
 
   const values = draft ?? getSettingsFormValues(settingsQuery.data);
+  const [fallbackFirstName = '', ...fallbackLastName] = userQuery.data.name.trim().split(/\s+/u);
+  const originalIdentity = {
+    firstName: user?.firstName ?? fallbackFirstName,
+    lastName: user?.lastName ?? fallbackLastName.join(' '),
+  };
+  const identity = identityDraft ?? originalIdentity;
+  const isSaving = updateSettings.isPending || updateAuthProfile.isPending;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setStatus(null);
-    updateSettings.mutate(toUpdateSettingsBody(values, settingsQuery.data), {
-      onSuccess: () => {
-        setDraft(null);
-        setStatus(null);
-        toast.success('Settings saved successfully.');
-      },
-      onError: (error) =>
-        setStatus({
-          kind: 'error',
-          message: error.message || 'Settings could not be saved. Please try again.',
-        }),
-    });
+    let identitySaved = false;
+    const hasIdentityChanges =
+      identity.firstName.trim() !== originalIdentity.firstName.trim() ||
+      identity.lastName.trim() !== originalIdentity.lastName.trim();
+    try {
+      if (hasIdentityChanges) {
+        if (!identity.firstName.trim()) throw new Error('First name is required.');
+        await updateAuthProfile.mutateAsync({
+          firstName: identity.firstName.trim(),
+          lastName: identity.lastName.trim(),
+        });
+        identitySaved = true;
+      }
+      if (draft !== null || !hasIdentityChanges) {
+        await updateSettings.mutateAsync(toUpdateSettingsBody(values, settingsQuery.data));
+      }
+      setDraft(null);
+      setIdentityDraft(null);
+      setStatus(null);
+      toast.success('Settings saved successfully.');
+    } catch (error) {
+      const detail =
+        error instanceof Error ? error.message : 'Please check your connection and try again.';
+      setStatus({
+        kind: 'error',
+        message: identitySaved
+          ? `Your name was updated, but the rest of your settings could not be saved: ${detail}`
+          : detail || 'Settings could not be saved. Please try again.',
+      });
+    }
   };
 
   const handleCreateCheckout = (plan: 'monthly' | 'yearly') => {
@@ -202,15 +233,20 @@ export const SettingsPage = () => {
       </header>
       <SettingsFormCard
         values={values}
-        userName={userQuery.data.name}
+        firstName={identity.firstName}
+        lastName={identity.lastName}
         userEmail={user?.email || userQuery.data.email}
-        isSaving={updateSettings.isPending}
+        isSaving={isSaving}
         status={status}
         activeTab={activeTab}
         onActiveTabChange={setActiveTab}
         planPanel={planPanel}
         onChange={(nextValues) => {
           setDraft(nextValues);
+          setStatus(null);
+        }}
+        onIdentityChange={(nextIdentity) => {
+          setIdentityDraft(nextIdentity);
           setStatus(null);
         }}
         onSave={handleSave}

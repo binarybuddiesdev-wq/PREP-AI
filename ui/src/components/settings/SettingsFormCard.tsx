@@ -13,11 +13,13 @@ import { SettingsTabList } from './SettingsTabList';
 export const SettingsFormCard = (props: ISettingsFormCardProps) => {
   const {
     values,
-    userName,
+    firstName,
+    lastName,
     userEmail,
     isSaving,
     status,
     onChange,
+    onIdentityChange,
     onSave,
     onOpenDocuments,
     planPanel,
@@ -47,9 +49,11 @@ export const SettingsFormCard = (props: ISettingsFormCardProps) => {
         return (
           <SettingsProfilePanel
             values={values}
-            userName={userName}
+            firstName={firstName}
+            lastName={lastName}
             userEmail={userEmail}
             isSaving={isSaving}
+            onIdentityChange={onIdentityChange}
             onChange={onChange}
           />
         );

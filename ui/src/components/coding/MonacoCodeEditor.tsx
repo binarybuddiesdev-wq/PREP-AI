@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import EditorWorker from '../../../node_modules/monaco-editor/esm/vs/editor/editor.worker.js?worker';
@@ -21,6 +22,12 @@ const languageId = {
 
 export const MonacoCodeEditor = (props: ICodingEditorProps) => {
   const { language, value, onChange } = props;
+  const layoutEditor = useCallback((editor: monaco.editor.IStandaloneCodeEditor) => {
+    const host = editor.getContainerDomNode().parentElement;
+    if (!host) return;
+    const { width, height } = host.getBoundingClientRect();
+    if (width > 0 && height > 0) editor.layout({ width, height });
+  }, []);
 
   return (
     <Editor
@@ -29,6 +36,7 @@ export const MonacoCodeEditor = (props: ICodingEditorProps) => {
       language={languageId[language]}
       value={value}
       onChange={(nextValue) => onChange(nextValue ?? '')}
+      onMount={layoutEditor}
       theme="vs-dark"
       options={{
         automaticLayout: true,

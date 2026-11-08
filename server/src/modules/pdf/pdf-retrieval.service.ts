@@ -53,10 +53,20 @@ export class PdfRetrievalService {
     );
 
     const threshold = this.config.get<number>('PDF_SIMILARITY_THRESHOLD', 0.15);
-    return rowsBySource
+    const relevantChunks = rowsBySource
       .flat()
       .filter((row) => Number(row.similarity) >= threshold)
-      .sort((left, right) => Number(right.similarity) - Number(left.similarity))
-      .slice(0, MAX_RETRIEVED_CHUNKS);
+      .sort((left, right) => Number(right.similarity) - Number(left.similarity));
+    const bestChunkBySource = new Map<string, (typeof relevantChunks)[number]>();
+    for (const chunk of relevantChunks) {
+      if (!bestChunkBySource.has(chunk.sourceId)) bestChunkBySource.set(chunk.sourceId, chunk);
+    }
+    const sourceCoverage = [...bestChunkBySource.values()].slice(0, MAX_RETRIEVED_CHUNKS);
+    const includedChunkIds = new Set(sourceCoverage.map((chunk) => chunk.id));
+    const selectedChunks = [
+      ...sourceCoverage,
+      ...relevantChunks.filter((chunk) => !includedChunkIds.has(chunk.id)),
+    ].slice(0, MAX_RETRIEVED_CHUNKS);
+    return selectedChunks.sort((left, right) => Number(right.similarity) - Number(left.similarity));
   }
 }

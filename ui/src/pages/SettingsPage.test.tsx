@@ -16,11 +16,15 @@ vi.mock('@clerk/clerk-react', () => ({
     user: {
       id: 'user_test',
       firstName: 'Asha',
+      lastName: 'Rao',
       emailAddresses: [{ emailAddress: 'asha@example.com' }],
       createdAt: new Date('2025-01-01T00:00:00.000Z'),
+      update: clerkUpdateMock,
     },
   }),
 }));
+
+const clerkUpdateMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 describe('SettingsPage', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -110,6 +114,109 @@ describe('SettingsPage', () => {
       notifications: { dailyReminder: true, email: true, timezone: 'Europe/London' },
     });
     expect(await screen.findByRole('status')).toHaveTextContent('Settings saved successfully');
+  });
+
+  it('saves changed first and last names to Clerk and leaves names out of the settings API body', async () => {
+    const patchBodies: unknown[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request) => {
+        if (request.url.endsWith('/users/me')) {
+          return Response.json({ success: true, message: 'ok', data: userProfile });
+        }
+        if (request.method === 'PATCH') {
+          patchBodies.push(await request.clone().json());
+          return Response.json({ success: true, message: 'ok', data: userSettings });
+        }
+        if (request.url.endsWith('/users/settings')) {
+          return Response.json({ success: true, message: 'ok', data: userSettings });
+        }
+        return Response.json({ success: false, message: 'Not found' }, { status: 404 });
+      })
+    );
+    clerkUpdateMock.mockClear();
+    const user = userEvent.setup();
+    renderSettingsPage();
+
+    const firstName = await screen.findByRole('textbox', { name: 'First Name' });
+    await user.clear(firstName);
+    await user.type(firstName, 'Mira');
+    const lastName = screen.getByRole('textbox', { name: 'Last Name' });
+    await user.clear(lastName);
+    await user.type(lastName, 'Shah');
+    const targetCompanies = screen.getByRole('textbox', { name: 'Target companies' });
+    await user.clear(targetCompanies);
+    await user.type(targetCompanies, 'Mira Systems');
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() =>
+      expect(clerkUpdateMock).toHaveBeenCalledWith({ firstName: 'Mira', lastName: 'Shah' })
+    );
+    await waitFor(() => expect(patchBodies).toHaveLength(1));
+    expect(patchBodies[0]).not.toHaveProperty('firstName');
+    expect(patchBodies[0]).not.toHaveProperty('lastName');
+    expect(patchBodies[0]).toMatchObject({ profile: { targetCompanies: 'Mira Systems' } });
+    expect(await screen.findByRole('status')).toHaveTextContent('Settings saved successfully');
+  });
+
+  it('updates only Clerk when the name is the only changed profile field', async () => {
+    const requests: Request[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request) => {
+        requests.push(request);
+        if (request.url.endsWith('/users/me')) {
+          return Response.json({ success: true, message: 'ok', data: userProfile });
+        }
+        return Response.json({ success: true, message: 'ok', data: userSettings });
+      })
+    );
+    clerkUpdateMock.mockClear();
+    const user = userEvent.setup();
+    renderSettingsPage();
+
+    const firstName = await screen.findByRole('textbox', { name: 'First Name' });
+    await user.clear(firstName);
+    await user.type(firstName, 'Mira');
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() =>
+      expect(clerkUpdateMock).toHaveBeenCalledWith({ firstName: 'Mira', lastName: 'Rao' })
+    );
+    expect(requests.some((request) => request.method === 'PATCH')).toBe(false);
+    expect(await screen.findByRole('status')).toHaveTextContent('Settings saved successfully');
+  });
+
+  it('shows a Clerk update error and does not save settings when the identity update fails', async () => {
+    const requests: Request[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request) => {
+        requests.push(request);
+        if (request.url.endsWith('/users/me')) {
+          return Response.json({ success: true, message: 'ok', data: userProfile });
+        }
+        if (request.url.endsWith('/users/settings')) {
+          return Response.json({ success: true, message: 'ok', data: userSettings });
+        }
+        return Response.json({ success: true, message: 'ok', data: userSettings });
+      })
+    );
+    clerkUpdateMock.mockRejectedValueOnce(new Error('Name update was rejected by Clerk'));
+    const user = userEvent.setup();
+    renderSettingsPage();
+
+    const firstName = await screen.findByRole('textbox', { name: 'First Name' });
+    await user.clear(firstName);
+    await user.type(firstName, 'Mira');
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    const alerts = await screen.findAllByRole('alert');
+    expect(
+      alerts.some((alert) => alert.textContent?.includes('Name update was rejected by Clerk'))
+    ).toBe(true);
+    expect(requests.some((request) => request.method === 'PATCH')).toBe(false);
+    expect(screen.getByRole('textbox', { name: 'First Name' })).toHaveValue('Mira');
   });
 
   it('loads plan and usage data only after the Plan tab is opened', async () => {

@@ -2,6 +2,57 @@ import { describe, expect, it, vi } from 'vitest';
 import { PdfRetrievalService } from './pdf-retrieval.service.js';
 
 describe('PdfRetrievalService', () => {
+  it('retains a relevant chunk from every selected PDF before filling by similarity', async () => {
+    const queryRows = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Array.from({ length: 8 }, (_, index) => ({
+          id: `source_1_chunk_${index}`,
+          sourceId: 'source_1',
+          pageStart: index + 1,
+          pageEnd: index + 1,
+          text: `source one ${index}`,
+          similarity: 0.9 - index * 0.01,
+        }))
+      )
+      .mockResolvedValueOnce([
+        {
+          id: 'source_2_chunk_1',
+          sourceId: 'source_2',
+          pageStart: 4,
+          pageEnd: 4,
+          text: 'source two relevant excerpt',
+          similarity: 0.2,
+        },
+      ]);
+    const postgres = {
+      withWorkerPdfContext: vi.fn(
+        async (_owner: string, _source: string, _revision: number, operation) =>
+          operation({ $queryRaw: queryRows })
+      ),
+    };
+    const embeddings = { embed: vi.fn().mockResolvedValue([Array(1024).fill(0.5)]) };
+    const config = { get: vi.fn((_key: string, fallback?: unknown) => fallback) };
+    const service = new PdfRetrievalService(
+      postgres as never,
+      embeddings as never,
+      config as never
+    );
+
+    const chunks = await service.retrieve(
+      'user_1',
+      [
+        { sourceId: 'source_1', revision: 1 },
+        { sourceId: 'source_2', revision: 1 },
+      ],
+      'make interview questions'
+    );
+
+    expect(chunks.map((chunk) => chunk.sourceId)).toContain('source_2');
+    expect(chunks).toHaveLength(8);
+    expect(chunks[0]).toMatchObject({ id: 'source_1_chunk_0', similarity: 0.9 });
+  });
+
   it('keeps semantically relevant source chunks under the default similarity floor', async () => {
     const queryRows = vi
       .fn()

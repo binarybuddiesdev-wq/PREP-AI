@@ -27,11 +27,13 @@ const values: ISettingsFormValues = {
 const renderCard = (overrides: Partial<ISettingsFormCardProps> = {}) => {
   const props: ISettingsFormCardProps = {
     values,
-    userName: 'Asha Rao',
+    firstName: 'Asha',
+    lastName: 'Rao',
     userEmail: 'asha@example.com',
     isSaving: false,
     status: null,
     onChange: vi.fn(),
+    onIdentityChange: vi.fn(),
     onSave: vi.fn(),
     onOpenDocuments: vi.fn(),
     ...overrides,

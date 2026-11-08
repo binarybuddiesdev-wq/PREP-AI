@@ -4,11 +4,13 @@ import type { ReactNode } from 'react';
 
 export interface ISettingsFormCardProps {
   values: ISettingsFormValues;
-  userName: string;
+  firstName: string;
+  lastName: string;
   userEmail: string;
   isSaving: boolean;
   status: ISettingsSaveStatus | null;
   onChange: (values: ISettingsFormValues) => void;
+  onIdentityChange: (profile: { firstName: string; lastName: string }) => void;
   onSave: () => void;
   onOpenDocuments: () => void;
   activeTab?: SettingsTab;
