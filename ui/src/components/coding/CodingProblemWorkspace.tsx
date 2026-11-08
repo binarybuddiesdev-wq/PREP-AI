@@ -304,7 +304,12 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
               </button>
             </header>
             <div className="min-h-0 flex-1">
-              <CodingEditor language={language} value={code} onChange={onCodeChange} />
+              <CodingEditor
+                key={language}
+                language={language}
+                value={code}
+                onChange={onCodeChange}
+              />
             </div>
           </section>
 
@@ -597,7 +602,7 @@ export const CodingProblemWorkspace = (props: ICodingProblemWorkspaceProps) => {
             </div>
           </header>
           <div className="min-h-0 flex-1">
-            <CodingEditor language={language} value={code} onChange={onCodeChange} />
+            <CodingEditor key={language} language={language} value={code} onChange={onCodeChange} />
           </div>
         </div>
       </div>

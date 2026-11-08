@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HTTPError } from 'ky';
+import { useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -34,14 +35,20 @@ vi.mock('@/logic', async (importOriginal) => ({
 }));
 
 vi.mock('@/components/coding/CodingEditor', () => ({
-  CodingEditor: (props: { language: string; value: string; onChange: (value: string) => void }) => (
-    <textarea
-      aria-label="Code editor"
-      data-language={props.language}
-      value={props.value}
-      onChange={(event) => props.onChange(event.currentTarget.value)}
-    />
-  ),
+  CodingEditor: (props: { language: string; value: string; onChange: (value: string) => void }) => {
+    const [value, setValue] = useState(props.value);
+    return (
+      <textarea
+        aria-label="Code editor"
+        data-language={props.language}
+        value={value}
+        onChange={(event) => {
+          setValue(event.currentTarget.value);
+          props.onChange(event.currentTarget.value);
+        }}
+      />
+    );
+  },
 }));
 
 const summary: ICodingProblemSummary = {
@@ -219,6 +226,24 @@ describe('coding pages', () => {
     );
     expect(screen.getByRole('textbox', { name: 'Code editor' })).toHaveValue(detail.codePy);
     expect(screen.getByText('twoSum.py')).toBeInTheDocument();
+
+    await user.clear(screen.getByRole('textbox', { name: 'Code editor' }));
+    await user.type(
+      screen.getByRole('textbox', { name: 'Code editor' }),
+      'def solution(): return 1'
+    );
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Programming language' }),
+      'javascript'
+    );
+    expect(screen.getByRole('textbox', { name: 'Code editor' })).toHaveValue(detail.codeJs);
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Programming language' }),
+      'python'
+    );
+    expect(screen.getByRole('textbox', { name: 'Code editor' })).toHaveValue(
+      'def solution(): return 1'
+    );
   });
 
   it('starts a session only when Run is pressed and sends the current code snapshot', async () => {
