@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PdfRetrievalService } from './pdf-retrieval.service.js';
 
 describe('PdfRetrievalService', () => {
-  it('filters by selected owner revisions and applies the configured similarity floor', async () => {
+  it('keeps semantically relevant source chunks under the default similarity floor', async () => {
     const queryRows = vi
       .fn()
       .mockResolvedValueOnce([
@@ -12,7 +12,15 @@ describe('PdfRetrievalService', () => {
           pageStart: 2,
           pageEnd: 2,
           text: 'strong',
-          similarity: 0.81,
+          similarity: 0.316,
+        },
+        {
+          id: 'chunk_below_floor',
+          sourceId: 'source_1',
+          pageStart: 3,
+          pageEnd: 3,
+          text: 'unrelated',
+          similarity: 0.14,
         },
       ])
       .mockResolvedValueOnce([
@@ -21,8 +29,8 @@ describe('PdfRetrievalService', () => {
           sourceId: 'source_2',
           pageStart: 4,
           pageEnd: 4,
-          text: 'weak',
-          similarity: 0.69,
+          text: 'relevant',
+          similarity: 0.163,
         },
       ]);
     const postgres = {
@@ -55,7 +63,15 @@ describe('PdfRetrievalService', () => {
         pageStart: 2,
         pageEnd: 2,
         text: 'strong',
-        similarity: 0.81,
+        similarity: 0.316,
+      },
+      {
+        id: 'chunk_2',
+        sourceId: 'source_2',
+        pageStart: 4,
+        pageEnd: 4,
+        text: 'relevant',
+        similarity: 0.163,
       },
     ]);
     expect(embeddings.embed).toHaveBeenCalledWith(['make practice questions'], 'query');

@@ -45,5 +45,6 @@ export const useTheorySessionQuestionsReader = (
       isPdfStudy && isPdfQuestionGenerationPending(query.state.error)
         ? PDF_QUESTION_POLL_INTERVAL_MS
         : false,
+    refetchIntervalInBackground: isPdfStudy,
   });
 };

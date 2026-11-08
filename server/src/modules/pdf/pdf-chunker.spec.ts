@@ -19,6 +19,14 @@ describe('chunkPdfPages', () => {
     ]);
   });
 
+  it('removes embedded NUL characters from chunks stored as PostgreSQL text', () => {
+    const chunks = chunkPdfPages([{ page: 1, text: 'First\u0000 page material' }]);
+
+    expect(chunks).toEqual([
+      { pageStart: 1, pageEnd: 1, chunkIndex: 0, text: 'First page material' },
+    ]);
+  });
+
   it('drops blank pages and rejects invalid chunk settings', () => {
     expect(chunkPdfPages([{ page: 1, text: '  \n\t ' }])).toEqual([]);
     expect(() => chunkPdfPages([], { size: 0, overlap: 0 })).toThrow(

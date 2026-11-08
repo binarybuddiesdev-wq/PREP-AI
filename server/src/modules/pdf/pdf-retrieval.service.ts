@@ -52,7 +52,7 @@ export class PdfRetrievalService {
       )
     );
 
-    const threshold = this.config.get<number>('PDF_SIMILARITY_THRESHOLD', 0.7);
+    const threshold = this.config.get<number>('PDF_SIMILARITY_THRESHOLD', 0.15);
     return rowsBySource
       .flat()
       .filter((row) => Number(row.similarity) >= threshold)

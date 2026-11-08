@@ -62,7 +62,7 @@ export const envSchema = z
       .optional()
       .default(50 * 1024 * 1024),
     PDF_DAILY_UPLOADS_PER_USER: z.coerce.number().int().positive().optional().default(9),
-    PDF_SIMILARITY_THRESHOLD: z.coerce.number().min(0).max(1).optional().default(0.7),
+    PDF_SIMILARITY_THRESHOLD: z.coerce.number().min(0).max(1).optional().default(0.15),
     AI_DAILY_TOKENS_FREE: z.coerce.number().int().positive().optional().default(400_000),
     AI_DAILY_TOKENS_PREMIUM: z.coerce.number().int().positive().optional().default(2_000_000),
     // Force a specific provider: undefined = auto-failover (NVIDIA first, Groq fallback),

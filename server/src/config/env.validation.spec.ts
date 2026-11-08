@@ -25,6 +25,7 @@ describe('background worker environment validation', () => {
     expect(result.PDF_MAX_FILES_PER_USER).toBe(10);
     expect(result.PDF_DAILY_UPLOADS_PER_USER).toBe(9);
     expect(result.PDF_MAX_STORAGE_BYTES_PER_USER).toBe(50 * 1024 * 1024);
+    expect(result.PDF_SIMILARITY_THRESHOLD).toBe(0.15);
   });
 
   it('allows the API process to disable its worker', () => {

@@ -120,12 +120,19 @@ describe('theory practice readers', () => {
     vi.mocked(getTheorySessionQuestions)
       .mockRejectedValueOnce(pendingError)
       .mockResolvedValueOnce(envelope([]));
-    const { Wrapper } = createWrapper();
+    const { Wrapper, queryClient } = createWrapper();
 
     const { result } = renderHook(() => useTheorySessionQuestionsReader('session-one', 10, true), {
       wrapper: Wrapper,
     });
 
+    const sessionQuestionsQuery = queryClient.getQueryCache().find({
+      queryKey: ['prepai', 'theory', 'user-one', 'session', 'session-one', 'questions', 10],
+    });
+    expect(
+      (sessionQuestionsQuery?.options as { refetchIntervalInBackground?: boolean } | undefined)
+        ?.refetchIntervalInBackground
+    ).toBe(true);
     await waitFor(() => expect(result.current.error).toBe(pendingError));
     await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 3000 });
     expect(getTheorySessionQuestions).toHaveBeenCalledTimes(2);

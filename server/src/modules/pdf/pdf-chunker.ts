@@ -40,7 +40,12 @@ export function chunkPdfPages(
   const step = options.size - options.overlap;
 
   for (const page of pages) {
-    const tokens = page.text.trim().split(/\s+/u).filter(Boolean);
+    const tokens = page.text
+      .split(String.fromCharCode(0))
+      .join(' ')
+      .trim()
+      .split(/\s+/u)
+      .filter(Boolean);
     if (tokens.length === 0) continue;
 
     for (let offset = 0; offset < tokens.length; offset += step) {

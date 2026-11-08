@@ -43,7 +43,10 @@ export class PdfEmbeddingService {
         throw new Error('PDF embedding provider is unavailable');
       });
 
-      if (!response.ok) throw new Error('PDF embedding provider rejected the request');
+      if (!response.ok) {
+        const status = Number.isInteger(response.status) ? ` (HTTP ${response.status})` : '';
+        throw new Error(`PDF embedding provider rejected the request${status}`);
+      }
       const payload = (await response.json().catch(() => null)) as {
         data?: Array<{ index?: number; embedding?: unknown }>;
       } | null;

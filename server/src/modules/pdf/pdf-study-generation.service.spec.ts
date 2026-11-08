@@ -243,10 +243,28 @@ describe('PdfStudyGenerationService', () => {
     await existing.service.markFailed('session_1');
     expect(existing.transaction.theorySession.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'session_1', userId: 'user_1', mode: 'pdf' },
+        where: {
+          id: 'session_1',
+          userId: 'user_1',
+          mode: 'pdf',
+          pdfGenerationStatus: { in: ['queued', 'running'] },
+        },
         data: { pdfGenerationStatus: 'failed', pdfGenerationError: 'question_generation_failed' },
       })
     );
+  });
+
+  it('does not mark a session failed after questions were already prepared', async () => {
+    const completed = setup();
+    completed.transaction.theorySession.findUnique.mockResolvedValue({
+      ...completed.session,
+      pdfGenerationStatus: 'ready',
+      pdfQuestions: [{ id: 'question_1' }],
+    });
+
+    await completed.service.markFailed('session_1');
+
+    expect(completed.transaction.theorySession.updateMany).not.toHaveBeenCalled();
   });
 
   it('does not update a session if the trusted owner changes between reads', async () => {

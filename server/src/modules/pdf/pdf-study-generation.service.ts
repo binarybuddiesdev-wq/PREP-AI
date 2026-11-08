@@ -130,12 +130,23 @@ export class PdfStudyGenerationService {
   }
 
   async markFailed(sessionId: string): Promise<void> {
-    const { ownerId } = await this.loadSession(sessionId);
-    if (!ownerId) return;
-    await this.updateSession(sessionId, ownerId, {
-      pdfGenerationStatus: 'failed',
-      pdfGenerationError: 'question_generation_failed',
-    });
+    const { ownerId, session } = await this.loadSession(sessionId);
+    if (
+      !ownerId ||
+      !session ||
+      !['queued', 'running'].includes(session.pdfGenerationStatus ?? '')
+    ) {
+      return;
+    }
+    await this.updateSession(
+      sessionId,
+      ownerId,
+      {
+        pdfGenerationStatus: 'failed',
+        pdfGenerationError: 'question_generation_failed',
+      },
+      ['queued', 'running']
+    );
   }
 
   private async loadSession(sessionId: string) {
@@ -153,7 +164,12 @@ export class PdfStudyGenerationService {
     });
   }
 
-  private async updateSession(sessionId: string, ownerId: string, data: Record<string, unknown>) {
+  private async updateSession(
+    sessionId: string,
+    ownerId: string,
+    data: Record<string, unknown>,
+    expectedStatuses?: string[]
+  ) {
     const updated = await this.postgres.withWorkerJobContext(sessionId, async (transaction) => {
       const [owner] = await transaction.$queryRaw<Array<{ owner_id: string }>>`
         SELECT owner_id FROM public.prepai_get_pdf_study_session_owner(${sessionId})
@@ -162,11 +178,18 @@ export class PdfStudyGenerationService {
       await this.postgres.setTenantContext(transaction, ownerId);
       await this.postgres.setWorkerSessionContext(transaction, sessionId);
       return transaction.theorySession.updateMany({
-        where: { id: sessionId, userId: ownerId, mode: 'pdf' },
+        where: {
+          id: sessionId,
+          userId: ownerId,
+          mode: 'pdf',
+          ...(expectedStatuses ? { pdfGenerationStatus: { in: expectedStatuses } } : {}),
+        },
         data,
       });
     });
-    if (!updated.count) throw new NotFoundException('PDF study session not found');
+    if (!updated.count && !expectedStatuses) {
+      throw new NotFoundException('PDF study session not found');
+    }
   }
 }
 

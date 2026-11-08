@@ -74,6 +74,15 @@ describe('PdfEmbeddingService', () => {
     );
   });
 
+  it('preserves an HTTP rejection status so worker logs identify provider rate limits', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429 }));
+    vi.stubEnv('NVIDIA_API_KEY', 'test-key');
+
+    await expect(new PdfEmbeddingService().embed(['text'], 'passage')).rejects.toThrow(
+      'PDF embedding provider rejected the request (HTTP 429)'
+    );
+  });
+
   it('rejects non-finite values and orders provider vectors by their response indices', async () => {
     vi.stubGlobal(
       'fetch',

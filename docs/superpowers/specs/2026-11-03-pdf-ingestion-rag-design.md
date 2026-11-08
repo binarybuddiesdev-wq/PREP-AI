@@ -30,8 +30,11 @@ they call storage, parsing, embedding, or language-model providers.
   covered by `server/prisma/rls/002-pdf-rag.sql`; the disposable restricted-role
   test harness applies and exercises that policy.
 - Chunk size/overlap use whitespace-separated pieces, not model-token counts.
-  Top 8 and the 0.7 similarity floor are configurable initial values, not
-  retrieval-quality-validated thresholds.
+  Top 8 is configurable. The initial 0.7 similarity floor rejected all matches
+  in a real selected-PDF session (the strongest observed cosine similarity was
+  0.316); the configurable default is now 0.15 so those source chunks are
+  eligible. This is an operational baseline, not a relevance-validated
+  threshold; calibrate against a labeled PDF query set before changing it.
 
 ## Goals
 
@@ -196,9 +199,9 @@ processing, ready/failed) for v1; avoid exposing raw parser/provider errors.
    model, and search only selected active revisions. Always filter by
    `ownerId`, `sourceId`, and revision in SQL in addition to application
    ownership checks and RLS context.
-3. Start with top 8 by cosine distance and evaluate the existing 0.7 similarity
+3. Retrieve top 8 by cosine distance using the calibrated initial 0.15 similarity
    floor (`cosine similarity = 1 - cosine distance`). Keep the threshold
-   configurable and calibrate it against an offline labeled PDF query set;
+   configurable and evaluate it against an offline labeled PDF query set;
    similarity scores are not universally comparable across model revisions.
    Use the ADR-0003 IVFFlat index only after enough representative rows exist
    and recall/latency are measured; exact filtered search is acceptable for
