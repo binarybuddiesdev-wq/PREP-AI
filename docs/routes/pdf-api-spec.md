@@ -14,8 +14,10 @@ upload, or indexing job. Reusing the key with another file or filename returns
 `409 Conflict`. After a failed upload, use a new key to start a separate
 operation. The upload must have a `.pdf` filename,
 `application/pdf` MIME type, and a valid `%PDF-` signature. Defaults are 10
-MiB, 100 pages, five active files / 50 MiB per account, and three uploads per
-UTC day. Limits can be adjusted with `PDF_*` environment settings.
+MiB and 400 pages per file, ten active files / 50 MiB per account, and nine
+uploads per UTC day. These defaults accommodate the nine PDFs in the
+`binarybuddiesdev-wq/interview-prep` repository (about 19 MiB total; the largest
+is 384 pages). Limits can be adjusted with `PDF_*` environment settings.
 
 Selectable text is required. Scanned/image-only PDFs are not OCR-processed and
 are rejected with an explanation. The API parses the PDF before storage, then

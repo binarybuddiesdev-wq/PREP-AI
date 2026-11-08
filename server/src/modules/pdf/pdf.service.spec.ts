@@ -199,7 +199,7 @@ describe('PdfService', () => {
     prisma.pdfSource.findFirst
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(uploadSource(buffer));
-    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(5).fill({ byteSize: 1 }));
+    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(10).fill({ byteSize: 1 }));
 
     await expect(
       upload(buffer, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
@@ -218,7 +218,7 @@ describe('PdfService', () => {
     prisma.pdfSource.findFirst
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(uploadSource(original));
-    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(5).fill({ byteSize: 1 }));
+    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(10).fill({ byteSize: 1 }));
 
     await expect(
       upload(changed, 'notes.pdf', 'application/pdf', 'user_1', 'retry-key')
@@ -277,7 +277,7 @@ describe('PdfService', () => {
   });
 
   it('enforces file-count and storage-byte quotas before reserving daily uploads', async () => {
-    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(5).fill({ byteSize: 1 }));
+    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(10).fill({ byteSize: 1 }));
     await expect(
       upload(Buffer.from('%PDF-1'), 'a.pdf', 'application/pdf', 'u')
     ).rejects.toBeInstanceOf(ConflictException);
@@ -286,6 +286,40 @@ describe('PdfService', () => {
       'PDF storage limit reached'
     );
     expect(redis.reserveQuota).not.toHaveBeenCalled();
+  });
+
+  it('accepts the ninth repository PDF within the default page and daily upload limits', async () => {
+    const buffer = Buffer.from('%PDF-1.7\nbody');
+    const source = {
+      id: 'source_nine',
+      userId: 'user_1',
+      displayName: 'notes.pdf',
+      byteSize: buffer.length,
+      contentHash: createHash('sha256').update(buffer).digest('hex'),
+      assetId: 'private-asset',
+      pageCount: 384,
+      status: 'queued',
+      activeRevision: 0,
+      requestedRevision: 1,
+      failureCode: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    prisma.pdfSource.findMany.mockResolvedValueOnce(Array(8).fill({ byteSize: 1 }));
+    prisma.pdfSource.create.mockResolvedValue({ ...source, status: 'uploading', assetId: null });
+    prisma.pdfSource.update.mockResolvedValue(source);
+
+    await expect(upload(buffer, 'notes.pdf', 'application/pdf', 'user_1')).resolves.toMatchObject({
+      pageCount: 384,
+      status: 'queued',
+    });
+
+    expect(extractor.extract).toHaveBeenCalledWith(buffer, 400, 1_000_000);
+    expect(redis.reserveQuota).toHaveBeenCalledWith(
+      expect.stringMatching(/^quota:user_1:\d{4}-\d{2}-\d{2}:pdf_uploads$/u),
+      9,
+      expect.any(Number)
+    );
   });
 
   it('rejects daily quota exhaustion and maps Redis failures to service unavailable', async () => {

@@ -30,7 +30,7 @@ Prepare these fixtures where the flow needs them:
 
 - A fresh Clerk test user for sign-up/onboarding and an existing user for returning-user behavior. Use a second account for ownership/isolation checks.
 - An account with available practice, coding, AI review, and AI-token quotas. For quota-bound checks, use an approved test configuration or wait for reset; do not silently reset or bypass the production quota.
-- A small, valid, selectable-text PDF under 10 MB and 100 pages, with known content on multiple pages. Add separate invalid fixtures: a non-PDF, corrupt PDF, encrypted PDF, scanned/image-only PDF, file over 10 MB, and PDF over 100 pages.
+- A small, valid, selectable-text PDF under 10 MB and 400 pages, with known content on multiple pages. Add separate invalid fixtures: a non-PDF, corrupt PDF, encrypted PDF, scanned/image-only PDF, file over 10 MB, and PDF over 400 pages.
 - A coding problem with known expected examples, plus working solutions for each advertised language (JavaScript, TypeScript, Python) and deliberately failing/invalid solutions.
 - Test-mode credentials for Clerk, NVIDIA/Groq, Cloudinary, Razorpay, email, and Piston only where that scenario needs them. Missing credentials mean **Blocked**, not Pass.
 

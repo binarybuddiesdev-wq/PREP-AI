@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Never expose storage URLs, Cloudinary asset IDs, extracted text, or embeddings to the browser.
-- Upload one `application/pdf` file per request with an idempotency key; defaults are 10 MiB, 100 pages, five active files / 50 MiB per account, and three uploads per UTC day.
+- Upload one `application/pdf` file per request with an idempotency key; defaults are 10 MiB, 400 pages, ten active files / 50 MiB per account, and nine uploads per UTC day.
 - PDF Study selects one to five unique ready source IDs and uses the existing theory session API.
 - Scanned/image-only PDFs are rejected; do not add OCR or fake/sample documents.
 - Use existing dependencies and the existing seven-layer UI architecture.

@@ -52,7 +52,7 @@ describe('PdfIndexingService', () => {
     await service.ingest('source_1', 1);
 
     expect(storage.download).toHaveBeenCalledWith('private-asset', 10 * 1024 * 1024);
-    expect(extractor.extract).toHaveBeenCalledWith(expect.any(Buffer), 100, 1_000_000);
+    expect(extractor.extract).toHaveBeenCalledWith(expect.any(Buffer), 400, 1_000_000);
     expect(embeddings.embed).toHaveBeenCalledWith(['chunk text'], 'passage');
     expect(postgres.withWorkerPdfContext).toHaveBeenCalledWith(
       'user_1',

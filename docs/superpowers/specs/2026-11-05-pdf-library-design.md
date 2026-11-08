@@ -24,7 +24,7 @@ Port the document upload, library, and PDF Study flows from `prepai-ui.html` int
 
 ## Backend and product constraints
 
-- Upload is one multipart `file` request per file to `POST /api/v1/pdfs`, with `Idempotency-Key`; the server accepts only real PDFs with selectable text, up to 10 MiB and 100 pages by default.
+- Upload is one multipart `file` request per file to `POST /api/v1/pdfs`, with `Idempotency-Key`; the server accepts only real PDFs with selectable text, up to 10 MiB and 400 pages by default. Defaults allow ten active documents / 50 MiB per account and nine uploads per UTC day.
 - Upload response is queued. The server source API exposes ID, display name, byte size, page count, status, active revision, failure code, and timestamps. Poll while queued/processing; stop at ready/failed/deleting.
 - Reusing an upload key is valid only for the exact same filename and bytes. A distinct file requires a new key. Reindex is idempotent with a key; delete is naturally retry-safe.
 - PDF Study uses `POST /api/v1/theory/session` with `mode: "pdf"` and one to five unique ready source IDs. The server owns validation and quota decisions.

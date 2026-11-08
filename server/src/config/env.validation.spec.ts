@@ -18,6 +18,15 @@ describe('background worker environment validation', () => {
     expect(result.JOBS_WORKER_ENABLED).toBe(true);
   });
 
+  it('allows the complete repository PDF set within the default Library quotas', () => {
+    const result = envSchema.parse({ NODE_ENV: 'test' });
+
+    expect(result.PDF_MAX_PAGES).toBe(400);
+    expect(result.PDF_MAX_FILES_PER_USER).toBe(10);
+    expect(result.PDF_DAILY_UPLOADS_PER_USER).toBe(9);
+    expect(result.PDF_MAX_STORAGE_BYTES_PER_USER).toBe(50 * 1024 * 1024);
+  });
+
   it('allows the API process to disable its worker', () => {
     const result = envSchema.parse({ NODE_ENV: 'test', JOBS_WORKER_ENABLED: 'false' });
 

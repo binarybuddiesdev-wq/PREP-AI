@@ -76,7 +76,7 @@ export class PdfService {
     const existing = await this.findMatchingUpload(sourceId, userId, fingerprint);
     if (existing) return existing;
 
-    const maxPages = this.config.get<number>('PDF_MAX_PAGES', 100);
+    const maxPages = this.config.get<number>('PDF_MAX_PAGES', 400);
     let extraction;
     try {
       extraction = await this.extractor.extract(
@@ -116,7 +116,7 @@ export class PdfService {
     try {
       const quota = await this.redis.reserveQuota(
         quotaKey,
-        this.config.get<number>('PDF_DAILY_UPLOADS_PER_USER', 3),
+        this.config.get<number>('PDF_DAILY_UPLOADS_PER_USER', 9),
         this.secondsUntilUtcMidnight()
       );
       if (!quota.allowed) throw new ConflictException('Daily PDF upload limit reached');
@@ -463,7 +463,7 @@ export class PdfService {
       where: { userId, status: { in: ACTIVE_STATUSES } },
       select: { byteSize: true },
     });
-    if (sources.length >= this.config.get<number>('PDF_MAX_FILES_PER_USER', 5)) {
+    if (sources.length >= this.config.get<number>('PDF_MAX_FILES_PER_USER', 10)) {
       throw new ConflictException('PDF file limit reached');
     }
     const currentBytes = sources.reduce((total, source) => total + source.byteSize, 0);

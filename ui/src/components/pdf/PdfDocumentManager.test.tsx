@@ -65,6 +65,16 @@ describe('PdfDocumentManager', () => {
     expect(screen.getByText('ready.pdf')).toHaveClass('text-[var(--text)]');
   });
 
+  it('shows the updated per-file page limit for the selected repository documents', () => {
+    renderManager();
+
+    expect(
+      screen.getByText(
+        'PDF with selectable text, up to 10 MB and 400 pages. One document per upload.'
+      )
+    ).toBeInTheDocument();
+  });
+
   it('uses theme-aware surfaces and text for empty and loading document states', () => {
     const { rerender } = renderManager({ sources: [] });
 

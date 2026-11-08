@@ -48,7 +48,7 @@ export class PdfIndexingService {
     const buffer = await this.storage.download(source.assetId, maxBytes);
     const extraction = await this.extractor.extract(
       buffer,
-      this.config.get<number>('PDF_MAX_PAGES', 100),
+      this.config.get<number>('PDF_MAX_PAGES', 400),
       this.config.get<number>('PDF_MAX_EXTRACTED_CHARS', 1_000_000)
     );
     const chunks = chunkPdfPages(extraction.pages, {

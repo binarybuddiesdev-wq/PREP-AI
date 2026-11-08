@@ -50,18 +50,18 @@ export const envSchema = z
       .positive()
       .optional()
       .default(10 * 1024 * 1024),
-    PDF_MAX_PAGES: z.coerce.number().int().positive().optional().default(100),
+    PDF_MAX_PAGES: z.coerce.number().int().positive().optional().default(400),
     PDF_MAX_EXTRACTED_CHARS: z.coerce.number().int().positive().optional().default(1_000_000),
     PDF_CHUNK_SIZE: z.coerce.number().int().positive().optional().default(512),
     PDF_CHUNK_OVERLAP: z.coerce.number().int().nonnegative().optional().default(64),
-    PDF_MAX_FILES_PER_USER: z.coerce.number().int().positive().optional().default(5),
+    PDF_MAX_FILES_PER_USER: z.coerce.number().int().positive().optional().default(10),
     PDF_MAX_STORAGE_BYTES_PER_USER: z.coerce
       .number()
       .int()
       .positive()
       .optional()
       .default(50 * 1024 * 1024),
-    PDF_DAILY_UPLOADS_PER_USER: z.coerce.number().int().positive().optional().default(3),
+    PDF_DAILY_UPLOADS_PER_USER: z.coerce.number().int().positive().optional().default(9),
     PDF_SIMILARITY_THRESHOLD: z.coerce.number().min(0).max(1).optional().default(0.7),
     AI_DAILY_TOKENS_FREE: z.coerce.number().int().positive().optional().default(400_000),
     AI_DAILY_TOKENS_PREMIUM: z.coerce.number().int().positive().optional().default(2_000_000),

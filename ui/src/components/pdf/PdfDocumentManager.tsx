@@ -134,7 +134,7 @@ export const PdfDocumentManager = (props: IPdfDocumentManagerProps) => {
             </button>
           </p>
           <p className="mt-1 text-xs text-[var(--dim)]">
-            PDF with selectable text, up to 10 MB and 100 pages. One document per upload.
+            PDF with selectable text, up to 10 MB and 400 pages. One document per upload.
           </p>
         </div>
 
