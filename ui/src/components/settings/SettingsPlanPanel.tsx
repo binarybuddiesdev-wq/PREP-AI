@@ -327,11 +327,6 @@ export const SettingsPlanPanel = (props: ISettingsPlanPanelProps) => {
               'Upgrade to Premium'
             )}
           </button>
-          {billing.createErrorMessage && (
-            <p role="alert" className="text-xs leading-5 text-[var(--danger-strong)]">
-              {billing.createErrorMessage}
-            </p>
-          )}
         </section>
       )}
     </section>

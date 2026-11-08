@@ -121,7 +121,19 @@ export const SettingsPage = () => {
         ? checkoutRequest
         : { plan, idempotencyKey: crypto.randomUUID() };
     setCheckoutRequest(request);
-    paymentCommands.create.mutate({ body: { plan }, idempotencyKey: request.idempotencyKey });
+    paymentCommands.create.mutate(
+      { body: { plan }, idempotencyKey: request.idempotencyKey },
+      {
+        onSuccess: () =>
+          toast.success('Your secure checkout link is ready. Continue to Razorpay to finish.'),
+      }
+    );
+  };
+
+  const handleCancelSubscription = () => {
+    paymentCommands.cancel.mutate(undefined, {
+      onSuccess: () => toast.success('Your subscription cancellation request was submitted.'),
+    });
   };
 
   const handleDeletePdfSource = (pdfId: string) => {
@@ -140,7 +152,6 @@ export const SettingsPage = () => {
       { pdfId },
       {
         onSuccess: () => toast.success('PDF source removed.'),
-        onError: (error) => toast.error(error.message || 'PDF source could not be removed.'),
       }
     );
   };
@@ -170,9 +181,6 @@ export const SettingsPage = () => {
         errorMessage: subscriptionQuery.isError
           ? planErrorMessage(subscriptionQuery.error, 'Subscription details could not be loaded.')
           : null,
-        createErrorMessage: paymentCommands.create.isError
-          ? planErrorMessage(paymentCommands.create.error, 'Checkout could not be started.')
-          : null,
         createdSubscription: paymentCommands.create.data ?? null,
         isCreating: paymentCommands.create.isPending,
         cancelErrorMessage: paymentCommands.cancel.isError
@@ -181,7 +189,7 @@ export const SettingsPage = () => {
         isCancelling: paymentCommands.cancel.isPending,
         onRetry: () => void subscriptionQuery.refetch(),
         onCreateCheckout: handleCreateCheckout,
-        onCancelSubscription: () => paymentCommands.cancel.mutate(),
+        onCancelSubscription: handleCancelSubscription,
       }}
     />
   );

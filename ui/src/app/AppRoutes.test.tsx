@@ -114,6 +114,20 @@ describe('AppRoutes', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('shows a helpful not-found page instead of redirecting unknown paths to sign-in', async () => {
+    renderWithProviders(
+      <>
+        <AppRoutes />
+        <CurrentPath />
+      </>,
+      ['/missing-page']
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Return home' })).toHaveAttribute('href', '/');
+    expect(screen.getByLabelText('Current route')).toHaveTextContent('/missing-page');
+  });
+
   it('redirects signed-in users from the root route to their dashboard', async () => {
     authenticationState.isSignedIn = true;
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);

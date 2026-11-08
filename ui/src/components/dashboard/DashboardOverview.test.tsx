@@ -402,7 +402,7 @@ describe('DashboardOverview', () => {
     });
 
     expect(screen.getAllByRole('alert')[0]).toHaveTextContent(
-      "Couldn't load recent sessions because the API returned HTTP 500. Check the backend/database and retry."
+      "Couldn't load recent sessions because the server encountered a problem (HTTP 500). Please try again. If it continues, contact support."
     );
     expect(screen.getAllByRole('alert')[0]).not.toHaveTextContent('Internal server error');
   });

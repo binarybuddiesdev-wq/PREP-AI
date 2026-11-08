@@ -40,7 +40,6 @@ const makeProps = (overrides: Partial<ISettingsPlanPanelProps> = {}): ISettingsP
     subscription: null,
     isLoading: false,
     errorMessage: null,
-    createErrorMessage: null,
     createdSubscription: null,
     isCreating: false,
     cancelErrorMessage: null,

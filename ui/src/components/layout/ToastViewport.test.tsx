@@ -33,6 +33,18 @@ describe('ToastViewport', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Could not save settings.');
   });
 
+  it('announces warnings with the shared warning toast treatment', () => {
+    render(
+      <ToastViewport
+        toasts={[{ id: 'toast-warning', kind: 'warning', message: 'Check your connection.' }]}
+        theme="dark"
+        onDismiss={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Check your connection.');
+  });
+
   it('dismisses a toast automatically after its display window', () => {
     vi.useFakeTimers();
     const onDismiss = vi.fn();

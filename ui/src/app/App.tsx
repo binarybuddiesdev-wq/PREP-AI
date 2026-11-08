@@ -4,6 +4,7 @@ import { IS_CLERK_CONFIGURATION_VALID } from '@/core';
 import { ConfigurationErrorScreen } from '@/components/layout';
 import { AppErrorBoundary } from './AppErrorBoundary';
 import { AppToastViewport } from './AppToastViewport';
+import { AppNetworkStatusNotifications } from './AppNetworkStatusNotifications';
 
 export const App = () => {
   if (!IS_CLERK_CONFIGURATION_VALID) {
@@ -23,6 +24,7 @@ export const App = () => {
       <AppProviders>
         <AppRoutes />
         <AppToastViewport />
+        <AppNetworkStatusNotifications />
       </AppProviders>
     </AppErrorBoundary>
   );

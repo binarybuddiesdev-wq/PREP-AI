@@ -3,10 +3,13 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 import { rootReducer } from '@/data/store/rootReducer';
+import { enqueueToast } from '@/data';
 import { AppToastViewport } from '@/app/AppToastViewport';
+import { getApiErrorMessage } from '@/utils/apiErrorMessage';
+import { createQueryClient } from '@/logic/queryClient';
 
 interface IRenderWithProvidersOptions {
   includeToastViewport?: boolean;
@@ -18,7 +21,15 @@ export const renderWithProviders = (
   options: IRenderWithProvidersOptions = {}
 ) => {
   const store = configureStore({ reducer: rootReducer });
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = createQueryClient((error) =>
+    store.dispatch(
+      enqueueToast({
+        kind: 'error',
+        message: getApiErrorMessage(error, 'complete this request'),
+      })
+    )
+  );
+  queryClient.setDefaultOptions({ queries: { retry: false } });
 
   return render(
     <Provider store={store}>

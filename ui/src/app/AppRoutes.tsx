@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router';
+import { Route, Routes } from 'react-router';
 import { ROUTES } from '@/core';
 import { LoadingScreen } from '@/components/layout';
 import { ProtectedRoute, PublicRoute } from './RouteGuards';
@@ -51,6 +51,9 @@ const TheorySessionDetailPage = lazy(() =>
   import('@/pages/TheorySessionDetailPage').then((module) => ({
     default: module.TheorySessionDetailPage,
   }))
+);
+const NotFoundPage = lazy(() =>
+  import('@/pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage }))
 );
 
 export const AppRoutes = () => (
@@ -105,7 +108,7 @@ export const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to={ROUTES.signIn} replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
 );

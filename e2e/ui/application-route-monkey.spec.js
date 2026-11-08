@@ -68,7 +68,8 @@ test('randomized full route walk preserves public screens and guards every priva
   }
 
   await page.goto('/this-route-does-not-exist');
-  await expect(page).toHaveURL(/\/sign-in/);
+  await expect(page).toHaveURL(/\/this-route-does-not-exist$/);
+  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
 

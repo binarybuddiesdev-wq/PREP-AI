@@ -11,12 +11,12 @@ export const useToastCommand = () => {
     (kind: ToastKind, message: string) => dispatch(enqueueToast({ kind, message })),
     [dispatch]
   );
+  const success = useCallback((message: string) => show('success', message), [show]);
+  const error = useCallback((message: string) => show('error', message), [show]);
+  const warning = useCallback((message: string) => show('warning', message), [show]);
+  const info = useCallback((message: string) => show('info', message), [show]);
 
-  return {
-    success: (message: string) => show('success', message),
-    error: (message: string) => show('error', message),
-    info: (message: string) => show('info', message),
-  };
+  return { success, error, warning, info };
 };
 
 export const useToastViewportController = () => {

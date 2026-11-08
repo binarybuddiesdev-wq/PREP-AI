@@ -12,7 +12,6 @@ export interface ISettingsPlanBillingProps {
   subscription: IPaymentSubscription | null;
   isLoading: boolean;
   errorMessage: string | null;
-  createErrorMessage: string | null;
   createdSubscription: IPaymentSubscription | null;
   isCreating: boolean;
   cancelErrorMessage: string | null;

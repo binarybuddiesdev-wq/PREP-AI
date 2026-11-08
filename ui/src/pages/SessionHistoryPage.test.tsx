@@ -258,7 +258,7 @@ describe('SessionHistoryPage', () => {
     renderPage();
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      "Couldn't load your practice session history because the API returned HTTP 500. Check the backend/database and retry."
+      "Couldn't load your practice session history because the server encountered a problem (HTTP 500). Please try again. If it continues, contact support."
     );
     expect(screen.getByRole('alert')).not.toHaveTextContent('Internal server error');
   });

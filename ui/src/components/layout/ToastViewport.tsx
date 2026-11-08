@@ -1,4 +1,4 @@
-import { CheckCircle2, Info, X, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
 import { useEffect } from 'react';
 
 import type { IToastMessage } from '@/core';
@@ -23,6 +23,7 @@ const toastAppearance = {
     iconClassName: 'text-rose-500',
     role: 'alert' as const,
   },
+  warning: { Icon: AlertTriangle, iconClassName: 'text-amber-500', role: 'status' as const },
   info: { Icon: Info, iconClassName: 'text-sky-500', role: 'status' as const },
 };
 

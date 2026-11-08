@@ -177,7 +177,7 @@ describe('useTheoryPracticeSession', () => {
     });
 
     expect(result.current.startError).toBe(
-      "Couldn't start this practice session because the API returned HTTP 500. Check the backend/database and retry."
+      "Couldn't start this practice session because the server encountered a problem (HTTP 500). Please try again. If it continues, contact support."
     );
   });
 
